@@ -5,7 +5,6 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   Squares2X2Icon,
-  DocumentTextIcon,
   ChartBarIcon,
   MagnifyingGlassIcon,
   StarIcon,
@@ -13,16 +12,26 @@ import {
   PlusIcon,
   CheckIcon,
   Cog6ToothIcon,
+  RectangleStackIcon,
   DocumentChartBarIcon,
-  PuzzlePieceIcon,
+  EyeIcon,
+  ClockIcon,
+  ArchiveBoxIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
+const metadataLinks = [
+  { label: "ASO Report", appPath: "", fallback: "/dashboard/report", icon: DocumentChartBarIcon },
+  { label: "App Page Preview", appPath: "preview", fallback: "/dashboard/metadata/preview", icon: EyeIcon },
+  { label: "Timeline", appPath: "timeline", fallback: "/dashboard/metadata/timeline", icon: ClockIcon },
+  { label: "Metadata History", appPath: "history", fallback: "/dashboard/metadata/history", icon: ArchiveBoxIcon },
+  { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency", icon: ArrowPathIcon },
+];
+
 const asoLinks = [
-  { label: "ASO Report", href: "/dashboard/report", icon: DocumentChartBarIcon },
-  { label: "Metadata", href: "/dashboard/metadata", icon: PuzzlePieceIcon },
   { label: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
   { label: "Keywords", href: "/dashboard/keywords", icon: MagnifyingGlassIcon },
   { label: "Reviews & Ratings", href: "/dashboard/reviews", icon: StarIcon },
@@ -33,6 +42,7 @@ type Props = {
   currentPath?: string;
   workspaces: Workspace[];
   activeWorkspaceId?: string;
+  activeAppId?: string;
 };
 
 function workspaceInitial(name: string) {
@@ -43,9 +53,18 @@ export default function DashboardSidebar({
   currentPath = "",
   workspaces,
   activeWorkspaceId,
+  activeAppId,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [metaOpen, setMetaOpen] = useState(
+    metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith(`/dashboard/apps/`))
+  );
+
+  function metaHref(link: typeof metadataLinks[number]) {
+    if (!activeAppId) return link.fallback;
+    return link.appPath ? `/dashboard/apps/${activeAppId}/${link.appPath}` : `/dashboard/apps/${activeAppId}`;
+  }
   const ref = useRef<HTMLDivElement>(null);
 
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
@@ -151,6 +170,49 @@ export default function DashboardSidebar({
             ASO Intelligence
           </p>
           <div className="space-y-1">
+            {/* Metadata — collapsible */}
+            <button
+              type="button"
+              onClick={() => setMetaOpen((v) => !v)}
+              className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith("/dashboard/apps/"))
+                  ? "bg-white/10 text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <RectangleStackIcon className="size-4 shrink-0" />
+                Metadata
+              </div>
+              <ChevronDownIcon
+                className={`size-3.5 text-gray-500 transition-transform duration-150 ${metaOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {metaOpen && (
+              <div className="ml-4 pl-3 border-l border-white/10 space-y-0.5">
+                {metadataLinks.map((link) => {
+                  const href = metaHref(link);
+                  const isActive = currentPath === href || currentPath.startsWith(link.fallback);
+                  return (
+                    <a
+                      key={link.fallback}
+                      href={href}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "text-white bg-white/10"
+                          : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      }`}
+                    >
+                      <link.icon className="size-4 shrink-0" />
+                      {link.label}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Other ASO links */}
             {asoLinks.map((link) => {
               const isActive = currentPath.startsWith(link.href);
               return (
