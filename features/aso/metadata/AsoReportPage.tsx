@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { DevicePhoneMobileIcon, ChevronDownIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "@/features/dashboard/DashboardSidebar";
+import AppSwitcher from "@/features/aso/AppSwitcher";
 import type { App, Workspace } from "@/libs/contracts";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 
@@ -33,61 +34,6 @@ function AppIcon({ app, size = "sm" }: { app: App; size?: "sm" | "lg" }) {
   ) : (
     <div className={`${cls} bg-gray-700 shrink-0 flex items-center justify-center`}>
       <DevicePhoneMobileIcon className={size === "lg" ? "size-7 text-gray-500" : "size-4 text-gray-500"} />
-    </div>
-  );
-}
-
-function AppSwitcher({ current, apps }: { current: App; apps: App[] }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-3 rounded-xl bg-gray-800/50 ring-1 ring-white/10 px-4 py-2.5 hover:bg-gray-800 transition-colors"
-      >
-        <AppIcon app={current} size="sm" />
-        <div className="text-left">
-          <p className="text-sm font-semibold text-white leading-tight">{current.name}</p>
-          <p className="text-xs text-gray-500 leading-tight">{current.store === "ios" ? "App Store" : "Google Play"}</p>
-        </div>
-        <ChevronDownIcon
-          className={`size-4 text-gray-500 ml-1 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-1.5 w-72 rounded-xl bg-gray-900 ring-1 ring-white/10 shadow-xl overflow-hidden">
-          <div className="p-1.5 max-h-72 overflow-y-auto">
-            {apps.map((a) => (
-              <a
-                key={a.id}
-                href={`/dashboard/apps/${a.id}`}
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-white/5 transition-colors"
-              >
-                <AppIcon app={a} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{a.name}</p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {a.store === "ios" ? "App Store" : "Google Play"}
-                    {a.country ? ` · ${a.country}` : ""}
-                  </p>
-                </div>
-                {a.id === current.id && <CheckIcon className="size-4 text-indigo-400 shrink-0" />}
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
