@@ -35,13 +35,13 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  if (apps.length <= 1) return null;
+  const canSwitch = apps.length > 1;
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-3 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 hover:bg-[#22252f] transition-colors shadow-lg shadow-black/20"
+        onClick={() => canSwitch && setOpen((v) => !v)}
+        className="flex items-center gap-3 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 transition-colors shadow-lg shadow-black/20 hover:bg-[#22252f]"
       >
         <AppIcon app={current} />
         <div className="text-left">
@@ -50,9 +50,11 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
             {current.store === "ios" ? "App Store" : "Google Play"}
           </p>
         </div>
-        <ChevronDownIcon
-          className={`size-4 text-gray-500 ml-1 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
+        {canSwitch && (
+          <ChevronDownIcon
+            className={`size-4 text-gray-500 ml-1 transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+          />
+        )}
       </button>
 
       {open && (

@@ -320,23 +320,12 @@ export default function AsoReportPage({ app, allApps, workspaces, storeData }: P
       />
 
       <main className="flex-1 overflow-y-auto bg-[#111318]">
-        {/* Page header — matches AppPagePreview header */}
+        {/* Page header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
-          <div className="flex items-center gap-3">
-            {app.icon_url && (
-              <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover" />
-            )}
-            <div>
-              <p className="text-sm font-semibold text-white leading-none">{app.name}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{app.bundle_id}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-semibold text-white">ASO Report</h1>
-              <InformationCircleIcon className="size-4 text-gray-500" />
-            </div>
-            {allApps.length > 1 && <AppSwitcher current={app} apps={allApps} />}
+          <AppSwitcher current={app} apps={allApps} />
+          <div className="flex items-center gap-1.5">
+            <h1 className="text-sm font-semibold text-white">ASO Report</h1>
+            <InformationCircleIcon className="size-4 text-gray-500" />
           </div>
         </div>
 
