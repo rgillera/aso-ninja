@@ -1,4 +1,5 @@
 import MyApps from "./MyApps";
+import { RecentlyViewedApps } from "./RecentlyViewedApps";
 import type { App } from "@/libs/contracts";
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 export default function DashboardPage({ activeWorkspaceId, apps }: Props) {
   return (
     <div className="h-full overflow-y-auto">
+      <RecentlyViewedApps />
       <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
     </div>
   );

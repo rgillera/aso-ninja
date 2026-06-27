@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
+import { WorkspaceProvider } from "./WorkspaceContext";
 import type { App, Workspace } from "@/libs/contracts";
 
 type Props = {
@@ -55,7 +56,11 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
   // 1. Active tracked app (current page or last-visited tracked)
   const resolvedAppId = params.id ?? (savedPreview ? undefined : savedAppId);
   const activeApp     = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
-  const activeWorkspaceId = activeApp?.workspace_id ?? workspaces[0]?.id;
+  const wsParam       = searchParams.get("ws");
+  const activeWorkspaceId =
+    activeApp?.workspace_id
+    ?? workspaces.find(w => w.id === wsParam)?.id
+    ?? workspaces[0]?.id;
 
   // 2. Preview override: used when viewing (or last viewed) an untracked search result
   const previewSearch = isOnPreview
@@ -70,21 +75,23 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
   const activePreviewPage = isOnPreview ? (searchParams.get("page") ?? "") : undefined;
 
   return (
-    <div className="flex h-screen bg-[#111318] overflow-hidden">
-      <DashboardSidebar
-        currentPath={pathname}
-        workspaces={workspaces}
-        activeWorkspaceId={activeWorkspaceId}
-        activeAppId={activeApp?.id}
-        metaOverrideHref={metaOverrideHref}
-        activePreviewPage={activePreviewPage}
-      />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
-        <DashboardSearch apps={allApps} />
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {children}
+    <WorkspaceProvider value={activeWorkspaceId ?? ""}>
+      <div className="flex h-screen bg-[#111318] overflow-hidden">
+        <DashboardSidebar
+          currentPath={pathname}
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          activeAppId={activeApp?.id}
+          metaOverrideHref={metaOverrideHref}
+          activePreviewPage={activePreviewPage}
+        />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
+          <DashboardSearch apps={allApps} workspaceId={activeWorkspaceId ?? ""} />
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {children}
+          </div>
         </div>
       </div>
-    </div>
+    </WorkspaceProvider>
   );
 }

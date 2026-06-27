@@ -6,43 +6,16 @@ import {
   ChevronDownIcon,
   DevicePhoneMobileIcon,
   XMarkIcon,
-  StarIcon,
-  LinkIcon,
 } from "@heroicons/react/24/outline";
 import { searchStoreApps } from "./searchAction";
+import { loadRecent, saveRecentEntry } from "./recentApps";
+import type { RecentEntry } from "./recentApps";
 import type { App, AppSearchResult } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
-type Props = { apps: App[] };
+type Props = { apps: App[]; workspaceId: string };
 type Tab = "all" | "myapps" | "recent";
 type StoreFilter = "all" | "ios" | "android";
-
-type RecentEntry = {
-  name: string;
-  iconUrl: string | null;
-  store: "ios" | "android";
-  bundleId: string;
-  storeId: string;
-  country: string;
-  href: string;
-  trackedId?: string;
-  timestamp: number;
-};
-
-const RECENT_KEY = "aso_recently_viewed";
-const RECENT_MAX = 10;
-
-function loadRecent(): RecentEntry[] {
-  try {
-    return JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-  } catch { return []; }
-}
-
-function saveRecentEntry(entry: Omit<RecentEntry, "timestamp">) {
-  const existing = loadRecent().filter(r => r.bundleId !== entry.bundleId || r.store !== entry.store);
-  const updated = [{ ...entry, timestamp: Date.now() }, ...existing].slice(0, RECENT_MAX);
-  localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
-}
 
 const RESULTS_PREVIEW = 7;
 
@@ -98,7 +71,7 @@ function FollowingBadge() {
   );
 }
 
-export function DashboardSearch({ apps }: Props) {
+export function DashboardSearch({ apps, workspaceId }: Props) {
   const [open, setOpen]               = useState(false);
   const [tab, setTab]                 = useState<Tab>("recent");
   const [query, setQuery]             = useState("");
@@ -111,7 +84,7 @@ export function DashboardSearch({ apps }: Props) {
   const [recentlyViewed, setRecentlyViewed] = useState<RecentEntry[]>([]);
 
   // Load recently viewed from localStorage on mount
-  useEffect(() => { setRecentlyViewed(loadRecent()); }, []);
+  useEffect(() => { setRecentlyViewed(loadRecent(workspaceId)); }, [workspaceId]);
 
   const wrapRef    = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
@@ -187,8 +160,8 @@ export function DashboardSearch({ apps }: Props) {
     : [{ key: "recent", label: "Recently Viewed" }, { key: "myapps", label: "My Apps" }];
 
   function handleResultClick(entry: Omit<RecentEntry, "timestamp">) {
-    saveRecentEntry(entry);
-    setRecentlyViewed(loadRecent());
+    saveRecentEntry(workspaceId, entry);
+    setRecentlyViewed(loadRecent(workspaceId));
     setOpen(false);
   }
 
@@ -292,18 +265,6 @@ export function DashboardSearch({ apps }: Props) {
               ))}
             </div>
 
-            {/* Status filter */}
-            <div className="flex items-center rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-1 gap-0.5">
-              <button className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium bg-white/10 text-white transition-colors">
-                All
-              </button>
-              <button className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors">
-                <StarIcon className="size-3.5" /> Starred
-              </button>
-              <button className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors">
-                <LinkIcon className="size-3.5" /> Connected
-              </button>
-            </div>
           </div>
 
           {/* Content */}
