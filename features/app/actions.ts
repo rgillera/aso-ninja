@@ -55,7 +55,7 @@ export async function addAppDirectAction(
     icon_url: result.iconUrl || null,
     country,
   });
-  if (error?.code === "23505") return "This app is already in the workspace.";
+  if (error?.code === "23505") return "This app is already tracked in this country for the workspace.";
   if (error) return error.message;
   revalidatePath("/dashboard");
   return null;

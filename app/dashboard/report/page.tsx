@@ -31,7 +31,7 @@ export default async function Page() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-[#111318] overflow-hidden">
       <DashboardSidebar
         currentPath="/dashboard/report"
         workspaces={allWorkspaces}

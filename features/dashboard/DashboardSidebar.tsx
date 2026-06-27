@@ -82,9 +82,9 @@ export default function DashboardSidebar({
   return (
     <>
     {showCreate && <CreateWorkspace onClose={() => setShowCreate(false)} />}
-    <aside className="flex h-full w-64 shrink-0 flex-col bg-gray-950 border-r border-white/10">
+    <aside className="flex h-full w-64 shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07]">
       {/* Workspace switcher */}
-      <div className="relative p-4 border-b border-white/10" ref={ref}>
+      <div className="relative p-4 border-b border-white/[0.07]" ref={ref}>
         <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">
           <button
             onClick={() => setOpen(!open)}
@@ -113,7 +113,7 @@ export default function DashboardSidebar({
         </div>
 
         {open && (
-          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-gray-900 ring-1 ring-white/10 shadow-xl overflow-hidden">
+          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
             <div className="px-2 py-1.5">
               <p className="px-2 py-1 text-xs font-semibold uppercase tracking-widest text-gray-600">
                 Workspaces
@@ -138,7 +138,7 @@ export default function DashboardSidebar({
               </div>
             </div>
 
-            <div className="border-t border-white/10 px-2 py-1.5">
+            <div className="border-t border-white/[0.07] px-2 py-1.5">
               <button
                 onClick={() => { setOpen(false); setShowCreate(true); }}
                 className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
@@ -190,7 +190,7 @@ export default function DashboardSidebar({
             </button>
 
             {metaOpen && (
-              <div className="ml-4 pl-3 border-l border-white/10 space-y-0.5">
+              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
                 {metadataLinks.map((link) => {
                   const href = metaHref(link);
                   const isActive = currentPath === href || currentPath.startsWith(link.fallback);
@@ -239,7 +239,7 @@ export default function DashboardSidebar({
       </nav>
 
       {/* Sign out */}
-      <div className="p-3 border-t border-white/10">
+      <div className="p-3 border-t border-white/[0.07]">
         <form action={signOutAction}>
           <button
             type="submit"

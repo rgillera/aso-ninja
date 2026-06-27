@@ -25,7 +25,7 @@ export default async function Page() {
   if (allApps.length === 1) redirect(`/dashboard/apps/${allApps[0].id}/timeline`);
 
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-[#111318] overflow-hidden">
       <DashboardSidebar currentPath="/dashboard/metadata/timeline" workspaces={allWorkspaces} activeWorkspaceId={firstWorkspace?.id} />
       <main className="flex-1 flex items-center justify-center">
         {allApps.length === 0 ? (

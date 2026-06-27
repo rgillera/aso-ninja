@@ -38,8 +38,8 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
 }
 
 function inputClass(error?: boolean) {
-  return `w-full rounded-lg bg-gray-900 border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-    error ? "border-red-500/50" : "border-white/10"
+  return `w-full rounded-lg bg-[#0d0f14] border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+    error ? "border-red-500/50" : "border-white/[0.07]"
   }`;
 }
 
@@ -57,7 +57,7 @@ export default function WorkspacePage({
   const [, startTransition] = useTransition();
 
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
+    <div className="flex h-screen bg-[#111318] overflow-hidden">
       <DashboardSidebar
         workspaces={allWorkspaces}
         activeWorkspaceId={workspace.id}
@@ -80,7 +80,7 @@ export default function WorkspacePage({
 
           <div className="space-y-8">
             {/* General */}
-            <section className="rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-6">
+            <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
               <h2 className="text-base font-semibold text-white mb-5">General</h2>
               <form action={generalAction} className="space-y-4">
                 <input type="hidden" name="id" value={workspace.id} />
@@ -103,7 +103,7 @@ export default function WorkspacePage({
                   <label className="block text-sm font-medium text-gray-300 mb-1.5">
                     Slug
                   </label>
-                  <div className="flex items-center rounded-lg bg-gray-900 border border-white/10 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                  <div className="flex items-center rounded-lg bg-[#0d0f14] border border-white/[0.07] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
                     <span className="pl-4 pr-1 text-sm text-gray-600 shrink-0">asoninja.com/</span>
                     <input
                       name="slug"
@@ -128,13 +128,13 @@ export default function WorkspacePage({
             </section>
 
             {/* Members */}
-            <section className="rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-6">
+            <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base font-semibold text-white">Members</h2>
                 <span className="text-xs text-gray-500">{members.length} member{members.length !== 1 ? "s" : ""}</span>
               </div>
 
-              <ul className="divide-y divide-white/5">
+              <ul className="divide-y divide-white/[0.07]">
                 {members.map((m) => (
                   <li key={m.user_id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export default function WorkspacePage({
                             )
                           )
                         }
-                        className="rounded-md bg-gray-900 border border-white/10 px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-md bg-[#0d0f14] border border-white/[0.07] px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <option value="owner">Owner</option>
                         <option value="admin">Admin</option>
@@ -190,7 +190,7 @@ export default function WorkspacePage({
 
               {/* Invite */}
               {isOwner && (
-                <form action={inviteAction} className="mt-5 space-y-3 border-t border-white/10 pt-5">
+                <form action={inviteAction} className="mt-5 space-y-3 border-t border-white/[0.07] pt-5">
                   <input type="hidden" name="workspace_id" value={workspace.id} />
                   <Alert state={inviteState} />
                   <div className="flex gap-3">
@@ -199,12 +199,12 @@ export default function WorkspacePage({
                       type="email"
                       required
                       placeholder="colleague@example.com"
-                      className="flex-1 rounded-lg bg-gray-900 border border-white/10 px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                      className="flex-1 rounded-lg bg-[#0d0f14] border border-white/[0.07] px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                     />
                     <select
                       name="role"
                       defaultValue="member"
-                      className="rounded-lg bg-gray-900 border border-white/10 px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="rounded-lg bg-[#0d0f14] border border-white/[0.07] px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                       <option value="admin">Admin</option>
                       <option value="member">Member</option>
