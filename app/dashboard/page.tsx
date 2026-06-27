@@ -1,18 +1,39 @@
-import { headers } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 import DashboardPage from "@/features/dashboard/DashboardPage";
-import type { App } from "@/libs/contracts";
+import type { App, Workspace } from "@/libs/contracts";
 
-export default async function Page() {
-  const headerStore = await headers();
-  const currentPath = headerStore.get("x-invoke-path") ?? "/dashboard";
+type PageProps = { searchParams: Promise<{ ws?: string }> };
+
+export default async function Page({ searchParams }: PageProps) {
+  const { ws: wsParam } = await searchParams;
 
   const supabase = await createClient();
 
-  const { data: apps } = await supabase
-    .from("apps")
+  const { data: workspaces } = await supabase
+    .from("workspaces")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
 
-  return <DashboardPage currentPath={currentPath} apps={(apps ?? []) as App[]} />;
+  const allWorkspaces = (workspaces ?? []) as Workspace[];
+
+  // Use the ?ws= param if it matches a real workspace, otherwise fall back to first
+  const activeWorkspaceId =
+    allWorkspaces.find((w) => w.id === wsParam)?.id ?? allWorkspaces[0]?.id;
+
+  const { data: apps } = activeWorkspaceId
+    ? await supabase
+        .from("apps")
+        .select("*")
+        .eq("workspace_id", activeWorkspaceId)
+        .order("created_at", { ascending: false })
+    : { data: [] };
+
+  return (
+    <DashboardPage
+      currentPath="/dashboard"
+      workspaces={allWorkspaces}
+      activeWorkspaceId={activeWorkspaceId}
+      apps={(apps ?? []) as App[]}
+    />
+  );
 }

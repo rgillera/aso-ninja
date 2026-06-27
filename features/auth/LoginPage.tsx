@@ -10,9 +10,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <a href="/" className="inline-block text-2xl font-bold text-white tracking-tight">
-            aso<span className="text-indigo-400">ninja</span>
-          </a>
           <h1 className="mt-6 text-2xl font-semibold text-white">Sign in to your account</h1>
           <p className="mt-2 text-sm text-gray-400">
             Don&apos;t have an account?{" "}

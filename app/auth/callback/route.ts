@@ -7,8 +7,29 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}/dashboard`);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error && data.user) {
+      // Create default workspace if this is a new OAuth user
+      const { count } = await supabase
+        .from("workspace_members")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", data.user.id);
+
+      if (count === 0) {
+        const displayName =
+          data.user.user_metadata?.full_name ??
+          data.user.email?.split("@")[0] ??
+          "My";
+
+        await supabase.rpc("create_default_workspace", {
+          p_user_id: data.user.id,
+          p_name: displayName,
+        });
+      }
+
+      return NextResponse.redirect(`${origin}/dashboard`);
+    }
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);

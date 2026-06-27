@@ -38,13 +38,23 @@ export async function registerAction(
     return { error: "Passwords do not match.", field: "confirm" };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+
+  const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { full_name: name } },
   });
 
-  if (error) return { error: error.message };
+  if (signUpError) return { error: signUpError.message };
+  if (!data.user) return { error: "Failed to create account." };
+
+  // Create the default workspace for the new user
+  const { error: workspaceError } = await supabase.rpc("create_default_workspace", {
+    p_user_id: data.user.id,
+    p_name: name,
+  });
+
+  if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
 
   redirect("/dashboard");
 }
