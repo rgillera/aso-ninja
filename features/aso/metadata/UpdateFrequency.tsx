@@ -1,24 +1,11 @@
-import type { App, Workspace } from "@/libs/contracts";
-import DashboardSidebar from "@/features/dashboard/DashboardSidebar";
+import type { App } from "@/libs/contracts";
 
-type Props = {
-  app: App;
-  allApps: App[];
-  workspaces: Workspace[];
-};
+type Props = { app: App; allApps: App[] };
 
-export default function UpdateFrequency({ app, workspaces }: Props) {
+export default function UpdateFrequency({ }: Props) {
   return (
-    <div className="flex h-screen bg-gray-900 overflow-hidden">
-      <DashboardSidebar
-        currentPath="/dashboard/metadata/frequency"
-        workspaces={workspaces}
-        activeWorkspaceId={app.workspace_id}
-        activeAppId={app.id}
-      />
-      <main className="flex-1 flex items-center justify-center">
-        <p className="text-sm text-gray-600">Update Frequency — coming soon</p>
-      </main>
-    </div>
+    <main className="h-full flex items-center justify-center">
+      <p className="text-sm text-gray-600">Update Frequency — coming soon</p>
+    </main>
   );
 }

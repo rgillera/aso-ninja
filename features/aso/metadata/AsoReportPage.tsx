@@ -8,9 +8,8 @@ import {
   ChevronDownIcon,
   DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
-import DashboardSidebar from "@/features/dashboard/DashboardSidebar";
-import AppSwitcher from "@/features/aso/AppSwitcher";
 import type { App, Workspace } from "@/libs/contracts";
+import { countryFlag } from "@/libs/countries";
 
 type StoreData = {
   screenshotUrls: string[];
@@ -27,7 +26,7 @@ type StoreData = {
 type Props = {
   app: App;
   allApps: App[];
-  workspaces: Workspace[];
+  workspaces?: Workspace[];
   storeData: StoreData;
 };
 
@@ -303,7 +302,7 @@ function ReportSection({ section, app, draft, onDraft }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AsoReportPage({ app, allApps, workspaces, storeData }: Props) {
+export default function AsoReportPage({ app, storeData }: Props) {
   const { overall, categories, sections } = computeReport(app, storeData);
   const [activeSection, setActiveSection] = useState(sections[0].id);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -311,18 +310,25 @@ export default function AsoReportPage({ app, allApps, workspaces, storeData }: P
   const activeSectionObj = sections.find((s) => s.id === activeSection) ?? sections[0];
 
   return (
-    <div className="flex h-screen bg-[#111318] overflow-hidden">
-      <DashboardSidebar
-        currentPath="/dashboard/report"
-        workspaces={workspaces}
-        activeWorkspaceId={app.workspace_id}
-        activeAppId={app.id}
-      />
-
-      <main className="flex-1 overflow-y-auto bg-[#111318]">
+    <main className="h-full overflow-y-auto bg-[#111318]">
         {/* Page header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
-          <AppSwitcher current={app} apps={allApps} />
+          <div className="flex items-center gap-3">
+            {app.icon_url ? (
+              <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
+            ) : (
+              <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+                <DevicePhoneMobileIcon className="size-4 text-gray-500" />
+              </div>
+            )}
+            <div>
+              <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
+              <p className="text-xs text-gray-500 leading-tight">
+                {app.store === "ios" ? "App Store" : "Google Play"}
+                {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-1.5">
             <h1 className="text-sm font-semibold text-white">ASO Report</h1>
             <InformationCircleIcon className="size-4 text-gray-500" />
@@ -385,7 +391,6 @@ export default function AsoReportPage({ app, allApps, workspaces, storeData }: P
             />
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

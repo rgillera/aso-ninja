@@ -1,25 +1,15 @@
-import DashboardSidebar from "./DashboardSidebar";
 import MyApps from "./MyApps";
-import type { App, Workspace } from "@/libs/contracts";
+import type { App } from "@/libs/contracts";
 
 type Props = {
-  currentPath?: string;
-  workspaces: Workspace[];
   activeWorkspaceId?: string;
   apps: App[];
 };
 
-export default function DashboardPage({ currentPath, workspaces, activeWorkspaceId, apps }: Props) {
+export default function DashboardPage({ activeWorkspaceId, apps }: Props) {
   return (
-    <div className="flex h-screen bg-[#111318] overflow-hidden">
-      <DashboardSidebar
-        currentPath={currentPath}
-        workspaces={workspaces}
-        activeWorkspaceId={activeWorkspaceId}
-      />
-      <main className="flex-1 overflow-y-auto">
-        <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
-      </main>
+    <div className="h-full overflow-y-auto">
+      <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import AsoReportPage from "@/features/aso/metadata/AsoReportPage";
-import type { App, Workspace } from "@/libs/contracts";
+import type { App } from "@/libs/contracts";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -91,10 +91,7 @@ export default async function Page({ params }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: app, error }, { data: workspaces }] = await Promise.all([
-    supabase.from("apps").select("*").eq("id", id).single(),
-    supabase.from("workspaces").select("*").order("created_at", { ascending: true }),
-  ]);
+  const { data: app, error } = await supabase.from("apps").select("*").eq("id", id).single();
 
   if (error || !app) notFound();
 
@@ -112,7 +109,6 @@ export default async function Page({ params }: PageProps) {
     <AsoReportPage
       app={app as App}
       allApps={(allApps ?? []) as App[]}
-      workspaces={(workspaces ?? []) as Workspace[]}
       storeData={storeData}
     />
   );

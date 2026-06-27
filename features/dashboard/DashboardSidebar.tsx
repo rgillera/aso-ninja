@@ -24,11 +24,11 @@ import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
 const metadataLinks = [
-  { label: "ASO Report", appPath: "", fallback: "/dashboard/report", icon: DocumentChartBarIcon },
-  { label: "App Page Preview", appPath: "preview", fallback: "/dashboard/metadata/preview", icon: EyeIcon },
-  { label: "Timeline", appPath: "timeline", fallback: "/dashboard/metadata/timeline", icon: ClockIcon },
-  { label: "Metadata History", appPath: "history", fallback: "/dashboard/metadata/history", icon: ArchiveBoxIcon },
-  { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency", icon: ArrowPathIcon },
+  { label: "ASO Report",       appPath: "",          fallback: "/dashboard/report",              previewPage: "",          icon: DocumentChartBarIcon },
+  { label: "App Page Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
+  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon },
+  { label: "Metadata History", appPath: "history",   fallback: "/dashboard/metadata/history",    previewPage: "history",   icon: ArchiveBoxIcon },
+  { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency",  previewPage: "frequency", icon: ArrowPathIcon },
 ];
 
 const asoLinks = [
@@ -43,6 +43,10 @@ type Props = {
   workspaces: Workspace[];
   activeWorkspaceId?: string;
   activeAppId?: string;
+  /** When set, every metadata nav link uses this href instead of building /apps/[id]/... */
+  metaOverrideHref?: string;
+  /** Which preview sub-page is currently active ("" = report, "timeline", etc.) */
+  activePreviewPage?: string;
 };
 
 function workspaceInitial(name: string) {
@@ -54,14 +58,21 @@ export default function DashboardSidebar({
   workspaces,
   activeWorkspaceId,
   activeAppId,
+  metaOverrideHref,
+  activePreviewPage,
 }: Props) {
+  const isOnPreviewRoute = currentPath === "/dashboard/preview";
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [metaOpen, setMetaOpen] = useState(
+    isOnPreviewRoute ||
     metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith(`/dashboard/apps/`))
   );
 
   function metaHref(link: typeof metadataLinks[number]) {
+    if (metaOverrideHref) {
+      return link.previewPage ? `${metaOverrideHref}&page=${link.previewPage}` : metaOverrideHref;
+    }
     if (!activeAppId) return link.fallback;
     return link.appPath ? `/dashboard/apps/${activeAppId}/${link.appPath}` : `/dashboard/apps/${activeAppId}`;
   }
@@ -171,29 +182,37 @@ export default function DashboardSidebar({
           </p>
           <div className="space-y-1">
             {/* Metadata — collapsible */}
-            <button
-              type="button"
-              onClick={() => setMetaOpen((v) => !v)}
-              className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith("/dashboard/apps/"))
-                  ? "bg-white/10 text-white"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
+            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
+              isOnPreviewRoute || metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith("/dashboard/apps/"))
+                ? "bg-white/10 text-white"
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            }`}>
+              <a
+                href={metaHref(metadataLinks[0])}
+                className="flex flex-1 items-center gap-3 px-3 py-2"
+              >
                 <RectangleStackIcon className="size-4 shrink-0" />
                 Metadata
-              </div>
-              <ChevronDownIcon
-                className={`size-3.5 text-gray-500 transition-transform duration-150 ${metaOpen ? "rotate-180" : ""}`}
-              />
-            </button>
+              </a>
+              <button
+                type="button"
+                onClick={() => setMetaOpen((v) => !v)}
+                className="pr-3 py-2"
+              >
+                <ChevronDownIcon
+                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${metaOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
 
             {metaOpen && (
               <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
                 {metadataLinks.map((link) => {
                   const href = metaHref(link);
-                  const isActive = currentPath === href || currentPath.startsWith(link.fallback);
+                  const isActive =
+                    currentPath === href ||
+                    currentPath.startsWith(link.fallback) ||
+                    (isOnPreviewRoute && activePreviewPage === link.previewPage);
                   return (
                     <a
                       key={link.fallback}

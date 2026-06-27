@@ -8,7 +8,6 @@ import {
   updateMemberRoleAction,
   deleteWorkspaceAction,
 } from "./actions";
-import DashboardSidebar from "@/features/dashboard/DashboardSidebar";
 import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
 type MemberWithProfile = WorkspaceMember & {
@@ -48,7 +47,6 @@ export default function WorkspacePage({
   members,
   currentUserId,
   currentUserRole,
-  allWorkspaces,
 }: Props) {
   const isOwner = currentUserRole === "owner";
 
@@ -57,14 +55,7 @@ export default function WorkspacePage({
   const [, startTransition] = useTransition();
 
   return (
-    <div className="flex h-screen bg-[#111318] overflow-hidden">
-      <DashboardSidebar
-        workspaces={allWorkspaces}
-        activeWorkspaceId={workspace.id}
-        currentPath={`/dashboard/settings/workspace/${workspace.id}`}
-      />
-
-      <main className="flex-1 overflow-y-auto">
+    <main className="h-full overflow-y-auto">
         <div className="mx-auto max-w-2xl px-8 py-10">
           {/* Header */}
           <div className="mb-8">
@@ -242,7 +233,6 @@ export default function WorkspacePage({
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }
