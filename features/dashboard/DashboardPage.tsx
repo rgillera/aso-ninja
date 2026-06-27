@@ -18,7 +18,7 @@ export default function DashboardPage({ currentPath, workspaces, activeWorkspace
         activeWorkspaceId={activeWorkspaceId}
       />
       <main className="flex-1 overflow-y-auto">
-        <MyApps apps={apps} />
+        <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
       </main>
     </div>
   );

@@ -13,13 +13,16 @@ import {
   PlusIcon,
   CheckIcon,
   Cog6ToothIcon,
+  DocumentChartBarIcon,
+  PuzzlePieceIcon,
 } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
 const asoLinks = [
-  { label: "Metadata", href: "/dashboard/metadata", icon: DocumentTextIcon },
+  { label: "ASO Report", href: "/dashboard/report", icon: DocumentChartBarIcon },
+  { label: "Metadata", href: "/dashboard/metadata", icon: PuzzlePieceIcon },
   { label: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
   { label: "Keywords", href: "/dashboard/keywords", icon: MagnifyingGlassIcon },
   { label: "Reviews & Ratings", href: "/dashboard/reviews", icon: StarIcon },
@@ -132,7 +135,7 @@ export default function DashboardSidebar({
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto p-3 space-y-1">
         <a
-          href="/dashboard"
+          href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
           className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
             currentPath === "/dashboard"
               ? "bg-white/10 text-white"

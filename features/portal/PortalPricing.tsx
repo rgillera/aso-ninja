@@ -5,15 +5,15 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 
 const plans = [
   {
-    name: "Pro",
-    monthly: { price: "$14.99", href: "/signup?plan=pro&billing=monthly" },
-    yearly: { price: "$9.99", href: "/signup?plan=pro&billing=yearly" },
-    description: "For growing teams managing multiple apps.",
+    name: "Indie",
+    monthly: { price: "$14.99", href: "/signup?plan=indie&billing=monthly" },
+    yearly: { price: "$9.99", href: "/signup?plan=indie&billing=yearly" },
+    description: "For indie developers managing their own apps.",
     badge: "7-day free trial",
     features: [
-      "3 workspaces",
-      "20 apps",
-      "500 keywords tracked",
+      "1 workspaces",
+      "5 Apps",
+      "1000 keywords tracked",
       "90-day rank history",
       "Daily reviews sync",
       "Rank alerts via email",

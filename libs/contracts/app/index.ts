@@ -8,6 +8,7 @@ export type App = {
   bundle_id: string;
   store_id: string;
   icon_url: string | null;
+  country: string | null;
   created_at: string;
   updated_at: string;
 };
