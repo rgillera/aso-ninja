@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import {
   PlusIcon,
   DevicePhoneMobileIcon,
@@ -8,8 +8,10 @@ import {
   GlobeAltIcon,
   ChevronDownIcon,
   CheckIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import AddApp from "@/features/app/AddApp";
+import { deleteAppAction } from "@/features/app/actions";
 import type { App } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
@@ -47,7 +49,57 @@ function groupApps(apps: App[]): AppGroup[] {
   }));
 }
 
-function AppRow({ group }: { group: AppGroup }) {
+function ConfirmRemoveDialog({
+  group,
+  onConfirm,
+  onCancel,
+}: {
+  group: AppGroup;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { primary } = group;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          {primary.icon_url ? (
+            <img src={primary.icon_url} alt={primary.name} className="size-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="size-10 rounded-xl bg-[#0d0f14] flex items-center justify-center shrink-0">
+              <DevicePhoneMobileIcon className="size-5 text-gray-600" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{primary.name}</p>
+            <p className="text-xs text-gray-500 truncate">{primary.bundle_id}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-300 mb-6">
+          Remove <span className="font-semibold text-white">{primary.name}</span> from your followed apps? This cannot be undone.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-lg bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/[0.10] hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-lg bg-red-500/90 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-500 transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: (group: AppGroup) => void }) {
   const { primary, entries } = group;
 
   return (
@@ -74,9 +126,8 @@ function AppRow({ group }: { group: AppGroup }) {
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
       </a>
 
-      {/* Badges */}
+      {/* Country badges + remove button */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* One clickable flag per country entry */}
         <div className="flex items-center gap-1.5">
           {entries.map((app) =>
             app.country ? (
@@ -92,6 +143,14 @@ function AppRow({ group }: { group: AppGroup }) {
             ) : null
           )}
         </div>
+
+        <button
+          onClick={() => onRequestDelete(group)}
+          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+          title="Remove app"
+        >
+          <TrashIcon className="size-4" />
+        </button>
       </div>
     </div>
   );
@@ -99,6 +158,15 @@ function AppRow({ group }: { group: AppGroup }) {
 
 export default function MyApps({ apps, workspaceId }: Props) {
   const [showAdd, setShowAdd] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
+  const [, startTransition] = useTransition();
+
+  function handleDelete(ids: string[]) {
+    startTransition(async () => {
+      for (const id of ids) await deleteAppAction(id);
+      setPendingDelete(null);
+    });
+  }
   const [storeFilter, setStoreFilter] = useState<"all" | "ios" | "android">("all");
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
@@ -144,6 +212,13 @@ export default function MyApps({ apps, workspaceId }: Props) {
   return (
     <>
       {showAdd && <AddApp workspaceId={workspaceId} onClose={() => setShowAdd(false)} />}
+      {pendingDelete && (
+        <ConfirmRemoveDialog
+          group={pendingDelete}
+          onConfirm={() => handleDelete(pendingDelete.entries.map(e => e.id))}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
 
       <div className="p-6">
         {/* Filter bar */}
@@ -291,7 +366,7 @@ export default function MyApps({ apps, workspaceId }: Props) {
             ) : (
               <div className="divide-y divide-white/[0.07]">
                 {groupApps(filtered).map((group) => (
-                  <AppRow key={group.key} group={group} />
+                  <AppRow key={group.key} group={group} onRequestDelete={setPendingDelete} />
                 ))}
               </div>
             )}
