@@ -72,7 +72,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
           bundleId: app.bundle_id,
           storeId: app.store_id,
           country: app.country ?? "US",
-          href: `/dashboard/apps/${app.id}`,
+          href: `/dashboard/apps/${app.id}/report`,
           trackedId: app.id,
         });
       }

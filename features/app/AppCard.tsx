@@ -21,7 +21,7 @@ export default function AppCard({ app }: { app: App }) {
 
   return (
     <a
-      href={`/dashboard/apps/${app.id}`}
+      href={`/dashboard/apps/${app.id}/report`}
       className="flex items-start gap-4 rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-5 hover:bg-gray-800/80 transition-colors"
     >
       {app.icon_url ? (

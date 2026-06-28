@@ -110,7 +110,7 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
       </div>
 
       {/* App icon — links to first entry */}
-      <a href={`/dashboard/apps/${primary.id}`} className="shrink-0">
+      <a href={`/dashboard/apps/${primary.id}/report`} className="shrink-0">
         {primary.icon_url ? (
           <img src={primary.icon_url} alt={primary.name} className="size-10 rounded-xl object-cover" />
         ) : (
@@ -121,7 +121,7 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
       </a>
 
       {/* Name + bundle — links to first entry */}
-      <a href={`/dashboard/apps/${primary.id}`} className="flex-1 min-w-0">
+      <a href={`/dashboard/apps/${primary.id}/report`} className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white truncate">{primary.name}</p>
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
       </a>
@@ -133,7 +133,7 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
             app.country ? (
               <a
                 key={app.id}
-                href={`/dashboard/apps/${app.id}`}
+                href={`/dashboard/apps/${app.id}/report`}
                 onClick={(e) => e.stopPropagation()}
                 className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] px-3 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-white/[0.08] hover:bg-white/[0.08] hover:text-white transition-colors"
               >

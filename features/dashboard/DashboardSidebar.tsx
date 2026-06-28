@@ -27,8 +27,7 @@ import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
 const metadataLinks = [
-  { label: "ASO Report",       appPath: "",          fallback: "/dashboard/report",              previewPage: "",          icon: DocumentChartBarIcon },
-  { label: "App Page Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
+  { label: "Page Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
   { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon },
   { label: "Metadata History", appPath: "history",   fallback: "/dashboard/metadata/history",    previewPage: "history",   icon: ArchiveBoxIcon },
   { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency",  previewPage: "frequency", icon: ArrowPathIcon },
@@ -71,15 +70,32 @@ export default function DashboardSidebar({
   activePreviewPage,
 }: Props) {
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
+  const isOnReport =
+    currentPath.startsWith("/dashboard/report") ||
+    currentPath.endsWith("/report") ||
+    (isOnPreviewRoute && (activePreviewPage === "report" || activePreviewPage === ""));
+  const isOnMetadata =
+    !isOnReport && (
+      (isOnPreviewRoute && activePreviewPage !== "" && activePreviewPage !== "report") ||
+      metadataLinks.some((l) => currentPath.startsWith(l.fallback)) ||
+      metadataLinks.some((l) => l.appPath && currentPath.endsWith(`/${l.appPath}`))
+    );
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [metaOpen, setMetaOpen] = useState(
-    isOnPreviewRoute ||
-    metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith(`/dashboard/apps/`))
-  );
+  const [metaOpen, setMetaOpen] = useState(isOnMetadata);
   const [keywordsOpen, setKeywordsOpen] = useState(
     currentPath.startsWith("/dashboard/keywords")
   );
+
+  useEffect(() => {
+    if (isOnReport) setMetaOpen(false);
+  }, [currentPath]);
+
+  function reportHref() {
+    if (metaOverrideHref) return `${metaOverrideHref}&page=report`;
+    if (activeAppId) return `/dashboard/apps/${activeAppId}/report`;
+    return "/dashboard/report";
+  }
 
   function metaHref(link: typeof metadataLinks[number]) {
     if (metaOverrideHref) {
@@ -193,11 +209,22 @@ export default function DashboardSidebar({
             ASO Intelligence
           </p>
           <div className="space-y-1">
+            {/* Report — top-level link */}
+            <a
+              href={reportHref()}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                isOnReport
+                  ? "bg-white/10 text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <DocumentChartBarIcon className="size-4 shrink-0" />
+              Reports
+            </a>
+
             {/* Metadata — collapsible */}
             <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
-              isOnPreviewRoute || metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith("/dashboard/apps/"))
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+              isOnMetadata ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
             }`}>
               <a
                 href={metaHref(metadataLinks[0])}

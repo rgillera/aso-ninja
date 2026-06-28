@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
-import AsoReportPage from "@/features/aso/metadata/AsoReportPage";
+import ReportPage from "@/features/aso/reports/ReportPage";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import Timeline from "@/features/aso/metadata/timeline";
 import MetadataHistory from "@/features/aso/metadata/MetadataHistory";
@@ -16,7 +16,7 @@ type PageProps = {
     icon?: string;
     developer?: string;
     country?: string;
-    page?: string; // "preview" | "timeline" | "history" | "frequency" | undefined → report
+    page?: string; // "preview" | "timeline" | "history" | "frequency" | "report" | undefined → preview
   }>;
 };
 
@@ -151,8 +151,8 @@ export default async function Page({ searchParams }: PageProps) {
       ? await fetchGooglePlayData(bundleId, resolvedCountry)
       : null;
 
-  if (page === "preview") {
-    return <AppPagePreview app={syntheticApp} allApps={allApps} storeData={storeData} />;
+  if (page === "report") {
+    return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
   }
   if (page === "timeline") {
     return <Timeline app={syntheticApp} allApps={allApps} screenshots={storeData?.screenshotUrls ?? []} />;
@@ -163,5 +163,5 @@ export default async function Page({ searchParams }: PageProps) {
   if (page === "frequency") {
     return <UpdateFrequency app={syntheticApp} allApps={allApps} />;
   }
-  return <AsoReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
+  return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
 }

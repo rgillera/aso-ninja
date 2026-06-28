@@ -166,7 +166,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
         bundleId: a.bundle_id,
         storeId: a.store_id,
         country: a.country ?? "US",
-        href: `/dashboard/apps/${a.id}`,
+        href: `/dashboard/apps/${a.id}/report`,
         trackedId: a.id,
         timestamp: 0,
       } as RecentEntry));
@@ -334,8 +334,8 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                           {visibleResults.map((r, i) => {
                             const trackedApp = apps.find(a => a.bundle_id === r.bundleId);
                             const href = trackedApp
-                              ? `/dashboard/apps/${trackedApp.id}`
-                              : `/dashboard/preview?bundleId=${encodeURIComponent(r.bundleId)}&storeId=${encodeURIComponent(r.storeId)}&store=${r.store}&name=${encodeURIComponent(r.name)}&icon=${encodeURIComponent(r.iconUrl)}&country=${country}`;
+                              ? `/dashboard/apps/${trackedApp.id}/report`
+                              : `/dashboard/preview?bundleId=${encodeURIComponent(r.bundleId)}&storeId=${encodeURIComponent(r.storeId)}&store=${r.store}&name=${encodeURIComponent(r.name)}&icon=${encodeURIComponent(r.iconUrl)}&country=${country}&page=report`;
                             return (
                               <a
                                 key={i}
@@ -390,7 +390,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                     {filteredApps.map(app => (
                       <a
                         key={app.id}
-                        href={`/dashboard/apps/${app.id}`}
+                        href={`/dashboard/apps/${app.id}/report`}
                         onClick={() => handleResultClick({
                           name: app.name,
                           iconUrl: app.icon_url,
@@ -398,7 +398,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                           bundleId: app.bundle_id,
                           storeId: app.store_id,
                           country: app.country ?? "US",
-                          href: `/dashboard/apps/${app.id}`,
+                          href: `/dashboard/apps/${app.id}/report`,
                           trackedId: app.id,
                         })}
                         className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"

@@ -41,7 +41,7 @@ export default function AppPicker({ apps, basePath }: { apps: App[]; basePath?: 
             return (
               <a
                 key={app.id}
-                href={basePath ? `/dashboard/apps/${app.id}/${basePath}` : `/dashboard/apps/${app.id}`}
+                href={basePath ? `/dashboard/apps/${app.id}/${basePath}` : `/dashboard/apps/${app.id}/report`}
                 className="flex items-center gap-4 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] p-4 hover:bg-[#22252f] shadow-lg shadow-black/20 transition-colors"
               >
                 {app.icon_url ? (

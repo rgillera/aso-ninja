@@ -291,7 +291,7 @@ function ReportSection({ section, app, draft, onDraft }: {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function AsoReportPage({ app, storeData }: Props) {
+export default function ReportPage({ app, storeData }: Props) {
   const { overall, categories, sections } = computeReport(app, storeData);
   const [activeSection, setActiveSection] = useState(sections[0].id);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
