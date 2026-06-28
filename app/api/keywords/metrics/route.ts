@@ -38,49 +38,58 @@ function computeRelevancy(keyword: string, appName: string, topTitles: string[])
   return Math.min(Math.round(directScore * 0.6 + contextScore * 0.4), 100);
 }
 
-// Converts autocomplete hint position to a 0–100 popularity score.
-// Position 0 (top suggestion) = 100, last position = lowest score.
-// Not in suggestions at all = falls back to resultCountScore (capped at 35).
+// Android only: converts Play Store suggest position to a popularity score.
+// Position 0 (top suggestion) = 100. Not in suggestions: falls back to
+// result count proxy scaled by 0.7.
 function hintsScore(idx: number, total: number, resultCountScore: number): number {
-  if (idx === -1) return Math.min(resultCountScore, 35);
+  if (idx === -1) return Math.round(resultCountScore * 0.7);
   return Math.max(Math.round(((total - idx) / total) * 100), 5);
 }
 
 async function fetchIosMetrics(term: string, country: string, appName: string): Promise<Metrics | null> {
   try {
+    // Apple's autocomplete hints API returns 404 for server-side requests —
+    // it only works in a browser/device context. Volume is estimated from
+    // search result signals instead.
     const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
-    const hintsUrl  = `https://search.itunes.apple.com/WebObjects/MZSearchHints.wo/wa/hints?media=software&term=${encodeURIComponent(term)}&limit=25&lang=en-US&country=${country}`;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [searchRes, hintsRes] = await Promise.all([
-      fetch(searchUrl, { next: { revalidate: 86400 } } as any),
-      fetch(hintsUrl,  { next: { revalidate: 3600  } } as any),
-    ]);
+    const searchRes = await fetch(searchUrl, { cache: "no-store" } as any);
+    const searchData = searchRes.ok ? await searchRes.json() : {};
 
-    const [searchData, hintsData] = await Promise.all([
-      searchRes.ok ? searchRes.json() : Promise.resolve({}),
-      hintsRes.ok  ? hintsRes.json()  : Promise.resolve({}),
-    ]);
-
-    const apps: any[]  = searchData.results ?? []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const count: number = searchData.resultCount ?? apps.length;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hints: { term: string }[] = hintsData.hints ?? [];
-    const hintIdx = hints.findIndex((h) => h.term.toLowerCase() === term.toLowerCase());
-
-    // Volume = today's popularity via autocomplete position
-    const resultCountScore = Math.min(Math.round((count / 200) * 100), 100);
-    const volume = hintsScore(hintIdx, hints.length || 25, resultCountScore);
+    const apps: any[]    = searchData.results ?? []; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const count: number  = searchData.resultCount ?? apps.length;
 
     const top10 = apps.slice(0, 10);
     const top5  = apps.slice(0, 5);
 
+    // Volume: average userRatingCount of apps whose title contains all keyword
+    // words, on a log₁₀ scale against 10M. Popular keywords → their dedicated
+    // apps have high avg ratings (many users found them via search). Brand
+    // keywords → the one matching app has few ratings → score stays at 5.
+    // Using avg (not count) avoids penalising multi-word keywords that have
+    // fewer title matches than single-word ones like "workout".
+    const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const titleApps = apps.filter((a: any) => kwTokens.every((w) => (a.trackName ?? "").toLowerCase().includes(w)));
+    const avgTitleRatings = titleApps.length === 0
+      ? 0
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      : titleApps.reduce((s: number, a: any) => s + (a.userRatingCount ?? 0), 0) / titleApps.length;
+    const volume = avgTitleRatings < 1_000
+      ? 5
+      : Math.min(Math.round((Math.log10(avgTitleRatings) / Math.log10(10_000_000)) * 100), 100);
+
+    // Difficulty: log scale so mid-range competition (10k–100k ratings) is
+    // meaningfully differentiated, not compressed near 0 by a linear 500k cap.
+    // log10 scale: 1k ratings ≈ 50, 100k ≈ 83, 1M ≈ 100.
     const avgRatings =
       top5.length > 0
         ? top5.reduce((s: number, r: any) => s + (r.userRatingCount ?? 0), 0) / top5.length // eslint-disable-line @typescript-eslint/no-explicit-any
         : 0;
-    const diff = Math.min(Math.round((avgRatings / 500_000) * 100), 100);
+    const diff = avgRatings < 10
+      ? 0
+      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
 
     const name    = appName.toLowerCase().trim();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -112,13 +121,19 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     ]);
 
     const count = apps.length;
+
+    const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
     const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
+    const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
+    const fallbackScore    = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
 
     const suggestIdx = (suggestions as string[]).findIndex(
       (s) => s.toLowerCase() === term.toLowerCase()
     );
 
-    const volume = hintsScore(suggestIdx, suggestions.length || 5, resultCountScore);
+    const volume = hintsScore(suggestIdx, suggestions.length || 5, fallbackScore);
 
     const top10 = apps.slice(0, 10);
     const top5  = apps.slice(0, 5);
@@ -127,7 +142,8 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
       top5.length > 0
         ? top5.reduce((s: number, r: any) => s + (r.score ?? 0), 0) / top5.length // eslint-disable-line @typescript-eslint/no-explicit-any
         : 0;
-    const diff = Math.min(Math.round((avgScore / 5) * 100), 100);
+    // Log scale: 4.5★ avg = ~100, 3★ avg = ~58, 1★ avg = ~0
+    const diff = avgScore < 0.1 ? 0 : Math.min(Math.round((Math.log10(avgScore * 10) / Math.log10(50)) * 100), 100);
 
     const name    = appName.toLowerCase().trim();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

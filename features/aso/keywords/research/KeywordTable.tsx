@@ -40,7 +40,7 @@ type ColumnDef = {
 };
 
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: "volume",      label: "Volume",        defaultVisible: true,  tooltip: "Today's popularity (0–100) based on autocomplete hint position. Higher = more people searching for this keyword right now." },
+  { key: "volume",      label: "Volume",        defaultVisible: true,  tooltip: "Search popularity (0–100), estimated from how many apps target this keyword in their title vs. total search results. Higher = more apps competing for it, which correlates with search demand." },
   { key: "results",     label: "Results",       defaultVisible: false, tooltip: "Number of apps returned when searching this keyword. More results = more competition." },
   { key: "diff",        label: "Difficulty",    defaultVisible: true,  tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
   { key: "chance",      label: "Chance",        defaultVisible: true,  tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
