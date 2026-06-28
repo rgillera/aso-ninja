@@ -10,6 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import type { App, Workspace } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
+import { AppHeader } from "@/features/aso/AppHeader";
 
 type StoreData = {
   screenshotUrls: string[];
@@ -311,29 +312,7 @@ export default function AsoReportPage({ app, storeData }: Props) {
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318]">
-        {/* Page header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
-          <div className="flex items-center gap-3">
-            {app.icon_url ? (
-              <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
-            ) : (
-              <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
-                <DevicePhoneMobileIcon className="size-4 text-gray-500" />
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
-              <p className="text-xs text-gray-500 leading-tight">
-                {app.store === "ios" ? "App Store" : "Google Play"}
-                {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <h1 className="text-sm font-semibold text-white">ASO Report</h1>
-            <InformationCircleIcon className="size-4 text-gray-500" />
-          </div>
-        </div>
+        <AppHeader app={app} title="ASO Report" />
 
         <div className="p-6 space-y-5">
           {/* Summary card */}

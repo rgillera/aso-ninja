@@ -18,6 +18,9 @@ import {
   ClockIcon,
   ArchiveBoxIcon,
   ArrowPathIcon,
+  AdjustmentsHorizontalIcon,
+  ArrowTrendingUpIcon,
+  ListBulletIcon,
 } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
@@ -31,9 +34,15 @@ const metadataLinks = [
   { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency",  previewPage: "frequency", icon: ArrowPathIcon },
 ];
 
+const keywordLinks = [
+  { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
+  { label: "Keyword Combination", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon },
+  { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
+  { label: "Keyword Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon },
+];
+
 const asoLinks = [
   { label: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
-  { label: "Keywords", href: "/dashboard/keywords", icon: MagnifyingGlassIcon },
   { label: "Reviews & Ratings", href: "/dashboard/reviews", icon: StarIcon },
   { label: "Explore", href: "/dashboard/explore", icon: GlobeAltIcon },
 ];
@@ -67,6 +76,9 @@ export default function DashboardSidebar({
   const [metaOpen, setMetaOpen] = useState(
     isOnPreviewRoute ||
     metadataLinks.some((l) => currentPath.startsWith(l.fallback) || currentPath.startsWith(`/dashboard/apps/`))
+  );
+  const [keywordsOpen, setKeywordsOpen] = useState(
+    currentPath.startsWith("/dashboard/keywords")
   );
 
   function metaHref(link: typeof metadataLinks[number]) {
@@ -228,6 +240,49 @@ export default function DashboardSidebar({
                     </a>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Keywords — collapsible */}
+            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
+              currentPath.startsWith("/dashboard/keywords")
+                ? "bg-white/10 text-white"
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            }`}>
+              <a
+                href="/dashboard/keywords/research"
+                className="flex flex-1 items-center gap-3 px-3 py-2"
+              >
+                <MagnifyingGlassIcon className="size-4 shrink-0" />
+                Keywords
+              </a>
+              <button
+                type="button"
+                onClick={() => setKeywordsOpen((v) => !v)}
+                className="pr-3 py-2"
+              >
+                <ChevronDownIcon
+                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${keywordsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
+
+            {keywordsOpen && (
+              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+                {keywordLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      currentPath.startsWith(link.href)
+                        ? "text-white bg-white/10"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <link.icon className="size-4 shrink-0" />
+                    {link.label}
+                  </a>
+                ))}
               </div>
             )}
 
