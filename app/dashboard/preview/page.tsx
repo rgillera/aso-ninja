@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import AsoReportPage from "@/features/aso/metadata/AsoReportPage";
-import AppPagePreview from "@/features/aso/metadata/AppPagePreview";
+import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import Timeline from "@/features/aso/metadata/timeline";
 import MetadataHistory from "@/features/aso/metadata/MetadataHistory";
 import UpdateFrequency from "@/features/aso/metadata/UpdateFrequency";

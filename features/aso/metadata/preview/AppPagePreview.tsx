@@ -10,7 +10,7 @@ import {
   MoonIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-import PhonePreview from "@/features/aso/metadata/PhonePreview";
+import PhonePreview from "@/features/aso/metadata/preview/PhonePreview";
 import type { App, Workspace } from "@/libs/contracts";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 

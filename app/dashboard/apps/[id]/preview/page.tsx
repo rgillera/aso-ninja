@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
-import AppPagePreview from "@/features/aso/metadata/AppPagePreview";
+import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import type { App } from "@/libs/contracts";
 
 type PageProps = { params: Promise<{ id: string }> };
