@@ -5,13 +5,14 @@ import { usePathname, useParams, useSearchParams } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider } from "./WorkspaceContext";
+import { saveRecentEntry } from "./recentApps";
 import type { App, Workspace } from "@/libs/contracts";
 
 type Props = {
   workspaces: Workspace[];
   allApps: App[];
   lastAppId?: string;
-  lastPreview?: string; // URL-encoded search string, e.g. "?bundleId=...&store=ios&..."
+  lastPreview?: string;
   children: React.ReactNode;
 };
 
@@ -22,10 +23,8 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
   const params       = useParams<{ id?: string }>();
   const searchParams = useSearchParams();
 
-  // Computed once — consistent on server and client (no window access)
   const isOnPreview = pathname === "/dashboard/preview";
   const rawSearch   = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
-  // Strip the `page` sub-param so the stored base URL is always page-agnostic
   const rawSearchClean = (() => {
     if (!rawSearch) return "";
     const sp = new URLSearchParams(rawSearch.slice(1));
@@ -33,7 +32,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
     return sp.size > 0 ? `?${sp.toString()}` : "";
   })();
 
-  // Mirrors the cookie so sidebar updates without a full navigation
   const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
   const [savedPreview, setSavedPreview] = useState<string | undefined>(lastPreview);
 
@@ -43,26 +41,60 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
       document.cookie = `lastPreview=; path=/; max-age=0; SameSite=Lax`;
       setSavedAppId(params.id);
       setSavedPreview(undefined);
+
+      // Track every tracked-app navigation as recently viewed
+      const app = allApps.find(a => a.id === params.id);
+      if (app) {
+        saveRecentEntry(app.workspace_id, {
+          name: app.name,
+          iconUrl: app.icon_url,
+          store: app.store,
+          bundleId: app.bundle_id,
+          storeId: app.store_id,
+          country: app.country ?? "US",
+          href: `/dashboard/apps/${app.id}`,
+          trackedId: app.id,
+        });
+      }
     } else if (isOnPreview && rawSearchClean) {
       document.cookie = `lastPreview=${encodeURIComponent(rawSearchClean)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
       document.cookie = `lastAppId=; path=/; max-age=0; SameSite=Lax`;
       setSavedPreview(rawSearchClean);
       setSavedAppId(undefined);
+
+      // Track every preview navigation as recently viewed
+      const sp = new URLSearchParams(rawSearchClean.slice(1));
+      const bundleId = sp.get("bundleId");
+      const store    = sp.get("store") as "ios" | "android" | null;
+      const name     = sp.get("name");
+      if (bundleId && store && name) {
+        saveRecentEntry(workspaces[0]?.id ?? "", {
+          name,
+          iconUrl: sp.get("icon") ?? null,
+          store,
+          bundleId,
+          storeId: sp.get("storeId") ?? bundleId,
+          country: sp.get("country") ?? "US",
+          href: `/dashboard/preview${rawSearchClean}`,
+        });
+      }
     }
   }, [params.id, isOnPreview, rawSearchClean]);
 
   // Resolve sidebar context ─────────────────────────────────────────────────
 
-  // 1. Active tracked app (current page or last-visited tracked)
   const resolvedAppId = params.id ?? (savedPreview ? undefined : savedAppId);
   const activeApp     = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
-  const wsParam       = searchParams.get("ws");
-  const activeWorkspaceId =
-    activeApp?.workspace_id
-    ?? workspaces.find(w => w.id === wsParam)?.id
-    ?? workspaces[0]?.id;
 
-  // 2. Preview override: used when viewing (or last viewed) an untracked search result
+  const wsParam = searchParams.get("ws");
+  // wsParam takes priority over the saved-app workspace when not on an app route,
+  // so clicking the workspace switcher always reflects immediately.
+  const activeWorkspaceId: string | undefined = params.id
+    ? (activeApp?.workspace_id ?? workspaces[0]?.id)
+    : wsParam
+    ? (workspaces.find(w => w.id === wsParam)?.id ?? workspaces[0]?.id)
+    : (activeApp?.workspace_id ?? workspaces[0]?.id);
+
   const previewSearch = isOnPreview
     ? rawSearchClean
     : (savedPreview ? decodeURIComponent(savedPreview) : undefined);
@@ -71,7 +103,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
     ? `/dashboard/preview${previewSearch}`
     : undefined;
 
-  // Which preview sub-page is active right now (empty string = report)
   const activePreviewPage = isOnPreview ? (searchParams.get("page") ?? "") : undefined;
 
   return (

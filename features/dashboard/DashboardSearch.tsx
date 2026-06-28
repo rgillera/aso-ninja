@@ -58,7 +58,7 @@ function AppIconWithBadge({
 function ConnectedBadge() {
   return (
     <span className="shrink-0 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium text-white">
-      Connected
+      Following
     </span>
   );
 }
@@ -83,8 +83,8 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
   const [isPending, startTransition]  = useTransition();
   const [recentlyViewed, setRecentlyViewed] = useState<RecentEntry[]>([]);
 
-  // Load recently viewed from localStorage on mount
-  useEffect(() => { setRecentlyViewed(loadRecent(workspaceId)); }, [workspaceId]);
+  // Reload recently viewed whenever the popup opens or workspace changes
+  useEffect(() => { setRecentlyViewed(loadRecent(workspaceId)); }, [open, workspaceId]);
 
   const wrapRef    = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
@@ -153,6 +153,25 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
       return true;
     });
   }, [apps, storeFilter, country, query, isSearching]);
+
+  // Recently viewed + followed apps not already in recent list
+  const combinedRecent = useMemo(() => {
+    const recentKeys = new Set(recentlyViewed.map(r => `${r.bundleId}::${r.store}`));
+    const followedNotInRecent = apps
+      .filter(a => !recentKeys.has(`${a.bundle_id}::${a.store}`))
+      .map(a => ({
+        name: a.name,
+        iconUrl: a.icon_url,
+        store: a.store,
+        bundleId: a.bundle_id,
+        storeId: a.store_id,
+        country: a.country ?? "US",
+        href: `/dashboard/apps/${a.id}`,
+        trackedId: a.id,
+        timestamp: 0,
+      } as RecentEntry));
+    return [...recentlyViewed, ...followedNotInRecent];
+  }, [recentlyViewed, apps]);
 
   // Tab labels: "All Apps" / "My Apps" when searching, "Recently Viewed" / "My Apps" otherwise
   const tabs: { key: Tab; label: string }[] = isSearching
@@ -274,11 +293,11 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
             {(tab === "all" || (!isSearching && tab === "recent")) && (
               <>
                 {tab === "recent" && (
-                  recentlyViewed.length === 0 ? (
+                  combinedRecent.length === 0 ? (
                     <p className="px-5 py-8 text-center text-sm text-gray-600">No recently viewed apps</p>
                   ) : (
                     <div className="divide-y divide-white/[0.04]">
-                      {recentlyViewed.map((r, i) => (
+                      {combinedRecent.map((r, i) => (
                         <a
                           key={i}
                           href={r.href}
