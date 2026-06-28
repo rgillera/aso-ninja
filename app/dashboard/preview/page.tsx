@@ -151,8 +151,8 @@ export default async function Page({ searchParams }: PageProps) {
       ? await fetchGooglePlayData(bundleId, resolvedCountry)
       : null;
 
-  if (page === "report") {
-    return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
+  if (page === "preview") {
+    return <AppPagePreview app={syntheticApp} allApps={allApps} storeData={storeData} />;
   }
   if (page === "timeline") {
     return <Timeline app={syntheticApp} allApps={allApps} screenshots={storeData?.screenshotUrls ?? []} />;
