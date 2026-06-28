@@ -11,21 +11,10 @@ import {
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import PhonePreview from "@/features/aso/metadata/preview/PhonePreview";
-import type { App, Workspace } from "@/libs/contracts";
+import type { App, Workspace, StoreData } from "@/libs/contracts";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 
 type Tab = "text" | "visual" | "details";
-
-type StoreData = {
-  screenshotUrls: string[];
-  subtitle: string;
-  description: string;
-  releaseNotes: string;
-  rating?: number;
-  ratingCount?: number;
-  primaryGenreName: string;
-  contentAdvisoryRating: string;
-} | null;
 
 type Props = {
   app: App;

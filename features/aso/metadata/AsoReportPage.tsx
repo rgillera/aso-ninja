@@ -8,21 +8,9 @@ import {
   ChevronDownIcon,
   DevicePhoneMobileIcon,
 } from "@heroicons/react/24/outline";
-import type { App, Workspace } from "@/libs/contracts";
+import type { App, Workspace, StoreData } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
 import { AppHeader } from "@/features/aso/AppHeader";
-
-type StoreData = {
-  screenshotUrls: string[];
-  subtitle: string;
-  description: string;
-  releaseNotes: string;
-  rating?: number;
-  ratingCount?: number;
-  primaryGenreName: string;
-  contentAdvisoryRating: string;
-  version?: string;
-} | null;
 
 type Props = {
   app: App;
