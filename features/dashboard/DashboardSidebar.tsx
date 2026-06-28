@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import {
   ChevronDownIcon,
-  ChevronRightIcon,
   Squares2X2Icon,
   ChartBarIcon,
   MagnifyingGlassIcon,
@@ -21,6 +20,9 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
+  MagnifyingGlassCircleIcon,
+  ScaleIcon,
+  ChatBubbleLeftEllipsisIcon,
 } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
@@ -40,10 +42,9 @@ const keywordLinks = [
   { label: "Keyword Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon },
 ];
 
-const asoLinks = [
-  { label: "Analytics", href: "/dashboard/analytics", icon: ChartBarIcon },
-  { label: "Reviews & Ratings", href: "/dashboard/reviews", icon: StarIcon },
-  { label: "Explore", href: "/dashboard/explore", icon: GlobeAltIcon },
+const marketLinks = [
+  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon },
+  { label: "App Comparison", href: "/dashboard/market/comparison", icon: ScaleIcon },
 ];
 
 type Props = {
@@ -85,6 +86,9 @@ export default function DashboardSidebar({
   const [metaOpen, setMetaOpen] = useState(isOnMetadata);
   const [keywordsOpen, setKeywordsOpen] = useState(
     currentPath.startsWith("/dashboard/keywords")
+  );
+  const [reviewsOpen, setReviewsOpen] = useState(
+    currentPath.startsWith("/dashboard/reviews")
   );
 
   useEffect(() => {
@@ -313,24 +317,73 @@ export default function DashboardSidebar({
               </div>
             )}
 
-            {/* Other ASO links */}
-            {asoLinks.map((link) => {
+            {/* Reviews & Ratings — collapsible */}
+            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
+              currentPath.startsWith("/dashboard/reviews")
+                ? "bg-white/10 text-white"
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            }`}>
+              <a
+                href="/dashboard/reviews/ratings"
+                className="flex flex-1 items-center gap-3 px-3 py-2"
+              >
+                <StarIcon className="size-4 shrink-0" />
+                Reviews &amp; Ratings
+              </a>
+              <button
+                type="button"
+                onClick={() => setReviewsOpen((v) => !v)}
+                className="pr-3 py-2"
+              >
+                <ChevronDownIcon
+                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${reviewsOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
+
+            {reviewsOpen && (
+              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+                {[
+                  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon },
+                  { label: "Reviews", href: "/dashboard/reviews/reviews", icon: ChatBubbleLeftEllipsisIcon },
+                ].map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      currentPath.startsWith(link.href)
+                        ? "text-white bg-white/10"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <link.icon className="size-4 shrink-0" />
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
+            Market Intelligence
+          </p>
+          <div className="space-y-1">
+            {marketLinks.map((link) => {
               const isActive = currentPath.startsWith(link.href);
               return (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-white/10 text-white"
                       : "text-gray-400 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <link.icon className="size-4 shrink-0" />
-                    {link.label}
-                  </div>
-                  <ChevronRightIcon className="size-3.5 text-gray-600" />
+                  <link.icon className="size-4 shrink-0" />
+                  {link.label}
                 </a>
               );
             })}
