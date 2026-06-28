@@ -1,13 +1,14 @@
 export type Keyword = {
   keyword: string;
   volume: number;
-  maxVolume: number;
   diff: number;
   chance: number;
-  kei: number;
-  rank: string;
-  growth: number | null;
+  opportunity: number;
+  rank: number | null;
   starred: boolean;
+  loading?: boolean;
+  results?: number;
+  relevancy?: number;
 };
 
 export type RankPill = typeof import("./constants").RANK_PILLS[number];

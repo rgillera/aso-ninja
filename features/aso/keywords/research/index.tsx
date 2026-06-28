@@ -6,23 +6,49 @@ import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { KeywordListSelector } from "./KeywordListSelector";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
-import { INITIAL_KEYWORDS } from "./constants";
 import type { Keyword } from "./types";
 
 export default function KeywordResearchPage() {
   const activeApp = useActiveApp();
-  const [keywords, setKeywords] = useState<Keyword[]>(INITIAL_KEYWORDS);
+  const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
 
-  function handleAddKeywords(newKeywords: string[]) {
+  async function handleAddKeywords(newKeywords: string[]) {
     setKeywords((prev) => [
       ...prev,
       ...newKeywords.map((kw) => ({
         keyword: kw,
-        volume: 0, maxVolume: 0, diff: 0, chance: 0, kei: 0,
-        rank: "Unranked", growth: null, starred: false,
+        volume: 0, diff: 0, chance: 0, opportunity: 0,
+        rank: null, starred: false, loading: true,
       })),
     ]);
+
+    const store = activeApp?.store ?? "ios";
+    const country = activeApp?.country ?? "us";
+    const params = new URLSearchParams({
+      terms: newKeywords.join(","),
+      store,
+      country: country ?? "us",
+      appName: activeApp?.name ?? "",
+    });
+
+    try {
+      const res = await fetch(`/api/keywords/metrics?${params}`);
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number; results: number; relevancy: number; rank: number | null }> = await res.json();
+      setKeywords((prev) =>
+        prev.map((k) => {
+          if (!k.loading || !newKeywords.includes(k.keyword)) return k;
+          const m = data[k.keyword];
+          return m ? { ...k, ...m, loading: false } : { ...k, loading: false };
+        })
+      );
+    } catch {
+      setKeywords((prev) =>
+        prev.map((k) =>
+          k.loading && newKeywords.includes(k.keyword) ? { ...k, loading: false } : k
+        )
+      );
+    }
   }
 
   function handleToggleStar(index: number) {
@@ -49,6 +75,8 @@ export default function KeywordResearchPage() {
 
         <KeywordTable
           keywords={keywords}
+          store={activeApp?.store ?? "ios"}
+          country={activeApp?.country ?? "us"}
           translateToggle={translateToggle}
           onTranslateToggle={() => setTranslateToggle((v) => !v)}
           onAddKeywords={handleAddKeywords}
