@@ -85,7 +85,7 @@ export function RecentlyViewedApps() {
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-        {entries.map((entry, i) => (
+        {entries.slice(0, 6).map((entry, i) => (
           <AppCard key={`${entry.bundleId}-${entry.store}-${i}`} entry={entry} onNavigate={handleNavigate} />
         ))}
       </div>
