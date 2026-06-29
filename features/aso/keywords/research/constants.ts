@@ -2,12 +2,7 @@ export const SUGGESTION_TABS = [
   { label: "Metadata", ai: false },
   { label: "Top Ranked", ai: false },
   { label: "Top Installs", ai: false },
-  { label: "Apple Ads", ai: false },
-  { label: "Auto-Complete", ai: false },
-  { label: "Category", ai: false },
-  { label: "Trending", ai: false },
-  { label: "Stories", ai: false },
-  { label: "Shuffler", ai: false },
+  { label: "AI Suggestions", ai: true },
 ] as const;
 
 export const RANK_PILLS = [

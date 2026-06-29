@@ -5,8 +5,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   PlusIcon,
-  DocumentDuplicateIcon,
-  ArrowDownTrayIcon,
   FunnelIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
@@ -23,6 +21,7 @@ type Props = {
   translateToggle: boolean;
   onTranslateToggle: () => void;
   onAddKeyword: (keyword: string) => void;
+  onAddKeywords?: (keywords: string[]) => void;
   activeApp?: ActiveApp;
   trackedKeywords?: Keyword[];
 };
@@ -66,6 +65,7 @@ function MetadataSection({
   keywords,
   trackedSet,
   onAdd,
+  onAddAll,
   placeholder,
   onLoadMore,
   loadingMore,
@@ -74,12 +74,20 @@ function MetadataSection({
   keywords: MetadataKeyword[] | null;
   trackedSet: Set<string>;
   onAdd: (term: string) => void;
+  onAddAll?: (terms: string[]) => void;
   placeholder?: React.ReactNode;
   onLoadMore?: () => void;
   loadingMore?: boolean;
 }) {
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
+
+  const handleAnalyzeAll = () => {
+    const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
+    if (!untracked.length) return;
+    if (onAddAll) onAddAll(untracked);
+    else untracked.forEach((t) => onAdd(t));
+  };
 
   return (
     <div className="py-3 border-b border-white/[0.05] last:border-0">
@@ -90,20 +98,12 @@ function MetadataSection({
             <span className="text-[10px] text-gray-600">{tracked} / {total}</span>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          <button className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
-            <ArrowDownTrayIcon className="size-3.5" />
-          </button>
-          <button className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
-            <DocumentDuplicateIcon className="size-3.5" />
-          </button>
-          <button
-            onClick={() => keywords?.filter((k) => !trackedSet.has(k.term)).forEach((k) => onAdd(k.term))}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors ml-1"
-          >
-            + Analyze all
-          </button>
-        </div>
+        <button
+          onClick={handleAnalyzeAll}
+          className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+        >
+          + Analyze all
+        </button>
       </div>
       {placeholder ?? (
         keywords === null ? (
@@ -141,10 +141,12 @@ function MetadataTab({
   activeApp,
   trackedKeywords,
   onAddKeyword,
+  onAddKeywords,
 }: {
   activeApp?: ActiveApp;
   trackedKeywords: Keyword[];
   onAddKeyword: (kw: string) => void;
+  onAddKeywords?: (keywords: string[]) => void;
 }) {
   const [data, setData]                 = useState<AppMetadataResult | null>(null);
   const [loading, setLoading]           = useState(false);
@@ -203,18 +205,21 @@ function MetadataTab({
             keywords={loading ? null : (data?.titleKeywords ?? [])}
             trackedSet={trackedSet}
             onAdd={onAddKeyword}
+            onAddAll={onAddKeywords}
           />
           <MetadataSection
             label="Subtitle Keywords"
             keywords={loading ? null : (data?.subtitleKeywords ?? [])}
             trackedSet={trackedSet}
             onAdd={onAddKeyword}
+            onAddAll={onAddKeywords}
           />
           <MetadataSection
             label="Description Keywords"
             keywords={loading ? null : descKeywords}
             trackedSet={trackedSet}
             onAdd={onAddKeyword}
+            onAddAll={onAddKeywords}
             onLoadMore={hasMoreDesc ? handleLoadMore : undefined}
             loadingMore={loadingMore}
           />
@@ -230,6 +235,7 @@ export function KeywordSuggestionsPanel({
   translateToggle,
   onTranslateToggle,
   onAddKeyword,
+  onAddKeywords,
   activeApp,
   trackedKeywords = [],
 }: Props) {
@@ -238,7 +244,7 @@ export function KeywordSuggestionsPanel({
   const [rankPill, setRankPill] = useState<RankPill>("All");
 
   return (
-    <div className="mx-6 mb-4 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
         <span className="text-sm font-semibold text-white">Keyword Suggestions</span>
@@ -266,7 +272,12 @@ export function KeywordSuggestionsPanel({
                     : "border-transparent text-gray-500 hover:text-gray-300"
                 }`}
               >
-                {tab.label}
+                {tab.ai ? (
+                  <span className="flex items-center gap-1">
+                    <span className="text-[10px]">✦</span>
+                    {tab.label}
+                  </span>
+                ) : tab.label}
               </button>
             ))}
           </div>
@@ -277,6 +288,7 @@ export function KeywordSuggestionsPanel({
               activeApp={activeApp}
               trackedKeywords={trackedKeywords}
               onAddKeyword={onAddKeyword}
+              onAddKeywords={onAddKeywords}
             />
           )}
 
@@ -339,17 +351,9 @@ export function KeywordSuggestionsPanel({
                     <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Your App</span>
                     <span className="text-[10px] text-gray-600">0 / 2</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
-                      <ArrowDownTrayIcon className="size-3.5" />
-                    </button>
-                    <button className="p-1 rounded text-gray-600 hover:text-gray-400 transition-colors">
-                      <DocumentDuplicateIcon className="size-3.5" />
-                    </button>
-                    <button className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                      + Analyze all
-                    </button>
-                  </div>
+                  <button className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                    + Analyze all
+                  </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {SAMPLE_SUGGESTIONS.map((kw) => (

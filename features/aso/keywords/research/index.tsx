@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -9,6 +10,18 @@ import { KeywordTable } from "./KeywordTable";
 import type { Keyword } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 
+
+function NoAppSelected() {
+  return (
+    <div className="h-full flex items-center justify-center bg-[#111318]">
+      <div className="text-center">
+        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+      </div>
+    </div>
+  );
+}
 
 export default function KeywordResearchPage() {
   const activeApp   = useActiveApp();
@@ -97,6 +110,7 @@ export default function KeywordResearchPage() {
             terms:     newKeywords,
             workspaceId,
             metrics:   data,
+            appId:     activeApp?.id,
             bundleId:  activeApp?.bundle_id,
             storeId:   activeApp?.store_id,
             appName:   activeApp?.name,
@@ -125,6 +139,10 @@ export default function KeywordResearchPage() {
     setKeywords((prev) => prev.filter((_, i) => !indices.has(i)));
   }
 
+  if (!activeApp) {
+    return <NoAppSelected />;
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={activeApp ?? null} title="Keyword Research" />
@@ -134,6 +152,7 @@ export default function KeywordResearchPage() {
           translateToggle={translateToggle}
           onTranslateToggle={() => setTranslateToggle((v) => !v)}
           onAddKeyword={(kw) => handleAddKeywords([kw])}
+          onAddKeywords={handleAddKeywords}
           activeApp={activeApp}
           trackedKeywords={keywords}
         />

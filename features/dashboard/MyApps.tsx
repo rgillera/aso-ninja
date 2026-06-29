@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import AddApp from "@/features/app/AddApp";
 import { deleteAppAction } from "@/features/app/actions";
+import { removeRecentEntry } from "@/features/dashboard/recentApps";
 import type { App } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
@@ -76,8 +77,11 @@ function ConfirmRemoveDialog({
           </div>
         </div>
 
-        <p className="text-sm text-gray-300 mb-6">
-          Remove <span className="font-semibold text-white">{primary.name}</span> from your followed apps? This cannot be undone.
+        <p className="text-sm text-gray-300 mb-2">
+          Remove <span className="font-semibold text-white">{primary.name}</span> from your followed apps?
+        </p>
+        <p className="text-xs text-red-400/80 mb-6">
+          All tracked keywords and metrics for this app will be permanently deleted. This cannot be undone.
         </p>
 
         <div className="flex gap-3">
@@ -161,9 +165,10 @@ export default function MyApps({ apps, workspaceId }: Props) {
   const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
   const [, startTransition] = useTransition();
 
-  function handleDelete(ids: string[]) {
+  function handleDelete(ids: string[], bundleId: string, store: string) {
     startTransition(async () => {
       for (const id of ids) await deleteAppAction(id);
+      removeRecentEntry(workspaceId, bundleId, store);
       setPendingDelete(null);
     });
   }
@@ -215,7 +220,7 @@ export default function MyApps({ apps, workspaceId }: Props) {
       {pendingDelete && (
         <ConfirmRemoveDialog
           group={pendingDelete}
-          onConfirm={() => handleDelete(pendingDelete.entries.map(e => e.id))}
+          onConfirm={() => handleDelete(pendingDelete.entries.map(e => e.id), pendingDelete.primary.bundle_id, pendingDelete.primary.store)}
           onCancel={() => setPendingDelete(null)}
         />
       )}

@@ -22,6 +22,17 @@ export function loadRecent(workspaceId: string): RecentEntry[] {
   } catch { return []; }
 }
 
+export function removeRecentEntry(workspaceId: string, bundleId: string, store: string) {
+  try {
+    const key = recentKey(workspaceId);
+    const filtered = loadRecent(workspaceId).filter(
+      (r) => r.bundleId !== bundleId || r.store !== store
+    );
+    localStorage.setItem(key, JSON.stringify(filtered));
+    window.dispatchEvent(new StorageEvent("storage", { key }));
+  } catch { /* no-op outside browser */ }
+}
+
 export function saveRecentEntry(workspaceId: string, entry: Omit<RecentEntry, "timestamp">) {
   const key = recentKey(workspaceId);
   const existing = loadRecent(workspaceId).filter(

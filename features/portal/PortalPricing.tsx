@@ -17,9 +17,9 @@ const plans: {
   contactSales: boolean;
 }[] = [
   {
-    name: "Indie",
-    monthly: { price: "$14.99", href: "/signup?plan=indie&billing=monthly" },
-    yearly: { price: "$9.99", href: "/signup?plan=indie&billing=yearly" },
+    name: "Starter",
+    monthly: { price: "$14.99", href: "/signup?plan=starter&billing=monthly" },
+    yearly: { price: "$9.99", href: "/signup?plan=starter&billing=yearly" },
     description: "Everything you need to launch, track, and grow your first app.",
     badge: "7-day free trial",
     features: [
@@ -36,9 +36,9 @@ const plans: {
     contactSales: false,
   },
   {
-    name: "Team",
-    monthly: { price: "$249", href: "/signup?plan=team&billing=monthly" },
-    yearly: { price: "$199", href: "/signup?plan=team&billing=yearly" },
+    name: "Pro",
+    monthly: { price: "$249", href: "/signup?plan=pro&billing=monthly" },
+    yearly: { price: "$199", href: "/signup?plan=pro&billing=yearly" },
     description: "Advanced tracking and collaboration for teams shipping multiple apps.",
     badge: "7-day free trial",
     features: [
@@ -62,7 +62,7 @@ const plans: {
     description: "Unlimited scale for agencies and publishers managing large app portfolios.",
     badge: null,
     features: [
-      "Everything in Team",
+      "Everything in Pro",
       "Unlimited workspaces & apps",
       "Unlimited keywords tracked",
       "Dedicated account manager",

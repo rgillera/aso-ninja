@@ -74,6 +74,21 @@ async function fetchVolumes(
 
 const EMPTY = { title: "", subtitle: "", description: "", titleKeywords: [], subtitleKeywords: [], descriptionKeywords: [], hasMoreDesc: false };
 
+async function scrapeAppStoreSubtitle(storeId: string, country: string): Promise<string> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await fetch(`https://apps.apple.com/${country}/app/id${storeId}`, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" },
+      cache: "no-store",
+    } as any);
+    if (!res.ok) return "";
+    const html = await res.text();
+    // Subtitle appears in the embedded shoebox JSON as "subtitle":"..."
+    const m = html.match(/"subtitle"\s*:\s*"([^"\\]+)"/);
+    return m ? m[1] : "";
+  } catch { return ""; }
+}
+
 // GET /api/keywords/app-metadata?storeId=...&store=ios&country=us&descOffset=0
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -94,7 +109,9 @@ export async function GET(request: NextRequest) {
     if (!r)    return NextResponse.json(EMPTY);
 
     const title       = (r.trackName ?? "") as string;
-    const subtitle    = (r.trackSubtitle ?? "") as string;
+    // iTunes lookup doesn't reliably expose subtitle — scrape App Store page as fallback
+    const itunesSubtitle = (r.subtitle ?? r.trackSubtitle ?? "") as string;
+    const subtitle    = itunesSubtitle || await scrapeAppStoreSubtitle(storeId, country);
     const description = (r.description ?? "") as string;
 
     // Singles first, then bigrams — so initial page always has the core single-word keywords
