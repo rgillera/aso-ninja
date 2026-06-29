@@ -241,7 +241,7 @@ async function fetchAndroidAppMeta(appName: string, country: string): Promise<Ap
 
 async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta): Promise<Metrics | null> {
   try {
-    const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
+    const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchRes  = await fetch(searchUrl, { cache: "no-store" } as any);
     const searchData = searchRes.ok ? await searchRes.json() : {};
@@ -347,48 +347,78 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-// GET /api/keywords/metrics?terms=kw1,kw2&country=us&store=ios&appName=MyApp
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// GET /api/keywords/metrics?terms=kw1,kw2&country=us&store=ios&appName=MyApp&appId=<uuid>
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const termsParam = searchParams.get("terms") ?? "";
   const country    = (searchParams.get("country") ?? "us").toLowerCase();
   const store      = searchParams.get("store") ?? "ios";
   const appName    = searchParams.get("appName") ?? "";
+  const appId      = searchParams.get("appId") ?? "";
 
   const terms = termsParam.split(",").map((t) => t.trim()).filter(Boolean);
   if (!terms.length) return NextResponse.json({});
 
-  // Fetch app description + embed it once; shared across all keyword lookups
-  const appMeta: AppMeta = appName
-    ? await (store === "android"
-        ? fetchAndroidAppMeta(appName, country)
-        : fetchIosAppMeta(appName, country))
-    : { description: "", category: "", embedding: null };
-
-  const entries = await Promise.all(
-    terms.map(async (term) => {
-      const metrics = store === "android"
-        ? await fetchAndroidMetrics(term, country, appName, appMeta)
-        : await fetchIosMetrics(term, country, appName, appMeta);
-      return [term, metrics] as const;
-    })
-  );
-
-  const result = Object.fromEntries(entries.filter(([, m]) => m !== null));
-
-  // Record today's popularity snapshot for each term (builds the history chart)
-  const today = new Date().toISOString().split("T")[0];
   const supabase = await createClient();
-  await Promise.all(
-    entries
-      .filter(([, m]) => m !== null)
-      .map(([term, m]) =>
-        supabase.from("keyword_popularity_snapshots").upsert(
-          { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
-          { onConflict: "term,store,country,recorded_on" }
-        )
-      )
-  );
 
-  return NextResponse.json(result);
+  // DB cache hit — avoids LLM for keywords computed in the last 7 days
+  const dbCache: Record<string, Metrics> = {};
+  if (appId) {
+    const { data: rows } = await supabase
+      .from("keyword_metrics")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .select("volume, diff, chance, opportunity, relevancy, rank, updated_at, keywords(term)" as any)
+      .eq("app_id", appId);
+
+    for (const row of (rows ?? []) as any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
+      const term = row.keywords?.term as string | undefined;
+      if (!term || !terms.includes(term)) continue;
+      if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
+      dbCache[term] = {
+        volume: row.volume, diff: row.diff, chance: row.chance,
+        opportunity: row.opportunity, results: 0,
+        relevancy: row.relevancy, rank: row.rank ?? null,
+      };
+    }
+  }
+
+  const uncached = terms.filter((t) => !dbCache[t]);
+
+  let freshMetrics: Record<string, Metrics> = {};
+  if (uncached.length) {
+    // Fetch app description + embed it once; shared across all keyword lookups
+    const appMeta: AppMeta = appName
+      ? await (store === "android"
+          ? fetchAndroidAppMeta(appName, country)
+          : fetchIosAppMeta(appName, country))
+      : { description: "", category: "", embedding: null };
+
+    const entries = await Promise.all(
+      uncached.map(async (term) => {
+        const metrics = store === "android"
+          ? await fetchAndroidMetrics(term, country, appName, appMeta)
+          : await fetchIosMetrics(term, country, appName, appMeta);
+        return [term, metrics] as const;
+      })
+    );
+
+    freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
+
+    // Record today's popularity snapshot for fresh terms only
+    const today = new Date().toISOString().split("T")[0];
+    await Promise.all(
+      entries
+        .filter(([, m]) => m !== null)
+        .map(([term, m]) =>
+          supabase.from("keyword_popularity_snapshots").upsert(
+            { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
+            { onConflict: "term,store,country,recorded_on" }
+          )
+        )
+    );
+  }
+
+  return NextResponse.json({ ...dbCache, ...freshMetrics });
 }

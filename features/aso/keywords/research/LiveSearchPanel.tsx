@@ -91,7 +91,7 @@ function AppRow({ app }: { app: AppSearchResult }) {
   );
 }
 
-function PhoneFrame({ keyword, apps, loading }: { keyword: string; apps: AppSearchResult[]; loading: boolean }) {
+function PhoneFrame({ keyword, apps, loading, error }: { keyword: string; apps: AppSearchResult[]; loading: boolean; error?: string | null }) {
   return (
     <div
       className="relative shrink-0 bg-black rounded-[3rem] shadow-2xl"
@@ -153,7 +153,7 @@ function PhoneFrame({ keyword, apps, loading }: { keyword: string; apps: AppSear
         {/* Results label */}
         <div className="px-3 pb-1 shrink-0">
           <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-            {loading ? "Loading…" : `${apps.length} results`}
+            {loading ? "Loading…" : error ? "Unavailable" : `${apps.length} results`}
           </span>
         </div>
 
@@ -171,6 +171,15 @@ function PhoneFrame({ keyword, apps, loading }: { keyword: string; apps: AppSear
                   <div className="w-10 h-6 bg-gray-200 rounded-full" />
                 </div>
               ))
+            : error
+            ? (
+                <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
+                  <svg className="size-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                  </svg>
+                  <p className="text-[11px] text-gray-400 leading-snug">Apple&rsquo;s search API is currently unavailable. Try again later.</p>
+                </div>
+              )
             : apps.map((app) => (
                 <AppRow key={app.position} app={app} />
               ))}
@@ -369,15 +378,54 @@ function PastResultsGrid({
 export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
   const [apps, setApps]           = useState<AppSearchResult[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("Live Search");
 
   useEffect(() => {
     setLoading(true);
     setApps([]);
-    fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}`)
-      .then((r) => r.json())
-      .then((data) => { setApps(data.apps ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
+    setError(null);
+
+    if (store === "ios") {
+      // Fetch directly from Apple client-side — Apple's CDN blocks server-side Node.js
+      // requests (403) but allows browser requests (CORS: allow-origin: *)
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(keyword)}&entity=software&limit=20&country=${country}`;
+      fetch(url)
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const results: any[] = data.results ?? [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mapped: AppSearchResult[] = results.map((a: any, i: number) => ({
+            position:       i + 1,
+            trackId:        (a.trackId ?? 0) as number,
+            name:           (a.trackName ?? "") as string,
+            subtitle:       (a.trackSubtitle ?? a.primaryGenreName ?? "") as string,
+            developer:      (a.artistName ?? "") as string,
+            icon:           (a.artworkUrl512 ?? a.artworkUrl100 ?? "") as string,
+            rating:         (a.averageUserRating ?? 0) as number,
+            ratingCount:    (a.userRatingCount ?? 0) as number,
+            price:          (a.formattedPrice ?? "Free") as string,
+            inAppPurchases: !!(a.minimumOsVersion) && (a.trackPrice === 0 || a.trackPrice === undefined),
+            screenshotUrls: [],
+          }));
+          setApps(mapped);
+          setLoading(false);
+          // Persist rankings to Supabase (fire-and-forget)
+          fetch("/api/keywords/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ keyword, store, country, apps: mapped }),
+          }).catch(() => {});
+        })
+        .catch(() => { setError("unavailable"); setLoading(false); });
+    } else {
+      // Android: must go through server-side (google-play-scraper is Node.js only)
+      fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}`)
+        .then((r) => r.json())
+        .then((data) => { setApps(data.apps ?? []); setLoading(false); })
+        .catch(() => { setError("unavailable"); setLoading(false); });
+    }
   }, [keyword, store, country]);
 
   const isPastResults = activeTab === "Past Results";
@@ -426,7 +474,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
           </div>
         ) : (
           <div className="flex justify-center p-8 overflow-auto">
-            <PhoneFrame keyword={keyword} apps={apps} loading={loading} />
+            <PhoneFrame keyword={keyword} apps={apps} loading={loading} error={error} />
           </div>
         )}
       </div>
