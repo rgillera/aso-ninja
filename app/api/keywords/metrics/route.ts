@@ -23,8 +23,11 @@ const OLLAMA_HOST        = process.env.OLLAMA_HOST        ?? "http://localhost:1
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "bge-m3";
 const OLLAMA_LLM_MODEL   = process.env.OLLAMA_LLM_MODEL   ?? "llama3.2";
 
-// Process-level cache: avoids re-embedding the same app on every keyword request.
+// Process-level caches.
 const embeddingCache = new Map<string, number[]>();
+const llmScoreCache  = new Map<string, number>();          // key: `${keyword}|||${description}`
+const appMetaCache   = new Map<string, { meta: AppMeta; ts: number }>();
+const APP_META_TTL   = 5 * 60 * 1000;
 
 async function getEmbedding(text: string): Promise<number[] | null> {
   if (embeddingCache.has(text)) return embeddingCache.get(text)!;
@@ -56,6 +59,8 @@ async function embeddingDescScore(keyword: string, description: string): Promise
 }
 
 async function getDescRelevanceScore(keyword: string, description: string): Promise<number> {
+  const cacheKey = `${keyword}|||${description}`;
+  if (llmScoreCache.has(cacheKey)) return llmScoreCache.get(cacheKey)!;
   try {
     const prompt = `You are an ASO (App Store Optimization) expert. A user types a keyword into the App Store search bar. Rate whether they would be looking for this specific app.
 
@@ -82,6 +87,7 @@ Reply with ONLY a single integer. No words, no punctuation, just the number.`;
     if (isNaN(num)) return embeddingDescScore(keyword, description);
     const score = Math.max(0, Math.min(100, num));
     console.log(`[llm-desc] "${keyword}" → raw="${(data.response as string).trim()}" score=${score}`);
+    llmScoreCache.set(cacheKey, score);
     return score;
   } catch {
     return embeddingDescScore(keyword, description);
@@ -171,6 +177,9 @@ function hintsScore(idx: number, total: number, resultCountScore: number): numbe
 }
 
 async function fetchIosAppMeta(appName: string, country: string): Promise<AppMeta> {
+  const cacheKey = `ios:${appName.toLowerCase()}:${country}`;
+  const cached = appMetaCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < APP_META_TTL) return cached.meta;
   try {
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(appName)}&entity=software&limit=5&country=${country}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -191,13 +200,18 @@ async function fetchIosAppMeta(appName: string, country: string): Promise<AppMet
     const embText  = [appName, description].filter(Boolean).join(". ");
     const embedding = embText ? await getEmbedding(embText) : null;
     console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} category="${category}"`);
-    return { description, category, embedding };
+    const meta = { description, category, embedding };
+    appMetaCache.set(cacheKey, { meta, ts: Date.now() });
+    return meta;
   } catch {
     return { description: "", category: "", embedding: null };
   }
 }
 
 async function fetchAndroidAppMeta(appName: string, country: string): Promise<AppMeta> {
+  const cacheKey = `android:${appName.toLowerCase()}:${country}`;
+  const cached = appMetaCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < APP_META_TTL) return cached.meta;
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -215,7 +229,9 @@ async function fetchAndroidAppMeta(appName: string, country: string): Promise<Ap
     const embText  = [appName, description].filter(Boolean).join(". ");
     const embedding = embText ? await getEmbedding(embText) : null;
     console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} category="${category}"`);
-    return { description, category, embedding };
+    const meta = { description, category, embedding };
+    appMetaCache.set(cacheKey, { meta, ts: Date.now() });
+    return meta;
   } catch {
     return { description: "", category: "", embedding: null };
   }

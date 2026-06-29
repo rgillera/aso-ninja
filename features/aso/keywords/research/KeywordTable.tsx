@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
   ChevronDownIcon,
+  ChevronUpIcon,
   PlusIcon,
   XMarkIcon,
   StarIcon,
@@ -45,7 +46,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "diff",        label: "Difficulty",    defaultVisible: true,  tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
   { key: "chance",      label: "Chance",        defaultVisible: true,  tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
   { key: "relevancy",   label: "Relevancy",     defaultVisible: true,  smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
-  { key: "opportunity", label: "Opportunity",   defaultVisible: true,  smart: true, tooltip: "Combined score (0–100): geometric mean of Volume and Chance, scaled by Relevancy (0.3–1×). Both Volume and Chance must be strong for a high score — a keyword you can't rank for scores low regardless of its popularity." },
+  { key: "opportunity", label: "Opportunity",   defaultVisible: true,  smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
   { key: "rank",        label: "App Rank",      defaultVisible: true,  tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
 ];
 
@@ -94,10 +95,22 @@ export function KeywordTable({
   const [keywordInput, setKeywordInput] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [tableFilter, setTableFilter] = useState<"all" | "checked" | "starred">("all");
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [visibleCols, setVisibleCols] = useState<Set<string>>(DEFAULT_VISIBLE);
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
   const [historyKeyword, setHistoryKeyword] = useState<string | null>(null);
+
+  // Filter state
+  const [kwSearch, setKwSearch] = useState("");
+  const [volumeFilter, setVolumeFilter] = useState<"any"|"low"|"medium"|"high">("any");
+  const [rankFilter, setRankFilter] = useState<"any"|"ranked"|"unranked"|"top3"|"top10">("any");
+  const [relevancyFilter, setRelevancyFilter] = useState<"any"|"low"|"medium"|"high">("any");
+  const [openFilter, setOpenFilter] = useState<string|null>(null);
+  const filterDropdownRef = useRef<HTMLDivElement>(null);
+  const filterPosRef = useRef<{top:number;left:number}|null>(null);
+
   const colPickerRef = useRef<HTMLDivElement>(null);
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
@@ -115,6 +128,33 @@ export function KeywordTable({
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [colPickerOpen]);
+
+  useEffect(() => {
+    if (!openFilter) return;
+    function onMouseDown(e: MouseEvent) {
+      if (filterDropdownRef.current?.contains(e.target as Node)) return;
+      setOpenFilter(null);
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [openFilter]);
+
+  function toggleFilterDropdown(key: string, e: React.MouseEvent<HTMLButtonElement>) {
+    if (openFilter === key) { setOpenFilter(null); return; }
+    const r = e.currentTarget.getBoundingClientRect();
+    filterPosRef.current = { top: r.bottom + 6, left: r.left };
+    setOpenFilter(key);
+  }
+
+  function clearAllFilters() {
+    setTableFilter("all");
+    setKwSearch("");
+    setVolumeFilter("any");
+    setRankFilter("any");
+    setRelevancyFilter("any");
+  }
+
+  const hasActiveFilters = tableFilter !== "all" || kwSearch !== "" || volumeFilter !== "any" || rankFilter !== "any" || relevancyFilter !== "any";
 
   function openColPicker() {
     if (colPickerRef.current) {
@@ -163,11 +203,67 @@ export function KeywordTable({
     });
   }
 
+  function handleSort(key: string) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  function SortIcon({ colKey }: { colKey: string }) {
+    if (sortKey !== colKey) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+    return sortDir === "asc"
+      ? <ChevronUpIcon className="size-3 text-indigo-400" />
+      : <ChevronDownIcon className="size-3 text-indigo-400" />;
+  }
+
   const displayed = useMemo(() => {
-    if (tableFilter === "starred") return keywords.filter((k) => k.starred);
-    if (tableFilter === "checked") return keywords.filter((_, i) => selected.has(i));
-    return keywords;
-  }, [keywords, tableFilter, selected]);
+    let rows = keywords;
+    if (tableFilter === "starred") rows = rows.filter((k) => k.starred);
+    else if (tableFilter === "checked") rows = rows.filter((_, i) => selected.has(i));
+
+    if (kwSearch) rows = rows.filter((k) => k.keyword.toLowerCase().includes(kwSearch.toLowerCase()));
+
+    if (volumeFilter === "low")    rows = rows.filter((k) => (k.volume ?? 0) < 20);
+    else if (volumeFilter === "medium") rows = rows.filter((k) => (k.volume ?? 0) >= 20 && (k.volume ?? 0) <= 60);
+    else if (volumeFilter === "high")   rows = rows.filter((k) => (k.volume ?? 0) > 60);
+
+    if (rankFilter === "ranked")   rows = rows.filter((k) => k.rank !== null);
+    else if (rankFilter === "unranked") rows = rows.filter((k) => k.rank === null);
+    else if (rankFilter === "top3")     rows = rows.filter((k) => k.rank !== null && k.rank <= 3);
+    else if (rankFilter === "top10")    rows = rows.filter((k) => k.rank !== null && k.rank <= 10);
+
+    if (relevancyFilter === "low")    rows = rows.filter((k) => (k.relevancy ?? 0) < 40);
+    else if (relevancyFilter === "medium") rows = rows.filter((k) => (k.relevancy ?? 0) >= 40 && (k.relevancy ?? 0) <= 70);
+    else if (relevancyFilter === "high")   rows = rows.filter((k) => (k.relevancy ?? 0) > 70);
+
+    if (!sortKey) return rows;
+
+    return [...rows].sort((a, b) => {
+      let av: number | string | null | undefined;
+      let bv: number | string | null | undefined;
+
+      if (sortKey === "keyword") {
+        av = a.keyword.toLowerCase();
+        bv = b.keyword.toLowerCase();
+      } else if (sortKey === "rank") {
+        // null (unranked) always sorts to the end
+        if (a.rank === null && b.rank === null) return 0;
+        if (a.rank === null) return 1;
+        if (b.rank === null) return -1;
+        av = a.rank; bv = b.rank;
+      } else {
+        av = (a as Record<string, unknown>)[sortKey] as number ?? 0;
+        bv = (b as Record<string, unknown>)[sortKey] as number ?? 0;
+      }
+
+      if (av === bv) return 0;
+      const cmp = (av ?? 0) < (bv ?? 0) ? -1 : 1;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [keywords, tableFilter, selected, sortKey, sortDir, kwSearch, volumeFilter, rankFilter, relevancyFilter]);
 
   const allSelected =
     displayed.length > 0 && displayed.every((_, i) => selected.has(i));
@@ -235,22 +331,41 @@ export function KeywordTable({
     <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
       {/* Filter toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] flex-wrap gap-y-2">
-        <button className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
+        {/* Keyword search */}
+        <button
+          onClick={(e) => toggleFilterDropdown("keyword", e)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "keyword" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+        >
           <MagnifyingGlassIcon className="size-3.5" />
-          Keyword
+          {kwSearch ? `"${kwSearch}"` : "Keyword"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
-          Volume
+
+        {/* Volume filter */}
+        <button
+          onClick={(e) => toggleFilterDropdown("volume", e)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "volume" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+        >
+          {volumeFilter !== "any" ? `Volume: ${volumeFilter.charAt(0).toUpperCase() + volumeFilter.slice(1)}` : "Volume"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
-          Rank
+
+        {/* Rank filter */}
+        <button
+          onClick={(e) => toggleFilterDropdown("rank", e)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "rank" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+        >
+          {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? "Unranked" : rankFilter === "top3" ? "Top 3" : "Top 10"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
-        <button className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">
+
+        {/* Relevancy filter */}
+        <button
+          onClick={(e) => toggleFilterDropdown("relevancy", e)}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "relevancy" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+        >
           <SparklesIcon className="size-3 text-violet-400" />
-          Relevancy
+          {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
 
@@ -276,23 +391,84 @@ export function KeywordTable({
           </button>
         </div>
 
-        <button className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-400 transition-colors">
-          <PlusIcon className="size-3.5" />
-          Add filters
-        </button>
-        <button
-          onClick={() => setTableFilter("all")}
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-400 transition-colors"
-        >
-          <XMarkIcon className="size-3.5" />
-          Clear
-        </button>
+        {hasActiveFilters && (
+          <button
+            onClick={clearAllFilters}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <XMarkIcon className="size-3.5" />
+            Clear
+          </button>
+        )}
 
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-gray-500">Translate to English</span>
           <Toggle checked={translateToggle} onChange={onTranslateToggle} />
         </div>
       </div>
+
+      {/* Filter dropdowns (portal) */}
+      {openFilter && filterPosRef.current && createPortal(
+        <div
+          ref={filterDropdownRef}
+          style={{ position: "fixed", top: filterPosRef.current.top, left: filterPosRef.current.left, zIndex: 9999 }}
+          className="bg-[#1a1d24] ring-1 ring-white/[0.12] rounded-xl overflow-hidden shadow-2xl"
+        >
+          {openFilter === "keyword" && (
+            <div className="p-2 w-56">
+              <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+                <MagnifyingGlassIcon className="size-3.5 text-gray-600 shrink-0" />
+                <input
+                  autoFocus
+                  value={kwSearch}
+                  onChange={(e) => setKwSearch(e.target.value)}
+                  placeholder="Search keywords…"
+                  className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+                />
+                {kwSearch && (
+                  <button onClick={() => setKwSearch("")}>
+                    <XMarkIcon className="size-3 text-gray-600 hover:text-gray-300" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {openFilter === "volume" && (
+            <div className="py-1 w-44">
+              {([["any","Any"],["low","Low  (< 20)"],["medium","Medium  20–60"],["high","High  (> 60)"]] as const).map(([val, label]) => (
+                <button key={val} onClick={() => { setVolumeFilter(val); setOpenFilter(null); }}
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${volumeFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  {volumeFilter === val && <CheckIcon className="size-3 shrink-0" />}
+                  <span className={volumeFilter === val ? "" : "ml-5"}>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {openFilter === "rank" && (
+            <div className="py-1 w-44">
+              {([["any","Any"],["ranked","Ranked"],["unranked","Unranked"],["top3","Top 3"],["top10","Top 10"]] as const).map(([val, label]) => (
+                <button key={val} onClick={() => { setRankFilter(val); setOpenFilter(null); }}
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${rankFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  {rankFilter === val && <CheckIcon className="size-3 shrink-0" />}
+                  <span className={rankFilter === val ? "" : "ml-5"}>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {openFilter === "relevancy" && (
+            <div className="py-1 w-44">
+              {([["any","Any"],["low","Low  (< 40)"],["medium","Medium  40–70"],["high","High  (> 70)"]] as const).map(([val, label]) => (
+                <button key={val} onClick={() => { setRelevancyFilter(val); setOpenFilter(null); }}
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${relevancyFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  {relevancyFilter === val && <CheckIcon className="size-3 shrink-0" />}
+                  <span className={relevancyFilter === val ? "" : "ml-5"}>{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* Add competitors */}
       <div className="px-4 py-2.5 border-b border-white/[0.07]">
@@ -421,9 +597,12 @@ export function KeywordTable({
                 />
               </th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button className="flex items-center gap-1 hover:text-gray-400 transition-colors">
+                <button
+                  onClick={() => handleSort("keyword")}
+                  className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "keyword" ? "text-gray-300" : ""}`}
+                >
                   Keywords
-                  <ArrowsUpDownIcon className="size-3 text-gray-700" />
+                  <SortIcon colKey="keyword" />
                 </button>
               </th>
               {visibleColDefs.map((col) => (
@@ -432,9 +611,12 @@ export function KeywordTable({
                   className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap"
                 >
                   <div className="flex items-center gap-1.5">
-                    <button className="flex items-center gap-1 hover:text-gray-400 transition-colors">
+                    <button
+                      onClick={() => handleSort(col.key)}
+                      className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === col.key ? "text-gray-300" : ""}`}
+                    >
                       {col.tableLabel ?? col.label}
-                      <ArrowsUpDownIcon className="size-3 text-gray-700" />
+                      <SortIcon colKey={col.key} />
                     </button>
                     <ColumnTooltip text={col.tooltip} />
                   </div>
@@ -447,25 +629,23 @@ export function KeywordTable({
             {displayed.map((row, i) => (
               <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
                 <td className="px-4 py-3.5">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onToggleStar(i)}
-                      className={`transition-opacity shrink-0 ${row.starred ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
-                    >
-                      <StarIcon
-                        className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`}
-                      />
-                    </button>
-                    <input
-                      type="checkbox"
-                      checked={selected.has(i)}
-                      onChange={() => toggleSelect(i)}
-                      className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
-                    />
-                  </div>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(i)}
+                    onChange={() => toggleSelect(i)}
+                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                  />
                 </td>
                 <td className="px-4 py-3.5">
-                  <span className="text-sm text-gray-200">{row.keyword}</span>
+                  <div className="flex items-center gap-1.5 group/kw">
+                    <button
+                      onClick={() => onToggleStar(keywords.indexOf(row))}
+                      className="shrink-0 transition-colors"
+                    >
+                      <StarIcon className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`} />
+                    </button>
+                    <span className="text-sm text-gray-200">{row.keyword}</span>
+                  </div>
                 </td>
                 {row.loading ? (
                   visibleColDefs.map((col) => (
@@ -481,10 +661,18 @@ export function KeywordTable({
                   ))
                 )}
                 <td className="pr-4 py-3.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap">
-                    <MagnifyingGlassIcon className="size-3" />
-                    Live search
-                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <button className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap">
+                      <MagnifyingGlassIcon className="size-3" />
+                      Live search
+                    </button>
+                    <button
+                      onClick={() => onRemoveSelected(new Set([keywords.indexOf(row)]))}
+                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors"
+                    >
+                      <XMarkIcon className="size-3" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
