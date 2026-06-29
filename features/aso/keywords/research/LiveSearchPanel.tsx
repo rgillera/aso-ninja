@@ -47,15 +47,17 @@ function Stars({ rating }: { rating: number }) {
   );
 }
 
+
 function AppRow({ app }: { app: AppSearchResult }) {
-  const slots = [app.screenshotUrls[0] ?? "", app.screenshotUrls[1] ?? "", app.screenshotUrls[2] ?? ""];
+  const storeUrl = app.trackId
+    ? `https://apps.apple.com/app/id${app.trackId}`
+    : null;
 
   return (
-    <div className="border-b border-gray-100 last:border-0">
-      {/* App info */}
-      <div className="flex items-center gap-2.5 px-3 pt-2.5 pb-2">
+    <div className="border-b border-gray-100 last:border-0 px-3 py-2">
+      <div className="flex items-center gap-2.5">
         <span className="text-[9px] font-bold text-gray-300 w-3 shrink-0 text-center">{app.position}</span>
-        <div className="w-12 h-12 rounded-2xl overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06]">
+        <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06]">
           {app.icon && <img src={app.icon} alt="" className="w-full h-full object-cover" />} {/* eslint-disable-line @next/next/no-img-element */}
         </div>
         <div className="flex-1 min-w-0">
@@ -72,18 +74,18 @@ function AppRow({ app }: { app: AppSearchResult }) {
           {app.price === "Free" ? "GET" : app.price}
         </span>
       </div>
-      {/* Screenshots */}
-      {slots.some(Boolean) && (
-        <div className="flex gap-1.5 px-3 pb-2.5">
-          {slots.map((url, si) => (
-            <div key={si} className="flex-1 rounded-xl overflow-hidden bg-gray-100 aspect-[9/19.5]">
-              {url
-                ? <img src={url} alt="" className="w-full h-full object-cover" /> /* eslint-disable-line @next/next/no-img-element */
-                : <div className="w-full h-full bg-gray-200" />
-              }
-            </div>
-          ))}
-        </div>
+      {storeUrl && (
+        <a
+          href={storeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1.5 ml-7 inline-flex items-center gap-1 text-[9px] text-[#007AFF] hover:underline"
+        >
+          View on App Store
+          <svg className="size-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          </svg>
+        </a>
       )}
     </div>
   );
@@ -385,8 +387,8 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal card — wider for Past Results */}
-      <div className={`relative z-10 w-full bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col transition-all ${isPastResults ? "max-w-5xl" : "max-w-4xl"}`}
+      {/* Modal card */}
+      <div className={`relative z-10 w-full bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col transition-all ${isPastResults ? "max-w-5xl" : "max-w-xl"}`}
         style={{ maxHeight: "90vh" }}
       >
         {/* Header */}
@@ -423,57 +425,8 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
             <PastResultsGrid keyword={keyword} store={store} country={country} />
           </div>
         ) : (
-          <div className="flex items-start gap-10 p-8 overflow-auto">
-            {/* Phone */}
+          <div className="flex justify-center p-8 overflow-auto">
             <PhoneFrame keyword={keyword} apps={apps} loading={loading} />
-
-            {/* Side list */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-500 mb-4">
-                Top {loading ? "—" : apps.length} apps ranking for{" "}
-                <span className="text-gray-300 font-medium">"{keyword}"</span>
-                {" "}in the {store === "ios" ? "App Store" : "Play Store"} ({country.toUpperCase()})
-              </p>
-              <div className="space-y-2">
-                {loading
-                  ? [...Array(12)].map((_, i) => (
-                      <div key={i} className="flex items-center gap-2 py-1 animate-pulse">
-                        <div className="w-4 h-3 bg-white/[0.05] rounded shrink-0" />
-                        <div className="w-6 h-6 rounded-lg bg-white/[0.05] shrink-0" />
-                        <div className="flex-1 space-y-1">
-                          <div className="h-2 bg-white/[0.05] rounded w-3/4" />
-                          <div className="h-1.5 bg-white/[0.05] rounded w-1/2" />
-                        </div>
-                      </div>
-                    ))
-                  : apps.slice(0, 15).map((app) => (
-                      <div key={app.position} className="flex items-center gap-2 py-1 rounded-md hover:bg-white/[0.03] px-1.5 -mx-1.5 transition-colors">
-                        <span className={`text-[10px] font-bold tabular-nums w-4 text-right shrink-0 ${
-                          app.position === 1 ? "text-yellow-400" :
-                          app.position <= 3  ? "text-orange-400" :
-                                               "text-gray-600"
-                        }`}>
-                          {app.position}
-                        </span>
-                        <div className="w-6 h-6 rounded-lg overflow-hidden shrink-0 bg-white/[0.05]">
-                          {app.icon && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={app.icon} alt="" className="w-full h-full object-cover" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] font-medium text-gray-300 truncate leading-tight">{app.name}</p>
-                          <p className="text-[9px] text-gray-700 truncate leading-tight">{app.developer}</p>
-                        </div>
-                        {app.rating > 0 && (
-                          <span className="shrink-0 text-[9px] font-medium text-yellow-500 tabular-nums">
-                            {app.rating.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-              </div>
-            </div>
           </div>
         )}
       </div>

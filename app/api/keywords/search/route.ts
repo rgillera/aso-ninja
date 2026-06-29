@@ -46,27 +46,8 @@ export async function GET(request: NextRequest) {
         ratingCount:    (a.userRatingCount ?? 0) as number,
         price:          (a.formattedPrice ?? "Free") as string,
         inAppPurchases: !!(a.minimumOsVersion) && (a.trackPrice === 0 || a.trackPrice === undefined),
-        screenshotUrls: ((a.screenshotUrls ?? a.ipadScreenshotUrls ?? []) as string[]).slice(0, 3),
+        screenshotUrls: [],
       }));
-
-      // Fill in missing screenshots via individual parallel lookups (batch iTunes lookup drops some IDs)
-      const needsLookup = apps.filter((a) => a.screenshotUrls.length === 0 && a.trackId);
-      if (needsLookup.length > 0) {
-        await Promise.allSettled(
-          needsLookup.map(async (app) => {
-            try {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const res = await fetch(`https://itunes.apple.com/lookup?id=${app.trackId}&country=${country}`, { cache: "no-store" } as any);
-              if (!res.ok) return;
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const r = ((await res.json()).results ?? [])[0] as any;
-              if (!r) return;
-              const urls: string[] = ((r.screenshotUrls?.length ? r.screenshotUrls : r.ipadScreenshotUrls) ?? []).slice(0, 3);
-              app.screenshotUrls = urls;
-            } catch { /* screenshots optional */ }
-          })
-        );
-      }
 
       // Persist today's rankings to history (fire-and-forget)
       const today = new Date().toISOString().split("T")[0];
