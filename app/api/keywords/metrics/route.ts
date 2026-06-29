@@ -117,6 +117,9 @@ async function computeRelevancy(
   const appWords = wordTokens(appName);
   if (!kwWords.length || !appWords.length) return 0;
 
+  // Own brand keyword — always 100% relevant.
+  if (keyword.toLowerCase().trim() === appName.toLowerCase().trim()) return 100;
+
   const hasDesc = !!appDescription && appDescription.length > 10;
 
   // 1. Description relevance (70%) — LLM or embedding keyword-vs-description.
@@ -266,7 +269,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
       ? Math.max(rawChance, Math.min(95, 100 - rank))
       : rawChance;
     const base        = Math.sqrt(volume * chance);
-    const opportunity = Math.round(base * (relevancy / 100));
+    const opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
 
     return { volume, diff, chance, opportunity, results: count, relevancy, rank };
   } catch {
@@ -318,7 +321,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
       ? Math.max(rawChance, Math.min(95, 100 - rank))
       : rawChance;
     const base        = Math.sqrt(volume * chance);
-    const opportunity = Math.round(base * (relevancy / 100));
+    const opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
 
     return { volume, diff, chance, opportunity, results: count, relevancy, rank };
   } catch {
