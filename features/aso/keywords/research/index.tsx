@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
-import { KeywordListSelector } from "./KeywordListSelector";
+import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import type { Keyword } from "./types";
 
 export default function KeywordResearchPage() {
-  const activeApp = useActiveApp();
+  const activeApp    = useActiveApp();
+  const workspaceId  = useWorkspaceId();
   const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
 
@@ -31,6 +32,24 @@ export default function KeywordResearchPage() {
       country: country ?? "us",
       appName: activeApp?.name ?? "",
     });
+
+    // Save to Supabase (fire-and-forget) — also auto-follows the app in My Apps
+    if (workspaceId) {
+      fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: newKeywords,
+          workspaceId,
+          bundleId:  activeApp?.bundle_id,
+          storeId:   activeApp?.store_id,
+          appName:   activeApp?.name,
+          iconUrl:   activeApp?.icon_url ?? undefined,
+          store:     activeApp?.store ?? "ios",
+          country:   activeApp?.country ?? "us",
+        }),
+      });
+    }
 
     try {
       const res = await fetch(`/api/keywords/metrics?${params}`);
@@ -64,7 +83,6 @@ export default function KeywordResearchPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={activeApp ?? null} title="Keyword Research" />
-      <KeywordListSelector count={keywords.length} />
 
       <div className="flex-1 overflow-y-auto">
         <KeywordSuggestionsPanel

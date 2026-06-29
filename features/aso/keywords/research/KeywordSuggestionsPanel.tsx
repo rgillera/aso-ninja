@@ -8,8 +8,6 @@ import {
   DocumentDuplicateIcon,
   ArrowDownTrayIcon,
   FunnelIcon,
-  ArrowsUpDownIcon,
-  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { Toggle } from "./ui";
 import { SUGGESTION_TABS, RANK_PILLS } from "./constants";
@@ -25,7 +23,7 @@ type Props = {
 
 export function KeywordSuggestionsPanel({ translateToggle, onTranslateToggle, onAddKeyword }: Props) {
   const [open, setOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("Top Ranked");
+  const [activeTab, setActiveTab] = useState<string>(SUGGESTION_TABS[0].label);
   const [rankPill, setRankPill] = useState<RankPill>("All");
 
   return (
@@ -34,11 +32,7 @@ export function KeywordSuggestionsPanel({ translateToggle, onTranslateToggle, on
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
         <span className="text-sm font-semibold text-white">Keyword Suggestions</span>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors">
-            <ArrowsUpDownIcon className="size-3.5" />
-            Move to table
-          </button>
-          <button
+<button
             onClick={() => setOpen((v) => !v)}
             className="p-1 rounded text-gray-500 hover:text-white transition-colors"
           >
@@ -55,13 +49,12 @@ export function KeywordSuggestionsPanel({ translateToggle, onTranslateToggle, on
               <button
                 key={tab.label}
                 onClick={() => setActiveTab(tab.label)}
-                className={`flex items-center gap-1 whitespace-nowrap px-3.5 py-3 text-xs font-medium border-b-2 -mb-px transition-colors shrink-0 ${
+                className={`whitespace-nowrap px-3.5 py-3 text-xs font-medium border-b-2 -mb-px transition-colors shrink-0 ${
                   activeTab === tab.label
                     ? "border-indigo-400 text-white"
                     : "border-transparent text-gray-500 hover:text-gray-300"
                 }`}
               >
-                {tab.ai && <SparklesIcon className="size-3 text-violet-400" />}
                 {tab.label}
               </button>
             ))}

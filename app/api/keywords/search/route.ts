@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
       ratingCount:    (a.ratings ?? 0) as number,
       price:          a.free ? "Free" : `$${(a.price as number).toFixed(2)}`,
       inAppPurchases: !!(a.IAPRange),
+      screenshotUrls: [],
     }));
     return NextResponse.json({ apps });
   } catch {

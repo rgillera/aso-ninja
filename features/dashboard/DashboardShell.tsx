@@ -139,14 +139,24 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
       const name  = sp.get("name");
       const store = sp.get("store") as "ios" | "android" | null;
       if (!name || !store) return undefined;
-      return { name, icon_url: sp.get("icon") ?? null, store, country: sp.get("country") ?? null };
+      return {
+        bundle_id: sp.get("bundleId") ?? undefined,
+        store_id:  sp.get("storeId")  ?? undefined,
+        name, icon_url: sp.get("icon") ?? null, store, country: sp.get("country") ?? null,
+      };
     })();
     // On the preview route itself: always show the currently previewed app
     if (isOnPreview) return previewApp;
     // savedPreview set = preview was navigated to after the last tracked app → preview wins
-    if (savedPreview) return previewApp ?? lastTrackedApp;
+    if (savedPreview) return previewApp ?? (lastTrackedApp ? {
+      id: lastTrackedApp.id, bundle_id: lastTrackedApp.bundle_id, store_id: lastTrackedApp.store_id,
+      name: lastTrackedApp.name, icon_url: lastTrackedApp.icon_url, store: lastTrackedApp.store, country: lastTrackedApp.country,
+    } : undefined);
     // No savedPreview = tracked app is more recent (or only tracked apps exist)
-    return lastTrackedApp ?? previewApp;
+    return lastTrackedApp ? {
+      id: lastTrackedApp.id, bundle_id: lastTrackedApp.bundle_id, store_id: lastTrackedApp.store_id,
+      name: lastTrackedApp.name, icon_url: lastTrackedApp.icon_url, store: lastTrackedApp.store, country: lastTrackedApp.country,
+    } : previewApp;
   })();
 
   return (
