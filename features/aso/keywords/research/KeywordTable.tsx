@@ -17,6 +17,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Toggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
+import { LiveSearchPanel } from "./LiveSearchPanel";
 import type { Keyword } from "./types";
 
 type Props = {
@@ -101,6 +102,7 @@ export function KeywordTable({
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
   const [historyKeyword, setHistoryKeyword] = useState<string | null>(null);
+  const [liveSearchKeyword, setLiveSearchKeyword] = useState<string | null>(null);
 
   // Filter state
   const [kwSearch, setKwSearch] = useState("");
@@ -662,7 +664,10 @@ export function KeywordTable({
                 )}
                 <td className="pr-4 py-3.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="flex items-center gap-1.5">
-                    <button className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap">
+                    <button
+                      onClick={() => setLiveSearchKeyword(row.keyword)}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                    >
                       <MagnifyingGlassIcon className="size-3" />
                       Live search
                     </button>
@@ -711,6 +716,15 @@ export function KeywordTable({
           store={store}
           country={country}
           onClose={() => setHistoryKeyword(null)}
+        />
+      )}
+
+      {liveSearchKeyword && (
+        <LiveSearchPanel
+          keyword={liveSearchKeyword}
+          store={store}
+          country={country}
+          onClose={() => setLiveSearchKeyword(null)}
         />
       )}
     </div>
