@@ -259,7 +259,12 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     const topTitles = apps.slice(0, 10).map((r: any) => r.trackName ?? "");
     const relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
 
-    const chance      = Math.min(Math.max(100 - diff, 5), 95);
+    const rawChance = Math.min(Math.max(100 - diff, 5), 95);
+    // If already ranked, chance reflects actual position rather than raw difficulty.
+    // rank=1 → 95, rank=10 → 90, rank=50 → 50, rank=100+ → no boost.
+    const chance = rank !== null
+      ? Math.max(rawChance, Math.min(95, 100 - rank))
+      : rawChance;
     const base        = Math.sqrt(volume * chance);
     const opportunity = Math.round(base * (relevancy / 100));
 
@@ -308,7 +313,10 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
     const relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
 
-    const chance      = Math.min(Math.max(100 - diff, 5), 95);
+    const rawChance = Math.min(Math.max(100 - diff, 5), 95);
+    const chance = rank !== null
+      ? Math.max(rawChance, Math.min(95, 100 - rank))
+      : rawChance;
     const base        = Math.sqrt(volume * chance);
     const opportunity = Math.round(base * (relevancy / 100));
 
