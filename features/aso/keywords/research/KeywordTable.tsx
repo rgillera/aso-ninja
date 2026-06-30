@@ -19,6 +19,8 @@ import {
 import { Toggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { LiveSearchPanel } from "./LiveSearchPanel";
+import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
+import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import type { Keyword } from "./types";
 
 type Props = {
@@ -30,6 +32,7 @@ type Props = {
   adding?: boolean;
   onAddKeywords: (keywords: string[]) => void;
   onToggleStar: (index: number) => void;
+  onStarSelected: (keywords: string[]) => void;
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
 };
@@ -95,6 +98,7 @@ export function KeywordTable({
   adding = false,
   onAddKeywords,
   onToggleStar,
+  onStarSelected,
   onRemoveSelected,
   onRemoveKeyword,
 }: Props) {
@@ -275,13 +279,38 @@ export function KeywordTable({
   const allSelected =
     displayed.length > 0 && displayed.every((_, i) => selected.has(i));
 
+  // `selected` holds indices into `displayed` (post sort/filter), not into
+  // the `keywords` prop — resolve to terms here so callers can match
+  // unambiguously regardless of what sort/filter was active when checked.
+  const selectedTerms = useMemo(
+    () => displayed.filter((_, i) => selected.has(i)).map((k) => k.keyword),
+    [displayed, selected]
+  );
+
   function handleRemoveSelected() {
-    // `selected` holds indices into `displayed` (post sort/filter), not into
-    // the `keywords` prop — resolve to terms here so the caller can match
-    // unambiguously regardless of what sort/filter was active when checked.
-    const terms = displayed.filter((_, i) => selected.has(i)).map((k) => k.keyword);
-    onRemoveSelected(terms);
+    onRemoveSelected(selectedTerms);
     setSelected(new Set());
+  }
+
+  function handleCopySelected() {
+    navigator.clipboard.writeText(selectedTerms.join("\n")).catch(() => {});
+  }
+
+  function cellValue(colKey: string, row: Keyword): string | number {
+    switch (colKey) {
+      case "rank":       return row.rank ?? "Unranked";
+      case "relevancy":  return row.relevancy ?? "";
+      case "opportunity": return row.opportunity ?? "";
+      case "results":    return row.results ?? "";
+      default:           return (row as unknown as Record<string, number>)[colKey] ?? "";
+    }
+  }
+
+  function handleExportSelected() {
+    const rows = displayed.filter((_, i) => selected.has(i));
+    const headers = ["Keyword", ...visibleColDefs.map((c) => c.label)];
+    const data = rows.map((row) => [row.keyword, ...visibleColDefs.map((c) => cellValue(c.key, row))]);
+    downloadCsv(`keywords-${Date.now()}.csv`, headers, data);
   }
 
   function renderCell(colKey: string, row: Keyword) {
@@ -709,21 +738,22 @@ export function KeywordTable({
 
       {/* Footer */}
       {displayed.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-white/[0.07] flex items-center justify-between">
+        <div className="px-4 py-2.5 border-t border-white/[0.07]">
           <span className="text-xs text-gray-600">
             {displayed.length} keyword{displayed.length !== 1 ? "s" : ""}
-            {selected.size > 0 && ` · ${selected.size} selected`}
           </span>
-          {selected.size > 0 && (
-            <button
-              onClick={handleRemoveSelected}
-              className="text-xs text-red-400 hover:text-red-300 transition-colors"
-            >
-              Remove selected
-            </button>
-          )}
         </div>
       )}
+
+      <SelectionActionBar
+        count={selected.size}
+        total={displayed.length}
+        onClear={() => setSelected(new Set())}
+        onCopy={handleCopySelected}
+        onStar={() => onStarSelected(selectedTerms)}
+        onExport={handleExportSelected}
+        onDelete={handleRemoveSelected}
+      />
 
       {historyKeyword && (
         <VolumeHistoryPanel

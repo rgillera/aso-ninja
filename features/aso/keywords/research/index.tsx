@@ -239,6 +239,13 @@ export default function KeywordResearchPage() {
     );
   }
 
+  function handleStarSelected(terms: string[]) {
+    const termSet = new Set(terms.map((t) => t.toLowerCase()));
+    setKeywords((prev) =>
+      prev.map((k) => termSet.has(k.keyword.toLowerCase()) ? { ...k, starred: true } : k)
+    );
+  }
+
   function persistRemoval(terms: string[]) {
     if (!terms.length || (!activeApp?.id && !activeApp?.bundle_id)) return;
     fetch("/api/keywords/remove", {
@@ -294,6 +301,7 @@ export default function KeywordResearchPage() {
           adding={pendingAdds > 0}
           onAddKeywords={handleAddKeywords}
           onToggleStar={handleToggleStar}
+          onStarSelected={handleStarSelected}
           onRemoveSelected={handleRemoveSelected}
           onRemoveKeyword={handleRemoveKeyword}
         />

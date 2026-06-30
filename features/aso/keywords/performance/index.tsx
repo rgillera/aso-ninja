@@ -220,14 +220,18 @@ export default function KeywordPerformancePage() {
     setKeywords((prev) => prev.map((k) => (k.term === term ? { ...k, starred: !k.starred } : k)));
   }
 
-  function handleRemoveKeyword(term: string) {
-    setKeywords((prev) => prev.filter((k) => k.term !== term));
-    if (!activeApp?.id && !activeApp?.bundle_id) return;
+  function handleStarSelected(terms: string[]) {
+    const termSet = new Set(terms.map((t) => t.toLowerCase()));
+    setKeywords((prev) => prev.map((k) => termSet.has(k.term.toLowerCase()) ? { ...k, starred: true } : k));
+  }
+
+  function persistRemoval(terms: string[]) {
+    if (!terms.length || (!activeApp?.id && !activeApp?.bundle_id)) return;
     fetch("/api/keywords/remove", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        terms: [term],
+        terms,
         appId: activeApp?.id,
         workspaceId: workspaceId,
         bundleId: activeApp?.bundle_id,
@@ -235,6 +239,17 @@ export default function KeywordPerformancePage() {
         country: activeApp?.country,
       }),
     }).catch(() => {});
+  }
+
+  function handleRemoveKeyword(term: string) {
+    setKeywords((prev) => prev.filter((k) => k.term !== term));
+    persistRemoval([term]);
+  }
+
+  function handleRemoveSelected(terms: string[]) {
+    const removedSet = new Set(terms.map((t) => t.toLowerCase()));
+    setKeywords((prev) => prev.filter((k) => !removedSet.has(k.term.toLowerCase())));
+    persistRemoval(terms);
   }
 
   // Prev vs Latest performance: the two most recent real Volume/Rank snapshots
@@ -413,7 +428,9 @@ export default function KeywordPerformancePage() {
               adding={pendingAdds > 0}
               onAddKeywords={handleAddKeywords}
               onToggleStar={handleToggleStar}
+              onStarSelected={handleStarSelected}
               onRemoveKeyword={handleRemoveKeyword}
+              onRemoveSelected={handleRemoveSelected}
               onLiveSearch={setLiveSearchTerm}
               onViewVolumeHistory={setVolumeHistoryTerm}
               onRefetchRanks={handleRefetchRanks}

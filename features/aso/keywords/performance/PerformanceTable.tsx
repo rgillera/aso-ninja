@@ -21,6 +21,8 @@ import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceFilters } from "./PerformanceFilters";
+import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
+import { downloadCsv } from "@/features/aso/keywords/csvExport";
 
 type Props = {
   keywords: PerformanceKeyword[];
@@ -37,7 +39,9 @@ type Props = {
   adding?: boolean;
   onAddKeywords: (terms: string[]) => void;
   onToggleStar: (term: string) => void;
+  onStarSelected: (terms: string[]) => void;
   onRemoveKeyword: (term: string) => void;
+  onRemoveSelected: (terms: string[]) => void;
   onLiveSearch: (term: string) => void;
   onViewVolumeHistory: (term: string) => void;
   onRefetchRanks: () => void;
@@ -49,6 +53,7 @@ const PAGE_SIZE = 25;
 
 // Fixed-width columns (px), matching their Tailwind col widths below —
 // used to compute how much room is left for the Keyword column to grow into.
+const CHECKBOX_COL_W = 40;    // w-10
 const VOLUME_COL_W = 208;     // w-52
 const RANK_GROUP_W = 448;     // w-40 + w-40 + w-32
 const ACTIONS_COL_W = 80;     // w-20
@@ -92,15 +97,47 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
 export function PerformanceTable({
   keywords, filtered, appName, appIcon, activeApp, competitors, onCompetitorsChange,
   filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
-  onAddKeywords, onToggleStar, onRemoveKeyword, onLiveSearch, onViewVolumeHistory,
+  onAddKeywords, onToggleStar, onStarSelected, onRemoveKeyword, onRemoveSelected,
+  onLiveSearch, onViewVolumeHistory,
   onRefetchRanks, refetchingRanks, stuckRankCount,
 }: Props) {
   const [input, setInput] = useState("");
   const [page,  setPage]  = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount);
   const pageRows = filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE);
+
+  function toggleSelect(term: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(term)) next.delete(term); else next.add(term);
+      return next;
+    });
+  }
+
+  const allSelected = filtered.length > 0 && filtered.every((k) => selected.has(k.term));
+  const selectedTerms = useMemo(
+    () => filtered.filter((k) => selected.has(k.term)).map((k) => k.term),
+    [filtered, selected]
+  );
+
+  function handleCopySelected() {
+    navigator.clipboard.writeText(selectedTerms.join("\n")).catch(() => {});
+  }
+
+  function handleExportSelected() {
+    const rows = filtered.filter((k) => selected.has(k.term));
+    const headers = ["Keyword", "Volume", "Rank"];
+    const data = rows.map((k) => [k.term, k.volume, k.rank ?? "Unranked"]);
+    downloadCsv(`keywords-${Date.now()}.csv`, headers, data);
+  }
+
+  function handleRemoveSelectedClick() {
+    onRemoveSelected(selectedTerms);
+    setSelected(new Set());
+  }
 
   // Keyword column grows to fill any leftover width (so there's no dead gap
   // when there are few competitors), but never shrinks below its min — once
@@ -114,7 +151,7 @@ export function PerformanceTable({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const otherColsWidth = VOLUME_COL_W + RANK_GROUP_W * (1 + competitors.length) + ACTIONS_COL_W;
+  const otherColsWidth = CHECKBOX_COL_W + VOLUME_COL_W + RANK_GROUP_W * (1 + competitors.length) + ACTIONS_COL_W;
   const keywordWidth = Math.max(KEYWORD_MIN_W, containerWidth - otherColsWidth);
 
   function handleAdd() {
@@ -213,6 +250,7 @@ export function PerformanceTable({
         <div ref={scrollRef} className="overflow-x-auto">
           <table className="table-fixed w-full border-collapse">
             <colgroup>
+              <col className="w-10" />
               <col style={{ width: keywordWidth, minWidth: keywordWidth }} />
               <col className="w-52" />
               <col className="w-40" />
@@ -229,8 +267,16 @@ export function PerformanceTable({
             </colgroup>
             <thead>
               <tr className="border-b border-white/[0.04]">
-                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Keyword</th>
-                <th rowSpan={2} style={{ left: keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">Volume</th>
+                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] border-r border-white/[0.07] w-10 px-2 py-2 align-bottom">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={() => setSelected(allSelected ? new Set() : new Set(filtered.map((k) => k.term)))}
+                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                  />
+                </th>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Keyword</th>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">Volume</th>
                 <th colSpan={3} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -267,7 +313,15 @@ export function PerformanceTable({
                 const s = snapshots[k.term];
                 return (
                   <tr key={k.term} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="sticky left-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-4 py-3">
+                    <td className="sticky left-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-2 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(k.term)}
+                        onChange={() => toggleSelect(k.term)}
+                        className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                      />
+                    </td>
+                    <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-4 py-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <button onClick={() => onToggleStar(k.term)} className="shrink-0 transition-colors">
                           <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400" : "text-gray-600"}`} />
@@ -282,7 +336,7 @@ export function PerformanceTable({
                         </span>
                       </div>
                     </td>
-                    <td style={{ left: keywordWidth }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-r border-white/[0.04] px-3 py-3">
+                    <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-r border-white/[0.04] px-3 py-3">
                       {k.loading ? (
                         <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
                       ) : (
@@ -336,8 +390,9 @@ export function PerformanceTable({
             </tbody>
             <tfoot>
               <tr className="border-t border-white/[0.07] bg-white/[0.015]">
-                <td className="sticky left-0 z-10 bg-[#1c1f27] border-r border-white/[0.07] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
-                <td style={{ left: keywordWidth }} className="sticky z-10 bg-[#1c1f27] border-l border-r border-white/[0.07] px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.volumeLatest ?? "-"}</td>
+                <td className="sticky left-0 z-10 bg-[#1c1f27] border-r border-white/[0.07]" />
+                <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] border-r border-white/[0.07] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
+                <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] border-l border-r border-white/[0.07] px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.volumeLatest ?? "-"}</td>
                 <td className="px-3 py-3 border-l border-white/[0.04]" />
                 <td className="px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.rankLatest ?? "-"}</td>
                 <td className="px-3 py-3" />
@@ -368,6 +423,16 @@ export function PerformanceTable({
           )}
         </div>
       )}
+
+      <SelectionActionBar
+        count={selectedTerms.length}
+        total={filtered.length}
+        onClear={() => setSelected(new Set())}
+        onCopy={handleCopySelected}
+        onStar={() => onStarSelected(selectedTerms)}
+        onExport={handleExportSelected}
+        onDelete={handleRemoveSelectedClick}
+      />
     </div>
   );
 }
