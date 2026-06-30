@@ -14,6 +14,7 @@ import {
   ArrowsUpDownIcon,
   SparklesIcon,
   ArrowTrendingUpIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { Toggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -26,9 +27,11 @@ type Props = {
   country: string;
   translateToggle: boolean;
   onTranslateToggle: () => void;
+  adding?: boolean;
   onAddKeywords: (keywords: string[]) => void;
   onToggleStar: (index: number) => void;
   onRemoveSelected: (indices: Set<number>) => void;
+  onRemoveKeyword: (keyword: string) => void;
 };
 
 type ColumnDef = {
@@ -89,9 +92,11 @@ export function KeywordTable({
   country,
   translateToggle,
   onTranslateToggle,
+  adding = false,
   onAddKeywords,
   onToggleStar,
   onRemoveSelected,
+  onRemoveKeyword,
 }: Props) {
   const [keywordInput, setKeywordInput] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -278,16 +283,14 @@ export function KeywordTable({
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
       case "volume":      return (
-        <div className="flex items-center gap-1.5 group/vol">
+        <button
+          onClick={() => setHistoryKeyword(row.keyword)}
+          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+          title="View volume history"
+        >
           <VolumeBar value={row.volume} />
-          <button
-            onClick={() => setHistoryKeyword(row.keyword)}
-            className="opacity-0 group-hover/vol:opacity-100 transition-opacity text-gray-600 hover:text-indigo-400"
-            title="View volume history"
-          >
-            <ArrowTrendingUpIcon className="size-3.5" />
-          </button>
-        </div>
+          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+        </button>
       );
       case "diff":        return (
         <span className={`text-sm ${row.diff > 60 ? "text-red-400" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>
@@ -300,13 +303,17 @@ export function KeywordTable({
         </span>
       );
       case "opportunity": return (
-        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-          row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400" :
-          row.opportunity >= 40 ? "bg-yellow-500/15 text-yellow-400" :
-                                  "bg-gray-500/10 text-gray-500"
-        }`}>
-          {row.opportunity}
-        </span>
+        row.opportunity !== undefined
+          ? (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+              row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+              row.opportunity >= 40 ? "bg-yellow-500/15 text-yellow-400" :
+                                      "bg-gray-500/10 text-gray-500"
+            }`}>
+              {row.opportunity}
+            </span>
+          )
+          : <ClockIcon className="size-4 text-gray-600 animate-pulse" />
       );
       case "rank":        return row.rank !== null
         ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>#{row.rank}</span>
@@ -323,7 +330,7 @@ export function KeywordTable({
               {row.relevancy}
             </span>
           )
-          : <span className="text-sm text-gray-600">—</span>
+          : <ClockIcon className="size-4 text-gray-600 animate-pulse" />
       );
       default:            return <span className="text-sm text-gray-600">—</span>;
     }
@@ -493,10 +500,14 @@ export function KeywordTable({
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-xs font-semibold text-white transition-colors shrink-0"
+          disabled={adding}
+          title={adding ? "Saving keyword(s)… don't refresh yet" : undefined}
+          className="flex items-center gap-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:bg-indigo-500/50 disabled:cursor-wait px-4 py-2 text-xs font-semibold text-white transition-colors shrink-0"
         >
-          <PlusIcon className="size-3.5" />
-          Add
+          {adding
+            ? <span className="size-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            : <PlusIcon className="size-3.5" />}
+          {adding ? "Adding…" : "Add"}
         </button>
 
         {/* Column picker */}
@@ -672,7 +683,7 @@ export function KeywordTable({
                       Live search
                     </button>
                     <button
-                      onClick={() => onRemoveSelected(new Set([keywords.indexOf(row)]))}
+                      onClick={() => onRemoveKeyword(row.keyword)}
                       className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors"
                     >
                       <XMarkIcon className="size-3" />

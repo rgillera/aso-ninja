@@ -3,7 +3,7 @@ export type Keyword = {
   volume: number;
   diff: number;
   chance: number;
-  opportunity: number;
+  opportunity?: number;
   rank: number | null;
   starred: boolean;
   loading?: boolean;

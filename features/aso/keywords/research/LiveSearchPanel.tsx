@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { XMarkIcon, CalendarDaysIcon } from "@heroicons/react/24/outline";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { RankingEntry } from "@/app/api/keywords/rankings-history/route";
+import { fetchLiveSearchResults } from "./liveSearch";
 
 type Props = {
   keyword: string;
@@ -385,47 +386,9 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
     setLoading(true);
     setApps([]);
     setError(null);
-
-    if (store === "ios") {
-      // Fetch directly from Apple client-side — Apple's CDN blocks server-side Node.js
-      // requests (403) but allows browser requests (CORS: allow-origin: *)
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(keyword)}&entity=software&limit=20&country=${country}`;
-      fetch(url)
-        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-        .then((data) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const results: any[] = data.results ?? [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const mapped: AppSearchResult[] = results.map((a: any, i: number) => ({
-            position:       i + 1,
-            trackId:        (a.trackId ?? 0) as number,
-            name:           (a.trackName ?? "") as string,
-            subtitle:       (a.trackSubtitle ?? a.primaryGenreName ?? "") as string,
-            developer:      (a.artistName ?? "") as string,
-            icon:           (a.artworkUrl512 ?? a.artworkUrl100 ?? "") as string,
-            rating:         (a.averageUserRating ?? 0) as number,
-            ratingCount:    (a.userRatingCount ?? 0) as number,
-            price:          (a.formattedPrice ?? "Free") as string,
-            inAppPurchases: !!(a.minimumOsVersion) && (a.trackPrice === 0 || a.trackPrice === undefined),
-            screenshotUrls: [],
-          }));
-          setApps(mapped);
-          setLoading(false);
-          // Persist rankings to Supabase (fire-and-forget)
-          fetch("/api/keywords/search", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ keyword, store, country, apps: mapped }),
-          }).catch(() => {});
-        })
-        .catch(() => { setError("unavailable"); setLoading(false); });
-    } else {
-      // Android: must go through server-side (google-play-scraper is Node.js only)
-      fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}`)
-        .then((r) => r.json())
-        .then((data) => { setApps(data.apps ?? []); setLoading(false); })
-        .catch(() => { setError("unavailable"); setLoading(false); });
-    }
+    fetchLiveSearchResults(keyword, store, country)
+      .then((apps) => { setApps(apps); setLoading(false); })
+      .catch(() => { setError("unavailable"); setLoading(false); });
   }, [keyword, store, country]);
 
   const isPastResults = activeTab === "Past Results";

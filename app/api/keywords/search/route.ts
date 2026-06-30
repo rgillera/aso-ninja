@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     apps.map((app) => ({
       keyword:     keyword.toLowerCase().trim(),
       store,
-      country,
+      country:     country.toLowerCase(),
       recorded_on: today,
       position:    app.position,
       app_id:      String(app.trackId || app.name),

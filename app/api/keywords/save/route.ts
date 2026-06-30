@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 
 type MetricsMap = Record<string, {
   volume: number; diff: number; chance: number;
-  opportunity: number; relevancy: number; rank: number | null;
+  opportunity: number | null; relevancy: number | null; rank: number | null;
 }>;
 
 // POST /api/keywords/save

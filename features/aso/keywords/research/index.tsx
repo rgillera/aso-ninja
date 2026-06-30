@@ -5,6 +5,7 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import type { Keyword } from "./types";
@@ -30,6 +31,10 @@ export default function KeywordResearchPage() {
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
+  // Counts in-flight adds (fast metrics → full metrics → Supabase save) — used
+  // to keep the Add button in a loading state until the keyword is actually
+  // persisted, so users don't refresh mid-add and lose it.
+  const [pendingAdds, setPendingAdds] = useState(0);
 
   // Load/save competitors per app in localStorage
   useEffect(() => {
@@ -93,39 +98,86 @@ export default function KeywordResearchPage() {
     newKeywords = fresh;
 
     setKeywords((prev) => [
-      ...prev,
       ...newKeywords.map((kw) => ({
         keyword: kw,
         volume: 0, diff: 0, chance: 0, opportunity: 0,
         rank: null, starred: false, loading: true,
       })),
+      ...prev,
     ]);
 
     const store   = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
-    const params  = new URLSearchParams({
+
+    setPendingAdds((n) => n + 1);
+
+    // Phase 1: fast metrics (volume/diff/chance/rank) — skips the slow LLM
+    // relevancy pass so basic numbers show up immediately. Relevancy/
+    // opportunity arrive null and get back-filled by phase 2 below.
+    const fastParams = new URLSearchParams({
       terms: newKeywords.join(","),
       store,
       country: country ?? "us",
+      appName: activeApp?.name ?? "",
+      fast: "1",
+      ...(activeApp?.id ? { appId: activeApp.id } : {}),
+    });
+
+    try {
+      const res  = await fetch(`/api/keywords/metrics?${fastParams}`);
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
+
+      setKeywords((prev) =>
+        prev.map((k) => {
+          if (!k.loading || !newKeywords.includes(k.keyword)) return k;
+          const m = data[k.keyword];
+          return m
+            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, loading: false }
+            : { ...k, loading: false };
+        })
+      );
+    } catch {
+      setKeywords((prev) =>
+        prev.map((k) =>
+          k.loading && newKeywords.includes(k.keyword) ? { ...k, loading: false } : k
+        )
+      );
+      setPendingAdds((n) => n - 1);
+      return;
+    }
+
+    // Phase 2: full metrics (relevancy/opportunity via LLM) + Supabase save —
+    // awaited here so pendingAdds only clears once the keyword is actually
+    // persisted, but not awaited by the caller, so it doesn't block the UI.
+    await finishAddingKeywords(newKeywords, store, country);
+    setPendingAdds((n) => n - 1);
+  }
+
+  async function finishAddingKeywords(newKeywords: string[], store: "ios" | "android", country: string) {
+    const params = new URLSearchParams({
+      terms: newKeywords.join(","),
+      store,
+      country,
       appName: activeApp?.name ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
     });
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number; results: number; relevancy: number; rank: number | null }> = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
 
       setKeywords((prev) =>
         prev.map((k) => {
-          if (!k.loading || !newKeywords.includes(k.keyword)) return k;
           const m = data[k.keyword];
-          return m ? { ...k, ...m, loading: false } : { ...k, loading: false };
+          return m && newKeywords.includes(k.keyword)
+            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined }
+            : k;
         })
       );
 
       // Persist keywords + freshly computed metrics to Supabase
       if (workspaceId) {
-        fetch("/api/keywords/save", {
+        await fetch("/api/keywords/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -142,12 +194,23 @@ export default function KeywordResearchPage() {
           }),
         });
       }
-    } catch {
-      setKeywords((prev) =>
-        prev.map((k) =>
-          k.loading && newKeywords.includes(k.keyword) ? { ...k, loading: false } : k
-        )
-      );
+    } catch {}
+
+    // Quietly back-fill a rank for each newly tracked keyword — same one
+    // request a user would've made by hand via the Performance tab's Live
+    // Search button, just automatic. Not awaited so it doesn't hold up Add.
+    runLiveSearchInBackground(newKeywords, store, country);
+  }
+
+  async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {
+    // Spacing between calls is enforced centrally in liveSearch.ts (shared
+    // across every caller app-wide), so this just fires them in order.
+    for (const term of terms) {
+      try {
+        await fetchLiveSearchResults(term, store, country);
+      } catch (err) {
+        console.warn(`Live search failed for "${term}" — rank will stay "Unknown" until retried`, err);
+      }
     }
   }
 
@@ -157,12 +220,25 @@ export default function KeywordResearchPage() {
     );
   }
 
+  function persistRemoval(terms: string[]) {
+    const appId = activeApp?.id;
+    if (!appId || !terms.length) return;
+    fetch("/api/keywords/remove", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId, terms }),
+    }).catch(() => {});
+  }
+
   function handleRemoveSelected(indices: Set<number>) {
+    const removedTerms = keywords.filter((_, i) => indices.has(i)).map((k) => k.keyword);
     setKeywords((prev) => prev.filter((_, i) => !indices.has(i)));
+    persistRemoval(removedTerms);
   }
 
   function handleRemoveKeyword(term: string) {
     setKeywords((prev) => prev.filter((k) => k.keyword.toLowerCase() !== term.toLowerCase()));
+    persistRemoval([term]);
   }
 
   if (!activeApp) {
@@ -190,9 +266,11 @@ export default function KeywordResearchPage() {
           country={activeApp?.country ?? "us"}
           translateToggle={translateToggle}
           onTranslateToggle={() => setTranslateToggle((v) => !v)}
+          adding={pendingAdds > 0}
           onAddKeywords={handleAddKeywords}
           onToggleStar={handleToggleStar}
           onRemoveSelected={handleRemoveSelected}
+          onRemoveKeyword={handleRemoveKeyword}
         />
       </div>
     </div>

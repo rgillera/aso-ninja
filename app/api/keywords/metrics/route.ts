@@ -5,9 +5,9 @@ type Metrics = {
   volume: number;
   diff: number;
   chance: number;
-  opportunity: number;
+  opportunity: number | null;
   results: number;
-  relevancy: number;
+  relevancy: number | null;
   rank: number | null;
 };
 
@@ -239,7 +239,7 @@ async function fetchAndroidAppMeta(appName: string, country: string): Promise<Ap
 
 // ── Metric fetchers ───────────────────────────────────────────────────────────
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta): Promise<Metrics | null> {
+async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean): Promise<Metrics | null> {
   try {
     const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -274,18 +274,22 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     const rankIdx = name ? apps.findIndex((r: any) => (r.trackName ?? "").toLowerCase().trim() === name) : -1;
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const topTitles = apps.slice(0, 10).map((r: any) => r.trackName ?? "");
-    const relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
-
     const rawChance = Math.min(Math.max(100 - diff, 5), 95);
     // If already ranked, chance reflects actual position rather than raw difficulty.
     // rank=1 → 95, rank=10 → 90, rank=50 → 50, rank=100+ → no boost.
     const chance = rank !== null
       ? Math.max(rawChance, Math.min(95, 100 - rank))
       : rawChance;
-    const base        = Math.sqrt(volume * chance);
-    const opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
+
+    let relevancy: number | null = null;
+    let opportunity: number | null = null;
+    if (withRelevancy) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const topTitles = apps.slice(0, 10).map((r: any) => r.trackName ?? "");
+      relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
+      const base = Math.sqrt(volume * chance);
+      opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
+    }
 
     return { volume, diff, chance, opportunity, results: count, relevancy, rank };
   } catch {
@@ -293,7 +297,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
   }
 }
 
-async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta): Promise<Metrics | null> {
+async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean): Promise<Metrics | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -328,16 +332,20 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const rankIdx = name ? apps.findIndex((r: any) => (r.title ?? "").toLowerCase().trim() === name) : -1;
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
-    const relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
-
     const rawChance = Math.min(Math.max(100 - diff, 5), 95);
     const chance = rank !== null
       ? Math.max(rawChance, Math.min(95, 100 - rank))
       : rawChance;
-    const base        = Math.sqrt(volume * chance);
-    const opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
+
+    let relevancy: number | null = null;
+    let opportunity: number | null = null;
+    if (withRelevancy) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
+      relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
+      const base = Math.sqrt(volume * chance);
+      opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
+    }
 
     return { volume, diff, chance, opportunity, results: count, relevancy, rank };
   } catch {
@@ -357,6 +365,10 @@ export async function GET(request: NextRequest) {
   const store      = searchParams.get("store") ?? "ios";
   const appName    = searchParams.get("appName") ?? "";
   const appId      = searchParams.get("appId") ?? "";
+  // fast=1 skips the LLM/embedding relevancy pass (the slow part of adding a
+  // keyword) — relevancy/opportunity come back null and get back-filled by a
+  // follow-up non-fast request.
+  const fast       = searchParams.get("fast") === "1";
 
   const terms = termsParam.split(",").map((t) => t.trim()).filter(Boolean);
   if (!terms.length) return NextResponse.json({});
@@ -388,8 +400,9 @@ export async function GET(request: NextRequest) {
 
   let freshMetrics: Record<string, Metrics> = {};
   if (uncached.length) {
-    // Fetch app description + embed it once; shared across all keyword lookups
-    const appMeta: AppMeta = appName
+    // Fetch app description + embed it once; shared across all keyword lookups.
+    // Skipped entirely in fast mode since it's only used for relevancy.
+    const appMeta: AppMeta = !fast && appName
       ? await (store === "android"
           ? fetchAndroidAppMeta(appName, country)
           : fetchIosAppMeta(appName, country))
@@ -398,8 +411,8 @@ export async function GET(request: NextRequest) {
     const entries = await Promise.all(
       uncached.map(async (term) => {
         const metrics = store === "android"
-          ? await fetchAndroidMetrics(term, country, appName, appMeta)
-          : await fetchIosMetrics(term, country, appName, appMeta);
+          ? await fetchAndroidMetrics(term, country, appName, appMeta, !fast)
+          : await fetchIosMetrics(term, country, appName, appMeta, !fast);
         return [term, metrics] as const;
       })
     );

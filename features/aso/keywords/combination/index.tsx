@@ -75,7 +75,7 @@ export default function KeywordCombinationPage() {
     const placeholders: CombinationGroup[] = fresh.map((seed) => ({
       seed, expanded: true, loading: true, children: [],
     }));
-    const next = [...groups, ...placeholders];
+    const next = [...placeholders, ...groups];
     persist(next);
 
     const country = activeApp?.country ?? "us";
