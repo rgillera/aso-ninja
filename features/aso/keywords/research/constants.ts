@@ -1,7 +1,6 @@
 export const SUGGESTION_TABS = [
   { label: "Metadata", ai: false },
-  { label: "Top Ranked", ai: false },
-  { label: "Top Installs", ai: false },
+  { label: "Competitors", ai: false },
   { label: "AI Suggestions", ai: true },
 ] as const;
 

@@ -37,8 +37,8 @@ const plans: {
   },
   {
     name: "Pro",
-    monthly: { price: "$249", href: "/signup?plan=pro&billing=monthly" },
-    yearly: { price: "$199", href: "/signup?plan=pro&billing=yearly" },
+    monthly: { price: "$199", href: "/signup?plan=pro&billing=monthly" },
+    yearly: { price: "$149", href: "/signup?plan=pro&billing=yearly" },
     description: "Advanced tracking and collaboration for teams shipping multiple apps.",
     badge: "7-day free trial",
     features: [

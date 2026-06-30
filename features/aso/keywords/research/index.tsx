@@ -9,6 +9,7 @@ import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import type { Keyword } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
+import type { CompetitorApp } from "./ManageCompetitorsModal";
 
 
 function NoAppSelected() {
@@ -26,8 +27,29 @@ function NoAppSelected() {
 export default function KeywordResearchPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const [keywords, setKeywords] = useState<Keyword[]>([]);
+  const [keywords,     setKeywords]     = useState<Keyword[]>([]);
+  const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
+
+  // Load/save competitors per app in localStorage
+  useEffect(() => {
+    const appId = activeApp?.id ?? activeApp?.store_id;
+    if (!appId) return;
+    try {
+      const raw = localStorage.getItem(`competitors-${appId}`);
+      setCompetitors(raw ? (JSON.parse(raw) as CompetitorApp[]) : []);
+    } catch {
+      setCompetitors([]);
+    }
+  }, [activeApp?.id, activeApp?.store_id]);
+
+  function handleCompetitorsChange(updated: CompetitorApp[]) {
+    setCompetitors(updated);
+    const appId = activeApp?.id ?? activeApp?.store_id;
+    if (appId) {
+      try { localStorage.setItem(`competitors-${appId}`, JSON.stringify(updated)); } catch {}
+    }
+  }
 
   // Load persisted keywords for this app on mount / app change — instant (no metrics recompute)
   const loadedAppId = useRef<string | undefined>(undefined);
@@ -139,6 +161,10 @@ export default function KeywordResearchPage() {
     setKeywords((prev) => prev.filter((_, i) => !indices.has(i)));
   }
 
+  function handleRemoveKeyword(term: string) {
+    setKeywords((prev) => prev.filter((k) => k.keyword.toLowerCase() !== term.toLowerCase()));
+  }
+
   if (!activeApp) {
     return <NoAppSelected />;
   }
@@ -149,12 +175,13 @@ export default function KeywordResearchPage() {
 
       <div className="flex-1 overflow-y-auto">
         <KeywordSuggestionsPanel
-          translateToggle={translateToggle}
-          onTranslateToggle={() => setTranslateToggle((v) => !v)}
           onAddKeyword={(kw) => handleAddKeywords([kw])}
           onAddKeywords={handleAddKeywords}
+          onRemoveKeyword={handleRemoveKeyword}
           activeApp={activeApp}
           trackedKeywords={keywords}
+          competitors={competitors}
+          onCompetitorsChange={handleCompetitorsChange}
         />
 
         <KeywordTable

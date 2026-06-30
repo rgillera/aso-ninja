@@ -32,10 +32,11 @@ export async function GET(request: NextRequest) {
   }
 
   // Text search
-  const [iosResults, androidResults] = await Promise.all([
+  const [iosRaw, androidResults] = await Promise.all([
     store === "all" || store === "ios" ? searchAppStore(q, country) : [],
     store === "all" || store === "android" ? searchPlayStore(q, country) : [],
   ]);
+  const iosResults = iosRaw ?? [];
 
   // Interleave so neither store dominates
   const results: AppSearchResult[] = [];

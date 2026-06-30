@@ -7,7 +7,7 @@ import {
   DevicePhoneMobileIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { searchStoreApps } from "./searchAction";
+import { searchStoreApps, type SearchStoreResult } from "./searchAction";
 import { loadRecent, saveRecentEntry } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import type { App, AppSearchResult } from "@/libs/contracts";
@@ -79,6 +79,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
   const [country, setCountry]         = useState("US");
   const [countryOpen, setCountryOpen] = useState(false);
   const [results, setResults]         = useState<AppSearchResult[]>([]);
+  const [iosDown, setIosDown]         = useState(false);
   const [showAll, setShowAll]         = useState(false);
   const [isPending, startTransition]  = useTransition();
   const [recentlyViewed, setRecentlyViewed] = useState<RecentEntry[]>([]);
@@ -102,11 +103,12 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
   // Debounced store search
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
-    if (!query.trim()) { setResults([]); return; }
+    if (!query.trim()) { setResults([]); setIosDown(false); return; }
     debounce.current = setTimeout(() => {
       startTransition(async () => {
-        const r = await searchStoreApps(query);
+        const { results: r, iosUnavailable }: SearchStoreResult = await searchStoreApps(query);
         setResults(r);
+        setIosDown(iosUnavailable);
       });
     }, 350);
     return () => { if (debounce.current) clearTimeout(debounce.current); };
@@ -327,9 +329,19 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                         Searching App Store &amp; Google Play…
                       </div>
                     ) : filteredResults.length === 0 && !isPending ? (
-                      <p className="px-5 py-6 text-sm text-gray-600">No results for "{query}"</p>
+                      <div className="px-5 py-6 space-y-1">
+                        {iosDown && (
+                          <p className="text-xs text-amber-500/80">App Store search is temporarily unavailable.</p>
+                        )}
+                        <p className="text-sm text-gray-600">No results for &ldquo;{query}&rdquo;</p>
+                      </div>
                     ) : (
                       <>
+                        {iosDown && (
+                          <div className="px-5 py-2 border-b border-white/[0.04]">
+                            <p className="text-xs text-amber-500/80">App Store is temporarily unavailable — showing Google Play results only.</p>
+                          </div>
+                        )}
                         <div className="divide-y divide-white/[0.04]">
                           {visibleResults.map((r, i) => {
                             const trackedApp = apps.find(a => a.bundle_id === r.bundleId);
