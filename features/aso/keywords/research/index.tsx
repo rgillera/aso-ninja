@@ -56,13 +56,25 @@ export default function KeywordResearchPage() {
     }
   }
 
-  // Load persisted keywords for this app on mount / app change — instant (no metrics recompute)
+  // Load persisted keywords for this app on mount / app change — instant (no metrics recompute).
+  // Keyed on bundle_id rather than the internal id: a previewed-but-not-yet-
+  // tracked app never gets an `id` from ActiveAppContext, so gating on it
+  // would skip loading entirely and make a refresh look like the add never
+  // saved, even though it did.
   const loadedAppId = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const appId = activeApp?.id;
-    if (!appId || loadedAppId.current === appId) return;
-    loadedAppId.current = appId;
-    fetch(`/api/keywords/list?appId=${appId}`)
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key || loadedAppId.current === key) return;
+    loadedAppId.current = key;
+    const params = activeApp?.id
+      ? new URLSearchParams({ appId: activeApp.id })
+      : new URLSearchParams({
+          workspaceId: workspaceId ?? "",
+          bundleId: activeApp?.bundle_id ?? "",
+          store: activeApp?.store ?? "ios",
+          country: activeApp?.country ?? "us",
+        });
+    fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
       .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
         if (!saved?.length) return;
@@ -86,7 +98,7 @@ export default function KeywordResearchPage() {
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id]);
+  }, [activeApp?.id, activeApp?.bundle_id]);
 
   async function handleAddKeywords(newKeywords: string[]) {
     // Deduplicate against already-tracked (non-loading) keywords
@@ -199,7 +211,14 @@ export default function KeywordResearchPage() {
     // Quietly back-fill a rank for each newly tracked keyword — same one
     // request a user would've made by hand via the Performance tab's Live
     // Search button, just automatic. Not awaited so it doesn't hold up Add.
-    runLiveSearchInBackground(newKeywords, store, country);
+    // iOS is skipped here: the metrics fetch above already ran its own iTunes
+    // search and wrote today's rankings on success, so firing a second,
+    // separate iTunes call right after would just double the request volume
+    // against Apple's rate limit for no new information. Android still needs
+    // it since fetchAndroidMetrics never writes keyword_rankings_history.
+    if (store === "android") {
+      runLiveSearchInBackground(newKeywords, store, country);
+    }
   }
 
   async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {
@@ -221,19 +240,25 @@ export default function KeywordResearchPage() {
   }
 
   function persistRemoval(terms: string[]) {
-    const appId = activeApp?.id;
-    if (!appId || !terms.length) return;
+    if (!terms.length || (!activeApp?.id && !activeApp?.bundle_id)) return;
     fetch("/api/keywords/remove", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appId, terms }),
+      body: JSON.stringify({
+        terms,
+        appId: activeApp?.id,
+        workspaceId: workspaceId,
+        bundleId: activeApp?.bundle_id,
+        store: activeApp?.store,
+        country: activeApp?.country,
+      }),
     }).catch(() => {});
   }
 
-  function handleRemoveSelected(indices: Set<number>) {
-    const removedTerms = keywords.filter((_, i) => indices.has(i)).map((k) => k.keyword);
-    setKeywords((prev) => prev.filter((_, i) => !indices.has(i)));
-    persistRemoval(removedTerms);
+  function handleRemoveSelected(terms: string[]) {
+    const removedSet = new Set(terms.map((t) => t.toLowerCase()));
+    setKeywords((prev) => prev.filter((k) => !removedSet.has(k.keyword.toLowerCase())));
+    persistRemoval(terms);
   }
 
   function handleRemoveKeyword(term: string) {

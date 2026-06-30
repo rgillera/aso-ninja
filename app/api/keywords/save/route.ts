@@ -35,61 +35,43 @@ export async function POST(request: NextRequest) {
   if (!appId && bundleId && storeId && appName && store) {
     const normalCountry = (country ?? "us").toLowerCase();
 
-    // Try to insert; ignoreDuplicates means existing row is not returned
-    const { data: newApp } = await supabase
+    // `ignoreDuplicates` + a fallback SELECT used to resolve this, but that's
+    // a TOCTOU race: concurrent saves for a brand-new app (e.g. clicking
+    // several keyword suggestion pills quickly) could all miss the insert
+    // AND the fallback SELECT if it ran before the winner's insert committed,
+    // leaving appId unresolved and silently dropping the app_keywords link.
+    // DO UPDATE (vs DO NOTHING) makes Postgres return the row atomically
+    // either way, so every concurrent caller resolves the same id.
+    const { data: app } = await supabase
       .from("apps")
       .upsert(
         { workspace_id: workspaceId, name: appName, store, bundle_id: bundleId, store_id: storeId, icon_url: iconUrl ?? null, country: normalCountry, updated_at: new Date().toISOString() },
-        { onConflict: "workspace_id,store,bundle_id,country", ignoreDuplicates: true }
+        { onConflict: "workspace_id,store,bundle_id,country" }
       )
       .select("id")
       .single();
 
-    if (newApp) {
-      appId = newApp.id;
-    } else {
-      // App already existed — fetch its ID
-      const { data: existingApp } = await supabase
-        .from("apps")
-        .select("id")
-        .eq("workspace_id", workspaceId)
-        .eq("store", store)
-        .eq("bundle_id", bundleId)
-        .eq("country", normalCountry)
-        .single();
-      if (existingApp) appId = existingApp.id;
-    }
+    if (app) appId = app.id;
   }
 
   // 2. Upsert keyword terms
   const normalised = terms.map((t) => t.toLowerCase().trim()).filter(Boolean);
   if (!normalised.length) return NextResponse.json({ appId });
 
-  const { data: insertedRows, error: kwErr } = await supabase
+  // DO UPDATE (the default, vs ignoreDuplicates' DO NOTHING) makes every row
+  // come back from a single atomic upsert — same TOCTOU race as the apps
+  // resolution above otherwise applies when two concurrent saves touch the
+  // same term (e.g. it appears in two suggestion sections clicked close
+  // together).
+  const { data: keywordRows, error: kwErr } = await supabase
     .from("keywords")
     .upsert(
       normalised.map((term) => ({ workspace_id: workspaceId, term })),
-      { onConflict: "workspace_id,term", ignoreDuplicates: true }
+      { onConflict: "workspace_id,term" }
     )
     .select("id, term");
 
-  if (kwErr) return NextResponse.json({ appId });
-
-  // ignoreDuplicates means already-existing keywords aren't returned — fetch them
-  let keywordRows = insertedRows ?? [];
-  const insertedTerms = new Set(keywordRows.map((r) => r.term));
-  const missingTerms  = normalised.filter((t) => !insertedTerms.has(t));
-
-  if (missingTerms.length) {
-    const { data: existingRows } = await supabase
-      .from("keywords")
-      .select("id, term")
-      .eq("workspace_id", workspaceId)
-      .in("term", missingTerms);
-    keywordRows = [...keywordRows, ...(existingRows ?? [])];
-  }
-
-  if (!keywordRows.length) return NextResponse.json({ appId });
+  if (kwErr || !keywordRows?.length) return NextResponse.json({ appId });
 
   // 3. Link all keywords to the app
   if (appId) {

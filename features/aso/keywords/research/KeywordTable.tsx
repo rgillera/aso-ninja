@@ -30,7 +30,7 @@ type Props = {
   adding?: boolean;
   onAddKeywords: (keywords: string[]) => void;
   onToggleStar: (index: number) => void;
-  onRemoveSelected: (indices: Set<number>) => void;
+  onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
 };
 
@@ -276,7 +276,11 @@ export function KeywordTable({
     displayed.length > 0 && displayed.every((_, i) => selected.has(i));
 
   function handleRemoveSelected() {
-    onRemoveSelected(selected);
+    // `selected` holds indices into `displayed` (post sort/filter), not into
+    // the `keywords` prop — resolve to terms here so the caller can match
+    // unambiguously regardless of what sort/filter was active when checked.
+    const terms = displayed.filter((_, i) => selected.has(i)).map((k) => k.keyword);
+    onRemoveSelected(terms);
     setSelected(new Set());
   }
 

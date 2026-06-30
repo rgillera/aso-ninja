@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
 type Metrics = {
   volume: number;
   diff: number;
@@ -239,39 +241,103 @@ async function fetchAndroidAppMeta(appName: string, country: string): Promise<Ap
 
 // ── Metric fetchers ───────────────────────────────────────────────────────────
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean): Promise<Metrics | null> {
-  try {
-    const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const searchRes  = await fetch(searchUrl, { cache: "no-store" } as any);
-    const searchData = searchRes.ok ? await searchRes.json() : {};
+type RawIosApp = { trackId: number; trackName: string; userRatingCount: number; artworkUrl: string };
 
-    const apps: any[]   = searchData.results ?? []; // eslint-disable-line @typescript-eslint/no-explicit-any
-    const count: number = searchData.resultCount ?? apps.length;
+// Raw iTunes search results for a term/country/day are identical no matter
+// which app is asking — volume/diff/rank are all derived from the same
+// result set. Checking this shared cache before hitting iTunes means only
+// the FIRST app to add a given keyword on a given day pays for the call;
+// every other app/workspace reuses it, cutting total request volume against
+// Apple's per-IP rate limit.
+async function getCachedIosSearch(
+  supabase: SupabaseClient, term: string, country: string
+): Promise<RawIosApp[] | null> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data } = await supabase
+    .from("keyword_popularity_snapshots")
+    .select("raw_apps")
+    .eq("term", term.toLowerCase().trim())
+    .eq("store", "ios")
+    .eq("country", country)
+    .eq("recorded_on", today)
+    .not("raw_apps", "is", null)
+    .maybeSingle();
+  return (data?.raw_apps as RawIosApp[] | null) ?? null;
+}
+
+async function persistIosSearch(
+  supabase: SupabaseClient, term: string, country: string,
+  apps: RawIosApp[], volume: number, diff: number
+) {
+  const today = new Date().toISOString().split("T")[0];
+  const normTerm = term.toLowerCase().trim();
+  await supabase.from("keyword_popularity_snapshots").upsert(
+    { term: normTerm, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
+    { onConflict: "term,store,country,recorded_on" }
+  );
+  if (apps.length) {
+    // Same write the manual/automatic client-side live search performs —
+    // doing it here too means a successful metrics fetch already covers
+    // today's rank history for every app in the results, not just this one.
+    await supabase.from("keyword_rankings_history").upsert(
+      apps.map((a, i) => ({
+        keyword: normTerm, store: "ios", country, recorded_on: today,
+        position: i + 1, app_id: String(a.trackId || a.trackName),
+        app_name: a.trackName, app_icon: a.artworkUrl,
+      })),
+      { onConflict: "keyword,store,country,recorded_on,position" }
+    );
+  }
+}
+
+async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, supabase: SupabaseClient): Promise<Metrics | null> {
+  try {
+    let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
+    let fresh = false;
+
+    if (!apps) {
+      const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const searchRes = await fetch(searchUrl, { cache: "no-store" } as any);
+      // A non-2xx here (most often a 403 from Apple's per-IP rate limit) means
+      // we genuinely don't know the answer — return null rather than fabricating
+      // a low-confidence guess, so it never gets written to the shared cache
+      // and poisons every other app/workspace's lookup for this term today.
+      if (!searchRes.ok) return null;
+      const searchData = await searchRes.json();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apps = ((searchData.results ?? []) as any[]).map((a) => ({
+        trackId: a.trackId ?? 0,
+        trackName: a.trackName ?? "",
+        userRatingCount: a.userRatingCount ?? 0,
+        artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
+      }));
+      fresh = true;
+    }
+
+    const count = apps.length;
     const top5 = apps.slice(0, 5);
 
     const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const titleApps = apps.filter((a: any) => kwTokens.every((w) => (a.trackName ?? "").toLowerCase().includes(w)));
+    const titleApps = apps.filter((a) => kwTokens.every((w) => a.trackName.toLowerCase().includes(w)));
     const avgTitleRatings = titleApps.length === 0
       ? 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      : titleApps.reduce((s: number, a: any) => s + (a.userRatingCount ?? 0), 0) / titleApps.length;
+      : titleApps.reduce((s, a) => s + a.userRatingCount, 0) / titleApps.length;
     const volume = avgTitleRatings < 1_000
       ? 5
       : Math.min(Math.round((Math.log10(avgTitleRatings) / Math.log10(10_000_000)) * 100), 100);
 
     const avgRatings = top5.length > 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? top5.reduce((s: number, r: any) => s + (r.userRatingCount ?? 0), 0) / top5.length
+      ? top5.reduce((s, r) => s + r.userRatingCount, 0) / top5.length
       : 0;
     const diff = avgRatings < 10
       ? 0
       : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
 
+    if (fresh) await persistIosSearch(supabase, term, country, apps, volume, diff);
+
     const name    = appName.toLowerCase().trim();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rankIdx = name ? apps.findIndex((r: any) => (r.trackName ?? "").toLowerCase().trim() === name) : -1;
+    const rankIdx = name ? apps.findIndex((r) => r.trackName.toLowerCase().trim() === name) : -1;
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
 
     const rawChance = Math.min(Math.max(100 - diff, 5), 95);
@@ -284,8 +350,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     let relevancy: number | null = null;
     let opportunity: number | null = null;
     if (withRelevancy) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const topTitles = apps.slice(0, 10).map((r: any) => r.trackName ?? "");
+      const topTitles = apps.slice(0, 10).map((r) => r.trackName);
       relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
       const base = Math.sqrt(volume * chance);
       opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
@@ -412,25 +477,30 @@ export async function GET(request: NextRequest) {
       uncached.map(async (term) => {
         const metrics = store === "android"
           ? await fetchAndroidMetrics(term, country, appName, appMeta, !fast)
-          : await fetchIosMetrics(term, country, appName, appMeta, !fast);
+          : await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
         return [term, metrics] as const;
       })
     );
 
     freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
 
-    // Record today's popularity snapshot for fresh terms only
-    const today = new Date().toISOString().split("T")[0];
-    await Promise.all(
-      entries
-        .filter(([, m]) => m !== null)
-        .map(([term, m]) =>
-          supabase.from("keyword_popularity_snapshots").upsert(
-            { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
-            { onConflict: "term,store,country,recorded_on" }
+    // iOS already wrote its popularity snapshot (and rankings history) inside
+    // fetchIosMetrics, scoped to genuine fresh successes only — doing it again
+    // here unconditionally is what used to let a degraded 403 fallback poison
+    // the shared cache for every other app/workspace querying this term today.
+    if (store === "android") {
+      const today = new Date().toISOString().split("T")[0];
+      await Promise.all(
+        entries
+          .filter(([, m]) => m !== null)
+          .map(([term, m]) =>
+            supabase.from("keyword_popularity_snapshots").upsert(
+              { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
+              { onConflict: "term,store,country,recorded_on" }
+            )
           )
-        )
-    );
+      );
+    }
   }
 
   return NextResponse.json({ ...dbCache, ...freshMetrics });

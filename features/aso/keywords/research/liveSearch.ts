@@ -10,7 +10,7 @@ import type { AppSearchResult } from "@/app/api/keywords/search/route";
 // every call through one shared queue, app-wide, keeps the real network rate
 // capped no matter how many callers ask for searches at once.
 let queue: Promise<void> = Promise.resolve();
-const MIN_GAP_MS = 1200;
+const MIN_GAP_MS = 3500;
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   const run = queue.then(fn);
@@ -46,7 +46,7 @@ async function fetchLiveSearchResultsInner(
       // A short retry isn't enough headroom for Apple's actual cooldown once
       // tripped — back off several seconds and double it on a second try.
       if ((res.status === 403 || res.status === 429) && attempt < 2) {
-        await new Promise((r) => setTimeout(r, 5000 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, 12000 * (attempt + 1)));
         return fetchLiveSearchResultsInner(keyword, store, country, attempt + 1);
       }
       throw new Error(`itunes search failed: ${res.status}`);

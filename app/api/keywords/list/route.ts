@@ -13,13 +13,37 @@ export type SavedKeyword = {
 };
 
 // GET /api/keywords/list?appId=...
+// or, for an app previewed but not yet formally tracked (no internal id yet):
+// GET /api/keywords/list?workspaceId=...&bundleId=...&store=...&country=...
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const appId = searchParams.get("appId") ?? "";
-
-  if (!appId) return NextResponse.json({ keywords: [] });
+  let appId = searchParams.get("appId") ?? "";
 
   const supabase = await createClient();
+
+  if (!appId) {
+    // Preview apps have no apps-table row reference on the client yet, but
+    // /api/keywords/save resolves/creates one by this same natural key on
+    // every add — look it up the same way so keywords saved while previewing
+    // still load back, instead of the page silently staying empty.
+    const workspaceId = searchParams.get("workspaceId") ?? "";
+    const bundleId     = searchParams.get("bundleId") ?? "";
+    const store        = searchParams.get("store") ?? "";
+    const country       = (searchParams.get("country") ?? "us").toLowerCase();
+    if (workspaceId && bundleId && store) {
+      const { data } = await supabase
+        .from("apps")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("store", store)
+        .eq("bundle_id", bundleId)
+        .eq("country", country)
+        .maybeSingle();
+      appId = data?.id ?? "";
+    }
+  }
+
+  if (!appId) return NextResponse.json({ keywords: [] });
 
   // Two separate queries — no direct FK exists between app_keywords and keyword_metrics
   const [akResult, metricsResult] = await Promise.all([

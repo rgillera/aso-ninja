@@ -70,13 +70,25 @@ export default function KeywordPerformancePage() {
     }
   }
 
-  // Tracked keywords are shared with Research — this view is a different lens on the same pool.
+  // Tracked keywords are shared with Research — this view is a different lens
+  // on the same pool. Keyed on bundle_id rather than the internal id: a
+  // previewed-but-not-yet-tracked app never gets an `id` from
+  // ActiveAppContext, so gating on it would skip loading entirely and make a
+  // refresh look like the add never saved, even though it did.
   const loadedAppId = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const appId = activeApp?.id;
-    if (!appId || loadedAppId.current === appId) return;
-    loadedAppId.current = appId;
-    fetch(`/api/keywords/list?appId=${appId}`)
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key || loadedAppId.current === key) return;
+    loadedAppId.current = key;
+    const params = activeApp?.id
+      ? new URLSearchParams({ appId: activeApp.id })
+      : new URLSearchParams({
+          workspaceId: workspaceId ?? "",
+          bundleId: activeApp?.bundle_id ?? "",
+          store: activeApp?.store ?? "ios",
+          country: activeApp?.country ?? "us",
+        });
+    fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
       .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
         if (!saved?.length) return;
@@ -94,7 +106,7 @@ export default function KeywordPerformancePage() {
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id]);
+  }, [activeApp?.id, activeApp?.bundle_id]);
 
   async function handleAddKeywords(newTerms: string[]) {
     const existing = new Set(keywords.filter((k) => !k.loading).map((k) => k.term.toLowerCase()));
@@ -155,7 +167,14 @@ export default function KeywordPerformancePage() {
       // Quietly back-fill a rank for each newly tracked keyword — same one
       // request a user would've made by hand via the per-row Live Search button,
       // just automatic. Not awaited so it doesn't hold up the Add button.
-      runLiveSearchInBackground(newTerms, store, country);
+      // iOS is skipped here: the metrics fetch above already ran its own iTunes
+      // search and wrote today's rankings on success, so firing a second,
+      // separate iTunes call right after would just double the request volume
+      // against Apple's rate limit for no new information. Android still needs
+      // it since fetchAndroidMetrics never writes keyword_rankings_history.
+      if (store === "android") {
+        runLiveSearchInBackground(newTerms, store, country);
+      }
     } catch {
       setKeywords((prev) =>
         prev.map((k) => (k.loading && newTerms.includes(k.term) ? { ...k, loading: false } : k))
@@ -178,18 +197,44 @@ export default function KeywordPerformancePage() {
     setSnapshotsRefreshKey((k) => k + 1);
   }
 
+  // Manual escape hatch for the auto-retry-once-per-visit logic below: lets a
+  // user re-trigger a live search for everything still stuck on "Unknown"
+  // (e.g. after Apple's rate limit, which the queue/backoff can't route
+  // around on its own, has had time to clear) without reloading the page.
+  const [refetchingRanks, setRefetchingRanks] = useState(false);
+  const stuckTerms = useMemo(
+    () => keywords.filter((k) => !k.loading && !snapshots[k.term]?.rankLatestDate).map((k) => k.term),
+    [keywords, snapshots]
+  );
+
+  async function handleRefetchRanks() {
+    if (!stuckTerms.length || refetchingRanks) return;
+    setRefetchingRanks(true);
+    try {
+      await runLiveSearchInBackground(stuckTerms, activeApp?.store ?? "ios", activeApp?.country ?? "us");
+    } finally {
+      setRefetchingRanks(false);
+    }
+  }
+
   function handleToggleStar(term: string) {
     setKeywords((prev) => prev.map((k) => (k.term === term ? { ...k, starred: !k.starred } : k)));
   }
 
   function handleRemoveKeyword(term: string) {
     setKeywords((prev) => prev.filter((k) => k.term !== term));
-    const appId = activeApp?.id;
-    if (!appId) return;
+    if (!activeApp?.id && !activeApp?.bundle_id) return;
     fetch("/api/keywords/remove", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appId, terms: [term] }),
+      body: JSON.stringify({
+        terms: [term],
+        appId: activeApp?.id,
+        workspaceId: workspaceId,
+        bundleId: activeApp?.bundle_id,
+        store: activeApp?.store,
+        country: activeApp?.country,
+      }),
     }).catch(() => {});
   }
 
@@ -206,6 +251,14 @@ export default function KeywordPerformancePage() {
   // without the user having to leave and re-enter the page.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
 
+  // Tracks which "<appId>:<term>" pairs have already had one automatic
+  // catch-up search this page visit, so a keyword that's still stuck after
+  // retrying doesn't get re-queued on every snapshot refetch (the search
+  // itself bumps snapshotsRefreshKey on completion, which would otherwise
+  // loop). Resets naturally on reload, so a still-stuck term gets another
+  // shot next visit.
+  const autoRetriedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (!activeApp || !trackedTerms) return;
     const t = setTimeout(() => {
@@ -219,7 +272,23 @@ export default function KeywordPerformancePage() {
       });
       fetch(`/api/keywords/performance-snapshots?${params}`)
         .then((r) => r.json())
-        .then((data: PerformanceSnapshotResult) => setSnapshots(data))
+        .then((data: PerformanceSnapshotResult) => {
+          setSnapshots(data);
+          // Any tracked keyword with no rank history at all (rankLatestDate
+          // null) never got a successful Live Search, whichever path added
+          // it. Automatically retry those once per visit instead of leaving
+          // them stuck on "Unknown" until someone notices and clicks the
+          // per-row button.
+          const appId = activeApp.id ?? "";
+          const missing = Object.entries(data)
+            .filter(([, snap]) => !snap.rankLatestDate)
+            .map(([term]) => term)
+            .filter((term) => !autoRetriedRef.current.has(`${appId}:${term}`));
+          if (missing.length) {
+            missing.forEach((term) => autoRetriedRef.current.add(`${appId}:${term}`));
+            runLiveSearchInBackground(missing, activeApp.store ?? "ios", activeApp.country ?? "us");
+          }
+        })
         .catch(() => setSnapshots({}))
         .finally(() => setSnapshotsLoading(false));
     }, 300);
@@ -352,6 +421,9 @@ export default function KeywordPerformancePage() {
               onRemoveKeyword={handleRemoveKeyword}
               onLiveSearch={setLiveSearchTerm}
               onViewVolumeHistory={setVolumeHistoryTerm}
+              onRefetchRanks={handleRefetchRanks}
+              refetchingRanks={refetchingRanks}
+              stuckRankCount={stuckTerms.length}
             />
           </div>
         )}
