@@ -7,7 +7,7 @@ import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
-import { PerformanceFilters } from "./PerformanceFilters";
+import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -355,9 +355,7 @@ export default function KeywordPerformancePage() {
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
 
       <div className="flex-1 overflow-y-auto">
-        <PerformanceFilters
-          filters={filters}
-          onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+        <CompetitorsBar
           activeApp={activeApp}
           competitors={competitors}
           onCompetitorsChange={handleCompetitorsChange}
@@ -413,6 +411,8 @@ export default function KeywordPerformancePage() {
               appName={activeApp.name}
               appIcon={activeApp.icon_url ?? ""}
               competitors={competitors}
+              filters={filters}
+              onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
               snapshots={snapshots}
               snapshotsLoading={snapshotsLoading}
               adding={pendingAdds > 0}

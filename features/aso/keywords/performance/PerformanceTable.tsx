@@ -16,8 +16,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
 import { formatRank, formatSnapshotDate, isBranded, rankGrowth, volumeGrowth } from "./types";
-import type { PerformanceKeyword, TermSnapshot } from "./types";
+import type { Filters, PerformanceKeyword, TermSnapshot } from "./types";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
+import { PerformanceFilters } from "./PerformanceFilters";
 
 type Props = {
   keywords: PerformanceKeyword[];
@@ -25,6 +26,8 @@ type Props = {
   appName: string;
   appIcon: string;
   competitors: CompetitorApp[];
+  filters: Filters;
+  onFiltersChange: (patch: Partial<Filters>) => void;
   snapshots: Record<string, TermSnapshot>;
   snapshotsLoading: boolean;
   adding?: boolean;
@@ -83,7 +86,8 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
 }
 
 export function PerformanceTable({
-  keywords, filtered, appName, appIcon, competitors, snapshots, snapshotsLoading, adding = false,
+  keywords, filtered, appName, appIcon, competitors,
+  filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
   onAddKeywords, onToggleStar, onRemoveKeyword, onLiveSearch, onViewVolumeHistory,
   onRefetchRanks, refetchingRanks, stuckRankCount,
 }: Props) {
@@ -131,6 +135,11 @@ export function PerformanceTable({
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+      <PerformanceFilters
+        filters={filters}
+        onChange={onFiltersChange}
+      />
+
       {keywords.length > 0 && (
         <div className="grid grid-cols-2 divide-x divide-white/[0.07] border-b border-white/[0.07]">
           <div className="px-5 py-3.5">
