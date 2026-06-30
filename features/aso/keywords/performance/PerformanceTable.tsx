@@ -17,7 +17,9 @@ import {
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
 import { formatRank, formatSnapshotDate, isBranded, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot } from "./types";
+import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
+import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceFilters } from "./PerformanceFilters";
 
 type Props = {
@@ -25,7 +27,9 @@ type Props = {
   filtered: PerformanceKeyword[];
   appName: string;
   appIcon: string;
+  activeApp: ActiveApp;
   competitors: CompetitorApp[];
+  onCompetitorsChange: (competitors: CompetitorApp[]) => void;
   filters: Filters;
   onFiltersChange: (patch: Partial<Filters>) => void;
   snapshots: Record<string, TermSnapshot>;
@@ -86,7 +90,7 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
 }
 
 export function PerformanceTable({
-  keywords, filtered, appName, appIcon, competitors,
+  keywords, filtered, appName, appIcon, activeApp, competitors, onCompetitorsChange,
   filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
   onAddKeywords, onToggleStar, onRemoveKeyword, onLiveSearch, onViewVolumeHistory,
   onRefetchRanks, refetchingRanks, stuckRankCount,
@@ -135,11 +139,6 @@ export function PerformanceTable({
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <PerformanceFilters
-        filters={filters}
-        onChange={onFiltersChange}
-      />
-
       {keywords.length > 0 && (
         <div className="grid grid-cols-2 divide-x divide-white/[0.07] border-b border-white/[0.07]">
           <div className="px-5 py-3.5">
@@ -152,6 +151,17 @@ export function PerformanceTable({
           </div>
         </div>
       )}
+
+      <PerformanceFilters
+        filters={filters}
+        onChange={onFiltersChange}
+      />
+
+      <CompetitorsBar
+        activeApp={activeApp}
+        competitors={competitors}
+        onCompetitorsChange={onCompetitorsChange}
+      />
 
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
         <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all min-w-[200px]">

@@ -15,7 +15,7 @@ type Props = {
   onChange: (patch: Partial<Filters>) => void;
 };
 
-function Dropdown({ label, children }: { label: string; children: React.ReactNode }) {
+function Dropdown({ label, active, children }: { label: string; active?: boolean; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -32,8 +32,12 @@ function Dropdown({ label, children }: { label: string; children: React.ReactNod
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium ring-1 transition-colors ${
-          open ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-300 hover:text-white"
+        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${
+          active
+            ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300"
+            : open
+              ? "bg-[#0d0f14] ring-indigo-500/40 text-white"
+              : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"
         }`}
       >
         {label}
@@ -75,20 +79,26 @@ function RangeFields({
 }
 
 export function PerformanceFilters({ filters, onChange }: Props) {
+  const volumeActive = filters.volumeMin !== DEFAULT_FILTERS.volumeMin || filters.volumeMax !== DEFAULT_FILTERS.volumeMax;
+  const rankActive = filters.rankMin !== DEFAULT_FILTERS.rankMin || filters.rankMax !== DEFAULT_FILTERS.rankMax;
+
   return (
     <div className="px-4 py-3 border-b border-white/[0.07]">
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-2 w-48 shrink-0">
-          <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
-          <input
-            value={filters.query}
-            onChange={(e) => onChange({ query: e.target.value })}
-            placeholder="Keyword"
-            className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none min-w-0"
-          />
-        </div>
+        <Dropdown label={filters.query ? `Keyword: ${filters.query}` : "Keyword"} active={!!filters.query}>
+          <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5">
+            <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
+            <input
+              autoFocus
+              value={filters.query}
+              onChange={(e) => onChange({ query: e.target.value })}
+              placeholder="Search keyword"
+              className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none min-w-0"
+            />
+          </div>
+        </Dropdown>
 
-        <Dropdown label={`Volume ${filters.volumeMin}-${filters.volumeMax}`}>
+        <Dropdown label={volumeActive ? `Volume ${filters.volumeMin}-${filters.volumeMax}` : "Volume"} active={volumeActive}>
           <RangeFields
             min={filters.volumeMin} max={filters.volumeMax} cap={100}
             onMin={(v) => onChange({ volumeMin: v })}
@@ -96,7 +106,7 @@ export function PerformanceFilters({ filters, onChange }: Props) {
           />
         </Dropdown>
 
-        <Dropdown label={`Rank ${filters.rankMin}-${filters.rankMax}`}>
+        <Dropdown label={rankActive ? `Rank ${filters.rankMin}-${filters.rankMax}` : "Rank"} active={rankActive}>
           <RangeFields
             min={filters.rankMin} max={filters.rankMax} cap={200}
             onMin={(v) => onChange({ rankMin: v })}
@@ -104,17 +114,26 @@ export function PerformanceFilters({ filters, onChange }: Props) {
           />
         </Dropdown>
 
-        <button
-          onClick={() => onChange({ starredOnly: !filters.starredOnly })}
-          className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-2 text-xs font-medium text-gray-300 hover:text-white transition-colors"
-        >
-          {filters.starredOnly ? "Starred" : "All"}
-          {filters.starredOnly
-            ? <StarIcon className="size-3.5 fill-amber-400 text-amber-400" />
-            : <CheckIcon className="size-3.5 text-gray-500" />}
-        </button>
+        <div className="flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] p-0.5">
+          <button
+            onClick={() => onChange({ starredOnly: false })}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+              !filters.starredOnly ? "bg-white/10 text-white" : "text-gray-500 hover:text-white"
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => onChange({ starredOnly: true })}
+            className={`rounded-md p-1.5 transition-colors ${
+              filters.starredOnly ? "bg-white/10 text-amber-400" : "text-gray-500 hover:text-white"
+            }`}
+          >
+            <StarIcon className={`size-3.5 ${filters.starredOnly ? "fill-amber-400" : ""}`} />
+          </button>
+        </div>
 
-        <Dropdown label={`Type${filters.type === "all" ? "" : `: ${filters.type === "branded" ? "Branded" : "Generic"}`}`}>
+        <Dropdown label={`Type${filters.type === "all" ? "" : `: ${filters.type === "branded" ? "Branded" : "Generic"}`}`} active={filters.type !== "all"}>
           <div className="flex flex-col gap-0.5">
             {(["all", "branded", "generic"] as const).map((t) => (
               <button
@@ -131,7 +150,7 @@ export function PerformanceFilters({ filters, onChange }: Props) {
           </div>
         </Dropdown>
 
-        <Dropdown label={`Word counts${filters.wordCount === "all" ? "" : `: ${filters.wordCount === 3 ? "3+" : filters.wordCount}`}`}>
+        <Dropdown label={`Word counts${filters.wordCount === "all" ? "" : `: ${filters.wordCount === 3 ? "3+" : filters.wordCount}`}`} active={filters.wordCount !== "all"}>
           <div className="flex flex-col gap-0.5">
             {([
               ["all", "All"],

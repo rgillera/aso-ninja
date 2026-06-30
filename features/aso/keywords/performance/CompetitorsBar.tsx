@@ -16,10 +16,10 @@ export function CompetitorsBar({ activeApp, competitors, onCompetitorsChange }: 
   const [showCompetitorModal, setShowCompetitorModal] = useState(false);
 
   return (
-    <div className="px-6 pt-3">
+    <div className="px-4 py-2.5 border-b border-white/[0.07]">
       <button
         onClick={() => setShowCompetitorModal(true)}
-        className="flex items-center gap-2 w-full rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] hover:ring-white/[0.16] px-3 py-2.5 text-xs font-medium text-gray-300 hover:text-white transition-colors"
+        className="flex items-center gap-2 w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] hover:ring-white/[0.16] px-3 py-2 text-xs font-medium text-gray-300 hover:text-white transition-colors"
       >
         <PlusIcon className="size-3.5" />
         {competitors.length === 0 ? "Add competitors to compare" : `Comparing against ${competitors.length} competitor${competitors.length === 1 ? "" : "s"}`}

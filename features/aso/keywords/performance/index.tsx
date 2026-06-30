@@ -7,7 +7,6 @@ import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
-import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -355,12 +354,6 @@ export default function KeywordPerformancePage() {
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
 
       <div className="flex-1 overflow-y-auto">
-        <CompetitorsBar
-          activeApp={activeApp}
-          competitors={competitors}
-          onCompetitorsChange={handleCompetitorsChange}
-        />
-
         <div className="flex flex-wrap items-center justify-between gap-2 px-6 pt-3">
           <div className="flex items-center gap-1">
             {([["chart", "Visibility Score"], ["table", "Keyword Performance"]] as const).map(([id, label]) => (
@@ -410,7 +403,9 @@ export default function KeywordPerformancePage() {
               filtered={filtered}
               appName={activeApp.name}
               appIcon={activeApp.icon_url ?? ""}
+              activeApp={activeApp}
               competitors={competitors}
+              onCompetitorsChange={handleCompetitorsChange}
               filters={filters}
               onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
               snapshots={snapshots}
