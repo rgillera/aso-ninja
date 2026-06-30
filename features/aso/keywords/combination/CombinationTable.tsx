@@ -56,6 +56,10 @@ export function CombinationTable({
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
   const [sortKey,   setSortKey]   = useState<SortKey | null>(null);
   const [sortDir,   setSortDir]   = useState<"asc" | "desc">("desc");
+  const [showAllSeeds, setShowAllSeeds] = useState(false);
+
+  const SEED_PREVIEW_COUNT = 10;
+  const visibleSeeds = showAllSeeds ? availableSeeds : availableSeeds.slice(0, SEED_PREVIEW_COUNT);
 
   function handleAdd() {
     const parts = seedInput.split(",").map((s) => s.trim()).filter(Boolean);
@@ -132,7 +136,7 @@ export function CombinationTable({
             </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {availableSeeds.map((term) => (
+            {visibleSeeds.map((term) => (
               <button
                 key={term}
                 onClick={() => onAddSeeds([term])}
@@ -142,6 +146,14 @@ export function CombinationTable({
                 {term}
               </button>
             ))}
+            {availableSeeds.length > SEED_PREVIEW_COUNT && (
+              <button
+                onClick={() => setShowAllSeeds((v) => !v)}
+                className="flex items-center rounded-md px-2.5 py-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                {showAllSeeds ? "Show less" : `+${availableSeeds.length - SEED_PREVIEW_COUNT} more`}
+              </button>
+            )}
           </div>
         </div>
       )}
