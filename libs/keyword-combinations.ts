@@ -1,6 +1,23 @@
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
 
+const SUFFIX_MODIFIERS = [
+  "app", "free", "tracker", "planner", "log", "diary", "manager",
+  "pro", "daily", "simple", "easy", "best", "tips", "guide",
+  "for beginners", "for kids", "for seniors", "online", "offline",
+];
+const PREFIX_MODIFIERS = [
+  "best", "free", "simple", "easy", "daily", "top",
+];
+
+function ruleBasedCombinations(seed: string, count: number): string[] {
+  const results = [
+    ...SUFFIX_MODIFIERS.map((m) => `${seed} ${m}`),
+    ...PREFIX_MODIFIERS.map((m) => `${m} ${seed}`),
+  ].filter((p, i, arr) => arr.indexOf(p) === i);
+  return results.slice(0, count);
+}
+
 export async function generateCombinations(
   seed: string,
   count: number,
@@ -41,18 +58,19 @@ Reply with ONLY a JSON array of strings. Example: ["${seed} tracker","pet ${seed
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    if (!res.ok) return [];
+    if (!res.ok) return ruleBasedCombinations(seed, count);
     const data = await res.json();
     const raw = (data.response ?? "") as string;
     const match = raw.match(/\[[\s\S]*\]/);
-    if (!match) return [];
+    if (!match) return ruleBasedCombinations(seed, count);
     const parsed = JSON.parse(match[0]) as unknown[];
     const seedLower = seed.toLowerCase();
-    return [...new Set(
+    const llmResults = [...new Set(
       parsed
         .filter((k): k is string => typeof k === "string")
         .map((k) => k.toLowerCase().trim())
         .filter((k) => k.includes(seedLower) && k.length >= seed.length && k.length <= 50)
     )].slice(0, count);
-  } catch { return []; }
+    return llmResults.length > 0 ? llmResults : ruleBasedCombinations(seed, count);
+  } catch { return ruleBasedCombinations(seed, count); }
 }
