@@ -69,20 +69,36 @@ export default function KeywordCombinationPage() {
       .catch(() => {});
   }, [activeApp?.store_id, activeApp?.store, activeApp?.country]);
 
-  // Load keywords already tracked in Keyword Research for this app — used both to
-  // mark "already tracked" rows and to offer them as one-click combination seeds
-  const loadedAppId = useRef<string | undefined>(undefined);
+  // Load tracked keywords from DB. Also re-fetches on window focus so that
+  // keywords added from other pages (research, performance) are reflected without
+  // requiring a full page reload.
+  // Falls back to workspaceId+bundleId lookup when activeApp.id is undefined
+  // (e.g. app shown via savedPreview cookie rather than a formal tracked-app route).
   useEffect(() => {
-    if (!activeApp?.id || loadedAppId.current === activeApp.id) return;
-    loadedAppId.current = activeApp.id;
-    fetch(`/api/keywords/list?appId=${activeApp.id}`)
-      .then((r) => r.json())
-      .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
-        setTrackedKeywords(new Set((saved ?? []).map((s) => s.term.toLowerCase())));
-        setResearchTerms((saved ?? []).map((s) => s.term));
-      })
-      .catch(() => {});
-  }, [activeApp?.id]);
+    if (!activeApp) return;
+
+    const listUrl = activeApp.id
+      ? `/api/keywords/list?appId=${activeApp.id}`
+      : workspaceId && activeApp.bundle_id
+        ? `/api/keywords/list?workspaceId=${workspaceId}&bundleId=${activeApp.bundle_id}&store=${activeApp.store}&country=${activeApp.country ?? "us"}`
+        : null;
+
+    if (!listUrl) return;
+
+    function refreshTracked() {
+      fetch(listUrl!)
+        .then((r) => r.json())
+        .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
+          setTrackedKeywords(new Set((saved ?? []).map((s) => s.term.toLowerCase())));
+          setResearchTerms((saved ?? []).map((s) => s.term));
+        })
+        .catch(() => {});
+    }
+
+    refreshTracked();
+    window.addEventListener("focus", refreshTracked);
+    return () => window.removeEventListener("focus", refreshTracked);
+  }, [activeApp?.id, activeApp?.bundle_id, workspaceId]);
 
   async function handleAddSeeds(seeds: string[]) {
     const existing = new Set(groups.map((g) => g.seed.toLowerCase()));
@@ -137,25 +153,11 @@ export default function KeywordCombinationPage() {
     persist(groups.map((g) => g.seed === seed ? { ...g, expanded: !g.expanded } : g));
   }
 
-  function handleToggleStar(seed: string, term: string) {
-    persist(groups.map((g) => g.seed !== seed ? g : {
-      ...g,
-      children: g.children.map((c) => c.term === term ? { ...c, starred: !c.starred } : c),
-    }));
-  }
 
   function handleRemoveGroup(seed: string) {
     persist(groups.filter((g) => g.seed !== seed));
   }
 
-  function handleDeleteTerms(terms: string[]) {
-    const termSet = new Set(terms.map((t) => t.toLowerCase()));
-    persist(
-      groups
-        .map((g) => ({ ...g, children: g.children.filter((c) => !termSet.has(c.term.toLowerCase())) }))
-        .filter((g) => g.children.length > 0)
-    );
-  }
 
   async function addTermsToTracked(terms: string[]) {
     // Filter out already tracked AND currently in-flight terms to prevent duplicates
@@ -201,15 +203,21 @@ export default function KeywordCombinationPage() {
       });
     }
 
+    // Save immediately with empty metrics so the keyword is persisted even if
+    // the user navigates away before Phase 1 metrics fetch completes.
+    // Await it (don't fire-and-forget) so we confirm it's in the DB before
+    // updating local tracked state — prevents phantom "tracked" entries that
+    // disappear after a reload because the save actually failed silently.
+    try { await saveKeywords({}); } catch {}
+    setTrackedKeywords((prev) => new Set([...prev, ...freshLower]));
+
     try {
-      // Phase 1: fast metrics (no LLM) — save immediately so keywords appear in
-      // Keyword Research right away without waiting for relevancy/opportunity
+      // Phase 1: fast metrics (no LLM) — update the saved record with real data
       const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams({ ...baseParams, fast: "1" })}`);
       const data = await res.json();
       await saveKeywords(data);
 
-      // Move from pending → tracked once saved
-      setTrackedKeywords((prev) => new Set([...prev, ...freshLower]));
+      // Clear pending now that metrics are saved
       setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
 
       // Fire-and-forget: pre-warm combinations for each newly tracked iOS keyword
@@ -238,7 +246,7 @@ export default function KeywordCombinationPage() {
         }
       }
     } catch {
-      // Phase 1 failed — clear pending so user can retry
+      // Phase 1 failed — keyword is already saved with empty metrics, just clear pending
       setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
     }
   }
@@ -261,10 +269,10 @@ export default function KeywordCombinationPage() {
           )}
           onAddSeeds={handleAddSeeds}
           onToggleExpand={handleToggleExpand}
-          onToggleStar={handleToggleStar}
+
           onAddTerm={(term) => addTermsToTracked([term])}
           onAddTerms={addTermsToTracked}
-          onDeleteTerms={handleDeleteTerms}
+
           onRemoveGroup={handleRemoveGroup}
           onLiveSearch={(term) => setLiveSearchTerm(term)}
         />

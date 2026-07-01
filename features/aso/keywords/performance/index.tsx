@@ -11,9 +11,10 @@ import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import {
-  DEFAULT_FILTERS, DEFAULT_RANGE, isBranded, wordCount,
+  DEFAULT_FILTERS, DEFAULT_RANGE, wordCount,
   type DateRange, type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
 } from "./types";
+import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -91,12 +92,13 @@ export default function KeywordPerformancePage() {
       .then((r) => r.json())
       .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
         if (!saved?.length) return;
+        const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
           saved.map((s) => ({
             term:    s.term,
             volume:  s.volume,
             rank:    s.rank,
-            starred: false,
+            starred: starred.has(s.term.toLowerCase()),
             loading: !s.hasCachedMetrics,
           }))
         );
@@ -113,8 +115,9 @@ export default function KeywordPerformancePage() {
     if (!fresh.length) return;
     newTerms = fresh;
 
+    const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
     setKeywords((prev) => [
-      ...newTerms.map((term) => ({ term, volume: 0, rank: null, starred: false, loading: true })),
+      ...newTerms.map((term) => ({ term, volume: 0, rank: null, starred: starred.has(term.toLowerCase()), loading: true })),
       ...prev,
     ]);
 
@@ -174,6 +177,16 @@ export default function KeywordPerformancePage() {
       if (store === "android") {
         runLiveSearchInBackground(newTerms, store, country);
       }
+
+      if (store === "ios") {
+        for (const term of newTerms) {
+          fetch("/api/keywords/expand-seed", {
+            method:  "POST",
+            headers: { "Content-Type": "application/json" },
+            body:    JSON.stringify({ term, store, country, appName: activeApp?.name ?? "" }),
+          }).catch(() => {});
+        }
+      }
     } catch {
       setKeywords((prev) =>
         prev.map((k) => (k.loading && newTerms.includes(k.term) ? { ...k, loading: false } : k))
@@ -217,10 +230,14 @@ export default function KeywordPerformancePage() {
   }
 
   function handleToggleStar(term: string) {
-    setKeywords((prev) => prev.map((k) => (k.term === term ? { ...k, starred: !k.starred } : k)));
+    const appId = activeApp?.id ?? activeApp?.store_id ?? "";
+    const nowStarred = toggleStarred(appId, term);
+    setKeywords((prev) => prev.map((k) => (k.term === term ? { ...k, starred: nowStarred } : k)));
   }
 
   function handleStarSelected(terms: string[]) {
+    const appId = activeApp?.id ?? activeApp?.store_id ?? "";
+    starTerms(appId, terms);
     const termSet = new Set(terms.map((t) => t.toLowerCase()));
     setKeywords((prev) => prev.map((k) => termSet.has(k.term.toLowerCase()) ? { ...k, starred: true } : k));
   }
@@ -350,11 +367,7 @@ export default function KeywordPerformancePage() {
       if (k.volume < filters.volumeMin || k.volume > filters.volumeMax) return false;
       if (filters.starredOnly && !k.starred) return false;
       if (k.rank !== null && (k.rank < filters.rankMin || k.rank > filters.rankMax)) return false;
-      if (filters.type !== "all") {
-        const branded = isBranded(k.term, activeApp.name);
-        if (filters.type === "branded" && !branded) return false;
-        if (filters.type === "generic" && branded) return false;
-      }
+
       if (filters.wordCount !== "all" && wordCount(k.term) !== filters.wordCount) return false;
       return true;
     });

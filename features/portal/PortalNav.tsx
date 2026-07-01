@@ -17,7 +17,7 @@ export default function PortalNav() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <a href="/" className="flex items-center gap-2">
           <span className="text-xl font-bold text-white tracking-tight">
-            aso<span className="text-indigo-400">ninja</span>
+            App<span className="text-indigo-400">ASO</span>
           </span>
         </a>
 

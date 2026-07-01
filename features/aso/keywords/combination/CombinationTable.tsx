@@ -4,7 +4,6 @@ import { Fragment, useState } from "react";
 import {
   PlusIcon,
   XMarkIcon,
-  StarIcon,
   CheckIcon,
   ChevronRightIcon,
   ChevronDownIcon,
@@ -25,10 +24,8 @@ type Props = {
   availableSeeds: string[];
   onAddSeeds: (seeds: string[]) => void;
   onToggleExpand: (seed: string) => void;
-  onToggleStar: (seed: string, term: string) => void;
   onAddTerm: (term: string) => void;
   onAddTerms: (terms: string[]) => void;
-  onDeleteTerms: (terms: string[]) => void;
   onRemoveGroup: (seed: string) => void;
   onLiveSearch: (term: string) => void;
 };
@@ -53,7 +50,7 @@ function groupAggregates(group: CombinationGroup) {
 }
 
 export function CombinationTable({
-  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onToggleStar, onAddTerm, onAddTerms, onDeleteTerms, onRemoveGroup, onLiveSearch,
+  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
@@ -129,14 +126,8 @@ export function CombinationTable({
 
       {availableSeeds.length > 0 && (
         <div className="px-4 py-3 border-b border-white/[0.07]">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center mb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">From Keyword Research</span>
-            <button
-              onClick={() => onAddSeeds(availableSeeds)}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              + Add all
-            </button>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {visibleSeeds.map((term) => (
@@ -264,7 +255,7 @@ export function CombinationTable({
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
-                            checked={selected.has(child.term)}
+                            checked={tracked || selected.has(child.term)}
                             onChange={() => toggleChild(child.term)}
                             disabled={tracked || pending}
                             className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 disabled:opacity-40"
@@ -272,9 +263,6 @@ export function CombinationTable({
                         </td>
                         <td className="px-4 py-3 pl-9">
                           <div className="flex items-center gap-1.5">
-                            <button onClick={() => onToggleStar(group.seed, child.term)} className="shrink-0 transition-colors">
-                              <StarIcon className={`size-3.5 ${child.starred ? "fill-amber-400 text-amber-400" : "text-gray-600"}`} />
-                            </button>
                             <span className="text-sm text-gray-300">{child.term}</span>
                           </div>
                         </td>
@@ -343,7 +331,6 @@ export function CombinationTable({
         onClear={() => setSelected(new Set())}
         onCopy={() => navigator.clipboard.writeText([...selected].join("\n")).catch(() => {})}
         onAdd={() => { onAddTerms([...selected]); setSelected(new Set()); }}
-        onDelete={() => { onDeleteTerms([...selected]); setSelected(new Set()); }}
       />
     </div>
   );

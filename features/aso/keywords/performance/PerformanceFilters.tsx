@@ -133,23 +133,6 @@ export function PerformanceFilters({ filters, onChange }: Props) {
           </button>
         </div>
 
-        <Dropdown label={`Type${filters.type === "all" ? "" : `: ${filters.type === "branded" ? "Branded" : "Generic"}`}`} active={filters.type !== "all"}>
-          <div className="flex flex-col gap-0.5">
-            {(["all", "branded", "generic"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => onChange({ type: t })}
-                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors ${
-                  filters.type === t ? "bg-indigo-500/15 text-indigo-300" : "text-gray-300 hover:bg-white/[0.05]"
-                }`}
-              >
-                {t === "all" ? "All" : t === "branded" ? "Branded" : "Generic"}
-                {filters.type === t && <CheckIcon className="size-3.5" />}
-              </button>
-            ))}
-          </div>
-        </Dropdown>
-
         <Dropdown label={`Word counts${filters.wordCount === "all" ? "" : `: ${filters.wordCount === 3 ? "3+" : filters.wordCount}`}`} active={filters.wordCount !== "all"}>
           <div className="flex flex-col gap-0.5">
             {([

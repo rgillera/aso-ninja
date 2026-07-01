@@ -22,7 +22,7 @@ export default function PortalFooter() {
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           <div className="col-span-2 lg:col-span-1">
             <span className="text-xl font-bold text-white tracking-tight">
-              aso<span className="text-indigo-400">ninja</span>
+              App<span className="text-indigo-400">ASO</span>
             </span>
             <p className="mt-4 text-sm text-gray-500 max-w-xs">
               App Store Optimization intelligence for modern app teams.

@@ -55,9 +55,10 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
         <button
           onClick={onAdd}
           title="Add to tracked keywords"
-          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-indigo-400 hover:bg-white/[0.06] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
         >
           <PlusCircleIcon className="size-4" />
+          Add
         </button>
       )}
       {onStar && (

@@ -8,6 +8,7 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
+import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import type { Keyword } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
@@ -84,6 +85,7 @@ export default function KeywordResearchPage() {
         const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
 
         // Set cached keywords immediately — these are complete, no loading state
+        const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
           withMetrics.map((s) => ({
             keyword:     s.term,
@@ -93,7 +95,7 @@ export default function KeywordResearchPage() {
             opportunity: s.opportunity,
             relevancy:   s.relevancy,
             rank:        s.rank,
-            starred:     false,
+            starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
           }))
         );
@@ -117,11 +119,12 @@ export default function KeywordResearchPage() {
     if (!fresh.length) return;
     newKeywords = fresh;
 
+    const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
     setKeywords((prev) => [
       ...newKeywords.map((kw) => ({
         keyword: kw,
         volume: 0, diff: 0, chance: 0, opportunity: 0,
-        rank: null, starred: false, loading: true,
+        rank: null, starred: starred.has(kw.toLowerCase()), loading: true,
       })),
       ...prev,
     ]);
@@ -256,12 +259,19 @@ export default function KeywordResearchPage() {
   }
 
   function handleToggleStar(index: number) {
+    const appId = activeApp?.id ?? activeApp?.store_id ?? "";
     setKeywords((prev) =>
-      prev.map((k, i) => i === index ? { ...k, starred: !k.starred } : k)
+      prev.map((k, i) => {
+        if (i !== index) return k;
+        const nowStarred = toggleStarred(appId, k.keyword);
+        return { ...k, starred: nowStarred };
+      })
     );
   }
 
   function handleStarSelected(terms: string[]) {
+    const appId = activeApp?.id ?? activeApp?.store_id ?? "";
+    starTerms(appId, terms);
     const termSet = new Set(terms.map((t) => t.toLowerCase()));
     setKeywords((prev) =>
       prev.map((k) => termSet.has(k.keyword.toLowerCase()) ? { ...k, starred: true } : k)

@@ -15,7 +15,7 @@ import {
   ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
-import { formatRank, formatSnapshotDate, isBranded, rankGrowth, volumeGrowth } from "./types";
+import { formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -327,13 +327,6 @@ export function PerformanceTable({
                           <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400" : "text-gray-600"}`} />
                         </button>
                         <span className="text-sm text-gray-300 truncate">{k.term}</span>
-                        <span className={`text-[9px] rounded px-1 py-0.5 ring-1 shrink-0 ${
-                          isBranded(k.term, appName)
-                            ? "text-indigo-300 ring-indigo-500/30 bg-indigo-500/10"
-                            : "text-gray-500 ring-white/[0.08] bg-white/[0.03]"
-                        }`}>
-                          {isBranded(k.term, appName) ? "B" : "G"}
-                        </span>
                       </div>
                     </td>
                     <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-r border-white/[0.04] px-3 py-3">
