@@ -137,18 +137,6 @@ function isBrandKeyword(keyword: string, appName: string): boolean {
   return false;
 }
 
-// Bonus for partial app-name token overlap: "pet tracker" shares "pet" with
-// "PawWare: Pet Care", so it earns more relevancy than "nutrition tracker" which
-// shares nothing. Scales 0–30 by fraction of keyword tokens matched. Capped so
-// combined score never reaches 100 (that's reserved for full brand keywords).
-function nameTokenBoost(keyword: string, appName: string): number {
-  const kwWords  = wordTokens(keyword);
-  const appWords = wordTokens(appName);
-  if (!kwWords.length || !appWords.length) return 0;
-  const appWordSet  = new Set(appWords);
-  const matchCount  = kwWords.filter((w) => appWordSet.has(w)).length;
-  return matchCount === 0 ? 0 : Math.round((matchCount / kwWords.length) * 30);
-}
 
 async function computeRelevancy(
   keyword: string,
@@ -201,9 +189,36 @@ async function computeRelevancy(
   const base = hasDesc
     ? Math.round(descScore * 0.7 + semanticScore * 0.3)
     : Math.round(semanticScore);
-  const final = Math.min(base + nameTokenBoost(keyword, appName), 99);
-  console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasDesc=${hasDesc} → ${final}`);
-  return final;
+  console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasDesc=${hasDesc} → ${base}`);
+  return base;
+}
+
+// ── Rank matching ─────────────────────────────────────────────────────────────
+
+// Strip punctuation/extra spaces
+function normalizeForRankMatch(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// Three-tier fuzzy match against a list of result names:
+//   1. Exact lowercase trim (fast path)
+//   2. Punctuation-normalized (handles dash/colon variants)
+//   3. Starts-with either direction (handles stored short name vs full title in results)
+function findRankIdx(resultNames: string[], appName: string): number {
+  if (!appName) return -1;
+  const name     = appName.toLowerCase().trim();
+  const nameNorm = normalizeForRankMatch(appName);
+
+  let idx = resultNames.findIndex((n) => n.toLowerCase().trim() === name);
+  if (idx >= 0) return idx;
+
+  idx = resultNames.findIndex((n) => normalizeForRankMatch(n) === nameNorm);
+  if (idx >= 0) return idx;
+
+  return resultNames.findIndex((n) => {
+    const nNorm = normalizeForRankMatch(n);
+    return nNorm.startsWith(nameNorm) || nameNorm.startsWith(nNorm);
+  });
 }
 
 // ── App metadata ──────────────────────────────────────────────────────────────
@@ -331,7 +346,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     let fresh = false;
 
     if (!apps) {
-      const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
+      const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const searchRes = await fetch(searchUrl, { cache: "no-store" } as any);
       // A non-2xx here (most often a 403 from Apple's per-IP rate limit) means
@@ -371,8 +386,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
 
     if (fresh) await persistIosSearch(supabase, term, country, apps, volume, diff);
 
-    const name    = appName.toLowerCase().trim();
-    const rankIdx = name ? apps.findIndex((r) => r.trackName.toLowerCase().trim() === name) : -1;
+    const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
 
     const rawChance = Math.min(Math.max(100 - diff, 5), 95);
@@ -403,7 +417,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     const [apps, suggestions]: [any[], string[]] = await Promise.all([ // eslint-disable-line @typescript-eslint/no-explicit-any
-      api.search({ term, country: country.toLowerCase(), num: 100 }),
+      api.search({ term, country: country.toLowerCase(), num: 250 }),
       api.suggest({ term, lang: "en", country: country.toLowerCase() }).catch(() => [] as string[]),
     ]);
 
@@ -421,15 +435,19 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const volume = hintsScore(suggestIdx, suggestions.length || 5, fallbackScore);
 
     const top5 = apps.slice(0, 5);
-    const avgScore = top5.length > 0
+    // Use rating *count* (install signal), not star rating — same approach as iOS.
+    // Star ratings cluster at 4.0–4.5 for virtually all apps, giving every keyword
+    // a diff of 87–97 regardless of actual competition.
+    const avgRatings = top5.length > 0
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? top5.reduce((s: number, r: any) => s + (r.score ?? 0), 0) / top5.length
+      ? top5.reduce((s: number, r: any) => s + (r.ratings ?? r.reviews ?? 0), 0) / top5.length
       : 0;
-    const diff = avgScore < 0.1 ? 0 : Math.min(Math.round((Math.log10(avgScore * 10) / Math.log10(50)) * 100), 100);
+    const diff = avgRatings < 10
+      ? 0
+      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
 
-    const name    = appName.toLowerCase().trim();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rankIdx = name ? apps.findIndex((r: any) => (r.title ?? "").toLowerCase().trim() === name) : -1;
+    const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
 
     const rawChance = Math.min(Math.max(100 - diff, 5), 95);
@@ -489,14 +507,9 @@ export async function GET(request: NextRequest) {
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
-      const boost    = (!isBrand && appName) ? nameTokenBoost(term, appName) : 0;
-      const relevancy = isBrand ? 100 : Math.min((row.relevancy ?? 0) + boost, 99);
+      const relevancy = isBrand ? 100 : (row.relevancy ?? null);
       const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
-      const opportunity = isBrand
-        ? Math.round(rawBase)
-        : boost > 0
-          ? Math.round(rawBase * Math.pow(relevancy / 100, 2))
-          : row.opportunity;
+      const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
       dbCache[term] = {
         volume: row.volume, diff: row.diff, chance: row.chance,
         opportunity, results: 0,
