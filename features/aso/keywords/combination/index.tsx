@@ -6,6 +6,7 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
+import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { CombinationTable } from "./CombinationTable";
 import type { CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
@@ -30,6 +31,7 @@ export default function KeywordCombinationPage() {
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [researchTerms,  setResearchTerms]  = useState<string[]>([]);
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
+  const [appSubtitle,    setAppSubtitle]    = useState<string>("");
 
   const appId = activeApp?.id ?? activeApp?.store_id;
 
@@ -50,6 +52,20 @@ export default function KeywordCombinationPage() {
       try { localStorage.setItem(`combinations-${appId}`, JSON.stringify(updated)); } catch {}
     }
   }
+
+  // Fetch app subtitle/short-description for AI context
+  const loadedSubtitleFor = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const storeId = activeApp?.store_id;
+    const store   = activeApp?.store;
+    if (!storeId || !store || loadedSubtitleFor.current === storeId) return;
+    loadedSubtitleFor.current = storeId;
+    const country = activeApp?.country ?? "us";
+    fetch(`/api/keywords/app-metadata?storeId=${storeId}&store=${store}&country=${country}`)
+      .then((r) => r.json())
+      .then((d) => setAppSubtitle(d?.subtitle ?? ""))
+      .catch(() => {});
+  }, [activeApp?.store_id, activeApp?.store, activeApp?.country]);
 
   // Load keywords already tracked in Keyword Research for this app — used both to
   // mark "already tracked" rows and to offer them as one-click combination seeds
@@ -80,7 +96,12 @@ export default function KeywordCombinationPage() {
 
     const country = activeApp?.country ?? "us";
     try {
-      const params = new URLSearchParams({ seeds: fresh.join(","), country });
+      const params = new URLSearchParams({
+        seeds: fresh.join(","),
+        country,
+        appName: activeApp?.name ?? "",
+        appSubtitle,
+      });
       const res  = await fetch(`/api/keywords/combinations?${params}`);
       const data: CombinationsResult = await res.json();
 
@@ -128,41 +149,64 @@ export default function KeywordCombinationPage() {
     const fresh = terms.filter((t) => !trackedKeywords.has(t.toLowerCase()));
     if (!fresh.length) return;
 
+    // Optimistic: mark as tracked immediately so the UI reflects it
     setTrackedKeywords((prev) => new Set([...prev, ...fresh.map((t) => t.toLowerCase())]));
 
     const store   = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
-    const params  = new URLSearchParams({
-      terms: fresh.join(","),
+
+    const baseParams = {
+      terms:   fresh.join(","),
       store,
       country,
       appName: activeApp?.name ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
-    });
+    };
 
+    async function saveKeywords(metrics: Record<string, unknown>) {
+      if (!workspaceId) return;
+      await fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: fresh,
+          workspaceId,
+          metrics,
+          appId:    activeApp?.id,
+          bundleId: activeApp?.bundle_id,
+          storeId:  activeApp?.store_id,
+          appName:  activeApp?.name,
+          iconUrl:  activeApp?.icon_url ?? undefined,
+          store,
+          country,
+        }),
+      });
+    }
+
+    // Phase 1: fast metrics (no LLM) — save immediately so keywords appear in
+    // Keyword Research right away without waiting for relevancy/opportunity
     try {
-      const res  = await fetch(`/api/keywords/metrics?${params}`);
+      const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams({ ...baseParams, fast: "1" })}`);
       const data = await res.json();
+      await saveKeywords(data);
+    } catch {
+      return;
+    }
 
-      if (workspaceId) {
-        fetch("/api/keywords/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            terms: fresh,
-            workspaceId,
-            metrics: data,
-            appId:    activeApp?.id,
-            bundleId: activeApp?.bundle_id,
-            storeId:  activeApp?.store_id,
-            appName:  activeApp?.name,
-            iconUrl:  activeApp?.icon_url ?? undefined,
-            store,
-            country,
-          }),
-        });
-      }
+    // Phase 2: full metrics (LLM relevancy + opportunity) — re-save to update
+    try {
+      const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
+      const data = await res.json();
+      await saveKeywords(data);
     } catch {}
+
+    // Android needs a separate live search to write keyword_rankings_history —
+    // iOS already does this inside the metrics fetch
+    if (store === "android") {
+      for (const term of fresh) {
+        try { await fetchLiveSearchResults(term, store, country); } catch {}
+      }
+    }
   }
 
   if (!activeApp) {

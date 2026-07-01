@@ -97,7 +97,26 @@ export async function GET(request: NextRequest) {
   const country    = (searchParams.get("country") ?? "us").toLowerCase();
   const descOffset = Math.max(0, parseInt(searchParams.get("descOffset") ?? "0", 10));
 
-  if (!storeId || store !== "ios") return NextResponse.json(EMPTY);
+  if (!storeId) return NextResponse.json(EMPTY);
+
+  // Android: lightweight path — just return the short description as subtitle, skip keyword extraction
+  if (store === "android") {
+    try {
+      const res = await fetch(
+        `https://play.google.com/store/apps/details?id=${storeId}&hl=en&gl=${country}`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" }, cache: "no-store" } as any,
+      );
+      if (!res.ok) return NextResponse.json(EMPTY);
+      const html = await res.text();
+      const m = html.match(/<meta[^>]+itemprop="description"[^>]+content="([^"]+)"/)
+             ?? html.match(/content="([^"]+)"[^>]+itemprop="description"/);
+      const subtitle = m ? m[1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : "";
+      return NextResponse.json({ ...EMPTY, subtitle });
+    } catch {
+      return NextResponse.json(EMPTY);
+    }
+  }
 
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

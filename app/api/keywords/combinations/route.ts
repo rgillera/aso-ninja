@@ -9,22 +9,28 @@ export type CombinationsResult = { groups: CombinationGroup[] };
 
 const EMPTY: CombinationsResult = { groups: [] };
 
-async function generateCombinations(seed: string, count: number): Promise<string[]> {
+async function generateCombinations(seed: string, count: number, appName: string, appSubtitle: string): Promise<string[]> {
+  const contextLines: string[] = [];
+  if (appName)     contextLines.push(`App name: "${appName}"`);
+  if (appSubtitle) contextLines.push(`App subtitle/short description: "${appSubtitle}"`);
+  const appContext = contextLines.length
+    ? `Context about the app:\n${contextLines.join("\n")}\n\nOnly suggest combinations relevant to what this app does and the users it serves.`
+    : "";
+
   const prompt = `You are an App Store Optimization expert. Generate ${count} realistic App Store search phrases that each contain the exact word or phrase "${seed}".
 
-Vary the surrounding words with modifiers a real user would type — pick whichever of these fit what kind of app "${seed}" suggests, ignore the ones that don't apply:
-- intent: free, pro, premium, online, offline
-- audience: for beginners, for kids, for seniors, for women, for men
-- function: tracker, planner, generator, creator, manager, guide, tips
-- discovery: near me, alternative, vs, best
+${appContext}
+
+Think about the specific niche and users of this app. Combine "${seed}" with words that users of THIS app would actually search for — related topics, tasks, problems, or features specific to its domain.
 
 Rules:
 - Each phrase MUST include "${seed}" as a substring
 - 2-4 words total per phrase
 - Lowercase, no punctuation
 - No duplicates
+- No generic filler like "for beginners" or "online" unless it genuinely fits this app
 
-Reply with ONLY a JSON array of strings. Example: ["${seed} tips","${seed} plan"]`;
+Reply with ONLY a JSON array of strings. Example: ["${seed} tracker","pet ${seed}"]`;
 
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
@@ -83,12 +89,14 @@ export async function GET(request: NextRequest) {
   const country     = (searchParams.get("country") ?? "us").toLowerCase();
   const perSeed     = Math.min(Math.max(parseInt(searchParams.get("perSeed") ?? "8", 10), 1), 20);
 
+  const appName     = searchParams.get("appName") ?? "";
+  const appSubtitle = searchParams.get("appSubtitle") ?? "";
   const seeds = [...new Set(seedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean))];
   if (!seeds.length) return NextResponse.json(EMPTY);
 
   const groups: CombinationGroup[] = await Promise.all(
     seeds.map(async (seed) => {
-      const phrases = await generateCombinations(seed, perSeed);
+      const phrases = await generateCombinations(seed, perSeed, appName, appSubtitle);
       const children = await Promise.all(phrases.map((term) => fetchVolumeAndResults(term, country)));
       children.sort((a, b) => b.volume - a.volume);
       return { seed, children };
