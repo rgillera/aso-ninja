@@ -308,7 +308,7 @@ async function getCachedIosSearch(
 ): Promise<RawIosApp[] | null> {
   const today = new Date().toISOString().split("T")[0];
   const { data } = await supabase
-    .from("keyword_popularity_snapshots")
+    .from("keyword_volume_history")
     .select("raw_apps")
     .eq("term", term.toLowerCase().trim())
     .eq("store", "ios")
@@ -325,7 +325,7 @@ async function persistIosSearch(
 ) {
   const today = new Date().toISOString().split("T")[0];
   const normTerm = term.toLowerCase().trim();
-  await supabase.from("keyword_popularity_snapshots").upsert(
+  await supabase.from("keyword_volume_history").upsert(
     { term: normTerm, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
     { onConflict: "term,store,country,recorded_on" }
   );
@@ -562,7 +562,7 @@ export async function GET(request: NextRequest) {
         entries
           .filter(([, m]) => m !== null)
           .map(([term, m]) =>
-            supabase.from("keyword_popularity_snapshots").upsert(
+            supabase.from("keyword_volume_history").upsert(
               { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
               { onConflict: "term,store,country,recorded_on" }
             )

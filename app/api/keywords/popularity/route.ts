@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("keyword_popularity_snapshots")
+    .from("keyword_volume_history")
     .select("score, recorded_on")
     .eq("term", term)
     .eq("store", store)

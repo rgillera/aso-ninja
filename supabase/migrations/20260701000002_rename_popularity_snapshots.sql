@@ -1,0 +1,1 @@
+alter table keyword_popularity_snapshots rename to keyword_volume_history;

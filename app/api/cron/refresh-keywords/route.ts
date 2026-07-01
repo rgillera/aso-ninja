@@ -87,7 +87,7 @@ export async function GET(req: Request) {
 
         const { volume, diff } = computeVolumeAndDiff(apps, term);
 
-        await supabase.from("keyword_popularity_snapshots").upsert(
+        await supabase.from("keyword_volume_history").upsert(
           { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
           { onConflict: "term,store,country,recorded_on" }
         );

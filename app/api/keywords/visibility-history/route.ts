@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
   const [popRes, rankRes] = await Promise.all([
     supabase
-      .from("keyword_popularity_snapshots")
+      .from("keyword_volume_history")
       .select("term, score, recorded_on")
       .in("term", terms)
       .eq("store", store)

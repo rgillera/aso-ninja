@@ -1,5 +1,4 @@
--- Returns distinct (term, store, country) combos that have historical
--- snapshots but no entry yet for today. Used by the daily cron job.
+-- Recreate function to reference renamed table keyword_volume_history
 create or replace function stale_keywords_today(p_today date, p_limit int default 200)
 returns table(term text, store text, country text)
 language sql security definer

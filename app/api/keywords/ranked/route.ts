@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   // Fetch volumes for all unique keywords
   const terms = [...kwMap.keys()];
   const { data: volRows } = await supabase
-    .from("keyword_popularity_snapshots")
+    .from("keyword_volume_history")
     .select("term, score, recorded_on")
     .in("term", terms)
     .eq("store", store)
