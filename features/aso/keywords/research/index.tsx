@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -35,6 +35,7 @@ export default function KeywordResearchPage() {
   // to keep the Add button in a loading state until the keyword is actually
   // persisted, so users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
 
   // Load/save competitors per app in localStorage
   useEffect(() => {
@@ -137,13 +138,14 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${fastParams}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null } | true> & { _rateLimited?: boolean } = await res.json();
+      if (data._rateLimited) setRateLimited(true);
 
       setKeywords((prev) =>
         prev.map((k) => {
           if (!k.loading || !newKeywords.includes(k.keyword)) return k;
           const m = data[k.keyword];
-          return m
+          return m && m !== true
             ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, loading: false }
             : { ...k, loading: false };
         })
@@ -176,7 +178,8 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean } = await res.json();
+      if (data._rateLimited) setRateLimited(true);
 
       setKeywords((prev) =>
         prev.map((k) => {
@@ -280,6 +283,16 @@ export default function KeywordResearchPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={activeApp ?? null} title="Keyword Research" />
+
+      {rateLimited && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">Apple&apos;s App Store API rate limit reached. Some keywords are missing data. Wait a minute and re-add them.</span>
+          <button onClick={() => setRateLimited(false)} className="shrink-0 hover:text-amber-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <KeywordSuggestionsPanel

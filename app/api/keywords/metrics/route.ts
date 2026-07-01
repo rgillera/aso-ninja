@@ -343,7 +343,7 @@ async function persistIosSearch(
   }
 }
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, supabase: SupabaseClient): Promise<Metrics | null> {
+async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, supabase: SupabaseClient): Promise<Metrics | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
     let fresh = false;
@@ -352,11 +352,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
       const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const searchRes = await fetch(searchUrl, { cache: "no-store" } as any);
-      // A non-2xx here (most often a 403 from Apple's per-IP rate limit) means
-      // we genuinely don't know the answer — return null rather than fabricating
-      // a low-confidence guess, so it never gets written to the shared cache
-      // and poisons every other app/workspace's lookup for this term today.
-      if (!searchRes.ok) return null;
+      if (!searchRes.ok) return searchRes.status === 403 ? "rate_limited" : null;
       const searchData = await searchRes.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       apps = ((searchData.results ?? []) as any[]).map((a) => ({
@@ -524,6 +520,7 @@ export async function GET(request: NextRequest) {
   const uncached = terms.filter((t) => !dbCache[t]);
 
   let freshMetrics: Record<string, Metrics> = {};
+  let rateLimited = false;
   if (uncached.length) {
     // Fetch app description + embed it once; shared across all keyword lookups.
     // Skipped entirely in fast mode since it's only used for relevancy.
@@ -539,8 +536,9 @@ export async function GET(request: NextRequest) {
     if (store === "ios") {
       entries = [];
       for (const term of uncached) {
-        const metrics = await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
-        entries.push([term, metrics] as const);
+        const result = await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
+        if (result === "rate_limited") { rateLimited = true; entries.push([term, null] as const); }
+        else entries.push([term, result] as const);
       }
     } else {
       entries = await Promise.all(
@@ -572,5 +570,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ...dbCache, ...freshMetrics });
+  return NextResponse.json({ ...dbCache, ...freshMetrics, ...(rateLimited ? { _rateLimited: true } : {}) });
 }
