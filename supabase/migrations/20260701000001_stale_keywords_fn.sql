@@ -5,9 +5,9 @@ returns table(term text, store text, country text)
 language sql security definer
 as $$
   select distinct kps.term, kps.store, kps.country
-  from keyword_volume_history kps
+  from keyword_popularity_snapshots kps
   where not exists (
-    select 1 from keyword_volume_history kps2
+    select 1 from keyword_popularity_snapshots kps2
     where kps2.term    = kps.term
       and kps2.store   = kps.store
       and kps2.country = kps.country
