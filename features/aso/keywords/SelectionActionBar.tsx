@@ -8,6 +8,7 @@ import {
   StarIcon,
   TableCellsIcon,
   TrashIcon,
+  PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 
 type Props = {
@@ -15,12 +16,13 @@ type Props = {
   total: number;
   onClear: () => void;
   onCopy: () => void;
-  onStar: () => void;
-  onExport: () => void;
-  onDelete: () => void;
+  onStar?: () => void;
+  onExport?: () => void;
+  onDelete?: () => void;
+  onAdd?: () => void;
 };
 
-export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onExport, onDelete }: Props) {
+export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onExport, onDelete, onAdd }: Props) {
   const [copied, setCopied] = useState(false);
 
   if (count === 0) return null;
@@ -49,27 +51,42 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
       >
         {copied ? <ClipboardDocumentCheckIcon className="size-4 text-emerald-400" /> : <ClipboardDocumentIcon className="size-4" />}
       </button>
-      <button
-        onClick={onStar}
-        title="Star selection"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-amber-400 hover:bg-white/[0.06] transition-colors"
-      >
-        <StarIcon className="size-4" />
-      </button>
-      <button
-        onClick={onExport}
-        title="Export to Google Sheets (CSV)"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
-      >
-        <TableCellsIcon className="size-4" />
-      </button>
-      <button
-        onClick={onDelete}
-        title="Delete selection"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
-      >
-        <TrashIcon className="size-4" />
-      </button>
+      {onAdd && (
+        <button
+          onClick={onAdd}
+          title="Add to tracked keywords"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-indigo-400 hover:bg-white/[0.06] transition-colors"
+        >
+          <PlusCircleIcon className="size-4" />
+        </button>
+      )}
+      {onStar && (
+        <button
+          onClick={onStar}
+          title="Star selection"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-amber-400 hover:bg-white/[0.06] transition-colors"
+        >
+          <StarIcon className="size-4" />
+        </button>
+      )}
+      {onExport && (
+        <button
+          onClick={onExport}
+          title="Export to Google Sheets (CSV)"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
+        >
+          <TableCellsIcon className="size-4" />
+        </button>
+      )}
+      {onDelete && (
+        <button
+          onClick={onDelete}
+          title="Delete selection"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
+        >
+          <TrashIcon className="size-4" />
+        </button>
+      )}
     </div>
   );
 }

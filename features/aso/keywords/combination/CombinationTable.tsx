@@ -13,6 +13,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
+import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import type { CombinationGroup } from "./types";
 
 type SortKey = "keyword" | "combinations" | "volume" | "totalResults" | "results";
@@ -20,12 +21,14 @@ type SortKey = "keyword" | "combinations" | "volume" | "totalResults" | "results
 type Props = {
   groups: CombinationGroup[];
   trackedSet: Set<string>;
+  pendingSet: Set<string>;
   availableSeeds: string[];
   onAddSeeds: (seeds: string[]) => void;
   onToggleExpand: (seed: string) => void;
   onToggleStar: (seed: string, term: string) => void;
   onAddTerm: (term: string) => void;
   onAddTerms: (terms: string[]) => void;
+  onDeleteTerms: (terms: string[]) => void;
   onRemoveGroup: (seed: string) => void;
   onLiveSearch: (term: string) => void;
 };
@@ -50,7 +53,7 @@ function groupAggregates(group: CombinationGroup) {
 }
 
 export function CombinationTable({
-  groups, trackedSet, availableSeeds, onAddSeeds, onToggleExpand, onToggleStar, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch,
+  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onToggleStar, onAddTerm, onAddTerms, onDeleteTerms, onRemoveGroup, onLiveSearch,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
@@ -158,17 +161,6 @@ export function CombinationTable({
         </div>
       )}
 
-      {selected.size > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.07] bg-indigo-500/[0.06]">
-          <span className="text-xs text-indigo-300">{selected.size} selected</span>
-          <button
-            onClick={() => { onAddTerms([...selected]); setSelected(new Set()); }}
-            className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            + Add to tracked keywords
-          </button>
-        </div>
-      )}
 
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -208,6 +200,7 @@ export function CombinationTable({
               const agg = groupAggregates(group);
               const terms = group.children.map((c) => c.term);
               const groupChecked = terms.length > 0 && terms.every((t) => selected.has(t));
+              const pendingCount = group.children.filter((c) => pendingSet.has(c.term.toLowerCase())).length;
               return (
                 <Fragment key={group.seed}>
                   <tr className="hover:bg-white/[0.02] transition-colors group">
@@ -230,6 +223,12 @@ export function CombinationTable({
                           : <ChevronRightIcon className="size-3.5 text-gray-500 shrink-0" />}
                         {group.seed}
                       </button>
+                      {pendingCount > 0 && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-indigo-400">
+                          <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
+                          Adding {pendingCount}…
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-300">
                       {group.loading ? <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" /> : agg.combinations}
@@ -255,6 +254,7 @@ export function CombinationTable({
 
                   {group.expanded && group.children.map((child) => {
                     const tracked = trackedSet.has(child.term.toLowerCase());
+                    const pending = pendingSet.has(child.term.toLowerCase());
                     return (
                       <tr key={child.term} className="hover:bg-white/[0.02] transition-colors group bg-white/[0.01]">
                         <td className="px-4 py-3">
@@ -262,7 +262,8 @@ export function CombinationTable({
                             type="checkbox"
                             checked={selected.has(child.term)}
                             onChange={() => toggleChild(child.term)}
-                            className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                            disabled={tracked || pending}
+                            className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 disabled:opacity-40"
                           />
                         </td>
                         <td className="px-4 py-3 pl-9">
@@ -286,15 +287,21 @@ export function CombinationTable({
                               <MagnifyingGlassIcon className="size-3" />
                             </button>
                             <button
-                              onClick={() => !tracked && onAddTerm(child.term)}
-                              disabled={tracked}
+                              onClick={() => !tracked && !pending && onAddTerm(child.term)}
+                              disabled={tracked || pending}
                               className={`flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
                                 tracked
                                   ? "bg-indigo-500/20 ring-indigo-500/40 text-indigo-300"
+                                  : pending
+                                  ? "bg-white/[0.04] ring-white/[0.08] text-gray-600 cursor-wait"
                                   : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"
                               }`}
                             >
-                              {tracked ? <CheckIcon className="size-3" /> : <PlusIcon className="size-3" />}
+                              {tracked
+                                ? <CheckIcon className="size-3" />
+                                : pending
+                                ? <div className="size-3 rounded-full border border-gray-500 border-t-transparent animate-spin" />
+                                : <PlusIcon className="size-3" />}
                             </button>
                           </div>
                         </td>
@@ -315,6 +322,15 @@ export function CombinationTable({
           </div>
         )}
       </div>
+
+      <SelectionActionBar
+        count={selected.size}
+        total={groups.reduce((s, g) => s + g.children.length, 0)}
+        onClear={() => setSelected(new Set())}
+        onCopy={() => navigator.clipboard.writeText([...selected].join("\n")).catch(() => {})}
+        onAdd={() => { onAddTerms([...selected]); setSelected(new Set()); }}
+        onDelete={() => { onDeleteTerms([...selected]); setSelected(new Set()); }}
+      />
     </div>
   );
 }

@@ -27,11 +27,12 @@ function NoAppSelected() {
 export default function KeywordCombinationPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const [groups,         setGroups]         = useState<CombinationGroup[]>([]);
+  const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
-  const [researchTerms,  setResearchTerms]  = useState<string[]>([]);
-  const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
-  const [appSubtitle,    setAppSubtitle]    = useState<string>("");
+  const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
+  const [researchTerms,   setResearchTerms]   = useState<string[]>([]);
+  const [liveSearchTerm,  setLiveSearchTerm]  = useState<string | null>(null);
+  const [appSubtitle,     setAppSubtitle]     = useState<string>("");
 
   const appId = activeApp?.id ?? activeApp?.store_id;
 
@@ -145,12 +146,27 @@ export default function KeywordCombinationPage() {
     persist(groups.filter((g) => g.seed !== seed));
   }
 
+  function handleDeleteTerms(terms: string[]) {
+    const termSet = new Set(terms.map((t) => t.toLowerCase()));
+    persist(
+      groups
+        .map((g) => ({ ...g, children: g.children.filter((c) => !termSet.has(c.term.toLowerCase())) }))
+        .filter((g) => g.children.length > 0)
+    );
+  }
+
   async function addTermsToTracked(terms: string[]) {
-    const fresh = terms.filter((t) => !trackedKeywords.has(t.toLowerCase()));
+    // Filter out already tracked AND currently in-flight terms to prevent duplicates
+    const fresh = terms.filter((t) => {
+      const lower = t.toLowerCase();
+      return !trackedKeywords.has(lower) && !pendingTerms.has(lower);
+    });
     if (!fresh.length) return;
 
-    // Optimistic: mark as tracked immediately so the UI reflects it
-    setTrackedKeywords((prev) => new Set([...prev, ...fresh.map((t) => t.toLowerCase())]));
+    const freshLower = fresh.map((t) => t.toLowerCase());
+
+    // Mark as pending immediately — blocks duplicate clicks and bulk re-adds
+    setPendingTerms((prev) => new Set([...prev, ...freshLower]));
 
     const store   = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
@@ -183,29 +199,34 @@ export default function KeywordCombinationPage() {
       });
     }
 
-    // Phase 1: fast metrics (no LLM) — save immediately so keywords appear in
-    // Keyword Research right away without waiting for relevancy/opportunity
     try {
+      // Phase 1: fast metrics (no LLM) — save immediately so keywords appear in
+      // Keyword Research right away without waiting for relevancy/opportunity
       const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams({ ...baseParams, fast: "1" })}`);
       const data = await res.json();
       await saveKeywords(data);
-    } catch {
-      return;
-    }
 
-    // Phase 2: full metrics (LLM relevancy + opportunity) — re-save to update
-    try {
-      const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
-      const data = await res.json();
-      await saveKeywords(data);
-    } catch {}
+      // Move from pending → tracked once saved
+      setTrackedKeywords((prev) => new Set([...prev, ...freshLower]));
+      setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
 
-    // Android needs a separate live search to write keyword_rankings_history —
-    // iOS already does this inside the metrics fetch
-    if (store === "android") {
-      for (const term of fresh) {
-        try { await fetchLiveSearchResults(term, store, country); } catch {}
+      // Phase 2: full metrics (LLM relevancy + opportunity) — re-save to update
+      try {
+        const res2  = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
+        const data2 = await res2.json();
+        await saveKeywords(data2);
+      } catch {}
+
+      // Android needs a separate live search to write keyword_rankings_history —
+      // iOS already does this inside the metrics fetch
+      if (store === "android") {
+        for (const term of fresh) {
+          try { await fetchLiveSearchResults(term, store, country); } catch {}
+        }
       }
+    } catch {
+      // Phase 1 failed — clear pending so user can retry
+      setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
     }
   }
 
@@ -221,6 +242,7 @@ export default function KeywordCombinationPage() {
         <CombinationTable
           groups={groups}
           trackedSet={trackedKeywords}
+          pendingSet={pendingTerms}
           availableSeeds={researchTerms.filter(
             (t) => !groups.some((g) => g.seed === t.toLowerCase())
           )}
@@ -229,6 +251,7 @@ export default function KeywordCombinationPage() {
           onToggleStar={handleToggleStar}
           onAddTerm={(term) => addTermsToTracked([term])}
           onAddTerms={addTermsToTracked}
+          onDeleteTerms={handleDeleteTerms}
           onRemoveGroup={handleRemoveGroup}
           onLiveSearch={(term) => setLiveSearchTerm(term)}
         />

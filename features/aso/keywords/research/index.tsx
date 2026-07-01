@@ -102,10 +102,10 @@ export default function KeywordResearchPage() {
   }, [activeApp?.id, activeApp?.bundle_id]);
 
   async function handleAddKeywords(newKeywords: string[]) {
-    // Deduplicate against already-tracked (non-loading) keywords
-    const existing = new Set(
-      keywords.filter((k) => !k.loading).map((k) => k.keyword.toLowerCase())
-    );
+    // Deduplicate against all tracked keywords including those still loading —
+    // excluding loading ones caused a second prepend row for keywords that were
+    // loaded from DB with loading:true and then passed to handleAddKeywords.
+    const existing = new Set(keywords.map((k) => k.keyword.toLowerCase()));
     const fresh = newKeywords.filter((kw) => !existing.has(kw.toLowerCase()));
     if (!fresh.length) return;
     newKeywords = fresh;
