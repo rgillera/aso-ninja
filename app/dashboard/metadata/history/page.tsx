@@ -7,7 +7,6 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 export default async function Page() {
   const cookieStore = await cookies();
   const lastAppId = cookieStore.get("lastAppId")?.value;
-  if (lastAppId) redirect(`/dashboard/apps/${lastAppId}/history`);
 
   const supabase = await createClient();
   const { data: workspaces } = await supabase.from("workspaces").select("*").order("created_at", { ascending: true });
@@ -17,6 +16,7 @@ export default async function Page() {
     : { data: [] };
   const allApps = (apps ?? []) as App[];
 
+  if (lastAppId && allApps.find(a => a.id === lastAppId)) redirect(`/dashboard/apps/${lastAppId}/history`);
   if (allApps.length > 0) redirect(`/dashboard/apps/${allApps[0].id}/history`);
 
   return (

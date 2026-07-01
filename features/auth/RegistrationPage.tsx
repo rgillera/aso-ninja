@@ -21,7 +21,7 @@ export default function RegistrationPage() {
 
         <div className="bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-8">
           <form action={action} className="space-y-5">
-            {state?.error && (
+            {state?.error && typeof state.error === "string" && (
               <div className="rounded-lg bg-red-500/10 ring-1 ring-red-500/20 px-4 py-3 text-sm text-red-400">
                 {state.error}
               </div>
