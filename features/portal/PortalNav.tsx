@@ -37,7 +37,7 @@ export default function PortalNav() {
             href="/signup"
             className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
           >
-            Get started free
+            Create free account
           </a>
         </div>
 
@@ -59,7 +59,7 @@ export default function PortalNav() {
           <hr className="border-white/10" />
           <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white">Sign in</a>
           <a href="/signup" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
-            Get started free
+            Create free account
           </a>
         </div>
       )}

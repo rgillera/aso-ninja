@@ -267,7 +267,7 @@ export function PerformanceTable({
             </colgroup>
             <thead>
               <tr className="border-b border-white/[0.04]">
-                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] border-r border-white/[0.07] w-10 px-2 py-2 align-bottom">
+                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] border-r border-white/[0.07] w-10 px-2 py-2 align-bottom text-center">
                   <input
                     type="checkbox"
                     checked={allSelected}
@@ -313,7 +313,7 @@ export function PerformanceTable({
                 const s = snapshots[k.term];
                 return (
                   <tr key={k.term} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="sticky left-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-2 py-3">
+                    <td className="sticky left-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-2 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={selected.has(k.term)}

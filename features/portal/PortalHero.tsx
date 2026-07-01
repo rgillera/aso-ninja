@@ -26,23 +26,26 @@ export default function PortalHero() {
           </div>
 
           <h1 className="text-5xl font-bold tracking-tight text-white sm:text-7xl">
-            Rank higher.{" "}
-            <span className="text-indigo-400">Grow faster.</span>
+            Rank higher.
+            <span className="block text-indigo-400">Grow faster.</span>
           </h1>
           <p className="mt-8 text-lg font-medium text-gray-400 sm:text-xl">
-            ASO Ninja gives your app the intelligence it needs — keyword tracking, metadata optimization, competitor analysis, and review monitoring in one workspace.
+            Get the intelligence your app needs, with keyword tracking, metadata optimization, competitor analysis, and review monitoring in one workspace.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
+          <div className="mt-10 flex flex-col items-center justify-center gap-y-4 gap-x-6 sm:flex-row">
             <a
               href="/signup"
               className="rounded-md bg-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
             >
-              Start for free
+              Create free account
             </a>
             <a href="#features" className="text-sm font-semibold text-gray-300 hover:text-white transition-colors">
               See how it works <span aria-hidden="true">→</span>
             </a>
           </div>
+          <p className="mt-4 text-sm text-gray-400">
+            Free for indie developers and small teams. No credit card required.
+          </p>
         </div>
 
         <div className="mt-20 rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-2">

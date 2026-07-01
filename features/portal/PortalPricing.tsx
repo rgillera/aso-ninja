@@ -17,52 +17,72 @@ const plans: {
   contactSales: boolean;
 }[] = [
   {
-    name: "Starter",
-    monthly: { price: "$14.99", href: "/signup?plan=starter&billing=monthly" },
-    yearly: { price: "$9.99", href: "/signup?plan=starter&billing=yearly" },
-    description: "Everything you need to launch, track, and grow your first app.",
-    badge: "7-day free trial",
+    name: "Free",
+    monthly: { price: "Free", href: "/signup?plan=free&billing=monthly" },
+    yearly: { price: "Free", href: "/signup?plan=free&billing=yearly" },
+    description: "Track your first app with no cost and access essential app store metrics.",
+    badge: "Always free",
     features: [
       "1 workspace",
-      "5 apps",
-      "500 keywords tracked",
-      "90-day rank history",
-      "Daily reviews sync",
-      "Rank alerts via email",
-      "Competitor analysis",
+      "1 app",
+      "50 keywords tracked",
+      "30-day rank history",
+      "Review sync",
+      "Basic rank alerts",
+      "Email support",
     ],
-    cta: "Start free trial",
+    cta: "Create free account",
     variant: "default",
     contactSales: false,
   },
   {
     name: "Pro",
-    monthly: { price: "$199", href: "/signup?plan=pro&billing=monthly" },
-    yearly: { price: "$149", href: "/signup?plan=pro&billing=yearly" },
-    description: "Advanced tracking and collaboration for teams shipping multiple apps.",
-    badge: "7-day free trial",
+    monthly: { price: "$14.99", href: "/signup?plan=pro&billing=monthly" },
+    yearly: { price: "$9.99", href: "/signup?plan=pro&billing=yearly" },
+    description: "Advanced tracking and collaboration for teams growing multiple apps.",
+    badge: null,
     features: [
       "3 workspaces",
-      "20 apps",
-      "2,000 keywords tracked",
+      "10 apps",
+      "500 keywords tracked",
       "Full rank history",
       "Daily reviews sync",
       "Rank alerts via email & Slack",
       "Competitor analysis",
       "Priority support",
     ],
-    cta: "Get started",
+    cta: "Upgrade now",
+    variant: "default",
+    contactSales: false,
+  },
+  {
+    name: "Pro+",
+    monthly: { price: "$149", href: "/signup?plan=pro_plus&billing=monthly" },
+    yearly: { price: "$129", href: "/signup?plan=pro_plus&billing=yearly" },
+    description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
+    badge: "Most popular",
+    features: [
+      "5 workspaces",
+      "20 apps",
+      "2,500 keywords tracked",
+      "Full rank history",
+      "Daily reviews sync",
+      "Rank alerts via email & Slack",
+      "Competitor benchmarking",
+      "Priority onboarding",
+    ],
+    cta: "Upgrade now",
     variant: "featured",
     contactSales: false,
   },
   {
     name: "Enterprise",
     monthly: { price: "$1,499", href: "/signup?plan=enterprise&billing=monthly" },
-    yearly: { price: "$1,199", href: "/signup?plan=enterprise&billing=yearly" },
-    description: "Unlimited scale for agencies and publishers managing large app portfolios.",
+    yearly: { price: "$1,299", href: "/signup?plan=enterprise&billing=yearly" },
+    description: "Unlimited keyword tracking and scale for agencies managing large app portfolios.",
     badge: null,
     features: [
-      "Everything in Pro",
+      "Everything in Pro+",
       "Unlimited workspaces & apps",
       "Unlimited keywords tracked",
       "Dedicated account manager",
@@ -71,7 +91,7 @@ const plans: {
       "Onboarding & training",
       "Invoiced billing",
     ],
-    cta: "Get started",
+    cta: "Upgrade now",
     variant: "premium",
     contactSales: false,
   },
@@ -162,10 +182,11 @@ export default function PortalPricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-6xl lg:grid-cols-3 lg:items-stretch" style={{ paddingTop: "1rem" }}>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-7xl lg:grid-cols-4 lg:items-stretch" style={{ paddingTop: "1rem" }}>
           {plans.map((plan) => {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
+            const isFree = plan.name === "Free";
             return (
               <div
                 key={plan.name}
@@ -196,9 +217,11 @@ export default function PortalPricing() {
                       <span className={`text-5xl font-bold tracking-tight ${s.price}`}>
                         {billing.price}
                       </span>
-                      <span className={`text-sm ${s.subtitle}`}>
-                        / mo{yearly && " · billed yearly"}
-                      </span>
+                      {!isFree && (
+                        <span className={`text-xs ${s.subtitle}`}>
+                          / mo{yearly && " · billed yearly"}
+                        </span>
+                      )}
                     </>
                   )}
                 </div>
