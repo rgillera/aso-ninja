@@ -26,14 +26,14 @@ export function ScoreGauge({ score, label }: ScoreGaugeProps) {
     <div className="flex flex-col items-center gap-3 shrink-0 p-4">
       <div className="relative" style={{ width: 200, height: 200 }}>
         <svg width="200" height="200" viewBox="0 0 200 200" style={{ filter: `drop-shadow(${glow})` }}>
-          <circle cx="100" cy="100" r={r} fill="none" stroke="#0d0f14" strokeWidth="17" />
+          <circle cx="100" cy="100" r={r} fill="none" stroke="#0d0f14" strokeWidth="15" />
           <circle
             cx="100"
             cy="100"
             r={r}
             fill="none"
             stroke={color}
-            strokeWidth="16"
+            strokeWidth="15"
             strokeLinecap="round"
             strokeDasharray={circ}
             strokeDashoffset={offset}
