@@ -116,6 +116,7 @@ export default function KeywordCombinationPage() {
             loading: false,
             children: match.children.map((c) => ({
               term: c.term, volume: c.volume, results: c.results,
+              difficulty: c.difficulty, chance: c.chance,
               starred: false, tracked: false,
             })),
           };

@@ -4,7 +4,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateCombinations } from "@/libs/keyword-combinations";
 
-export type CombinationChild = { term: string; volume: number; results: number };
+export type CombinationChild = { term: string; volume: number; results: number; difficulty: number; chance: number };
 export type CombinationGroup = { seed: string; children: CombinationChild[] };
 export type CombinationsResult = { groups: CombinationGroup[] };
 
@@ -54,8 +54,11 @@ async function fetchVolume(
       .maybeSingle();
 
     if (data) {
-      const results = Array.isArray(data.raw_apps) ? (data.raw_apps as unknown[]).length : 0;
-      return { term, volume: data.score ?? 0, results };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const apps = Array.isArray(data.raw_apps) ? data.raw_apps as any[] : [];
+      const results = apps.length;
+      const { diff } = computeVolume(apps, term);
+      return { term, volume: data.score ?? 0, results, difficulty: diff, chance: Math.max(0, 100 - diff) };
     }
   } catch { /* fall through to Apple */ }
 
@@ -64,7 +67,7 @@ async function fetchVolume(
     const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await enqueueAppleRequest(() => fetch(url, { cache: "no-store" } as any));
-    if (!res.ok) return { term, volume: 0, results: 0 };
+    if (!res.ok) return { term, volume: 0, results: 0, difficulty: 0, chance: 0 };
 
     const json = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,9 +79,9 @@ async function fetchVolume(
       { onConflict: "term,store,country,recorded_on" }
     );
 
-    return { term, volume, results: apps.length };
+    return { term, volume, results: apps.length, difficulty: diff, chance: Math.max(0, 100 - diff) };
   } catch {
-    return { term, volume: 0, results: 0 };
+    return { term, volume: 0, results: 0, difficulty: 0, chance: 0 };
   }
 }
 

@@ -2,6 +2,8 @@ export type CombinationChild = {
   term: string;
   volume: number;
   results: number;
+  difficulty: number;
+  chance: number;
   starred: boolean;
   tracked: boolean;
 };

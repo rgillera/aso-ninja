@@ -16,7 +16,7 @@ import { VolumeBar } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import type { CombinationGroup } from "./types";
 
-type SortKey = "keyword" | "combinations" | "volume" | "totalResults" | "results";
+type SortKey = "keyword" | "combinations" | "volume" | "difficulty" | "chance";
 
 type Props = {
   groups: CombinationGroup[];
@@ -45,11 +45,11 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 }
 
 function groupAggregates(group: CombinationGroup) {
-  const combinations  = group.children.length;
-  const avgVol        = combinations ? Math.round(group.children.reduce((s, c) => s + c.volume, 0) / combinations) : 0;
-  const totalResults  = group.children.reduce((s, c) => s + c.results, 0);
-  const avgResults    = combinations ? Math.round(group.children.reduce((s, c) => s + c.results, 0) / combinations) : 0;
-  return { combinations, avgVol, totalResults, avgResults };
+  const combinations = group.children.length;
+  const avgVol       = combinations ? Math.round(group.children.reduce((s, c) => s + c.volume, 0)     / combinations) : 0;
+  const avgDiff      = combinations ? Math.round(group.children.reduce((s, c) => s + (c.difficulty ?? 0), 0) / combinations) : 0;
+  const avgChance    = combinations ? Math.round(group.children.reduce((s, c) => s + (c.chance ?? 0),     0) / combinations) : 0;
+  return { combinations, avgVol, avgDiff, avgChance };
 }
 
 export function CombinationTable({
@@ -100,8 +100,8 @@ export function CombinationTable({
     if (sortKey === "keyword") cmp = a.seed.localeCompare(b.seed);
     else if (sortKey === "combinations") cmp = aggA.combinations - aggB.combinations;
     else if (sortKey === "volume") cmp = aggA.avgVol - aggB.avgVol;
-    else if (sortKey === "totalResults") cmp = aggA.totalResults - aggB.totalResults;
-    else if (sortKey === "results") cmp = aggA.avgResults - aggB.avgResults;
+    else if (sortKey === "difficulty") cmp = aggA.avgDiff - aggB.avgDiff;
+    else if (sortKey === "chance") cmp = aggA.avgChance - aggB.avgChance;
     return sortDir === "asc" ? cmp : -cmp;
   }) : groups;
 
@@ -183,13 +183,13 @@ export function CombinationTable({
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("totalResults")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "totalResults" ? "text-gray-300" : ""}`}>
-                  Total Competition <SortIcon active={sortKey === "totalResults"} dir={sortDir} />
+                <button onClick={() => handleSort("difficulty")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "difficulty" ? "text-gray-300" : ""}`}>
+                  Avg.Difficulty <SortIcon active={sortKey === "difficulty"} dir={sortDir} />
                 </button>
               </th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("results")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "results" ? "text-gray-300" : ""}`}>
-                  Avg.Competition <SortIcon active={sortKey === "results"} dir={sortDir} />
+                <button onClick={() => handleSort("chance")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "chance" ? "text-gray-300" : ""}`}>
+                  Avg.Chance <SortIcon active={sortKey === "chance"} dir={sortDir} />
                 </button>
               </th>
               <th className="w-24 pr-4" />
@@ -236,11 +236,15 @@ export function CombinationTable({
                     <td className="px-4 py-3.5">
                       {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse" /> : <VolumeBar value={agg.avgVol} />}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-300 tabular-nums">
-                      {group.loading ? <div className="h-3 w-14 rounded bg-white/[0.06] animate-pulse" /> : formatNum(agg.totalResults)}
+                    <td className="px-4 py-3.5 tabular-nums">
+                      {group.loading
+                        ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                        : <span className={`text-sm ${agg.avgDiff > 60 ? "text-red-400" : agg.avgDiff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>{agg.avgDiff}</span>}
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-300 tabular-nums">
-                      {group.loading ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" /> : formatNum(agg.avgResults)}
+                    <td className="px-4 py-3.5 tabular-nums">
+                      {group.loading
+                        ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                        : <span className={`text-sm ${agg.avgChance > 15 ? "text-emerald-400" : "text-gray-400"}`}>{agg.avgChance}</span>}
                     </td>
                     <td className="pr-4 py-3.5">
                       <button
@@ -278,11 +282,15 @@ export function CombinationTable({
                         <td className="px-4 py-3">
                           {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" /> : <VolumeBar value={child.volume} />}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">
-                          {group.loading ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" /> : formatNum(child.results)}
+                        <td className="px-4 py-3 tabular-nums">
+                          {group.loading
+                            ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                            : (() => { const d = child.difficulty ?? 0; return <span className={`text-sm ${d > 60 ? "text-red-400" : d > 40 ? "text-yellow-400" : "text-emerald-400"}`}>{d}</span>; })()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">
-                          {group.loading ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" /> : formatNum(child.results)}
+                        <td className="px-4 py-3 tabular-nums">
+                          {group.loading
+                            ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                            : (() => { const c = child.chance ?? 0; return <span className={`text-sm ${c > 15 ? "text-emerald-400" : "text-gray-400"}`}>{c}</span>; })()}
                         </td>
                         <td className="pr-4 py-3">
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
