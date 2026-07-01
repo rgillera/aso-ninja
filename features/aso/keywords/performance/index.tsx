@@ -11,8 +11,8 @@ import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import {
-  DEFAULT_FILTERS, DEFAULT_RANGE, wordCount,
-  type DateRange, type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
+  DEFAULT_FILTERS, wordCount,
+  type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
 } from "./types";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
@@ -37,7 +37,6 @@ export default function KeywordPerformancePage() {
   const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters,     setFilters]     = useState<Filters>(DEFAULT_FILTERS);
-  const [range,       setRange]       = useState<DateRange>(DEFAULT_RANGE);
   const [snapshots,        setSnapshots]        = useState<Record<string, TermSnapshot>>({});
   const [snapshotsLoading, setSnapshotsLoading]  = useState(false);
   const [tab, setTab] = useState<"chart" | "table">("table");
@@ -342,13 +341,17 @@ export default function KeywordPerformancePage() {
     if (!activeApp || !trackedTerms || !chartApps.length) return;
     const t = setTimeout(() => {
       setVisibilityLoading(true);
+      const today = new Date();
+      const from30 = new Date(today); from30.setDate(today.getDate() - 29);
+      const toIso   = today.toISOString().split("T")[0];
+      const fromIso = from30.toISOString().split("T")[0];
       const params = new URLSearchParams({
         terms:  trackedTerms,
         appIds: chartApps.map((a) => a.id).join(","),
         store:  activeApp.store ?? "ios",
         country: activeApp.country ?? "us",
-        from: range.from,
-        to:   range.to,
+        from: fromIso,
+        to:   toIso,
       });
       fetch(`/api/keywords/visibility-history?${params}`)
         .then((r) => r.json())
@@ -357,7 +360,7 @@ export default function KeywordPerformancePage() {
         .finally(() => setVisibilityLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp, trackedTerms, chartApps, range]);
+  }, [activeApp, trackedTerms, chartApps]);
 
   const filtered = useMemo(() => {
     if (!activeApp) return [];
@@ -382,47 +385,32 @@ export default function KeywordPerformancePage() {
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-6 pt-3">
-          <div className="flex items-center gap-1">
-            {([["chart", "Visibility Score"], ["table", "Keyword Performance"]] as const).map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {tab === "chart" && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={range.from}
-                max={range.to}
-                onChange={(e) => setRange({ ...range, from: e.target.value })}
-                className="rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5 text-xs text-gray-300 outline-none focus:ring-indigo-500/40 [color-scheme:dark]"
-              />
-              <span className="text-xs text-gray-600">to</span>
-              <input
-                type="date"
-                value={range.to}
-                min={range.from}
-                max={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setRange({ ...range, to: e.target.value })}
-                className="rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5 text-xs text-gray-300 outline-none focus:ring-indigo-500/40 [color-scheme:dark]"
-              />
-              {visibilityLoading && <div className="size-3 rounded-full border-2 border-gray-600 border-t-indigo-400 animate-spin" />}
-            </div>
-          )}
+        <div className="flex items-center gap-1 px-6 pt-3">
+          {([["chart", "Visibility Score"], ["table", "Keyword Performance"]] as const).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                tab === id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         {tab === "chart" ? (
-          <div className="pt-2">
-            <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />
+          <div className="px-6 pt-4 pb-6">
+            <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07]">
+              <div className="flex items-center justify-between px-5 pt-4 pb-1">
+                <div>
+                  <p className="text-sm font-semibold text-white">Visibility Score</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Last 30 days</p>
+                </div>
+                {visibilityLoading && <div className="size-3 rounded-full border-2 border-gray-600 border-t-indigo-400 animate-spin" />}
+              </div>
+              <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />
+            </div>
           </div>
         ) : (
           <div className="pt-4">
