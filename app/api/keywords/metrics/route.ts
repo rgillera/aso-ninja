@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -351,7 +352,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     if (!apps) {
       const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const searchRes = await fetch(searchUrl, { cache: "no-store" } as any);
+      const searchRes = await enqueueAppleRequest(() => fetch(searchUrl, { cache: "no-store" } as any));
       if (!searchRes.ok) return searchRes.status === 403 ? "rate_limited" : null;
       const searchData = await searchRes.json();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
