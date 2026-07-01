@@ -114,6 +114,29 @@ function wordTokens(str: string): string[] {
   return str.toLowerCase().split(/\W+/).filter((w) => w.length > 2);
 }
 
+// Returns true when the keyword is a brand/name term for this app.
+// Covers: exact match, token-subset ("pet care" ⊆ "PawWare: Pet Care"),
+// and compound forms without spaces ("petcare" inside "pawwarepetcare").
+function isBrandKeyword(keyword: string, appName: string): boolean {
+  const kwWords  = wordTokens(keyword);
+  const appWords = wordTokens(appName);
+  if (!kwWords.length || !appWords.length) return false;
+
+  // Exact match
+  if (keyword.toLowerCase().replace(/[^a-z0-9]/g, "") === appName.toLowerCase().replace(/[^a-z0-9]/g, "")) return true;
+
+  // All keyword tokens present in app name tokens ("pet care" → ["pet","care"] ⊆ ["pawware","pet","care"])
+  const appWordSet = new Set(appWords);
+  if (kwWords.every((w) => appWordSet.has(w))) return true;
+
+  // Compound match: "petcare" inside "pawwarepetcare" (min length 4 to avoid false positives)
+  const kwCompact  = keyword.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const appCompact = appWords.join("");
+  if (kwCompact.length >= 4 && appCompact.includes(kwCompact)) return true;
+
+  return false;
+}
+
 async function computeRelevancy(
   keyword: string,
   appName: string,
@@ -121,12 +144,10 @@ async function computeRelevancy(
   appEmbedding: number[] | null,
   appDescription?: string,
 ): Promise<number> {
-  const kwWords  = wordTokens(keyword);
   const appWords = wordTokens(appName);
-  if (!kwWords.length || !appWords.length) return 0;
+  if (!wordTokens(keyword).length || !appWords.length) return 0;
 
-  // Own brand keyword — always 100% relevant.
-  if (keyword.toLowerCase().trim() === appName.toLowerCase().trim()) return 100;
+  if (isBrandKeyword(keyword, appName)) return 100;
 
   const hasDesc = !!appDescription && appDescription.length > 10;
 
@@ -453,10 +474,14 @@ export async function GET(request: NextRequest) {
       const term = row.keywords?.term as string | undefined;
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
+      const isBrand = appName ? isBrandKeyword(term, appName) : false;
+      const relevancy  = isBrand ? 100 : row.relevancy;
+      const base       = isBrand ? Math.sqrt((row.volume ?? 0) * (row.chance ?? 0)) : null;
+      const opportunity = isBrand && base !== null ? Math.round(base) : row.opportunity;
       dbCache[term] = {
         volume: row.volume, diff: row.diff, chance: row.chance,
-        opportunity: row.opportunity, results: 0,
-        relevancy: row.relevancy, rank: row.rank ?? null,
+        opportunity, results: 0,
+        relevancy, rank: row.rank ?? null,
       };
     }
   }
