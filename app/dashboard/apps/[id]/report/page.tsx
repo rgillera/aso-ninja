@@ -97,20 +97,36 @@ export default async function Page({ params }: PageProps) {
   if (error || !app) notFound();
 
   const country = app.country ?? "US";
-  const [{ data: allApps }, storeData] = await Promise.all([
+  const [{ data: allApps }, storeData, { data: kwRows }, { data: metricsRows }] = await Promise.all([
     supabase.from("apps").select("*").eq("workspace_id", app.workspace_id).order("created_at", { ascending: false }),
     app.store === "ios" && app.store_id
       ? fetchItunesData(app.store_id, country)
       : app.store === "android" && app.bundle_id
         ? fetchGooglePlayData(app.bundle_id, country)
         : Promise.resolve(null),
+    supabase.from("app_keywords").select("keywords!inner(term)").eq("app_id", id),
+    supabase.from("keyword_metrics").select("keyword_id, volume, diff, chance, keywords!inner(term)").eq("app_id", id),
   ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const trackedKeywords = (kwRows ?? []).map((r: any) => {
+    const kw = Array.isArray(r.keywords) ? r.keywords[0] : r.keywords;
+    return kw?.term as string | undefined;
+  }).filter((t): t is string => !!t);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const keywordMetrics = (metricsRows ?? []).map((r: any) => {
+    const kw = Array.isArray(r.keywords) ? r.keywords[0] : r.keywords;
+    return { term: kw?.term as string, volume: r.volume as number, diff: r.diff as number, chance: r.chance as number };
+  }).filter((r) => !!r.term).sort((a, b) => b.volume - a.volume);
 
   return (
     <ReportPage
       app={app as App}
       allApps={(allApps ?? []) as App[]}
       storeData={storeData}
+      trackedKeywords={trackedKeywords}
+      keywordMetrics={keywordMetrics}
     />
   );
 }
