@@ -78,6 +78,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
   const [storeFilter, setStoreFilter] = useState<StoreFilter>("all");
   const [country, setCountry]         = useState("US");
   const [countryOpen, setCountryOpen] = useState(false);
+  const [countryQuery, setCountryQuery] = useState("");
   const [results, setResults]         = useState<AppSearchResult[]>([]);
   const [iosDown, setIosDown]         = useState(false);
   const [showAll, setShowAll]         = useState(false);
@@ -126,12 +127,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
-  const allCountries = useMemo(() => {
-    const codes = new Set<string>();
-    for (const a of apps) if (a.country) codes.add(a.country);
-    if (!codes.has("US")) codes.add("US");
-    return [...codes].sort();
-  }, [apps]);
+  const allCountries = useMemo(() => Object.keys(COUNTRY_MAP).sort(), []);
 
   // Filtered store results (by store type)
   const filteredResults = useMemo(() => {
@@ -240,7 +236,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
             {/* Country */}
             <div className="relative" ref={countryRef}>
               <button
-                onClick={() => setCountryOpen(v => !v)}
+                onClick={() => { setCountryOpen(v => !v); setCountryQuery(""); }}
                 className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3.5 py-2 text-sm text-gray-200 hover:text-white transition-colors min-w-[160px]"
               >
                 <span className="text-base leading-none">{countryFlag(country)}</span>
@@ -250,20 +246,35 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
 
               {countryOpen && (
                 <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
-                  <div className="max-h-60 overflow-y-auto py-1">
-                    {allCountries.map(code => (
-                      <button
-                        key={code}
-                        onClick={() => { setCountry(code); setCountryOpen(false); }}
-                        className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] transition-colors ${
-                          country === code ? "text-white" : "text-gray-400"
-                        }`}
-                      >
-                        <span className="text-base leading-none">{countryFlag(code)}</span>
-                        <span className="flex-1 truncate">{COUNTRY_MAP[code] ?? code}</span>
-                        <span className="text-xs text-gray-600">{code}</span>
-                      </button>
-                    ))}
+                  <div className="px-2 pt-2 pb-1">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search country…"
+                      value={countryQuery}
+                      onChange={e => setCountryQuery(e.target.value)}
+                      className="w-full rounded-md bg-white/[0.06] px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none"
+                    />
+                  </div>
+                  <div className="max-h-52 overflow-y-auto py-1">
+                    {allCountries
+                      .filter(code => {
+                        const q = countryQuery.toLowerCase();
+                        return !q || (COUNTRY_MAP[code] ?? code).toLowerCase().includes(q) || code.toLowerCase().includes(q);
+                      })
+                      .map(code => (
+                        <button
+                          key={code}
+                          onClick={() => { setCountry(code); setCountryOpen(false); setCountryQuery(""); }}
+                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] transition-colors ${
+                            country === code ? "text-white" : "text-gray-400"
+                          }`}
+                        >
+                          <span className="text-base leading-none">{countryFlag(code)}</span>
+                          <span className="flex-1 truncate">{COUNTRY_MAP[code] ?? code}</span>
+                          <span className="text-xs text-gray-600">{code}</span>
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
