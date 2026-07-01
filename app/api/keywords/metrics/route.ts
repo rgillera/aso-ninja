@@ -64,19 +64,22 @@ async function getDescRelevanceScore(keyword: string, description: string): Prom
   const cacheKey = `${keyword}|||${description}`;
   if (llmScoreCache.has(cacheKey)) return llmScoreCache.get(cacheKey)!;
   try {
-    const prompt = `You are an ASO (App Store Optimization) expert. A user types a keyword into the App Store search bar. Rate whether they would be looking for this specific app.
+    const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the App Store search bar. Score the probability (0-100) that they are specifically looking for THIS app.
 
 App description: "${description}"
 Keyword: "${keyword}"
 
-Scoring guide (pick one range):
-0-15  = Completely different category (e.g. "baby tracker" for a calorie counting app)
-16-40 = Different primary use, loosely related
-41-60 = Somewhat relevant secondary use case
-61-80 = Relevant, user would likely consider this app
-81-100 = Perfect match, exactly what they are searching for
+Rules — apply in order, stop at first match:
+1. If the keyword is another app's brand name or company name → score 0-10. The user wants that specific product, not this one.
+2. If the keyword describes a completely unrelated category (e.g. "baby tracker", "pet care", "ride sharing" for a nutrition app) → score 0-15.
+3. If the keyword is loosely related but this app is unlikely to satisfy the search intent → score 16-40.
+4. If the keyword is a secondary use case this app genuinely supports → score 41-60.
+5. If the keyword directly describes a core feature of this app → score 61-80.
+6. If the keyword is exactly what this app is built for → score 81-100.
 
-Reply with ONLY a single integer. No words, no punctuation, just the number.`;
+Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).
+
+Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -530,14 +533,23 @@ export async function GET(request: NextRequest) {
           : fetchIosAppMeta(appName, country))
       : { description: "", category: "", embedding: null };
 
-    const entries = await Promise.all(
-      uncached.map(async (term) => {
-        const metrics = store === "android"
-          ? await fetchAndroidMetrics(term, country, appName, appMeta, !fast)
-          : await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
-        return [term, metrics] as const;
-      })
-    );
+    // iOS: sequential to stay under Apple's per-IP rate limit.
+    // Android: parallel is fine (google-play-scraper has no such restriction).
+    let entries: (readonly [string, Metrics | null])[];
+    if (store === "ios") {
+      entries = [];
+      for (const term of uncached) {
+        const metrics = await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
+        entries.push([term, metrics] as const);
+      }
+    } else {
+      entries = await Promise.all(
+        uncached.map(async (term) => {
+          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, !fast);
+          return [term, metrics] as const;
+        })
+      );
+    }
 
     freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
 
