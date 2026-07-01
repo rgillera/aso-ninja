@@ -119,24 +119,37 @@ function wordTokens(str: string): string[] {
 }
 
 // Returns true when the keyword is a brand/name term for this app.
-// Covers: exact match, token-subset ("pet care" ⊆ "PawWare: Pet Care"),
-// and compound forms without spaces ("petcare" inside "pawwarepetcare").
+// Covers: exact match, brand token match
+function getBrandTokens(appName: string): string[] {
+  const separators = /[:\-–—|]/;
+  const segments = appName.split(separators).map((segment) => segment.trim()).filter(Boolean);
+  const brandPart = segments[0] ?? appName;
+  return wordTokens(brandPart);
+}
+
 function isBrandKeyword(keyword: string, appName: string): boolean {
   const kwWords  = wordTokens(keyword);
   const appWords = wordTokens(appName);
   if (!kwWords.length || !appWords.length) return false;
 
-  // Exact match
-  if (keyword.toLowerCase().replace(/[^a-z0-9]/g, "") === appName.toLowerCase().replace(/[^a-z0-9]/g, "")) return true;
+  const normalizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normalizedAppName = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (normalizedKeyword === normalizedAppName) return true;
 
-  // All keyword tokens present in app name tokens ("pet care" → ["pet","care"] ⊆ ["pawware","pet","care"])
   const appWordSet = new Set(appWords);
-  if (kwWords.every((w) => appWordSet.has(w))) return true;
+  const brandTokens = getBrandTokens(appName);
+  const brandTokenSet = new Set(brandTokens);
 
-  // Compound match: "petcare" inside "pawwarepetcare" (min length 4 to avoid false positives)
-  const kwCompact  = keyword.toLowerCase().replace(/[^a-z0-9]/g, "");
-  const appCompact = appWords.join("");
-  if (kwCompact.length >= 4 && appCompact.includes(kwCompact)) return true;
+  // Keyword includes the brand portion and otherwise only contains terms from the app name.
+  if (brandTokens.length > 0) {
+    const hasBrandToken = kwWords.some((w) => brandTokenSet.has(w));
+    if (hasBrandToken && kwWords.every((w) => appWordSet.has(w) || brandTokenSet.has(w))) return true;
+
+    const kwCompact = normalizedKeyword;
+    const appCompact = appWords.join("");
+    const brandCompact = brandTokens.join("");
+    if (brandCompact && kwCompact.length >= 4 && kwCompact.includes(brandCompact) && appCompact.includes(kwCompact)) return true;
+  }
 
   return false;
 }
