@@ -47,6 +47,7 @@ export default function KeywordCombinationPage() {
     }
   }, [appId]);
 
+
   function persist(updated: CombinationGroup[]) {
     setGroups(updated);
     if (appId) {

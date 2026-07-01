@@ -43,9 +43,6 @@ function AiKeywordPill({ kw, tracked, onAdd, onRemove }: {
         : <PlusIcon className="size-3 text-gray-500 shrink-0" />
       }
       {kw.term}
-      <span className={`ml-0.5 font-semibold tabular-nums text-[11px] ${tracked ? (hovered ? "text-red-400" : "text-indigo-400") : "text-gray-500"}`}>
-        {kw.volume > 0 ? kw.volume : "-"}
-      </span>
     </button>
   );
 }
@@ -123,10 +120,9 @@ function AISuggestionsSection({
 }
 
 export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword }: Props) {
-  const [data, setData]               = useState<AISuggestionsResult | null>(null);
-  const [loading, setLoading]         = useState(false);
-  const [loadingVols, setLoadingVols] = useState(false);
-  const [fetched, setFetched]         = useState<string | null>(null);
+  const [data, setData]       = useState<AISuggestionsResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState<string | null>(null);
 
   useEffect(() => {
     const key = `${activeApp?.store_id}-${activeApp?.country}`;
@@ -135,32 +131,9 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
     setLoading(true);
     setData(null);
 
-    const base = new URLSearchParams({
-      appName: activeApp.name,
-      country: activeApp.country ?? "us",
-    });
-
-    fetch(`/api/keywords/ai-suggestions?${base}`)
+    fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us" })}`)
       .then((r) => r.json())
-      .then(async (d: AISuggestionsResult) => {
-        setData(d);
-        setLoading(false);
-
-        const allEmpty = !d.discovery.length && !d.generic.length && !d.branded.length && !d.relevancy.length;
-        if (allEmpty) return;
-        setLoadingVols(true);
-        const volParams = new URLSearchParams(base);
-        volParams.set("volumesOnly", "1");
-        volParams.set("discovery", d.discovery.map((k) => k.term).join(","));
-        volParams.set("generic",   d.generic.map((k)   => k.term).join(","));
-        volParams.set("branded",   d.branded.map((k)   => k.term).join(","));
-        volParams.set("relevancy", d.relevancy.map((k) => k.term).join(","));
-        try {
-          const v: AISuggestionsResult = await fetch(`/api/keywords/ai-suggestions?${volParams}`).then((r) => r.json());
-          setData(v);
-        } catch { /* volumes stay as 0 */ }
-        setLoadingVols(false);
-      })
+      .then((d: AISuggestionsResult) => { setData(d); setLoading(false); })
       .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [] }); setLoading(false); });
   }, [activeApp?.name, activeApp?.country, activeApp?.store_id, fetched]);
 
@@ -204,9 +177,6 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
       />
-      {loadingVols && (
-        <p className="text-[10px] text-gray-600 text-center py-2 animate-pulse">Loading volumes…</p>
-      )}
     </div>
   );
 }

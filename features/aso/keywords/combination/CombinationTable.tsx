@@ -275,9 +275,15 @@ export function CombinationTable({
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">—</td>
-                        <td className="px-4 py-3"><VolumeBar value={child.volume} /></td>
-                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">{formatNum(child.results)}</td>
-                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">{formatNum(child.results)}</td>
+                        <td className="px-4 py-3">
+                          {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" /> : <VolumeBar value={child.volume} />}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">
+                          {group.loading ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" /> : formatNum(child.results)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">
+                          {group.loading ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" /> : formatNum(child.results)}
+                        </td>
                         <td className="pr-4 py-3">
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button

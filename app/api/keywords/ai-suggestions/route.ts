@@ -112,70 +112,16 @@ function deduplicateAcross(...sections: string[][]): string[][] {
   });
 }
 
-async function fetchVolumes(terms: string[], country: string): Promise<Record<string, number>> {
-  if (!terms.length) return {};
-  const results = await Promise.allSettled(
-    terms.map(async (term) => {
-      try {
-        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=50&country=${country}`;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const res = await fetch(url, { cache: "no-store" } as any);
-        if (!res.ok) return [term, 0] as const;
-        const data = await res.json();
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apps: any[] = data.results ?? [];
-        const kwTokens = term.toLowerCase().split(/\s+/);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const titleApps = apps.filter((a: any) => kwTokens.every((w) => (a.trackName ?? "").toLowerCase().includes(w)));
-        const avgRatings = titleApps.length === 0 ? 0
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          : titleApps.reduce((s: number, a: any) => s + (a.userRatingCount ?? 0), 0) / titleApps.length;
-        const volume = avgRatings < 1_000 ? 5
-          : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(10_000_000)) * 100), 100);
-        return [term, volume] as const;
-      } catch { return [term, 0] as const; }
-    })
-  );
-  return Object.fromEntries(
-    results.map((r) => r.status === "fulfilled" ? r.value : ["", 0]).filter(([k]) => k)
-  );
-}
-
 const EMPTY: AISuggestionsResult = { discovery: [], generic: [], branded: [], relevancy: [] };
 
 // GET /api/keywords/ai-suggestions?appName=...&country=us
-// Phase 1 (default): generate keyword terms from LLM, no volume fetch
-// Phase 2 (volumesOnly=1&discovery=a,b&generic=c,d&branded=e,f&relevancy=g,h): fetch volumes only
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const appName     = searchParams.get("appName")     ?? "";
   const description = searchParams.get("description") ?? "";
-  const country     = (searchParams.get("country")    ?? "us").toLowerCase();
-  const volumesOnly = searchParams.get("volumesOnly") === "1";
 
   if (!appName) return NextResponse.json(EMPTY);
 
-  // Phase 2: caller already has terms, just fetch volumes
-  if (volumesOnly) {
-    const parse = (key: string) =>
-      (searchParams.get(key) ?? "").split(",").map((t) => t.trim()).filter(Boolean);
-    const discoveryTerms = parse("discovery");
-    const genericTerms   = parse("generic");
-    const brandedTerms   = parse("branded");
-    const relevancyTerms = parse("relevancy");
-    const allTerms = [...discoveryTerms, ...genericTerms, ...brandedTerms, ...relevancyTerms];
-    const vols = await fetchVolumes(allTerms, country);
-    const toKw = (terms: string[]) =>
-      terms.map((term) => ({ term, volume: vols[term] ?? 0 })).sort((a, b) => b.volume - a.volume);
-    return NextResponse.json({
-      discovery: toKw(discoveryTerms),
-      generic:   toKw(genericTerms),
-      branded:   toKw(brandedTerms),
-      relevancy: toKw(relevancyTerms),
-    } satisfies AISuggestionsResult);
-  }
-
-  // Phase 1: generate keywords from LLM only (no volume fetch — fast)
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
     generateKeywords(appName, description, "discovery", 40),
     generateKeywords(appName, description, "generic",   50),

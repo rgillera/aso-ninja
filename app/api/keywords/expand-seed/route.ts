@@ -34,8 +34,9 @@ function computeVolume(apps: any[], term: string) {
 // Body: { term, store, country, appName?, appSubtitle? }
 // Fire-and-forget: pre-warms keyword_volume_history for all combinations of the seed.
 export async function POST(req: Request) {
-  const { term, store, country = "us", appName = "", appSubtitle = "" } = await req.json() as {
+  const { term, store, country = "us", appName = "", appSubtitle = "", terms } = await req.json() as {
     term: string; store: string; country?: string; appName?: string; appSubtitle?: string;
+    terms?: string[]; // explicit phrases to cache — skips Ollama generation
   };
 
   if (!term || store !== "ios") {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const today = new Date().toISOString().split("T")[0];
 
-  const phrases = await generateCombinations(term, 10, appName, appSubtitle);
+  const phrases = terms?.length ? terms : await generateCombinations(term, 10, appName, appSubtitle);
   if (!phrases.length) return NextResponse.json({ expanded: 0 });
 
   // Find which combinations already have today's data
