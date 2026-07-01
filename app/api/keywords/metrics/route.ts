@@ -137,6 +137,19 @@ function isBrandKeyword(keyword: string, appName: string): boolean {
   return false;
 }
 
+// Bonus for partial app-name token overlap: "pet tracker" shares "pet" with
+// "PawWare: Pet Care", so it earns more relevancy than "nutrition tracker" which
+// shares nothing. Scales 0–30 by fraction of keyword tokens matched. Capped so
+// combined score never reaches 100 (that's reserved for full brand keywords).
+function nameTokenBoost(keyword: string, appName: string): number {
+  const kwWords  = wordTokens(keyword);
+  const appWords = wordTokens(appName);
+  if (!kwWords.length || !appWords.length) return 0;
+  const appWordSet  = new Set(appWords);
+  const matchCount  = kwWords.filter((w) => appWordSet.has(w)).length;
+  return matchCount === 0 ? 0 : Math.round((matchCount / kwWords.length) * 30);
+}
+
 async function computeRelevancy(
   keyword: string,
   appName: string,
@@ -185,9 +198,10 @@ async function computeRelevancy(
     semanticScore = 50;
   }
 
-  const final = hasDesc
-    ? Math.min(Math.round(descScore * 0.7 + semanticScore * 0.3), 100)
-    : Math.min(Math.round(semanticScore), 100);
+  const base = hasDesc
+    ? Math.round(descScore * 0.7 + semanticScore * 0.3)
+    : Math.round(semanticScore);
+  const final = Math.min(base + nameTokenBoost(keyword, appName), 99);
   console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasDesc=${hasDesc} → ${final}`);
   return final;
 }
@@ -474,10 +488,15 @@ export async function GET(request: NextRequest) {
       const term = row.keywords?.term as string | undefined;
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
-      const isBrand = appName ? isBrandKeyword(term, appName) : false;
-      const relevancy  = isBrand ? 100 : row.relevancy;
-      const base       = isBrand ? Math.sqrt((row.volume ?? 0) * (row.chance ?? 0)) : null;
-      const opportunity = isBrand && base !== null ? Math.round(base) : row.opportunity;
+      const isBrand  = appName ? isBrandKeyword(term, appName) : false;
+      const boost    = (!isBrand && appName) ? nameTokenBoost(term, appName) : 0;
+      const relevancy = isBrand ? 100 : Math.min((row.relevancy ?? 0) + boost, 99);
+      const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
+      const opportunity = isBrand
+        ? Math.round(rawBase)
+        : boost > 0
+          ? Math.round(rawBase * Math.pow(relevancy / 100, 2))
+          : row.opportunity;
       dbCache[term] = {
         volume: row.volume, diff: row.diff, chance: row.chance,
         opportunity, results: 0,
