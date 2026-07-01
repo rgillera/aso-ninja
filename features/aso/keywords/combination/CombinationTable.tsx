@@ -203,8 +203,11 @@ export function CombinationTable({
               const pendingCount = group.children.filter((c) => pendingSet.has(c.term.toLowerCase())).length;
               return (
                 <Fragment key={group.seed}>
-                  <tr className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-4 py-3.5">
+                  <tr
+                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                    onClick={() => onToggleExpand(group.seed)}
+                  >
+                    <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
                         checked={groupChecked}
@@ -214,21 +217,18 @@ export function CombinationTable({
                       />
                     </td>
                     <td className="px-4 py-3.5">
-                      <button
-                        onClick={() => onToggleExpand(group.seed)}
-                        className="flex items-center gap-1.5 text-sm font-medium text-white"
-                      >
+                      <div className="flex items-center gap-1.5">
                         {group.expanded
                           ? <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />
                           : <ChevronRightIcon className="size-3.5 text-gray-500 shrink-0" />}
-                        {group.seed}
-                      </button>
-                      {pendingCount > 0 && (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[10px] text-indigo-400">
-                          <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
-                          Adding {pendingCount}…
-                        </span>
-                      )}
+                        <span className="text-sm font-medium text-white">{group.seed}</span>
+                        {pendingCount > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
+                            <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
+                            Adding {pendingCount}…
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-sm text-gray-300">
                       {group.loading ? <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" /> : agg.combinations}
@@ -246,7 +246,7 @@ export function CombinationTable({
                         ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
                         : <span className={`text-sm ${agg.avgChance > 15 ? "text-emerald-400" : "text-gray-400"}`}>{agg.avgChance}</span>}
                     </td>
-                    <td className="pr-4 py-3.5">
+                    <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onRemoveGroup(group.seed)}
                         className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
