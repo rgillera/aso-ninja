@@ -79,8 +79,13 @@ export default function KeywordResearchPage() {
       .then((r) => r.json())
       .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
         if (!saved?.length) return;
+
+        const withMetrics    = saved.filter((s) =>  s.hasCachedMetrics);
+        const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
+
+        // Set cached keywords immediately — these are complete, no loading state
         setKeywords(
-          saved.map((s) => ({
+          withMetrics.map((s) => ({
             keyword:     s.term,
             volume:      s.volume,
             diff:        s.diff,
@@ -89,12 +94,14 @@ export default function KeywordResearchPage() {
             relevancy:   s.relevancy,
             rank:        s.rank,
             starred:     false,
-            // If no cached metrics, mark as loading so metrics get re-fetched
-            loading:     !s.hasCachedMetrics,
+            loading:     false,
           }))
         );
-        // Re-fetch metrics for any keywords that have no cached values
-        const needsMetrics = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
+
+        // Keywords without cached metrics go through handleAddKeywords so they
+        // are fetched fresh. Keeping them separate from the setKeywords above
+        // avoids a stale-closure dedup failure where handleAddKeywords read the
+        // old keywords state and prepended them a second time.
         if (needsMetrics.length) handleAddKeywords(needsMetrics);
       })
       .catch(() => {});
@@ -221,6 +228,18 @@ export default function KeywordResearchPage() {
     // it since fetchAndroidMetrics never writes keyword_rankings_history.
     if (store === "android") {
       runLiveSearchInBackground(newKeywords, store, country);
+    }
+
+    // Fire-and-forget: pre-warm combination data for each new iOS keyword so
+    // the Keyword Combination page loads instantly without hitting Apple live.
+    if (store === "ios") {
+      for (const term of newKeywords) {
+        fetch("/api/keywords/expand-seed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ term, store, country, appName: activeApp?.name ?? "" }),
+        }).catch(() => {});
+      }
     }
   }
 

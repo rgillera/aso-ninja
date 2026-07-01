@@ -210,6 +210,17 @@ export default function KeywordCombinationPage() {
       setTrackedKeywords((prev) => new Set([...prev, ...freshLower]));
       setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
 
+      // Fire-and-forget: pre-warm combinations for each newly tracked iOS keyword
+      if (store === "ios") {
+        for (const term of fresh) {
+          fetch("/api/keywords/expand-seed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ term, store, country, appName: activeApp?.name ?? "", appSubtitle }),
+          }).catch(() => {});
+        }
+      }
+
       // Phase 2: full metrics (LLM relevancy + opportunity) — re-save to update
       try {
         const res2  = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
