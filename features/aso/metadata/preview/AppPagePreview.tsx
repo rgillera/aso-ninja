@@ -36,6 +36,12 @@ export default function AppPagePreview({ app, storeData }: Props) {
   const [showSearchPreview, setShowSearchPreview] = useState(false);
   const [showCompareVersions, setShowCompareVersions] = useState(false);
 
+  // Local, unsaved overrides for the editable text fields
+  const [nameOverride, setNameOverride] = useState<string | null>(null);
+  const [subtitleOverride, setSubtitleOverride] = useState<string | null>(null);
+  const [promoTextOverride, setPromoTextOverride] = useState("");
+  const [descriptionOverride, setDescriptionOverride] = useState<string | null>(null);
+
   function handleClearAll() {
     if (customIconUrl) URL.revokeObjectURL(customIconUrl);
     customScreenshotUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -43,6 +49,10 @@ export default function AppPagePreview({ app, storeData }: Props) {
     setCustomIconUrl(null);
     setCustomScreenshotUrls([]);
     setCustomVideoUrl(null);
+    setNameOverride(null);
+    setSubtitleOverride(null);
+    setPromoTextOverride("");
+    setDescriptionOverride(null);
   }
 
   function handleIconUpload(file: File) {
@@ -71,21 +81,23 @@ export default function AppPagePreview({ app, storeData }: Props) {
     });
   }
 
-  const previewApp: App = customIconUrl ? { ...app, icon_url: customIconUrl } : app;
+  const previewApp: App = {
+    ...app,
+    icon_url: customIconUrl ?? app.icon_url,
+    name: nameOverride ?? app.name,
+  };
 
-  const previewStoreData: StoreData = storeData || customScreenshotUrls.length > 0
-    ? {
-        screenshotUrls: [...customScreenshotUrls, ...(storeData?.screenshotUrls ?? [])],
-        subtitle: storeData?.subtitle ?? "",
-        description: storeData?.description ?? "",
-        releaseNotes: storeData?.releaseNotes ?? "",
-        rating: storeData?.rating,
-        ratingCount: storeData?.ratingCount,
-        primaryGenreName: storeData?.primaryGenreName ?? "",
-        contentAdvisoryRating: storeData?.contentAdvisoryRating ?? "",
-        version: storeData?.version,
-      }
-    : null;
+  const previewStoreData: StoreData = {
+    screenshotUrls: [...customScreenshotUrls, ...(storeData?.screenshotUrls ?? [])],
+    subtitle: subtitleOverride ?? storeData?.subtitle ?? "",
+    description: descriptionOverride ?? storeData?.description ?? "",
+    releaseNotes: storeData?.releaseNotes ?? "",
+    rating: storeData?.rating,
+    ratingCount: storeData?.ratingCount,
+    primaryGenreName: storeData?.primaryGenreName ?? "",
+    contentAdvisoryRating: storeData?.contentAdvisoryRating ?? "",
+    version: storeData?.version,
+  };
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "text", label: "App Text" },
@@ -170,7 +182,21 @@ export default function AppPagePreview({ app, storeData }: Props) {
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[#111318]">
-              {tab === "text" && <AppTextPreview app={app} storeData={storeData} dark={dark} />}
+              {tab === "text" && (
+                <AppTextPreview
+                  app={previewApp}
+                  storeData={previewStoreData}
+                  dark={dark}
+                  promotionalText={promoTextOverride}
+                  originalName={app.name}
+                  originalSubtitle={storeData?.subtitle ?? ""}
+                  originalDescription={storeData?.description ?? ""}
+                  onNameChange={setNameOverride}
+                  onSubtitleChange={setSubtitleOverride}
+                  onPromotionalTextChange={setPromoTextOverride}
+                  onDescriptionChange={setDescriptionOverride}
+                />
+              )}
               {tab === "visual" && (
                 <AppVisualPreview
                   app={previewApp}

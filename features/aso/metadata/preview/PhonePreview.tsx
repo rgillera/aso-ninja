@@ -304,6 +304,7 @@ function AndroidPreview({ app, dark, storeData, videoUrl }: { app: App; dark: bo
   const ratingCount = storeData?.ratingCount;
   const genre = storeData?.primaryGenreName ?? "App";
   const ageRating = storeData?.contentAdvisoryRating ?? "3+";
+  const subtitle = storeData?.subtitle ?? "";
   const description = storeData?.description ?? "";
   const bars = rating !== undefined ? ratingBars(rating) : null;
 
@@ -352,6 +353,7 @@ function AndroidPreview({ app, dark, storeData, videoUrl }: { app: App; dark: bo
             <div className="flex-1 min-w-0 pt-1">
               <p className={`text-xl font-bold leading-tight ${text}`}>{app.name}</p>
               <p className="text-sm text-green-400 mt-1">{app.bundle_id.split(".").slice(0, 2).join(".")}</p>
+              {subtitle && <p className={`text-xs mt-1 leading-snug ${subtext}`}>{subtitle}</p>}
               <p className={`text-xs mt-0.5 ${subtext}`}>In-app purchases</p>
             </div>
           </div>
