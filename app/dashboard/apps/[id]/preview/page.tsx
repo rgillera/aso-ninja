@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import type { App } from "@/libs/contracts";
@@ -133,7 +133,17 @@ export default async function Page({ params }: PageProps) {
 
   const { data: app, error } = await supabase.from("apps").select("*").eq("id", id).single();
 
-  if (error || !app) notFound();
+  if (error || !app) {
+    const { data: fallbackApp } = await supabase
+      .from("apps")
+      .select("id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackApp?.id) redirect(`/dashboard/apps/${fallbackApp.id}/report`);
+    redirect("/dashboard");
+  }
 
   const packageId = app.bundle_id;
   const country = app.country ?? "US";

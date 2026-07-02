@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import UpdateFrequency from "@/features/aso/metadata/UpdateFrequency";
 import type { App } from "@/libs/contracts";
@@ -13,7 +13,17 @@ export default async function Page({ params }: PageProps) {
   if (!user) redirect("/login");
 
   const { data: app, error } = await supabase.from("apps").select("*").eq("id", id).single();
-  if (error || !app) notFound();
+  if (error || !app) {
+    const { data: fallbackApp } = await supabase
+      .from("apps")
+      .select("id")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackApp?.id) redirect(`/dashboard/apps/${fallbackApp.id}/report`);
+    redirect("/dashboard");
+  }
 
   const { data: allApps } = await supabase.from("apps").select("*").eq("workspace_id", app.workspace_id).order("created_at", { ascending: false });
 

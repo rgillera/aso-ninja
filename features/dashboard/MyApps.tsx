@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect, useTransition } from "react";
+import Link from "next/link";
 import {
   PlusIcon,
   DevicePhoneMobileIcon,
@@ -114,7 +115,7 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
       </div>
 
       {/* App icon — links to first entry */}
-      <a href={`/dashboard/apps/${primary.id}/report`} className="shrink-0">
+      <Link href={`/dashboard/apps/${primary.id}/report`} className="shrink-0">
         {primary.icon_url ? (
           <img src={primary.icon_url} alt={primary.name} className="size-10 rounded-xl object-cover" />
         ) : (
@@ -122,20 +123,20 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
             <DevicePhoneMobileIcon className="size-5 text-gray-500" />
           </div>
         )}
-      </a>
+      </Link>
 
       {/* Name + bundle — links to first entry */}
-      <a href={`/dashboard/apps/${primary.id}/report`} className="flex-1 min-w-0">
+      <Link href={`/dashboard/apps/${primary.id}/report`} className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white truncate">{primary.name}</p>
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
-      </a>
+      </Link>
 
       {/* Country badges + remove button */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1.5">
           {entries.map((app) =>
             app.country ? (
-              <a
+              <Link
                 key={app.id}
                 href={`/dashboard/apps/${app.id}/report`}
                 onClick={(e) => e.stopPropagation()}
@@ -143,7 +144,7 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
               >
                 <span className="text-base leading-none">{countryFlag(app.country)}</span>
                 {app.country}
-              </a>
+              </Link>
             ) : null
           )}
         </div>
