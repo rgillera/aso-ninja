@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function MaintenancePage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 px-6 py-12">
-      <div className="max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/90 p-10 shadow-2xl shadow-slate-950/40">
+    <main className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(129,140,248,0.16),_transparent_28%),_linear-gradient(180deg,_#04122d_0%,_#03060f_100%)] text-slate-100 px-6 py-12">
+      <div className="max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/85 p-10 shadow-2xl shadow-slate-950/40">
         <div className="text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500">We'll be back soon</p>
           <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">Site maintenance</h1>
