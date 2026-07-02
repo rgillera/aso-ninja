@@ -9,11 +9,11 @@ export type SearchStoreResult = {
   iosUnavailable: boolean;
 };
 
-export async function searchStoreApps(query: string): Promise<SearchStoreResult> {
+export async function searchStoreApps(query: string, country: string): Promise<SearchStoreResult> {
   if (!query.trim()) return { results: [], iosUnavailable: false };
   const [ios, android] = await Promise.allSettled([
-    searchAppStore(query, "US"),
-    searchPlayStore(query, "US"),
+    searchAppStore(query, country),
+    searchPlayStore(query, country),
   ]);
   const iosResults     = ios.status === "fulfilled" && ios.value !== null ? ios.value : [];
   const iosUnavailable = ios.status === "rejected" || (ios.status === "fulfilled" && ios.value === null);

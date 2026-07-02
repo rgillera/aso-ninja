@@ -26,6 +26,14 @@ function AndroidIcon() {
   return <img src="/google-play.svg" alt="Google Play" className="size-4" />;
 }
 
+function FollowedBadge() {
+  return (
+    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/25">
+      Following
+    </span>
+  );
+}
+
 function AppIconWithBadge({
   iconUrl,
   name,
@@ -52,22 +60,6 @@ function AppIconWithBadge({
         )}
       </div>
     </div>
-  );
-}
-
-function ConnectedBadge() {
-  return (
-    <span className="shrink-0 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium text-white">
-      Following
-    </span>
-  );
-}
-
-function FollowingBadge() {
-  return (
-    <span className="shrink-0 rounded-full bg-[#22252f] px-3 py-1 text-xs text-gray-400 ring-1 ring-white/[0.08]">
-      Following
-    </span>
   );
 }
 
@@ -107,7 +99,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
     if (!query.trim()) { setResults([]); setIosDown(false); return; }
     debounce.current = setTimeout(() => {
       startTransition(async () => {
-        const { results: r, iosUnavailable }: SearchStoreResult = await searchStoreApps(query);
+        const { results: r, iosUnavailable }: SearchStoreResult = await searchStoreApps(query, country);
         setResults(r);
         setIosDown(iosUnavailable);
       });
@@ -129,6 +121,37 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
 
   const allCountries = useMemo(() => Object.keys(COUNTRY_MAP).sort(), []);
 
+  // Persist selected country per-workspace in localStorage
+  useEffect(() => {
+    if (!workspaceId) return;
+    const key = `dashboardCountry:${workspaceId}`;
+    try {
+      const stored = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+      if (stored) setCountry(stored);
+    } catch {
+      /* ignore */
+    }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    const key = `dashboardCountry:${workspaceId}`;
+    try {
+      localStorage.setItem(key, country);
+    } catch {
+      /* ignore */
+    }
+
+    // Also set a cookie so SSR/server components can read the selected country for this workspace
+    try {
+      const cookieName = `dashboardCountry:${workspaceId}`;
+      const maxAge = 60 * 60 * 24 * 30; // 30 days
+      document.cookie = `${cookieName}=${encodeURIComponent(country)}; path=/; max-age=${maxAge}; samesite=Lax`;
+    } catch {
+      /* ignore */
+    }
+  }, [country, workspaceId]);
+
   // Filtered store results (by store type)
   const filteredResults = useMemo(() => {
     let r = results;
@@ -143,7 +166,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
   const filteredApps = useMemo(() => {
     return apps.filter(a => {
       if (storeFilter !== "all" && a.store !== storeFilter) return false;
-      if (country && a.country !== country) return false;
+      if (country && (a.country ?? "US").toUpperCase() !== country.toUpperCase()) return false;
       if (isSearching) {
         const q = query.toLowerCase();
         return a.name.toLowerCase().includes(q) || a.bundle_id.toLowerCase().includes(q);
@@ -165,16 +188,15 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
         storeId: a.store_id,
         country: a.country ?? "US",
         href: `/dashboard/apps/${a.id}/report`,
-        trackedId: a.id,
         timestamp: 0,
       } as RecentEntry));
     return [...recentlyViewed, ...followedNotInRecent];
   }, [recentlyViewed, apps]);
 
-  // Tab labels: "All Apps" / "My Apps" when searching, "Recently Viewed" / "My Apps" otherwise
+  // Tab labels: "All Apps" / "Followed Apps" when searching, "Recently Viewed" / "Followed Apps" otherwise
   const tabs: { key: Tab; label: string }[] = isSearching
-    ? [{ key: "all", label: "All Apps" }, { key: "myapps", label: "My Apps" }]
-    : [{ key: "recent", label: "Recently Viewed" }, { key: "myapps", label: "My Apps" }];
+    ? [{ key: "all", label: "All Apps" }, { key: "myapps", label: "Followed Apps" }]
+    : [{ key: "recent", label: "Recently Viewed" }, { key: "myapps", label: "Followed Apps" }];
 
   function handleResultClick(entry: Omit<RecentEntry, "timestamp">) {
     saveRecentEntry(workspaceId, entry);
@@ -310,24 +332,34 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                     <p className="px-5 py-8 text-center text-sm text-gray-600">No recently viewed apps</p>
                   ) : (
                     <div className="divide-y divide-white/[0.04]">
-                      {combinedRecent.map((r, i) => (
-                        <a
-                          key={i}
-                          href={r.href}
-                          onClick={() => handleResultClick(r)}
-                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
-                        >
-                          <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{r.name}</p>
-                            <p className="text-xs text-gray-500 truncate mt-0.5">
-                              {countryFlag(r.country)} {COUNTRY_MAP[r.country] ?? r.country}
-                              {" · "}{r.store === "ios" ? "App Store" : "Google Play"}
-                            </p>
-                          </div>
-                          {r.trackedId ? <ConnectedBadge /> : null}
-                        </a>
-                      ))}
+                      {combinedRecent.map((r, i) => {
+                        const isFollowed = apps.some(a =>
+                          a.bundle_id === r.bundleId &&
+                          a.store === r.store &&
+                          (a.country ?? "US").toUpperCase() === r.country.toUpperCase()
+                        );
+                        return (
+                          <a
+                            key={i}
+                            href={r.href}
+                            onClick={() => handleResultClick(r)}
+                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                          >
+                            <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">
+                                {r.country ? <span className="mr-2 text-base leading-none">{countryFlag(r.country)}</span> : null}
+                                {r.name}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate mt-0.5">
+                                {countryFlag(r.country)} {COUNTRY_MAP[r.country] ?? r.country}
+                                {" · "}{r.store === "ios" ? "App Store" : "Google Play"}
+                              </p>
+                            </div>
+                            {isFollowed ? <FollowedBadge /> : null}
+                          </a>
+                        );
+                      })}
                     </div>
                   )
                 )}
@@ -355,7 +387,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                         )}
                         <div className="divide-y divide-white/[0.04]">
                           {visibleResults.map((r, i) => {
-                            const trackedApp = apps.find(a => a.bundle_id === r.bundleId);
+                            const trackedApp = apps.find(a => a.bundle_id === r.bundleId && (a.country ?? "US").toUpperCase() === country.toUpperCase());
                             const href = trackedApp
                               ? `/dashboard/apps/${trackedApp.id}/report`
                               : `/dashboard/preview?bundleId=${encodeURIComponent(r.bundleId)}&storeId=${encodeURIComponent(r.storeId)}&store=${r.store}&name=${encodeURIComponent(r.name)}&icon=${encodeURIComponent(r.iconUrl)}&country=${country}&page=report`;
@@ -371,16 +403,21 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                                   storeId: r.storeId,
                                   country,
                                   href,
-                                  trackedId: trackedApp?.id,
                                 })}
                                 className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                               >
                                 <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-white truncate">{r.name}</p>
-                                  <p className="text-xs text-gray-500 truncate mt-0.5">{r.developer}</p>
+                                        <p className="text-sm font-semibold text-white truncate">
+                                          <span className="mr-2 text-base leading-none">{countryFlag(country)}</span>
+                                          {r.name}
+                                        </p>
+                                        <p className="text-xs text-gray-500 truncate mt-0.5">
+                                          {COUNTRY_MAP[country] ?? country}
+                                          {" · "}{r.developer}
+                                        </p>
                                 </div>
-                                {trackedApp && <ConnectedBadge />}
+                                {trackedApp ? <FollowedBadge /> : null}
                               </a>
                             );
                           })}
@@ -401,7 +438,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
               </>
             )}
 
-            {/* My Apps tab */}
+            {/* Followed Apps tab */}
             {tab === "myapps" && (
               <>
                 {filteredApps.length === 0 ? (
@@ -422,7 +459,6 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                           storeId: app.store_id,
                           country: app.country ?? "US",
                           href: `/dashboard/apps/${app.id}/report`,
-                          trackedId: app.id,
                         })}
                         className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                       >
@@ -438,7 +474,6 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                             )}
                           </p>
                         </div>
-                        <FollowingBadge />
                       </a>
                     ))}
                   </div>

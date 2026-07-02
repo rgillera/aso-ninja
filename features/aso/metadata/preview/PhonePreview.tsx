@@ -16,6 +16,30 @@ type StoreData = {
   contentAdvisoryRating: string;
 } | null;
 
+function IosStatusIcons({ className }: { className: string }) {
+  return (
+    <div className={`flex items-center gap-1.5 ${className}`}>
+      {/* Cellular signal */}
+      <svg viewBox="0 0 20 12" className="h-2.5 w-4" fill="currentColor">
+        <rect x="0" y="7" width="3.2" height="5" rx="1" />
+        <rect x="5.6" y="5" width="3.2" height="7" rx="1" />
+        <rect x="11.2" y="3" width="3.2" height="9" rx="1" />
+        <rect x="16.8" y="0" width="3.2" height="12" rx="1" />
+      </svg>
+      {/* WiFi */}
+      <svg viewBox="0 0 24 24" className="h-3 w-3.5" fill="currentColor">
+        <path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" />
+      </svg>
+      {/* Battery */}
+      <svg viewBox="0 0 25 13" className="h-3 w-6">
+        <rect x="0.5" y="0.5" width="21" height="12" rx="3.5" stroke="currentColor" strokeOpacity="0.4" fill="none" />
+        <rect x="2" y="2" width="18" height="9" rx="2" fill="currentColor" />
+        <rect x="22.5" y="4.5" width="1.6" height="4" rx="0.8" fill="currentColor" fillOpacity="0.4" />
+      </svg>
+    </div>
+  );
+}
+
 function ratingBars(avg: number): number[] {
   const five = Math.min(0.95, Math.max(0.15, ((avg - 1) / 4) * 0.85 + 0.1));
   const one = Math.min(0.4, Math.max(0.02, ((5 - avg) / 4) * 0.25));
@@ -48,7 +72,7 @@ function IosStarRating({ rating }: { rating: number }) {
   );
 }
 
-function IosPreview({ app, dark, storeData }: { app: App; dark: boolean; storeData: StoreData }) {
+function IosPreview({ app, dark, storeData, videoUrl }: { app: App; dark: boolean; storeData: StoreData; videoUrl?: string | null }) {
   const bg = dark ? "bg-black" : "bg-white";
   const text = dark ? "text-white" : "text-black";
   const subtext = dark ? "text-gray-400" : "text-gray-500";
@@ -72,9 +96,7 @@ function IosPreview({ app, dark, storeData }: { app: App; dark: boolean; storeDa
       {/* Status bar */}
       <div className={`shrink-0 flex items-center justify-between px-7 pt-4 pb-1 text-xs font-semibold ${text}`}>
         <span>9:41</span>
-        <div className="flex items-center gap-1.5">
-          <span>▐▐▐▐</span><span>WiFi</span><span className="font-bold">⬤</span>
-        </div>
+        <IosStatusIcons className={text} />
       </div>
 
       {/* Nav bar */}
@@ -131,13 +153,15 @@ function IosPreview({ app, dark, storeData }: { app: App; dark: boolean; storeDa
         {/* Screenshots */}
         <div className={`px-4 pb-4 border-t ${border} pt-4 ${bg}`}>
           <div className="flex gap-2.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {screenshots.length > 0
-              ? screenshots.map((url, i) => (
-                  <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[150px] h-[280px] shrink-0 rounded-2xl object-cover object-top" />
-                ))
-              : [...Array(2)].map((_, i) => (
-                  <div key={i} className={`w-[150px] h-[280px] rounded-2xl shrink-0 ${screenshotBg}`} />
-                ))}
+            {videoUrl && (
+              <video src={videoUrl} className="w-[150px] h-[280px] shrink-0 rounded-2xl object-cover" muted loop autoPlay playsInline />
+            )}
+            {screenshots.map((url, i) => (
+              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[150px] h-[280px] shrink-0 rounded-2xl object-cover object-top" />
+            ))}
+            {screenshots.length === 0 && !videoUrl && [...Array(2)].map((_, i) => (
+              <div key={i} className={`w-[150px] h-[280px] rounded-2xl shrink-0 ${screenshotBg}`} />
+            ))}
           </div>
         </div>
 
@@ -270,7 +294,7 @@ function IosPreview({ app, dark, storeData }: { app: App; dark: boolean; storeDa
 
 // ─── Android / Google Play ────────────────────────────────────────────────────
 
-function AndroidPreview({ app, dark, storeData }: { app: App; dark: boolean; storeData: StoreData }) {
+function AndroidPreview({ app, dark, storeData, videoUrl }: { app: App; dark: boolean; storeData: StoreData; videoUrl?: string | null }) {
   const bg = dark ? "bg-[#1a1a1a]" : "bg-white";
   const text = dark ? "text-white" : "text-black";
   const subtext = dark ? "text-gray-400" : "text-gray-500";
@@ -368,13 +392,15 @@ function AndroidPreview({ app, dark, storeData }: { app: App; dark: boolean; sto
         {/* Screenshots */}
         <div className={`px-4 pb-4 border-t ${border} pt-4 ${bg}`}>
           <div className="flex gap-2.5 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
-            {screenshots.length > 0
-              ? screenshots.map((url, i) => (
-                  <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[145px] h-[270px] shrink-0 rounded-xl object-cover object-top" />
-                ))
-              : [...Array(3)].map((_, i) => (
-                  <div key={i} className={`w-[145px] h-[270px] rounded-xl shrink-0 ${screenshotBg}`} />
-                ))}
+            {videoUrl && (
+              <video src={videoUrl} className="w-[145px] h-[270px] shrink-0 rounded-xl object-cover" muted loop autoPlay playsInline />
+            )}
+            {screenshots.map((url, i) => (
+              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[145px] h-[270px] shrink-0 rounded-xl object-cover object-top" />
+            ))}
+            {screenshots.length === 0 && !videoUrl && [...Array(3)].map((_, i) => (
+              <div key={i} className={`w-[145px] h-[270px] rounded-xl shrink-0 ${screenshotBg}`} />
+            ))}
           </div>
         </div>
 
@@ -467,17 +493,19 @@ export default function PhonePreview({
   app,
   dark,
   storeData,
+  videoUrl,
 }: {
   app: App;
   dark: boolean;
   storeData: StoreData;
+  videoUrl?: string | null;
 }) {
   return (
     <div className="w-[520px] shrink-0 flex items-start justify-center overflow-y-auto p-8">
       {app.store === "android" ? (
-        <AndroidPreview app={app} dark={dark} storeData={storeData} />
+        <AndroidPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
       ) : (
-        <IosPreview app={app} dark={dark} storeData={storeData} />
+        <IosPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
       )}
     </div>
   );

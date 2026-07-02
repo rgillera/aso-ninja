@@ -9,7 +9,7 @@ const links = [
   { label: "Testimonials", href: "#testimonials" },
 ];
 
-export default function PortalNav() {
+export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -30,15 +30,26 @@ export default function PortalNav() {
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
-          <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
-            Sign in
-          </a>
-          <a
-            href="/signup"
-            className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
-          >
-            Create free account
-          </a>
+          {isAuthenticated ? (
+            <a
+              href="/dashboard"
+              className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+            >
+              Dashboard
+            </a>
+          ) : (
+            <>
+              <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                Sign in
+              </a>
+              <a
+                href="/signup"
+                className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+              >
+                Create free account
+              </a>
+            </>
+          )}
         </div>
 
         <button
@@ -57,10 +68,18 @@ export default function PortalNav() {
             </a>
           ))}
           <hr className="border-white/10" />
-          <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white">Sign in</a>
-          <a href="/signup" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
-            Create free account
-          </a>
+          {isAuthenticated ? (
+            <a href="/dashboard" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
+              Dashboard
+            </a>
+          ) : (
+            <>
+              <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white">Sign in</a>
+              <a href="/signup" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
+                Create free account
+              </a>
+            </>
+          )}
         </div>
       )}
     </header>
