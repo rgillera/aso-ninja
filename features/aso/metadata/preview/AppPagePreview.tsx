@@ -10,6 +10,8 @@ import {
 import PhonePreview from "@/features/aso/metadata/preview/PhonePreview";
 import AppTextPreview from "@/features/aso/metadata/preview/AppTextPreview";
 import AppVisualPreview from "@/features/aso/metadata/preview/AppVisualPreview";
+import SearchPreviewModal from "@/features/aso/metadata/preview/SearchPreviewModal";
+import CompareVersionsModal from "@/features/aso/metadata/preview/CompareVersionsModal";
 import type { App, Workspace, StoreData } from "@/libs/contracts";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 
@@ -31,6 +33,17 @@ export default function AppPagePreview({ app, storeData }: Props) {
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
   const [customScreenshotUrls, setCustomScreenshotUrls] = useState<string[]>([]);
   const [customVideoUrl, setCustomVideoUrl] = useState<string | null>(null);
+  const [showSearchPreview, setShowSearchPreview] = useState(false);
+  const [showCompareVersions, setShowCompareVersions] = useState(false);
+
+  function handleClearAll() {
+    if (customIconUrl) URL.revokeObjectURL(customIconUrl);
+    customScreenshotUrls.forEach((url) => URL.revokeObjectURL(url));
+    if (customVideoUrl) URL.revokeObjectURL(customVideoUrl);
+    setCustomIconUrl(null);
+    setCustomScreenshotUrls([]);
+    setCustomVideoUrl(null);
+  }
 
   function handleIconUpload(file: File) {
     const url = URL.createObjectURL(file);
@@ -80,6 +93,7 @@ export default function AppPagePreview({ app, storeData }: Props) {
   ];
 
   return (
+    <>
     <div className="h-full flex flex-col overflow-hidden">
         {/* Page header */}
         <div className="shrink-0 border-b border-white/[0.07] bg-[#111318] px-6 py-4">
@@ -149,9 +163,9 @@ export default function AppPagePreview({ app, storeData }: Props) {
                 ))}
               </div>
               <div className="flex items-center gap-2">
-                <button className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Clear all</button>
-                <button className="rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">Search Preview</button>
-                <button className="rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">Compare versions</button>
+                <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Clear all</button>
+                <button onClick={() => setShowSearchPreview(true)} className="rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">Search Preview</button>
+                <button onClick={() => setShowCompareVersions(true)} className="rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white transition-colors">Compare versions</button>
               </div>
             </div>
 
@@ -175,5 +189,20 @@ export default function AppPagePreview({ app, storeData }: Props) {
           <PhonePreview app={previewApp} dark={dark} storeData={previewStoreData} videoUrl={customVideoUrl} />
         </div>
       </div>
+
+      {showSearchPreview && (
+        <SearchPreviewModal app={previewApp} storeData={previewStoreData} onClose={() => setShowSearchPreview(false)} />
+      )}
+      {showCompareVersions && (
+        <CompareVersionsModal
+          currentApp={app}
+          currentStoreData={storeData}
+          yourApp={previewApp}
+          yourStoreData={previewStoreData}
+          yourVideoUrl={customVideoUrl}
+          onClose={() => setShowCompareVersions(false)}
+        />
+      )}
+    </>
   );
 }

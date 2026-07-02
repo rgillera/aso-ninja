@@ -64,39 +64,27 @@ async function fetchItunesData(storeId: string, country: string) {
   } catch { return null; }
 }
 
+function decodeHtmlEntities(s: string) {
+  return s.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"');
+}
+
 async function fetchGooglePlayData(packageId: string, country: string) {
   try {
-    const res = await fetch(
-      `https://play.google.com/store/apps/details?id=${packageId}&hl=en&gl=${country}`,
-      { headers: { "User-Agent": UA }, cache: "no-store" }
-    );
-    const html = await res.text();
-    const shotRe = /jscontroller="RQJprf"[^>]*><img src="(https:\/\/play-lh\.googleusercontent\.com\/[^"]+)"/g;
-    const screenshots: string[] = []; let m;
-    while ((m = shotRe.exec(html)) !== null) {
-      screenshots.push(m[1].replace(/=[^=\s"']+$/, "") + "=w390-h844-rw");
-      if (screenshots.length >= 7) break;
-    }
-    const rvMatch = html.match(/"ratingValue":"([^"]+)"/);
-    const rcMatch = html.match(/"ratingCount":"([^"]+)"/);
-    const decode = (s: string) => s.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"');
-    const shortMatch = html.match(/<meta[^>]+itemprop="description"[^>]+content="([^"]+)"/) ?? html.match(/content="([^"]+)"[^>]+itemprop="description"/);
-    const longMatch = html.match(/data-g-id="description">([\s\S]{50,4000}?)<\/div>/);
-    const longDescription = longMatch
-      ? longMatch[1].replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").trim()
-      : (shortMatch ? decode(shortMatch[1]) : "");
-    const genreMatch = html.match(/"genre":"([^"]+)"/);
-    const ageMatch = html.match(/Content Rating<\/div><div[^>]*><span[^>]*>([^<]+)<\/span>/);
+    const gplay = await import("google-play-scraper");
+    const api = gplay.default ?? gplay;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: "en" });
+
     return {
-      screenshotUrls: screenshots,
-      subtitle:               shortMatch ? decode(shortMatch[1]) : "",
-      description:            longDescription,
-      releaseNotes:           "",
-      rating:                 rvMatch ? parseFloat(rvMatch[1]) : undefined,
-      ratingCount:            rcMatch ? parseInt(rcMatch[1]) : undefined,
-      primaryGenreName:       genreMatch?.[1] ?? "",
-      contentAdvisoryRating:  ageMatch?.[1] ?? "3+",
-      version:                "",
+      screenshotUrls: (r.screenshots ?? []).slice(0, 7).map((url: string) => `${url}=w390-h844-rw`),
+      subtitle:               decodeHtmlEntities(r.summary ?? ""),
+      description:            r.description ?? "",
+      releaseNotes:           r.recentChanges ? decodeHtmlEntities(r.recentChanges.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")) : "",
+      rating:                 r.score as number | undefined,
+      ratingCount:            r.ratings as number | undefined,
+      primaryGenreName:       r.genre ?? "",
+      contentAdvisoryRating:  r.contentRating ?? "3+",
+      version:                r.version ?? "",
     };
   } catch { return null; }
 }

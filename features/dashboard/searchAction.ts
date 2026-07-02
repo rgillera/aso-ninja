@@ -9,6 +9,19 @@ export type SearchStoreResult = {
   iosUnavailable: boolean;
 };
 
+// Alternates between the two lists so both stores are represented near the
+// front of the results — a plain concat would let a large iOS result set
+// push every Android result past the UI's collapsed preview slice.
+function interleave<T>(a: T[], b: T[]): T[] {
+  const merged: T[] = [];
+  const max = Math.max(a.length, b.length);
+  for (let i = 0; i < max; i++) {
+    if (i < a.length) merged.push(a[i]);
+    if (i < b.length) merged.push(b[i]);
+  }
+  return merged;
+}
+
 export async function searchStoreApps(query: string, country: string): Promise<SearchStoreResult> {
   if (!query.trim()) return { results: [], iosUnavailable: false };
   const [ios, android] = await Promise.allSettled([
@@ -19,7 +32,7 @@ export async function searchStoreApps(query: string, country: string): Promise<S
   const iosUnavailable = ios.status === "rejected" || (ios.status === "fulfilled" && ios.value === null);
   const androidResults = android.status === "fulfilled" ? android.value : [];
   return {
-    results: [...iosResults, ...androidResults].slice(0, 24),
+    results: interleave(iosResults, androidResults).slice(0, 24),
     iosUnavailable,
   };
 }

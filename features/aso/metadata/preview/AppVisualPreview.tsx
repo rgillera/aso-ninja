@@ -119,7 +119,13 @@ export default function AppVisualPreview({
               <>
                 <img src={app.icon_url} alt={app.name} className="size-28 rounded-2xl object-cover ring-1 ring-white/[0.08]" />
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-                  <ArrowUpTrayIcon className="size-5 text-white" />
+                  <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                    <ArrowUpTrayIcon className="size-4" />
+                    Replace
+                  </span>
+                </div>
+                <div className="absolute -bottom-1.5 -right-1.5 flex size-7 items-center justify-center rounded-full bg-indigo-500 text-white ring-2 ring-[#1a1d24] shadow-md transition-transform group-hover:scale-110">
+                  <ArrowUpTrayIcon className="size-3.5" />
                 </div>
               </>
             ) : (

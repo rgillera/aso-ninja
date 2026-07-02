@@ -64,7 +64,7 @@ function MetadataSection({
       <div className={`mx-4 mb-4 rounded-xl ring-1 ring-white/[0.06] ${dark ? "bg-[#0d0f14]" : "bg-[#13151b]"}`}>
         <div className="px-4 pt-3 pb-2 min-h-[60px]">
           {value ? (
-            <p className="text-sm text-white leading-relaxed">{value}</p>
+            <p className="text-sm text-white leading-relaxed whitespace-pre-line">{value}</p>
           ) : (
             <p className="text-sm text-gray-600 italic">{placeholder}</p>
           )}
@@ -85,6 +85,16 @@ function MetadataSection({
 }
 
 export default function AppTextPreview({ app, storeData, dark }: Props) {
+  if (app.store === "android") {
+    return (
+      <>
+        <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" dark={dark} />
+        <MetadataSection title="Short Description" value={storeData?.subtitle ?? ""} limit={80} placeholder="Enter short description…" dark={dark} />
+        <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" dark={dark} />
+      </>
+    );
+  }
+
   return (
     <>
       <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" dark={dark} />

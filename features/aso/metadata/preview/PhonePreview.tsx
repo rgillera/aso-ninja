@@ -16,7 +16,7 @@ type StoreData = {
   contentAdvisoryRating: string;
 } | null;
 
-function IosStatusIcons({ className }: { className: string }) {
+export function IosStatusIcons({ className }: { className: string }) {
   return (
     <div className={`flex items-center gap-1.5 ${className}`}>
       {/* Cellular signal */}
@@ -103,11 +103,7 @@ function IosPreview({ app, dark, storeData, videoUrl }: { app: App; dark: boolea
       <div className={`shrink-0 flex items-center justify-between px-5 py-2 ${bg}`}>
         <span className="text-blue-400 text-sm">‹ Search</span>
         <span className={`text-xs font-semibold ${subtext}`}>App Store</span>
-        <button className="rounded-full bg-gray-700/60 p-1">
-          <svg className="size-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-        </button>
+        <span className="size-6" aria-hidden="true" />
       </div>
 
       {/* Scrollable */}
