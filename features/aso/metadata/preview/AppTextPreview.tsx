@@ -1,5 +1,6 @@
 import { QuestionMarkCircleIcon, ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData } from "@/libs/contracts";
+import KeywordDensity from "./KeywordDensity";
 
 type Props = {
   app: App;
@@ -94,9 +95,12 @@ function MetadataSection({
       </div>
 
       {showCurrentValue && (
-        <p className="px-5 pb-4 text-xs text-gray-500 truncate">
-          Current {title}: {originalValue}
-        </p>
+        <div className="px-5 pb-4">
+          <p className="mb-2 text-xs text-gray-500">Current {title}:</p>
+          <div className="max-h-48 overflow-y-auto rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] px-4 py-3">
+            <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">{originalValue}</p>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -121,6 +125,7 @@ export default function AppTextPreview({
         <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" dark={dark} originalValue={originalName} onChange={onNameChange} />
         <MetadataSection title="Short Description" value={storeData?.subtitle ?? ""} limit={80} placeholder="Enter short description…" dark={dark} rows={3} originalValue={originalSubtitle} onChange={onSubtitleChange} />
         <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" dark={dark} rows={10} originalValue={originalDescription} onChange={onDescriptionChange} />
+        <KeywordDensity description={storeData?.description ?? ""} originalDescription={originalDescription} />
       </>
     );
   }
