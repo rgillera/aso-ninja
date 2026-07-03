@@ -11,7 +11,6 @@ import {
   CheckIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
-import AddApp from "@/features/app/AddApp";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
 import type { App } from "@/libs/contracts";
@@ -161,8 +160,11 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
   );
 }
 
+function focusGlobalSearch() {
+  window.dispatchEvent(new Event("aso:focus-search"));
+}
+
 export default function MyApps({ apps, workspaceId }: Props) {
-  const [showAdd, setShowAdd] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
   const [, startTransition] = useTransition();
 
@@ -217,7 +219,6 @@ export default function MyApps({ apps, workspaceId }: Props) {
 
   return (
     <>
-      {showAdd && <AddApp workspaceId={workspaceId} onClose={() => setShowAdd(false)} />}
       {pendingDelete && (
         <ConfirmRemoveDialog
           group={pendingDelete}
@@ -336,7 +337,7 @@ export default function MyApps({ apps, workspaceId }: Props) {
           {/* Add app — right side */}
           <div className="ml-auto">
             <button
-              onClick={() => setShowAdd(true)}
+              onClick={focusGlobalSearch}
               className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-[#22252f] transition-colors"
             >
               <PlusIcon className="size-3.5" />
@@ -352,7 +353,7 @@ export default function MyApps({ apps, workspaceId }: Props) {
             <p className="text-sm font-medium text-gray-400">No apps yet</p>
             <p className="mt-1 text-sm text-gray-600">Add your first app to start tracking its ASO performance.</p>
             <button
-              onClick={() => setShowAdd(true)}
+              onClick={focusGlobalSearch}
               className="mt-6 flex items-center gap-2 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 transition-colors"
             >
               <PlusIcon className="size-4" />

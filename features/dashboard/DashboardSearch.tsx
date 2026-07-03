@@ -119,6 +119,16 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
+  // Let other components (e.g. "Add App" buttons) open + focus this search bar
+  useEffect(() => {
+    function onFocusRequest() {
+      setOpen(true);
+      inputRef.current?.focus();
+    }
+    window.addEventListener("aso:focus-search", onFocusRequest);
+    return () => window.removeEventListener("aso:focus-search", onFocusRequest);
+  }, []);
+
   const allCountries = useMemo(() => Object.keys(COUNTRY_MAP).sort(), []);
 
   // Persist selected country per-workspace in localStorage

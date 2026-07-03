@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
-import type { AppSearchResult, AppStore } from "@/libs/contracts";
+import type { AppStore } from "@/libs/contracts";
 
 export type AppState = { error?: string; field?: string } | null;
 
@@ -36,27 +36,6 @@ export async function createAppAction(
     return { error: "This app is already added to the workspace.", field: "bundle_id" };
   if (error) return { error: error.message };
 
-  revalidatePath("/dashboard");
-  return null;
-}
-
-export async function addAppDirectAction(
-  workspaceId: string,
-  result: AppSearchResult,
-  country: string
-): Promise<string | null> {
-  const supabase = await createClient();
-  const { error } = await supabase.from("apps").insert({
-    workspace_id: workspaceId,
-    name: result.name,
-    store: result.store,
-    bundle_id: result.bundleId,
-    store_id: result.storeId,
-    icon_url: result.iconUrl || null,
-    country,
-  });
-  if (error?.code === "23505") return "This app is already tracked in this country for the workspace.";
-  if (error) return error.message;
   revalidatePath("/dashboard");
   return null;
 }

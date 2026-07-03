@@ -19,7 +19,6 @@ import {
   ArrowTrendingUpIcon,
   ListBulletIcon,
   MagnifyingGlassCircleIcon,
-  ScaleIcon,
   ChatBubbleLeftEllipsisIcon,
   UserCircleIcon,
   CreditCardIcon,
@@ -42,7 +41,6 @@ const keywordLinks = [
 
 const marketLinks = [
   { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon },
-  { label: "App Comparison", href: "/dashboard/market/comparison", icon: ScaleIcon },
 ];
 
 type Props = {
@@ -397,7 +395,10 @@ export default function DashboardSidebar({
           className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
         >
           <CreditCardIcon className="size-4 shrink-0" />
-          Free Plan
+          <span className="flex-1">Manage Plan</span>
+          <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-xs font-medium text-gray-400">
+            Free
+          </span>
         </a>
         <a
           href="/dashboard/settings/account"
