@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      "ASO Ninja cut our keyword research time in half. We went from guessing to knowing exactly which terms drive downloads.",
+      "AppASO cut our keyword research time in half. We went from guessing to knowing exactly which terms drive downloads.",
     name: "Mia Chen",
     title: "Growth Lead, Lumio Apps",
     avatar: "MC",

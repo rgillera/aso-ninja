@@ -47,7 +47,7 @@ export default function PortalFooter() {
 
         <div className="mt-16 border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-600">
-            &copy; {new Date().getFullYear()} ASO Ninja. All rights reserved.
+            &copy; {new Date().getFullYear()} AppASO. All rights reserved.
           </p>
           <p className="text-sm text-gray-600">
             Built for iOS &amp; Android
