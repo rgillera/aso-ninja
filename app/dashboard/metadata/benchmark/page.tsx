@@ -16,8 +16,8 @@ export default async function Page() {
     : { data: [] };
   const allApps = (apps ?? []) as App[];
 
-  if (lastAppId && allApps.find(a => a.id === lastAppId)) redirect(`/dashboard/apps/${lastAppId}/history`);
-  if (allApps.length > 0) redirect(`/dashboard/apps/${allApps[0].id}/history`);
+  if (lastAppId && allApps.find(a => a.id === lastAppId)) redirect(`/dashboard/apps/${lastAppId}/benchmark`);
+  if (allApps.length > 0) redirect(`/dashboard/apps/${allApps[0].id}/benchmark`);
 
   return (
     <main className="h-full flex items-center justify-center">

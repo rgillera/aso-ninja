@@ -3,9 +3,11 @@ import { createClient } from "@/libs/supabase/server";
 import ReportPage from "@/features/aso/reports/ReportPage";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import Timeline from "@/features/aso/metadata/timeline";
-import MetadataHistory from "@/features/aso/metadata/MetadataHistory";
-import UpdateFrequency from "@/features/aso/metadata/UpdateFrequency";
-import type { App, Workspace } from "@/libs/contracts";
+import MetadataBenchmark from "@/features/aso/metadata/benchmark";
+import { fetchIosStoreData, fetchIosCategoryPeers } from "@/libs/store/appstore";
+import { fetchAndroidStoreData, fetchAndroidCategoryPeers } from "@/libs/store/googleplay";
+import { daysSince } from "@/libs/store/benchmark-utils";
+import type { App, Workspace, StoreData, CategoryBenchmark } from "@/libs/contracts";
 
 type PageProps = {
   searchParams: Promise<{
@@ -16,92 +18,18 @@ type PageProps = {
     icon?: string;
     developer?: string;
     country?: string;
-    page?: string; // "preview" | "timeline" | "history" | "frequency" | "report" | undefined → preview
+    page?: string; // "preview" | "timeline" | "benchmark" | "report" | undefined → preview
   }>;
 };
 
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-
-async function fetchIosAppPage(storeId: string, country: string): Promise<string | null> {
-  try {
-    const res = await fetch(`https://apps.apple.com/${country.toLowerCase()}/app/id${storeId}`, {
-      headers: { "User-Agent": UA }, cache: "no-store",
-    });
-    return await res.text();
-  } catch { return null; }
-}
-
-function extractIosScreenshots(html: string): string[] {
-  const re = /(https:\/\/is\d+-?ssl\.mzstatic\.com\/image\/thumb\/[^"'\s]+\/)(\d{2,4}x\d{3,4}bb(?:-\d+)?\.(?:webp|jpg|png))/g;
-  const EXCLUDE = /Placeholder|AppIcon|Features|\{w\}x\{h\}/i;
-  const seen = new Set<string>(); const results: string[] = []; let m;
-  while ((m = re.exec(html)) !== null) {
-    const base = m[1]; if (EXCLUDE.test(base)) continue;
-    const [w, h] = m[2].split("x").map(Number); if (h <= w) continue;
-    if (!seen.has(base)) { seen.add(base); results.push(`${base}300x650bb.webp`); }
-    if (results.length >= 6) break;
+async function loadBenchmark(store: string, storeId: string, bundleId: string, country: string, storeData: StoreData): Promise<CategoryBenchmark> {
+  if (store === "ios" && storeData?.primaryGenreId) {
+    return fetchIosCategoryPeers(storeData.primaryGenreId, country, storeId);
   }
-  return results;
-}
-
-// The public iTunes lookup API has no "subtitle" field at all — the marketing
-// subtitle shown under the app name only exists in the store page's embedded
-// JSON, tied to the exact title text. Apps without one set just won't match.
-function extractIosSubtitle(html: string, trackName: string): string {
-  try {
-    const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}","isIOSBinaryMacOSCompatible":(?:true|false),"useAdsLocale":(?:true|false),"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
-    const m = html.match(re);
-    return m ? JSON.parse(`"${m[1]}"`) : "";
-  } catch { return ""; }
-}
-
-async function fetchItunesData(storeId: string, country: string) {
-  try {
-    const [apiRes, html] = await Promise.all([
-      fetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`, { cache: "no-store" }),
-      fetchIosAppPage(storeId, country),
-    ]);
-    const json = await apiRes.json();
-    const r = json.results?.[0];
-    if (!r) return null;
-    return {
-      screenshotUrls:         html ? extractIosScreenshots(html) : [],
-      subtitle:               html ? extractIosSubtitle(html, r.trackName ?? "") : "",
-      description:            (r.description ?? "") as string,
-      releaseNotes:           (r.releaseNotes ?? "") as string,
-      rating:                 r.averageUserRating as number | undefined,
-      ratingCount:            r.userRatingCount as number | undefined,
-      primaryGenreName:       (r.primaryGenreName ?? "") as string,
-      contentAdvisoryRating:  (r.contentAdvisoryRating ?? "") as string,
-      version:                (r.version ?? "") as string,
-    };
-  } catch { return null; }
-}
-
-function decodeHtmlEntities(s: string) {
-  return s.replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"');
-}
-
-async function fetchGooglePlayData(packageId: string, country: string) {
-  try {
-    const gplay = await import("google-play-scraper");
-    const api = gplay.default ?? gplay;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: "en" });
-
-    return {
-      screenshotUrls: (r.screenshots ?? []).slice(0, 7).map((url: string) => `${url}=w390-h844-rw`),
-      subtitle:               decodeHtmlEntities(r.summary ?? ""),
-      description:            r.description ?? "",
-      releaseNotes:           r.recentChanges ? decodeHtmlEntities(r.recentChanges.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "")) : "",
-      rating:                 r.score as number | undefined,
-      ratingCount:            r.ratings as number | undefined,
-      primaryGenreName:       r.genre ?? "",
-      contentAdvisoryRating:  r.contentRating ?? "3+",
-      version:                r.version ?? "",
-    };
-  } catch { return null; }
+  if (store === "android" && storeData?.primaryGenreId) {
+    return fetchAndroidCategoryPeers(storeData.primaryGenreId, storeData.primaryGenreName, country, bundleId);
+  }
+  return null;
 }
 
 export default async function Page({ searchParams }: PageProps) {
@@ -149,9 +77,9 @@ export default async function Page({ searchParams }: PageProps) {
   };
 
   const storeData = store === "ios" && resolvedStoreId
-    ? await fetchItunesData(resolvedStoreId, resolvedCountry)
+    ? await fetchIosStoreData(resolvedStoreId, resolvedCountry)
     : store === "android" && bundleId
-      ? await fetchGooglePlayData(bundleId, resolvedCountry)
+      ? await fetchAndroidStoreData(bundleId, resolvedCountry)
       : null;
 
   if (page === "preview") {
@@ -160,11 +88,16 @@ export default async function Page({ searchParams }: PageProps) {
   if (page === "timeline") {
     return <Timeline app={syntheticApp} allApps={allApps} screenshots={storeData?.screenshotUrls ?? []} />;
   }
-  if (page === "history") {
-    return <MetadataHistory app={syntheticApp} allApps={allApps} />;
-  }
-  if (page === "frequency") {
-    return <UpdateFrequency app={syntheticApp} allApps={allApps} />;
+  if (page === "benchmark") {
+    const benchmark = await loadBenchmark(store, resolvedStoreId, bundleId, resolvedCountry, storeData);
+    return (
+      <MetadataBenchmark
+        app={syntheticApp}
+        storeData={storeData}
+        benchmark={benchmark}
+        daysSinceUpdate={daysSince(storeData?.lastUpdatedAt)}
+      />
+    );
   }
   return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
 }

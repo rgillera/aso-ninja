@@ -15,8 +15,6 @@ import {
   DocumentChartBarIcon,
   EyeIcon,
   ClockIcon,
-  ArchiveBoxIcon,
-  ArrowPathIcon,
   AdjustmentsHorizontalIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
@@ -29,17 +27,16 @@ import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
 const metadataLinks = [
-  { label: "Page Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
+  { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
   { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon },
-  { label: "Metadata History", appPath: "history",   fallback: "/dashboard/metadata/history",    previewPage: "history",   icon: ArchiveBoxIcon },
-  { label: "Update Frequency", appPath: "frequency", fallback: "/dashboard/metadata/frequency",  previewPage: "frequency", icon: ArrowPathIcon },
+  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon },
 ];
 
 const keywordLinks = [
-  { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Keyword Combination", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon },
-  { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
-  { label: "Keyword Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon },
+  { label: "Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
+  { label: "Combination", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon },
+  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
+  { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon },
 ];
 
 const marketLinks = [
