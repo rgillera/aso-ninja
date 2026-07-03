@@ -13,7 +13,23 @@ import type { RecentEntry } from "./recentApps";
 import type { App, AppSearchResult } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
-type Props = { apps: App[]; workspaceId: string };
+type Props = {
+  apps: App[];
+  workspaceId: string;
+  /** True when the current page doesn't encode the app in its URL (Keywords, Reviews, Market, ...) */
+  stayInPlace: boolean;
+  onSelectApp: (entry: Omit<RecentEntry, "timestamp">) => void;
+  /** Builds the link target for an app-scoped page (Report/Metadata/preview), preserving the current sub-page. */
+  hrefForApp: (entry: {
+    trackedId?: string;
+    bundleId: string;
+    storeId: string;
+    store: "ios" | "android";
+    name: string;
+    iconUrl: string | null;
+    country: string;
+  }) => string;
+};
 type Tab = "all" | "myapps" | "recent";
 type StoreFilter = "all" | "ios" | "android";
 
@@ -63,7 +79,7 @@ function AppIconWithBadge({
   );
 }
 
-export function DashboardSearch({ apps, workspaceId }: Props) {
+export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, hrefForApp }: Props) {
   const [open, setOpen]               = useState(false);
   const [tab, setTab]                 = useState<Tab>("recent");
   const [query, setQuery]             = useState("");
@@ -198,6 +214,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
         storeId: a.store_id,
         country: a.country ?? "US",
         href: `/dashboard/apps/${a.id}/report`,
+        trackedId: a.id,
         timestamp: 0,
       } as RecentEntry));
     return [...recentlyViewed, ...followedNotInRecent];
@@ -208,10 +225,14 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
     ? [{ key: "all", label: "All Apps" }, { key: "myapps", label: "Followed Apps" }]
     : [{ key: "recent", label: "Recently Viewed" }, { key: "myapps", label: "Followed Apps" }];
 
-  function handleResultClick(entry: Omit<RecentEntry, "timestamp">) {
+  function handleResultClick(e: React.MouseEvent, entry: Omit<RecentEntry, "timestamp">) {
     saveRecentEntry(workspaceId, entry);
     setRecentlyViewed(loadRecent(workspaceId));
     setOpen(false);
+    if (stayInPlace) {
+      e.preventDefault();
+      onSelectApp(entry);
+    }
   }
 
   function clearQuery() {
@@ -343,16 +364,31 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                   ) : (
                     <div className="divide-y divide-white/[0.04]">
                       {combinedRecent.map((r, i) => {
-                        const isFollowed = apps.some(a =>
+                        const followedApp = apps.find(a =>
                           a.bundle_id === r.bundleId &&
                           a.store === r.store &&
                           (a.country ?? "US").toUpperCase() === r.country.toUpperCase()
                         );
+                        const isFollowed = !!followedApp;
+                        const trackedId = r.trackedId ?? followedApp?.id;
+                        const targetHref = stayInPlace ? r.href : hrefForApp({
+                          trackedId, bundleId: r.bundleId, storeId: r.storeId, store: r.store,
+                          name: r.name, iconUrl: r.iconUrl, country: r.country,
+                        });
                         return (
                           <a
                             key={i}
-                            href={r.href}
-                            onClick={() => handleResultClick(r)}
+                            href={targetHref}
+                            onClick={(e) => handleResultClick(e, {
+                              name: r.name,
+                              iconUrl: r.iconUrl,
+                              store: r.store,
+                              bundleId: r.bundleId,
+                              storeId: r.storeId,
+                              country: r.country,
+                              href: r.href,
+                              trackedId,
+                            })}
                             className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                           >
                             <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
@@ -400,11 +436,15 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                             const href = trackedApp
                               ? `/dashboard/apps/${trackedApp.id}/report`
                               : `/dashboard/preview?bundleId=${encodeURIComponent(r.bundleId)}&storeId=${encodeURIComponent(r.storeId)}&store=${r.store}&name=${encodeURIComponent(r.name)}&icon=${encodeURIComponent(r.iconUrl)}&country=${country}&page=report`;
+                            const targetHref = stayInPlace ? href : hrefForApp({
+                              trackedId: trackedApp?.id, bundleId: r.bundleId, storeId: r.storeId, store: r.store,
+                              name: r.name, iconUrl: r.iconUrl, country,
+                            });
                             return (
                               <a
                                 key={i}
-                                href={href}
-                                onClick={() => handleResultClick({
+                                href={targetHref}
+                                onClick={(e) => handleResultClick(e, {
                                   name: r.name,
                                   iconUrl: r.iconUrl,
                                   store: r.store,
@@ -412,6 +452,7 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                                   storeId: r.storeId,
                                   country,
                                   href,
+                                  trackedId: trackedApp?.id,
                                 })}
                                 className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
                               >
@@ -456,35 +497,42 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                   </p>
                 ) : (
                   <div className="divide-y divide-white/[0.04]">
-                    {filteredApps.map(app => (
-                      <a
-                        key={app.id}
-                        href={`/dashboard/apps/${app.id}/report`}
-                        onClick={() => handleResultClick({
-                          name: app.name,
-                          iconUrl: app.icon_url,
-                          store: app.store,
-                          bundleId: app.bundle_id,
-                          storeId: app.store_id,
-                          country: app.country ?? "US",
-                          href: `/dashboard/apps/${app.id}/report`,
-                        })}
-                        className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
-                      >
-                        <AppIconWithBadge iconUrl={app.icon_url} name={app.name} store={app.store} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-white truncate">{app.name}</p>
-                          <p className="text-xs text-gray-500 truncate mt-0.5">
-                            {app.country && (
-                              <span>{countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country} - {app.country}</span>
-                            )}
-                            {app.bundle_id && (
-                              <span className="ml-2 text-gray-700">{app.bundle_id.split(".").slice(0, 3).join(".")}</span>
-                            )}
-                          </p>
-                        </div>
-                      </a>
-                    ))}
+                    {filteredApps.map(app => {
+                      const targetHref = stayInPlace ? `/dashboard/apps/${app.id}/report` : hrefForApp({
+                        trackedId: app.id, bundleId: app.bundle_id, storeId: app.store_id, store: app.store,
+                        name: app.name, iconUrl: app.icon_url, country: app.country ?? "US",
+                      });
+                      return (
+                        <a
+                          key={app.id}
+                          href={targetHref}
+                          onClick={(e) => handleResultClick(e, {
+                            name: app.name,
+                            iconUrl: app.icon_url,
+                            store: app.store,
+                            bundleId: app.bundle_id,
+                            storeId: app.store_id,
+                            country: app.country ?? "US",
+                            href: `/dashboard/apps/${app.id}/report`,
+                            trackedId: app.id,
+                          })}
+                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                        >
+                          <AppIconWithBadge iconUrl={app.icon_url} name={app.name} store={app.store} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">{app.name}</p>
+                            <p className="text-xs text-gray-500 truncate mt-0.5">
+                              {app.country && (
+                                <span>{countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country} - {app.country}</span>
+                              )}
+                              {app.bundle_id && (
+                                <span className="ml-2 text-gray-700">{app.bundle_id.split(".").slice(0, 3).join(".")}</span>
+                              )}
+                            </p>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 )}
               </>

@@ -68,7 +68,9 @@
       "Bash(node .tmp-seed-second-ws.mjs)",
       "Bash(node check_ws_bug2.mjs)",
       "Bash(lsof -iTCP -sTCP:LISTEN -P)",
-      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/dashboard)"
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/dashboard/keywords/research)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/dashboard/metadata/preview)"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"
