@@ -358,7 +358,6 @@ export function DashboardSearch({ apps, workspaceId }: Props) {
                             <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-semibold text-white truncate">
-                                {r.country ? <span className="mr-2 text-base leading-none">{countryFlag(r.country)}</span> : null}
                                 {r.name}
                               </p>
                               <p className="text-xs text-gray-500 truncate mt-0.5">
