@@ -21,8 +21,9 @@ import {
   MagnifyingGlassCircleIcon,
   ScaleIcon,
   ChatBubbleLeftEllipsisIcon,
+  UserCircleIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline";
-import { signOutAction } from "@/features/auth/actions";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { Workspace } from "@/libs/contracts";
 
@@ -389,16 +390,22 @@ export default function DashboardSidebar({
 
       </nav>
 
-      {/* Sign out */}
-      <div className="p-3 border-t border-white/[0.07]">
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
-          >
-            Sign out
-          </button>
-        </form>
+      {/* Account footer */}
+      <div className="border-t border-white/[0.07] p-3 space-y-0.5">
+        <a
+          href="/dashboard/subscription"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+        >
+          <CreditCardIcon className="size-4 shrink-0" />
+          Free Plan
+        </a>
+        <a
+          href="/dashboard/settings/account"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+        >
+          <UserCircleIcon className="size-4 shrink-0" />
+          Account settings
+        </a>
       </div>
     </aside>
     </>
