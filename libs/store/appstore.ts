@@ -12,7 +12,7 @@ const SCRAPE_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/5
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function itunesFetch(url: string): Promise<Response | null> {
+export async function itunesFetch(url: string): Promise<Response | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -6,6 +6,9 @@ export type StoreData = {
   releaseNotes: string;
   rating?: number;
   ratingCount?: number;
+  // Per-star breakdown — only available from Google Play's scraper. Apple's
+  // public APIs expose no per-star data at all, so this stays undefined for iOS.
+  ratingHistogram?: Record<"1" | "2" | "3" | "4" | "5", number>;
   primaryGenreName: string;
   primaryGenreId?: string;
   contentAdvisoryRating: string;

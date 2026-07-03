@@ -76,6 +76,7 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
     releaseNotes: (r.recentChanges ?? "") as string,
     rating: r.score as number | undefined,
     ratingCount: r.ratings as number | undefined,
+    ratingHistogram: r.histogram as NonNullable<StoreData>["ratingHistogram"],
     primaryGenreName: (r.genre ?? "") as string,
     primaryGenreId: r.genreId as string | undefined,
     contentAdvisoryRating: (r.contentRating ?? "") as string,

@@ -12,8 +12,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   const cookieStore = await cookies();
-  const lastAppId      = cookieStore.get("lastAppId")?.value;
-  const lastPreview    = cookieStore.get("lastPreview")?.value; // encoded search string
+  const lastAppId       = cookieStore.get("lastAppId")?.value;
+  const lastPreview     = cookieStore.get("lastPreview")?.value; // encoded search string
+  const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
 
   const [{ data: workspaces }, { data: apps }] = await Promise.all([
     supabase.from("workspaces").select("*").order("created_at", { ascending: true }),
@@ -27,6 +28,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         allApps={(apps ?? []) as App[]}
         lastAppId={lastAppId}
         lastPreview={lastPreview}
+        lastWorkspaceId={lastWorkspaceId}
       >
         {children}
       </DashboardShell>

@@ -15,12 +15,13 @@ type Props = {
   allApps: App[];
   lastAppId?: string;
   lastPreview?: string;
+  lastWorkspaceId?: string;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, children }: Props) {
   const pathname     = usePathname();
   const params       = useParams<{ id?: string }>();
   const searchParams = useSearchParams();
@@ -36,6 +37,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
 
   const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
   const [savedPreview, setSavedPreview] = useState<string | undefined>(lastPreview);
+  const [savedWorkspaceId, setSavedWorkspaceId] = useState<string | undefined>(lastWorkspaceId);
 
   // On mount: clear stale cookie if the app was deleted, then fall through to
   // seed recentAppId from localStorage. Both checks share one effect so that
@@ -65,6 +67,10 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
       // Track every tracked-app navigation as recently viewed
       const app = allApps.find(a => a.id === params.id);
       if (app) {
+        // Following a specific app also follows its workspace, so non-app pages
+        // (App Explorer, etc.) visited afterwards stay on the same workspace.
+        document.cookie = `lastWorkspaceId=${app.workspace_id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+        setSavedWorkspaceId(app.workspace_id);
         saveRecentEntry(app.workspace_id, {
           name: app.name,
           iconUrl: app.icon_url,
@@ -114,13 +120,27 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, ch
     : undefined;
 
   const wsParam = searchParams.get("ws");
-  // wsParam takes priority over the saved-app workspace when not on an app route,
-  // so clicking the workspace switcher always reflects immediately.
+
+  // Persist an explicit workspace switch (the sidebar switcher navigates to
+  // /dashboard?ws=<id>) so it sticks on the next navigation — otherwise it's
+  // only reflected on that one URL and any link without ?ws= (e.g. App
+  // Explorer) falls straight back to whatever workspace the last-viewed app
+  // belongs to, undoing the switch.
+  useEffect(() => {
+    if (!wsParam) return;
+    const match = workspaces.find(w => w.id === wsParam);
+    if (!match) return;
+    document.cookie = `lastWorkspaceId=${match.id}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    setSavedWorkspaceId(match.id);
+  }, [wsParam, workspaces]);
+
+  // wsParam (freshest explicit switch) wins, then the persisted workspace
+  // choice, then the last-viewed app's workspace, then the first workspace.
   const activeWorkspaceId: string | undefined = params.id
     ? (activeApp?.workspace_id ?? workspaces[0]?.id)
     : wsParam
     ? (workspaces.find(w => w.id === wsParam)?.id ?? workspaces[0]?.id)
-    : (activeApp?.workspace_id ?? workspaces[0]?.id);
+    : (workspaces.find(w => w.id === savedWorkspaceId)?.id ?? activeApp?.workspace_id ?? workspaces[0]?.id);
 
   const metaOverrideHref = isOnPreview
     ? `/dashboard/preview${rawSearchClean}`
