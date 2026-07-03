@@ -5,6 +5,7 @@ import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroic
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
@@ -37,6 +38,11 @@ export default function KeywordResearchPage() {
   // persisted, so users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
   const [rateLimited, setRateLimited] = useState(false);
+  const { setGuardMessage } = useNavigationGuard();
+  useEffect(() => {
+    setGuardMessage(pendingAdds > 0 ? "A keyword is still being added. Leaving now may lose it." : null);
+    return () => setGuardMessage(null);
+  }, [pendingAdds, setGuardMessage]);
 
   // Load/save competitors per app in localStorage
   useEffect(() => {

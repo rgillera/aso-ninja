@@ -1,6 +1,7 @@
 import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
+import { countryFlag } from "@/libs/countries";
 
 type Props = { app: App; storeData: StoreData; benchmark: CategoryBenchmark; daysSinceUpdate?: number };
 
@@ -122,9 +123,32 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
   const categoryLabel = benchmark?.genreName || storeData.primaryGenreName || "category";
 
   return (
-    <main className="h-full overflow-y-auto bg-[#111318]">
-      <div className="p-6">
-        <h1 className="text-xl font-semibold text-white">Metadata Benchmarks</h1>
+    <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
+      <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+        <div className="flex items-center gap-3">
+          {app.icon_url ? (
+            <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+              <DevicePhoneMobileIcon className="size-4 text-gray-500" />
+            </div>
+          )}
+          <div>
+            <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
+            <p className="text-xs text-gray-500 leading-tight">
+              {app.store === "ios" ? "App Store" : "Google Play"}
+              {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <h1 className="text-sm font-semibold text-white">Benchmark</h1>
+          <InformationCircleIcon className="size-4 text-gray-500" />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-6">
+        <h2 className="text-xl font-semibold text-white">Metadata Benchmarks</h2>
         <p className="mt-1 text-sm text-gray-500">
           {benchmark
             ? `How ${app.name}'s metadata compares to ${benchmark.peerCount} other top ${categoryLabel} apps`

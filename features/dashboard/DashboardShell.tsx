@@ -7,6 +7,8 @@ import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider } from "./WorkspaceContext";
 import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
+import { NavigationGuardProvider } from "./NavigationGuardContext";
+import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import type { App, Workspace } from "@/libs/contracts";
@@ -64,6 +66,22 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
   const [savedPreview, setSavedPreview] = useState<string | undefined>(lastPreview);
   const [savedWorkspaceId, setSavedWorkspaceId] = useState<string | undefined>(lastWorkspaceId);
+
+  // Set by pages (e.g. Keywords) while a save is still in flight, so navigating
+  // away — sidebar links, search results, any in-app link — asks for confirmation
+  // first instead of silently losing the in-progress add.
+  const [guardMessage, setGuardMessage] = useState<string | null>(null);
+  const [pendingHref,  setPendingHref]  = useState<string | null>(null);
+
+  function handleNavClickCapture(e: React.MouseEvent) {
+    if (!guardMessage) return;
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const anchor = (e.target as HTMLElement).closest("a[href]");
+    if (!anchor) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setPendingHref(anchor.getAttribute("href"));
+  }
 
   // On mount: clear stale cookie if the app was deleted, then fall through to
   // seed recentAppId from localStorage. Both checks share one effect so that
@@ -271,7 +289,8 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   return (
     <WorkspaceProvider value={activeWorkspaceId ?? ""}>
     <ActiveAppProvider value={displayApp}>
-      <div className="flex h-screen bg-[#111318] overflow-hidden">
+    <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
+      <div className="flex h-screen bg-[#111318] overflow-hidden" onClickCapture={handleNavClickCapture}>
         <DashboardSidebar
           currentPath={pathname}
           workspaces={workspaces}
@@ -293,6 +312,14 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           </div>
         </div>
       </div>
+      {pendingHref && guardMessage && (
+        <LeaveConfirmDialog
+          message={guardMessage}
+          onCancel={() => setPendingHref(null)}
+          onConfirm={() => { window.location.href = pendingHref; }}
+        />
+      )}
+    </NavigationGuardProvider>
     </ActiveAppProvider>
     </WorkspaceProvider>
   );

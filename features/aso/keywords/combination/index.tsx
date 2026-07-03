@@ -5,6 +5,7 @@ import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { CombinationTable } from "./CombinationTable";
@@ -30,6 +31,11 @@ export default function KeywordCombinationPage() {
   const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
+  const { setGuardMessage } = useNavigationGuard();
+  useEffect(() => {
+    setGuardMessage(pendingTerms.size > 0 ? "A keyword is still being saved. Leaving now may lose it." : null);
+    return () => setGuardMessage(null);
+  }, [pendingTerms, setGuardMessage]);
   const [researchTerms,   setResearchTerms]   = useState<string[]>([]);
   const [liveSearchTerm,  setLiveSearchTerm]  = useState<string | null>(null);
   const [appSubtitle,     setAppSubtitle]     = useState<string>("");

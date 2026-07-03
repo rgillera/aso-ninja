@@ -5,6 +5,7 @@ import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PerformanceTable } from "./PerformanceTable";
@@ -48,6 +49,11 @@ export default function KeywordPerformancePage() {
   // button in a loading state until the keyword is actually persisted, so
   // users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
+  const { setGuardMessage } = useNavigationGuard();
+  useEffect(() => {
+    setGuardMessage(pendingAdds > 0 ? "A keyword is still being added. Leaving now may lose it." : null);
+    return () => setGuardMessage(null);
+  }, [pendingAdds, setGuardMessage]);
 
   // Competitors are shared with the Research tab — same app, same comparison set.
   useEffect(() => {
