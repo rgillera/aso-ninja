@@ -142,8 +142,14 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     ? (workspaces.find(w => w.id === wsParam)?.id ?? workspaces[0]?.id)
     : (workspaces.find(w => w.id === savedWorkspaceId)?.id ?? activeApp?.workspace_id ?? workspaces[0]?.id);
 
+  // Mirrors displayApp's priority: while on preview, use the live query string;
+  // otherwise fall back to the persisted savedPreview so sidebar Metadata links
+  // keep pointing at a previewed-but-not-tracked app after navigating away
+  // (e.g. Keywords -> Metadata) instead of losing it to the generic fallback route.
   const metaOverrideHref = isOnPreview
     ? `/dashboard/preview${rawSearchClean}`
+    : savedPreview
+    ? `/dashboard/preview${decodeURIComponent(savedPreview)}`
     : undefined;
 
   const activePreviewPage = isOnPreview ? (searchParams.get("page") ?? "") : undefined;

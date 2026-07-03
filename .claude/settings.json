@@ -66,7 +66,9 @@
       "Bash(node check_noapp.mjs)",
       "Bash(grep -n \"wsParam\\\\|\\\\\\\\?ws=\\\\|ws=\\\\${\" /Users/bmo/Documents/dev/aso-ninja/features/dashboard/DashboardSidebar.tsx)",
       "Bash(node .tmp-seed-second-ws.mjs)",
-      "Bash(node check_ws_bug2.mjs)"
+      "Bash(node check_ws_bug2.mjs)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code} %{redirect_url}\\\\n\" http://localhost:3000/dashboard)"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"
