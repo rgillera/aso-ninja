@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
 type Props = {
@@ -10,17 +10,21 @@ type Props = {
 };
 
 export function LeaveConfirmDialog({ message, onCancel, onConfirm }: Props) {
+  // Leaving is a hard page navigation (full reload), which takes a beat —
+  // show immediate feedback so the click doesn't read as unresponsive.
+  const [leaving, setLeaving] = useState(false);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onCancel();
+      if (!leaving && e.key === "Escape") onCancel();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [onCancel, leaving]);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={leaving ? undefined : onCancel} />
 
       <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
         <div className="flex items-start gap-3 mb-5">
@@ -37,17 +41,20 @@ export function LeaveConfirmDialog({ message, onCancel, onConfirm }: Props) {
           <button
             type="button"
             onClick={onCancel}
+            disabled={leaving}
             autoFocus
-            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Stay
           </button>
           <button
             type="button"
-            onClick={onConfirm}
-            className="rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 transition-colors"
+            onClick={() => { setLeaving(true); onConfirm(); }}
+            disabled={leaving}
+            className="flex items-center gap-2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-70 disabled:cursor-wait transition-colors"
           >
-            Leave anyway
+            {leaving && <span className="size-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />}
+            {leaving ? "Leaving…" : "Leave anyway"}
           </button>
         </div>
       </div>
