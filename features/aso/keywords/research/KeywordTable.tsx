@@ -293,7 +293,7 @@ export function KeywordTable({
   }
 
   function handleCopySelected() {
-    navigator.clipboard.writeText(selectedTerms.join("\n")).catch(() => {});
+    navigator.clipboard.writeText(selectedTerms.join(", ")).catch(() => {});
   }
 
   function cellValue(colKey: string, row: Keyword): string | number {

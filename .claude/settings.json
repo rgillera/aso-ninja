@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/dashboard/market/explorer)",
+      "Bash(curl -s -D - -o /dev/null http://localhost:3000/dashboard/market/explorer)",
+      "Bash(timeout 180 npm run build)",
+      "Bash(curl -s \"https://itunes.apple.com/us/rss/newipadapplications/limit=2/genre=6014/json\")",
+      "Bash(curl -s --compressed \"https://itunes.apple.com/us/rss/newipadapplications/limit=2/genre=6014/json\")",
+      "Bash(pkill -f \"next build\")",
+      "Bash(npm run *)",
+      "Bash(curl -s --compressed \"https://itunes.apple.com/us/rss/topfreeapplications/limit=50/json\")",
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s -D - -o /dev/null -L \"https://apps.apple.com/us/app/instagram/id389801252?uo=2\")",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/120.0.0.0 Safari/537.36\" \"https://apps.apple.com/us/app/instagram/id389801252\" -o /tmp/insta.html)",
+      "Bash(python3 -)",
+      "Bash(curl -s -A \"Mozilla/5.0 \\(Macintosh; Intel Mac OS X 10_15_7\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/120.0.0.0 Safari/537.36\" \"https://apps.apple.com/us/app/netflix/id363590051\" -o /tmp/netflix.html)",
+      "Bash(curl -s \"http://localhost:3000/api/market/explorer?limit=2&chart=free\" -D - -o /tmp/final.json)",
+      "Bash(curl -s -D - -o /dev/null \"http://localhost:3000/api/market/status?workspaceId=x\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s --compressed \"https://itunes.apple.com/us/rss/topfreeapplications/limit=300/json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(len\\(d['feed']['entry']\\)\\)\")",
+      "Bash(curl -s --compressed \"https://itunes.apple.com/us/rss/topfreeapplications/limit=300/json\" -o /tmp/limit300.json -w \"%{http_code}\\\\n\")",
+      "Bash(supabase migration *)",
+      "Bash(python3 -c \"print\\('countries count placeholder'\\)\")",
+      "Bash(docker exec -i supabase_db_aso-ninja psql -U postgres -d postgres -c ' *)",
+      "Bash(docker exec *)",
+      "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=android&chart=new&limit=5\")",
+      "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=android&chart=new&category=SOCIAL&limit=5\")",
+      "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=ios&chart=new&limit=3\")",
+      "Bash(pkill -f \"next dev\")"
+    ]
+  }
+}

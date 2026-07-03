@@ -4,6 +4,7 @@ export type { WorkspaceRole, Workspace, WorkspaceMember } from "./workspace";
 export type { AppStore, App } from "./app";
 export type { AppSearchResult } from "./app/search";
 export type { StoreData, CategoryBenchmark } from "./app/store-data";
+export type { ChartApp } from "./app/chart";
 export type { Keyword, AppKeyword } from "./keyword";
 export type { KeywordRank } from "./keyword/rank";
 export type { MetadataStatus, MetadataDraft } from "./metadata";

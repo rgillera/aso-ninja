@@ -124,7 +124,7 @@ export function PerformanceTable({
   );
 
   function handleCopySelected() {
-    navigator.clipboard.writeText(selectedTerms.join("\n")).catch(() => {});
+    navigator.clipboard.writeText(selectedTerms.join(", ")).catch(() => {});
   }
 
   function handleExportSelected() {

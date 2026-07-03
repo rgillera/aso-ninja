@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
-import type { AppSearchResult, StoreData, CategoryBenchmark } from "@/libs/contracts";
+import type { AppSearchResult, StoreData, CategoryBenchmark, ChartApp } from "@/libs/contracts";
 import { average, median } from "./benchmark-utils";
+import { CATEGORY_MAP } from "@/libs/categories";
 
 // Benchmark data (peer descriptions, screenshots, ratings...) doesn't meaningfully
 // shift minute to minute, so results are cached for a few hours. This is the main
@@ -224,6 +225,159 @@ export async function fetchIosCategoryPeers(
       medianRatingCount: median(ratingCounts),
       avgLanguageCount: languageCounts.length ? Math.round(average(languageCounts)!) : null,
     };
+  } catch {
+    return null;
+  }
+}
+
+export type ChartType = "free" | "paid" | "grossing" | "new";
+
+const CHART_FEED_BASE: Record<ChartType, string> = {
+  free: "topfreeapplications",
+  paid: "toppaidapplications",
+  grossing: "topgrossingapplications",
+  new: "newapplications",
+};
+
+// "new" has no iPhone/iPad variant on Apple's feed — it's a single universal
+// list of recently-released apps, so the device filter doesn't apply to it.
+function chartFeedName(device: "iphone" | "ipad", chart: ChartType): string {
+  const base = CHART_FEED_BASE[chart];
+  return chart !== "new" && device === "ipad" ? base.replace(/applications$/, "ipadapplications") : base;
+}
+
+// Apple's top-charts RSS feed carries rank/name/price/genre but not rating or
+// update date — those live only in the lookup API, so they're fetched separately
+// and merged in below.
+async function fetchTopChartsImpl(
+  country: string,
+  device: "iphone" | "ipad",
+  chart: ChartType,
+  genreId: string | null,
+  limit: number
+): Promise<ChartApp[]> {
+  const feed = chartFeedName(device, chart);
+  // Apple's "newapplications" feed silently ignores both the genre and limit
+  // path segments — it always returns its own fixed, unfiltered list of the
+  // newest ~100 apps store-wide. So for "new", genre/limit are applied below
+  // in-process instead of relying on the feed to honor them.
+  const genrePart = chart !== "new" && genreId ? `/genre=${genreId}` : "";
+  const feedRes = await fetch(
+    `https://itunes.apple.com/${country.toLowerCase()}/rss/${feed}/limit=${limit}${genrePart}/json`,
+    { cache: "no-store" }
+  );
+  if (!feedRes.ok) return [];
+  const feedJson = await feedRes.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const raw: any = feedJson?.feed?.entry;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let entries: any[] = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  if (chart === "new" && genreId) {
+    const genreName = CATEGORY_MAP[genreId];
+    entries = entries.filter((e) => e.category?.attributes?.label === genreName);
+  }
+  if (chart === "new") entries = entries.slice(0, limit);
+
+  return entries.map((e, i) => {
+    // "link" is a single object when the app has only the store-page link, but an
+    // array (store page + preview-video asset) when it also has a video preview.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const links: any[] = Array.isArray(e.link) ? e.link : e.link ? [e.link] : [];
+    const storeLink = links.find((l) => l.attributes?.rel === "alternate")?.attributes?.href;
+
+    return {
+      rank: i + 1,
+      store: "ios" as const,
+      storeId: e.id?.attributes?.["im:id"] ?? "",
+      bundleId: e.id?.attributes?.["im:bundleId"] as string | undefined,
+      name: e["im:name"]?.label ?? "",
+      developer: e["im:artist"]?.label ?? "",
+      iconUrl: e["im:image"]?.[e["im:image"].length - 1]?.label ?? "",
+      price: parseFloat(e["im:price"]?.attributes?.amount ?? "0") || 0,
+      priceLabel: e["im:price"]?.label ?? "Free",
+      genre: e.category?.attributes?.label ?? "",
+      url: storeLink ?? e.id?.label ?? "",
+      rating: null,
+      ratingCount: null,
+      lastUpdatedAt: null,
+    };
+  });
+}
+
+const cachedFetchTopCharts = unstable_cache(fetchTopChartsImpl, ["ios-top-charts"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+type AppLookupExtras = { rating: number | null; ratingCount: number | null; lastUpdatedAt: number | null };
+
+async function fetchAppLookupExtrasImpl(ids: string[], country: string): Promise<Record<string, AppLookupExtras>> {
+  if (ids.length === 0) return {};
+  const res = await itunesFetch(`https://itunes.apple.com/lookup?id=${ids.join(",")}&country=${country}`);
+  if (!res) return {};
+  try {
+    const data = await res.json();
+    const out: Record<string, AppLookupExtras> = {};
+    for (const r of data.results ?? []) {
+      out[String(r.trackId)] = {
+        rating: typeof r.averageUserRating === "number" ? r.averageUserRating : null,
+        ratingCount: typeof r.userRatingCount === "number" ? r.userRatingCount : null,
+        lastUpdatedAt: r.currentVersionReleaseDate ? new Date(r.currentVersionReleaseDate).getTime() : null,
+      };
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+const cachedFetchAppLookupExtras = unstable_cache(fetchAppLookupExtrasImpl, ["ios-app-lookup-extras"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+// Public iTunes top-charts feed — a real, always-current list of the top (or
+// newest) apps per country/category/device/chart-type. No download or revenue
+// figures: Apple doesn't expose those for apps you don't own, so rank stands
+// in for them.
+export async function fetchTopCharts(opts: {
+  country: string;
+  device: "iphone" | "ipad";
+  chart: ChartType;
+  genreId?: string | null;
+  limit?: number;
+}): Promise<ChartApp[] | null> {
+  try {
+    const { country, device, chart, genreId = null, limit = 100 } = opts;
+    const apps = await cachedFetchTopCharts(country, device, chart, genreId, limit);
+    if (apps.length === 0) return apps;
+
+    const extras = await cachedFetchAppLookupExtras(apps.map((a) => a.storeId), country);
+    return apps.map((a) => ({ ...a, ...extras[a.storeId] }));
+  } catch {
+    return null;
+  }
+}
+
+// The developer's privacy policy is a real link Apple embeds on the app's own
+// store page (as "Developer's Privacy Policy") — it's not in the iTunes API,
+// so it takes a page scrape. Not fetched for every chart row up front (that'd
+// be one request per app); only looked up on demand when a row is clicked.
+async function fetchIosPrivacyPolicyUrlImpl(storeId: string, country: string): Promise<string | null> {
+  try {
+    const res = await fetch(`https://apps.apple.com/${country.toLowerCase()}/app/id${storeId}`, {
+      headers: { "User-Agent": SCRAPE_UA },
+      cache: "no-store",
+    });
+    const html = await res.text();
+    const tagMatch = html.match(/<a[^>]*aria-label="Developer(?:’|'|&#8217;)s Privacy Policy"[^>]*>/);
+    if (!tagMatch) return null;
+    const hrefMatch = tagMatch[0].match(/href="([^"]+)"/);
+    return hrefMatch ? hrefMatch[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+const cachedFetchIosPrivacyPolicyUrl = unstable_cache(fetchIosPrivacyPolicyUrlImpl, ["ios-privacy-policy-url"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+export async function fetchIosPrivacyPolicyUrl(storeId: string, country: string): Promise<string | null> {
+  try {
+    return await cachedFetchIosPrivacyPolicyUrl(storeId, country);
   } catch {
     return null;
   }

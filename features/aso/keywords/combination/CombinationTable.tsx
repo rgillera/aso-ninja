@@ -329,7 +329,7 @@ export function CombinationTable({
         count={selected.size}
         total={groups.reduce((s, g) => s + g.children.length, 0)}
         onClear={() => setSelected(new Set())}
-        onCopy={() => navigator.clipboard.writeText([...selected].join("\n")).catch(() => {})}
+        onCopy={() => navigator.clipboard.writeText([...selected].join(", ")).catch(() => {})}
         onAdd={() => { onAddTerms([...selected]); setSelected(new Set()); }}
       />
     </div>

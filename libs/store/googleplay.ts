@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
-import type { AppSearchResult, StoreData, CategoryBenchmark } from "@/libs/contracts";
+import type { AppSearchResult, StoreData, CategoryBenchmark, ChartApp } from "@/libs/contracts";
 import { average, median } from "./benchmark-utils";
+import { ANDROID_CATEGORY_MAP } from "@/libs/categories";
 
 // Benchmark data (peer descriptions, screenshots, ratings...) doesn't meaningfully
 // shift minute to minute, so results are cached for a few hours. This is the main
@@ -166,6 +167,113 @@ export async function fetchAndroidCategoryPeers(
       medianRatingCount: median(ratingCounts),
       avgLanguageCount: null,
     };
+  } catch {
+    return null;
+  }
+}
+
+export type ChartType = "free" | "paid" | "grossing";
+
+// google-play-scraper's `category` enum values, not arbitrary labels — must
+// match ANDROID_CATEGORIES ids in libs/categories.ts exactly.
+const ANDROID_COLLECTION: Record<ChartType, string> = {
+  free: "TOP_FREE",
+  paid: "TOP_PAID",
+  grossing: "GROSSING",
+};
+
+function formatPrice(amount: number, currency: string): string {
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount);
+  } catch {
+    return `${currency} ${amount.toFixed(2)}`;
+  }
+}
+
+// Play's chart list (unlike Apple's) caps at 200 apps regardless of the `num`
+// requested — confirmed empirically, google-play-scraper has no continuation
+// token for list() the way it does for search(). Deliberately using the
+// lightweight (non-fullDetail) list call: fullDetail issues one extra request
+// per app (up to 200 concurrent Play Store hits), which is both slow and a
+// good way to get rate-limited. That trade-off costs rating count and last-
+// updated date, which the light list doesn't return.
+async function fetchAndroidTopChartsImpl(
+  country: string,
+  categoryId: string | null,
+  chart: ChartType,
+  limit: number
+): Promise<ChartApp[]> {
+  const gplay = await import("google-play-scraper");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const api: any = gplay.default ?? gplay;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const results: any[] = await api.list({
+    collection: api.collection[ANDROID_COLLECTION[chart]],
+    category: categoryId ? api.category[categoryId] : api.category.APPLICATION,
+    country: country.toLowerCase(),
+    num: limit,
+  });
+
+  const genreLabel = categoryId ? (ANDROID_CATEGORY_MAP[categoryId] ?? "") : "";
+
+  return results.map((r, i) => {
+    const price = typeof r.price === "number" ? r.price : 0;
+    const currency = typeof r.currency === "string" ? r.currency : "USD";
+    return {
+      rank: i + 1,
+      store: "android" as const,
+      storeId: r.appId,
+      bundleId: r.appId,
+      name: r.title ?? "",
+      developer: r.developer ?? "",
+      iconUrl: r.icon ? ensureHttps(r.icon) : "",
+      price,
+      priceLabel: r.free ? "Free" : formatPrice(price, currency),
+      genre: genreLabel,
+      url: r.url ?? `https://play.google.com/store/apps/details?id=${r.appId}&hl=en&gl=${country.toLowerCase()}`,
+      rating: typeof r.score === "number" ? r.score : null,
+      ratingCount: null,
+      lastUpdatedAt: null,
+    };
+  });
+}
+
+const cachedFetchAndroidTopCharts = unstable_cache(fetchAndroidTopChartsImpl, ["android-top-charts"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+export async function fetchAndroidTopCharts(opts: {
+  country: string;
+  category?: string | null;
+  chart: ChartType;
+  limit?: number;
+}): Promise<ChartApp[] | null> {
+  try {
+    const { country, category = null, chart, limit = 200 } = opts;
+    return await cachedFetchAndroidTopCharts(country, category, chart, limit);
+  } catch {
+    return null;
+  }
+}
+
+// Unlike iOS (which needs an HTML scrape + regex), Play's app() detail
+// response has a real, structured privacyPolicy field — looked up on demand
+// when a row is clicked, same as the iOS path.
+async function fetchAndroidPrivacyPolicyUrlImpl(bundleId: string, country: string): Promise<string | null> {
+  try {
+    const gplay = await import("google-play-scraper");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const api: any = gplay.default ?? gplay;
+    const r = await api.app({ appId: bundleId, country: country.toLowerCase() });
+    return typeof r.privacyPolicy === "string" && r.privacyPolicy ? r.privacyPolicy : null;
+  } catch {
+    return null;
+  }
+}
+
+const cachedFetchAndroidPrivacyPolicyUrl = unstable_cache(fetchAndroidPrivacyPolicyUrlImpl, ["android-privacy-policy-url"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+export async function fetchAndroidPrivacyPolicyUrl(bundleId: string, country: string): Promise<string | null> {
+  try {
+    return await cachedFetchAndroidPrivacyPolicyUrl(bundleId, country);
   } catch {
     return null;
   }
