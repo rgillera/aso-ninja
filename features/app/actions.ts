@@ -45,3 +45,43 @@ export async function deleteAppAction(appId: string): Promise<void> {
   await supabase.from("apps").delete().eq("id", appId);
   revalidatePath("/dashboard");
 }
+
+export type FollowAppInput = {
+  workspaceId: string;
+  name: string;
+  store: AppStore;
+  bundleId: string;
+  storeId: string;
+  iconUrl: string | null;
+  country: string | null;
+};
+
+export async function followAppAction(
+  input: FollowAppInput
+): Promise<{ id: string } | { error: string }> {
+  const supabase = await createClient();
+  // Upsert instead of insert: if the row already exists (e.g. the UI's
+  // followed-state was stale), this just returns its id and resyncs the
+  // header instead of erroring on the unique constraint.
+  const { data, error } = await supabase
+    .from("apps")
+    .upsert(
+      {
+        workspace_id: input.workspaceId,
+        name: input.name,
+        store: input.store,
+        bundle_id: input.bundleId,
+        store_id: input.storeId,
+        icon_url: input.iconUrl,
+        country: input.country,
+      },
+      { onConflict: "workspace_id,store,bundle_id,country" }
+    )
+    .select("id")
+    .single();
+
+  if (error || !data) return { error: error?.message ?? "Failed to follow app." };
+
+  revalidatePath("/dashboard");
+  return { id: data.id };
+}

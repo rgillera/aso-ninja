@@ -77,7 +77,17 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" http://localhost:3000/opengraph-image)",
       "Bash(curl -s -o /dev/null -w \"%{http_code} %{content_type}\\\\n\" \"http://localhost:3000/opengraph-image?6f5081cb2271eb53\")",
       "Bash(lsof -ti:3000)",
-      "Bash(xargs kill)"
+      "Bash(xargs kill)",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff features/portal/PortalFooter.tsx features/portal/PortalTestimonials.tsx)",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff -- features/portal/PortalFooter.tsx features/portal/PortalTestimonials.tsx)",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff --stat)",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja stash)",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja stash pop)",
+      "Bash(curl -sI \"http://localhost:3000/dashboard/apps/x/report\")",
+      "Bash(curl -s \"http://localhost:3000/dashboard/apps/x/report\")",
+      "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff -- features/aso/AppHeader.tsx)",
+      "Bash(npx next *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard\")"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"

@@ -2,6 +2,7 @@ import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid"
 import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
+import { FollowButton } from "@/features/aso/AppHeader";
 
 type Props = { app: App; storeData: StoreData; benchmark: CategoryBenchmark; daysSinceUpdate?: number };
 
@@ -140,6 +141,7 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
               {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
             </p>
           </div>
+          <FollowButton app={app} />
         </div>
         <div className="flex items-center gap-1.5">
           <h1 className="text-sm font-semibold text-white">Benchmark</h1>

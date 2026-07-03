@@ -266,10 +266,20 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       const name  = sp.get("name");
       const store = sp.get("store") as "ios" | "android" | null;
       if (!name || !store) return undefined;
+      const bundleId = sp.get("bundleId") ?? undefined;
+      const country = sp.get("country") ?? null;
+      // Cross-reference allApps so a preview that's since been followed shows
+      // as followed in the header instead of always reading as untracked.
+      const matched = allApps.find(a =>
+        a.bundle_id === bundleId &&
+        a.store === store &&
+        (a.country ?? "US").toUpperCase() === (country ?? "US").toUpperCase()
+      );
       return {
-        bundle_id: sp.get("bundleId") ?? undefined,
+        id: matched?.id,
+        bundle_id: bundleId,
         store_id:  sp.get("storeId")  ?? undefined,
-        name, icon_url: sp.get("icon") ?? null, store, country: sp.get("country") ?? null,
+        name, icon_url: sp.get("icon") ?? null, store, country,
       };
     })();
     // On the preview route itself: always show the currently previewed app
