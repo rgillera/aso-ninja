@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { InformationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { createClient } from "@/libs/supabase/client";
 import { ExplorerFilters } from "./ExplorerFilters";
 import { ExplorerTable } from "./ExplorerTable";
 import { DEFAULT_FILTERS, type Filters, type ChartApp } from "./types";
@@ -64,6 +65,30 @@ export default function AppExplorerPage() {
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
   }, [workspaceId, apps]);
+
+  // Live updates on top of the focus-refetch above (kept as a fallback in case
+  // the websocket drops while backgrounded) — a teammate's toggle shows up
+  // immediately instead of waiting for a tab switch. Realtime's
+  // postgres_changes still enforces market_app_status's existing RLS policy
+  // per subscriber, so this can't leak another workspace's rows.
+  useEffect(() => {
+    if (!workspaceId) return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`market_app_status:${workspaceId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "market_app_status", filter: `workspace_id=eq.${workspaceId}` },
+        (payload) => {
+          const row = payload.new as { store_id?: string; connected?: boolean } | null;
+          if (!row?.store_id) return;
+          setConnected((prev) => ({ ...prev, [row.store_id!]: !!row.connected }));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [workspaceId]);
 
   function toggleConnected(storeId: string, store: "ios" | "android") {
     if (!workspaceId) return;

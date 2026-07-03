@@ -27,7 +27,8 @@
       "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=android&chart=new&limit=5\")",
       "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=android&chart=new&category=SOCIAL&limit=5\")",
       "Bash(curl -s \"http://localhost:3000/api/market/explorer?store=ios&chart=new&limit=3\")",
-      "Bash(pkill -f \"next dev\")"
+      "Bash(pkill -f \"next dev\")",
+      "Bash(grep -v \"set-state-in-effect\\\\|Calling setState synchronously\\\\|Effects are intended\\\\|react-hooks/\\\\|^\\\\s*[0-9]\\\\|^$\\\\|Update external systems\\\\|Subscribe for updates\")"
     ]
   }
 }
