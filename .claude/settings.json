@@ -87,7 +87,8 @@
       "Bash(curl -s \"http://localhost:3000/dashboard/apps/x/report\")",
       "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff -- features/aso/AppHeader.tsx)",
       "Bash(npx next *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard/market/explorer\")"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"

@@ -13,10 +13,11 @@ import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import type { App, Workspace } from "@/libs/contracts";
 
-// Routes where the selected app is encoded in the URL itself, so switching
-// apps has to navigate. Everywhere else (Keywords, Reviews, Market, ...) the
-// page is app-agnostic and just reads the active app from context/cookies.
-const APP_SCOPED_PREFIXES = ["/dashboard/apps/", "/dashboard/report", "/dashboard/metadata", "/dashboard/preview"];
+// The only pages where picking an app from search should stay put instead of
+// navigating: app-agnostic ASO Intelligence tools that just swap their active
+// app in place. Every other page (My Apps, App Explorer, Analytics, Settings,
+// ...) — including the app-scoped ones above — navigates to the app's Report.
+const STAY_IN_PLACE_PREFIXES = ["/dashboard/keywords", "/dashboard/reviews"];
 
 type MetaSection = "report" | "preview" | "timeline" | "benchmark";
 
@@ -216,7 +217,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     // Intentionally do NOT clear savedAppId — same reasoning as the effect above.
   }
 
-  const isAppScopedPath = APP_SCOPED_PREFIXES.some(p => pathname.startsWith(p));
+  const staysInPlace = STAY_IN_PLACE_PREFIXES.some(p => pathname.startsWith(p));
   const activeSection = sectionFromPath(pathname, isOnPreview, searchParams.get("page"));
 
   // Used by DashboardSearch on app-scoped pages (Report/Metadata/preview) to
@@ -313,7 +314,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           <DashboardSearch
             apps={allApps}
             workspaceId={activeWorkspaceId ?? ""}
-            stayInPlace={!isAppScopedPath}
+            stayInPlace={staysInPlace}
             onSelectApp={selectApp}
             hrefForApp={hrefForApp}
           />
