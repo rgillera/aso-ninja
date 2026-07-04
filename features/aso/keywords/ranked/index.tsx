@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChartBarIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon, ListBulletIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
@@ -154,8 +154,15 @@ export default function RankedKeywordsPage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="All Ranked Keywords" />
         <FeatureLocked
+          minPlan="pro_plus"
+          icon={ListBulletIcon}
           title="All Ranked Keywords is a Pro+ feature"
           description="Upgrade to Pro+ or above to see every keyword your app ranks for over time."
+          benefits={[
+            "See every keyword your app currently ranks for, not just the ones you track",
+            "Filter by branded vs. generic, word count, volume, and rank",
+            "Watch your ranked-keyword count grow over time on one chart",
+          ]}
         />
       </div>
     );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ChatBubbleLeftEllipsisIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
@@ -80,8 +80,15 @@ export default function ReviewsDashboardPage() {
       <main className="h-full overflow-y-auto bg-[#111318]">
         <AppHeader app={activeApp} title="Reviews" />
         <FeatureLocked
+          minPlan="pro"
+          icon={ChatBubbleLeftEllipsisIcon}
           title="Reviews is a Pro feature"
           description="Upgrade to Pro or above to browse and track your app's reviews."
+          benefits={[
+            "Read and filter every review left on your app",
+            "Track new review volume and rating shifts over time",
+            "Spot recurring complaints before they hurt your rating",
+          ]}
         />
       </main>
     );

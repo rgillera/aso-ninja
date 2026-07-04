@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { ClockIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -97,8 +98,15 @@ export default function Timeline({ app, screenshots = [] }: TimelineProps) {
           <p className="text-sm font-semibold text-white">{app.name}</p>
         </div>
         <FeatureLocked
+          minPlan="pro"
+          icon={ClockIcon}
           title="Timeline is a Pro feature"
           description="Upgrade to Pro or above to see your metadata's update history."
+          benefits={[
+            "See every past title, subtitle, and screenshot change side by side",
+            "Compare before & after copy with word-level diffs",
+            "Learn what worked by lining updates up with rating shifts",
+          ]}
         />
       </main>
     );

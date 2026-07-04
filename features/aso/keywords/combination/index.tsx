@@ -292,8 +292,15 @@ export default function KeywordCombinationPage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="Keyword Combination" />
         <FeatureLocked
+          minPlan="pro_plus"
+          icon={AdjustmentsHorizontalIcon}
           title="Keyword Combination is a Pro+ feature"
           description="Upgrade to Pro+ or above to expand seed keywords into combinations."
+          benefits={[
+            "Turn one seed keyword into dozens of long-tail combinations",
+            "See search volume and difficulty for every combination instantly",
+            "Add winning combinations straight to your tracked keywords",
+          ]}
         />
       </div>
     );

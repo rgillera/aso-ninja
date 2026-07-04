@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { InformationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon, ExclamationTriangleIcon, MagnifyingGlassCircleIcon } from "@heroicons/react/24/outline";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
@@ -113,8 +113,15 @@ export default function AppExplorerPage() {
           <h1 className="text-xl font-semibold text-white">App Explorer</h1>
         </div>
         <FeatureLocked
+          minPlan="enterprise"
+          icon={MagnifyingGlassCircleIcon}
           title="Market Intelligence is an Enterprise feature"
           description="App Explorer and the rest of Market Intelligence are available on the Enterprise plan."
+          benefits={[
+            "Browse live Top Free, Paid, and Grossing charts for iOS and Android",
+            "Spot newly trending and newly discovered apps in your category",
+            "Track competitor apps straight from the charts into your workspace",
+          ]}
         />
       </div>
     );

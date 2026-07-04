@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, StarIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
@@ -73,8 +73,15 @@ export default function RatingsDashboardPage() {
       <main className="h-full overflow-y-auto bg-[#111318]">
         <AppHeader app={activeApp} title="Ratings" />
         <FeatureLocked
+          minPlan="pro"
+          icon={StarIcon}
           title="Ratings is a Pro feature"
           description="Upgrade to Pro or above to track your app's rating trends over time."
+          benefits={[
+            "See your rating trend and star breakdown over the last 90 days",
+            "Compare your rating against your category's average",
+            "Get AI suggestions to help lift a low rating",
+          ]}
         />
       </main>
     );

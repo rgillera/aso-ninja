@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid";
-import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
 import { FollowButton } from "@/features/aso/AppHeader";
@@ -122,8 +122,15 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
           <p className="text-sm font-semibold text-white">{app.name}</p>
         </div>
         <FeatureLocked
+          minPlan="pro"
+          icon={ChartBarIcon}
           title="Benchmark is a Pro feature"
           description="Upgrade to Pro or above to see how your metadata compares to your category."
+          benefits={[
+            "Compare your title, subtitle, and description length to category norms",
+            "See how your rating and review count stack up against peers",
+            "Spot gaps in screenshots, video, or localization versus competitors",
+          ]}
         />
       </main>
     );
