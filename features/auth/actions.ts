@@ -42,11 +42,20 @@ export async function registerAction(
   const { data, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name } },
+    options: {
+      data: { full_name: name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
   });
 
   if (signUpError) return { error: signUpError.message };
   if (!data.user) return { error: "Failed to create account." };
+
+  // No session means email confirmation is required before the account is
+  // active — the workspace gets created in /auth/callback once they confirm.
+  if (!data.session) {
+    redirect(`/signup/verify-email?email=${encodeURIComponent(email)}`);
+  }
 
   // The signup trigger already joined any workspace(s) this email was
   // invited to — only create a default workspace if none of those applied.
@@ -63,6 +72,69 @@ export async function registerAction(
 
     if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
   }
+
+  redirect("/dashboard");
+}
+
+export type ResendState = { error?: string; success?: boolean } | null;
+
+export async function resendVerificationEmailAction(
+  _prev: ResendState,
+  formData: FormData
+): Promise<ResendState> {
+  const email = formData.get("email") as string;
+  if (!email) return { error: "Email is required." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+    },
+  });
+
+  if (error) return { error: error.message };
+
+  return { success: true };
+}
+
+export type ForgotPasswordState = { error?: string; success?: boolean } | null;
+
+export async function forgotPasswordAction(
+  _prev: ForgotPasswordState,
+  formData: FormData
+): Promise<ForgotPasswordState> {
+  const email = formData.get("email") as string;
+  if (!email) return { error: "Email is required." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/reset-password`,
+  });
+
+  if (error) return { error: error.message };
+
+  return { success: true };
+}
+
+export async function resetPasswordAction(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const password = formData.get("password") as string;
+  const confirm = formData.get("confirm") as string;
+
+  if (!password || !confirm) return { error: "All fields are required." };
+  if (password.length < 8)
+    return { error: "Password must be at least 8 characters.", field: "password" };
+  if (password !== confirm)
+    return { error: "Passwords do not match.", field: "confirm" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) return { error: error.message };
 
   redirect("/dashboard");
 }

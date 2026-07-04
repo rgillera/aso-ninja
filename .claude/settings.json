@@ -102,7 +102,10 @@
       "Read(//Users/bmo/.npm/_npx/**)",
       "Bash(node verify-no-flash.mjs)",
       "Bash(stripe --version)",
-      "Bash(stripe config *)"
+      "Bash(stripe config *)",
+      "Bash(xargs -I{} sh -c 'echo \"=== {} ===\"; cat {}')",
+      "Bash(curl -s \"http://127.0.0.1:54334/api/v1/message/9hX4kxKxnD7Ta7i5EnwQfx\")",
+      "Bash(curl -s -i \"http://127.0.0.1:54331/auth/v1/verify?token=8fb39bd795d12b67bb9f709f0362e28cb76fdedb810c4e40b06581a5&type=recovery&redirect_to=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback%3Fnext%3D%2Freset-password\")"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"
