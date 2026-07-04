@@ -64,6 +64,8 @@ type Props = {
   /** The current member's role in the active workspace — only owners can manage billing */
   role?: WorkspaceRole;
   planSlug?: PlanSlug;
+  /** Max workspaces the current user may own under their plan; null = unlimited */
+  workspaceLimit?: number | null;
 };
 
 function workspaceInitial(name: string) {
@@ -80,9 +82,11 @@ export default function DashboardSidebar({
   access,
   role,
   planSlug = "free",
+  workspaceLimit,
 }: Props) {
   const planBadge = PLAN_BADGE[planSlug];
   const canManagePlan = role === "owner";
+  const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
@@ -196,15 +200,31 @@ export default function DashboardSidebar({
               </div>
             </div>
 
-            <div className="border-t border-white/[0.07] px-2 py-1.5">
-              <button
-                onClick={() => { setOpen(false); setShowCreate(true); }}
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                <PlusIcon className="size-4" />
-                Create workspace
-              </button>
-            </div>
+            {canCreateWorkspace ? (
+              <div className="border-t border-white/[0.07] px-2 py-1.5">
+                <button
+                  onClick={() => { setOpen(false); setShowCreate(true); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  <PlusIcon className="size-4" />
+                  Create workspace
+                </button>
+              </div>
+            ) : (
+              <div className="border-t border-white/[0.07] px-4 py-2.5">
+                <p className="text-xs text-gray-600">
+                  Your plan allows {workspaceLimit} workspace{workspaceLimit === 1 ? "" : "s"}.{" "}
+                  <a
+                    href="/dashboard/subscription"
+                    onClick={() => setOpen(false)}
+                    className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                  >
+                    Upgrade
+                  </a>{" "}
+                  to add more.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

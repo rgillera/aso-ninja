@@ -68,12 +68,13 @@ type Props = {
   accessByWorkspace: Record<string, WorkspaceAccess[]>;
   roleByWorkspace: Record<string, WorkspaceRole>;
   initialPlanSlug?: PlanSlug;
+  initialWorkspaceLimit?: number | null;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, children }: Props) {
   const pathname     = usePathname();
   const router       = useRouter();
   const params       = useParams<{ id?: string }>();
@@ -215,11 +216,15 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
 
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
+  const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
   useEffect(() => {
     if (!activeWorkspaceId) return;
     let cancelled = false;
     getWorkspacePlanState(activeWorkspaceId).then((result) => {
-      if (!cancelled && !("error" in result)) setPlanSlug(result.plan.slug);
+      if (!cancelled && !("error" in result)) {
+        setPlanSlug(result.plan.slug);
+        setWorkspaceLimit(result.plan.workspace_limit);
+      }
     });
     return () => {
       cancelled = true;
@@ -361,6 +366,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           access={currentAccess}
           role={currentRole}
           planSlug={planSlug}
+          workspaceLimit={workspaceLimit}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
           <DashboardSearch
