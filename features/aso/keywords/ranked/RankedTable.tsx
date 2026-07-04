@@ -21,6 +21,7 @@ type Props = {
   filters: Filters;
   onFiltersChange: (patch: Partial<Filters>) => void;
   onViewVolumeHistory: (term: string) => void;
+  onViewRankHistory: (term: string) => void;
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
@@ -37,6 +38,19 @@ function VolumeCell({ volume, onClick }: { volume: number | null; onClick: () =>
       className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
     >
       <VolumeBar value={volume} />
+      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+    </button>
+  );
+}
+
+function RankCell({ rank, onClick }: { rank: number; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="View rank history"
+      className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+    >
+      <span className="text-sm tabular-nums font-medium text-white">#{rank}</span>
       <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
     </button>
   );
@@ -103,7 +117,7 @@ function RangeFields({ min, max, onMin, onMax, cap }: {
 }
 
 export function RankedTable({
-  keywords, filtered, filters, onFiltersChange, onViewVolumeHistory,
+  keywords, filtered, filters, onFiltersChange, onViewVolumeHistory, onViewRankHistory,
   translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
   const [page, setPage] = useState(0);
@@ -277,7 +291,6 @@ export function RankedTable({
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 w-52">Volume</th>
               <SortTh col="rank" label="Rank" />
-              <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Prev</th>
               <SortTh col="delta" label="Change" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Date</th>
@@ -300,9 +313,8 @@ export function RankedTable({
                   <td className="px-3 py-2.5 w-52">
                     <VolumeCell volume={kw.volume} onClick={() => onViewVolumeHistory(kw.term)} />
                   </td>
-                  <td className="px-3 py-2.5 text-sm tabular-nums font-medium text-white">#{kw.rank}</td>
-                  <td className="px-3 py-2.5 text-sm tabular-nums text-gray-500">
-                    {kw.prevRank !== null ? `#${kw.prevRank}` : <span className="text-gray-700">—</span>}
+                  <td className="px-3 py-2.5">
+                    <RankCell rank={kw.rank} onClick={() => onViewRankHistory(kw.term)} />
                   </td>
                   <td className="px-3 py-2.5"><GrowthCell value={delta} /></td>
                   <td className="px-3 py-2.5 text-sm text-gray-200">

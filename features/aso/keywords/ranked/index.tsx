@@ -9,6 +9,7 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
+import { RankHistoryPanel } from "@/features/aso/keywords/performance/RankHistoryPanel";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { RankedTable } from "./RankedTable";
@@ -110,6 +111,7 @@ export default function RankedKeywordsPage() {
   const [tab,               setTab]               = useState<"chart" | "table">("table");
   const [filters,           setFilters]           = useState<Filters>(DEFAULT_FILTERS);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
+  const [rankHistoryTerm,   setRankHistoryTerm]   = useState<string | null>(null);
   const [translateToggle,   setTranslateToggle]   = useState(false);
 
   useEffect(() => {
@@ -217,6 +219,7 @@ export default function RankedKeywordsPage() {
                 filters={filters}
                 onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
                 onViewVolumeHistory={setVolumeHistoryTerm}
+                onViewRankHistory={setRankHistoryTerm}
                 translateToggle={translateToggle && !translateLocked}
                 translateLocked={translateLocked}
                 onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
@@ -232,6 +235,16 @@ export default function RankedKeywordsPage() {
           store={activeApp.store ?? "ios"}
           country={activeApp.country ?? "us"}
           onClose={() => setVolumeHistoryTerm(null)}
+        />
+      )}
+
+      {rankHistoryTerm && activeApp.store_id && (
+        <RankHistoryPanel
+          term={rankHistoryTerm}
+          storeId={activeApp.store_id}
+          store={activeApp.store ?? "ios"}
+          country={activeApp.country ?? "us"}
+          onClose={() => setRankHistoryTerm(null)}
         />
       )}
     </div>
