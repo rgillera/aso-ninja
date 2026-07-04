@@ -13,7 +13,7 @@ import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { RankedTable } from "./RankedTable";
 import {
-  DEFAULT_FILTERS, isBranded, wordCount,
+  DEFAULT_FILTERS, wordCount,
   type RankedKeyword, type RankedHistoryPoint, type Filters,
 } from "./types";
 import type { RankedKeywordsResult } from "@/app/api/keywords/ranked/route";
@@ -139,11 +139,6 @@ export default function RankedKeywordsPage() {
       const vol = k.volume ?? 0;
       if (vol < filters.volumeMin || vol > filters.volumeMax) return false;
       if (k.rank < filters.rankMin || k.rank > filters.rankMax) return false;
-      if (filters.type !== "all") {
-        const branded = isBranded(k.term, activeApp.name);
-        if (filters.type === "branded" && !branded) return false;
-        if (filters.type === "generic" && branded)  return false;
-      }
       if (filters.wordCount !== "all" && wordCount(k.term) !== filters.wordCount) return false;
       return true;
     });
@@ -198,7 +193,7 @@ export default function RankedKeywordsPage() {
         </div>
 
         {tab === "chart" ? (
-          <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
             <RankedChart history={history} loading={loading} />
           </div>
         ) : (
@@ -219,7 +214,6 @@ export default function RankedKeywordsPage() {
               <RankedTable
                 keywords={keywords}
                 filtered={filtered}
-                appName={activeApp.name}
                 filters={filters}
                 onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
                 onViewVolumeHistory={setVolumeHistoryTerm}

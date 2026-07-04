@@ -11,14 +11,13 @@ import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui"
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import {
-  DEFAULT_FILTERS, isFiltersDefault, isBranded, wordCount, rankDelta, formatDate,
+  DEFAULT_FILTERS, isFiltersDefault, wordCount, rankDelta, formatDate,
   type RankedKeyword, type Filters,
 } from "./types";
 
 type Props = {
   keywords: RankedKeyword[];
   filtered: RankedKeyword[];
-  appName: string;
   filters: Filters;
   onFiltersChange: (patch: Partial<Filters>) => void;
   onViewVolumeHistory: (term: string) => void;
@@ -104,7 +103,7 @@ function RangeFields({ min, max, onMin, onMax, cap }: {
 }
 
 export function RankedTable({
-  keywords, filtered, appName, filters, onFiltersChange, onViewVolumeHistory,
+  keywords, filtered, filters, onFiltersChange, onViewVolumeHistory,
   translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
   const [page, setPage] = useState(0);
@@ -185,14 +184,13 @@ export function RankedTable({
   function handleExport() {
     const rows = keywords.filter((k) => selected.has(k.term));
     downloadCsv("ranked-keywords.csv",
-      ["Keyword", "Volume", "Rank", "Prev Rank", "Change", "Type", "Date"],
+      ["Keyword", "Volume", "Rank", "Prev Rank", "Change", "Date"],
       rows.map((k) => [
         k.term,
         k.volume ?? "",
         k.rank,
         k.prevRank ?? "",
         rankDelta(k.prevRank, k.rank) ?? "",
-        isBranded(k.term, appName) ? "Branded" : "Generic",
         k.rankDate,
       ])
     );
@@ -236,19 +234,6 @@ export function RankedTable({
             onMin={(v) => { onFiltersChange({ rankMin: v }); setPage(0); }}
             onMax={(v) => { onFiltersChange({ rankMax: v }); setPage(0); }}
           />
-        </Dropdown>
-
-        <Dropdown label={`Type${filters.type === "all" ? "" : `: ${filters.type === "branded" ? "Branded" : "Generic"}`}`} active={filters.type !== "all"}>
-          <div className="flex flex-col gap-0.5">
-            {(["all", "branded", "generic"] as const).map((t) => (
-              <button key={t} onClick={() => { onFiltersChange({ type: t }); setPage(0); }}
-                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors ${filters.type === t ? "bg-indigo-500/15 text-indigo-300" : "text-gray-300 hover:bg-white/[0.05]"}`}
-              >
-                {t === "all" ? "All" : t === "branded" ? "Branded" : "Generic"}
-                {filters.type === t && <CheckIcon className="size-3.5" />}
-              </button>
-            ))}
-          </div>
         </Dropdown>
 
         <Dropdown label={`Words${filters.wordCount === "all" ? "" : `: ${filters.wordCount === 3 ? "3+" : filters.wordCount}`}`} active={filters.wordCount !== "all"}>
@@ -295,14 +280,12 @@ export function RankedTable({
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Prev</th>
               <SortTh col="delta" label="Change" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
-              <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Type</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Date</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.map((kw) => {
               const delta   = rankDelta(kw.prevRank, kw.rank);
-              const branded = isBranded(kw.term, appName);
               const sel     = selected.has(kw.term);
               return (
                 <tr
@@ -328,11 +311,6 @@ export function RankedTable({
                       {translationFor(kw.term) && (
                         <span className="text-[10px] text-gray-500">(en) {translationFor(kw.term)}</span>
                       )}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${branded ? "bg-violet-500/15 text-violet-300" : "bg-gray-700/50 text-gray-400"}`}>
-                      {branded ? "Branded" : "Generic"}
                     </span>
                   </td>
                   <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap">{formatDate(kw.rankDate)}</td>

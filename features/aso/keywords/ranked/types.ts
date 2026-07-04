@@ -8,7 +8,6 @@ export type Filters = {
   volumeMax: number;
   rankMin: number;
   rankMax: number;
-  type: "all" | "branded" | "generic";
   wordCount: "all" | 1 | 2 | 3;
 };
 
@@ -18,20 +17,11 @@ export const DEFAULT_FILTERS: Filters = {
   volumeMax: 100,
   rankMin: 1,
   rankMax: 200,
-  type: "all",
   wordCount: "all",
 };
 
 export function isFiltersDefault(f: Filters): boolean {
   return JSON.stringify(f) === JSON.stringify(DEFAULT_FILTERS);
-}
-
-export function isBranded(term: string, appName: string): boolean {
-  const tokens = new Set(
-    appName.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length >= 3)
-  );
-  if (!tokens.size) return false;
-  return term.toLowerCase().split(/\s+/).some((w) => tokens.has(w));
 }
 
 export function wordCount(term: string): 1 | 2 | 3 {
