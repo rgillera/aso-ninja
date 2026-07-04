@@ -336,11 +336,11 @@ export function PerformanceTable({
               </tr>
               <tr className="border-b border-white/[0.07]">
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Growth</th>
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Change</th>
                 {competitors.map((c) => (
                   <Fragment key={c.storeId}>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Growth</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Change</th>
                   </Fragment>
                 ))}
               </tr>
