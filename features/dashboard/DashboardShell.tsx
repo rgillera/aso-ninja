@@ -77,8 +77,15 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, children }: Props) {
   const pathname     = usePathname();
   const router       = useRouter();
-  const params       = useParams<{ id?: string }>();
+  const rawParams    = useParams<{ id?: string }>();
   const searchParams = useSearchParams();
+
+  // useParams() reflects whatever dynamic route is currently matched — and
+  // /dashboard/settings/workspace/[id] also has an `id` param, but it's a
+  // workspace id, not an app id. Only treat it as an app id on app routes,
+  // otherwise a workspace-settings visit gets misread as an unknown app and
+  // the active workspace silently falls back to workspaces[0].
+  const params = { id: pathname.startsWith("/dashboard/apps/") ? rawParams.id : undefined };
 
   const isOnPreview = pathname === "/dashboard/preview";
   const rawSearch   = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
