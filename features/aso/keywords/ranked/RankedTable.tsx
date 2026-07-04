@@ -5,7 +5,7 @@ import {
   ChevronLeftIcon, ChevronRightIcon,
   ChevronDoubleLeftIcon, ChevronDoubleRightIcon,
   MagnifyingGlassIcon, ChevronDownIcon, CheckIcon, XMarkIcon,
-  ArrowTrendingUpIcon, ArrowTrendingDownIcon,
+  ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
@@ -53,18 +53,6 @@ function RankCell({ rank, onClick }: { rank: number; onClick: () => void }) {
       <span className="text-sm tabular-nums font-medium text-white">#{rank}</span>
       <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
     </button>
-  );
-}
-
-function GrowthCell({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-gray-600">—</span>;
-  if (value === 0) return <span className="text-xs text-gray-500">0</span>;
-  const up = value > 0;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${up ? "text-emerald-400" : "text-red-400"}`}>
-      {up ? <ArrowTrendingUpIcon className="size-3" /> : <ArrowTrendingDownIcon className="size-3" />}
-      {Math.abs(value)}
-    </span>
   );
 }
 
@@ -122,7 +110,7 @@ export function RankedTable({
 }: Props) {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [sortKey, setSortKey] = useState<"rank" | "volume" | "delta">("rank");
+  const [sortKey, setSortKey] = useState<"rank" | "volume">("rank");
   const [sortAsc, setSortAsc] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating]   = useState(false);
@@ -157,7 +145,6 @@ export function RankedTable({
       let diff = 0;
       if (sortKey === "rank")   diff = a.rank - b.rank;
       if (sortKey === "volume") diff = (b.volume ?? -1) - (a.volume ?? -1);
-      if (sortKey === "delta")  diff = (rankDelta(b.prevRank, b.rank) ?? 0) - (rankDelta(a.prevRank, a.rank) ?? 0);
       return sortAsc ? diff : -diff;
     });
   }, [filtered, sortKey, sortAsc]);
@@ -291,15 +278,13 @@ export function RankedTable({
               </th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 w-52">Volume</th>
               <SortTh col="rank" label="Rank" />
-              <SortTh col="delta" label="Change" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Date</th>
             </tr>
           </thead>
           <tbody>
             {pageRows.map((kw) => {
-              const delta   = rankDelta(kw.prevRank, kw.rank);
-              const sel     = selected.has(kw.term);
+              const sel = selected.has(kw.term);
               return (
                 <tr
                   key={kw.term}
@@ -316,7 +301,6 @@ export function RankedTable({
                   <td className="px-3 py-2.5">
                     <RankCell rank={kw.rank} onClick={() => onViewRankHistory(kw.term)} />
                   </td>
-                  <td className="px-3 py-2.5"><GrowthCell value={delta} /></td>
                   <td className="px-3 py-2.5 text-sm text-gray-200">
                     <span className="flex flex-col items-start leading-tight py-0.5">
                       <span>{kw.term}</span>
