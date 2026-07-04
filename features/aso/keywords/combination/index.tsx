@@ -34,9 +34,11 @@ export default function KeywordCombinationPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const isLocked    = !isPlanAtLeast(planSlug, "pro_plus");
+  const translateLocked = !isPlanAtLeast(planSlug, "pro");
   const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
+  const [translateToggle, setTranslateToggle] = useState(false);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingTerms.size > 0 ? "A keyword is still being saved. Leaving now may lose it." : null);
@@ -337,6 +339,9 @@ export default function KeywordCombinationPage() {
 
           onRemoveGroup={handleRemoveGroup}
           onLiveSearch={(term) => setLiveSearchTerm(term)}
+          translateToggle={translateToggle && !translateLocked}
+          translateLocked={translateLocked}
+          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
         />
       </div>
 

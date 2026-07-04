@@ -14,7 +14,7 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
-import { VolumeBar } from "@/features/aso/keywords/research/ui";
+import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -47,6 +47,9 @@ type Props = {
   onRefetchRanks: () => void;
   refetchingRanks: boolean;
   stuckRankCount: number;
+  translateToggle: boolean;
+  translateLocked?: boolean;
+  onTranslateToggle: () => void;
 };
 
 const PAGE_SIZE = 25;
@@ -100,10 +103,38 @@ export function PerformanceTable({
   onAddKeywords, onToggleStar, onStarSelected, onRemoveKeyword, onRemoveSelected,
   onLiveSearch, onViewVolumeHistory,
   onRefetchRanks, refetchingRanks, stuckRankCount,
+  translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
   const [input, setInput] = useState("");
   const [page,  setPage]  = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const terms = [...new Set(keywords.map((k) => k.term))].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, keywords]);
+
+  function translationFor(term: string): string | undefined {
+    if (!translateToggle) return undefined;
+    const t = translations[term];
+    return t && t.toLowerCase() !== term.toLowerCase() ? t : undefined;
+  }
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount);
@@ -233,6 +264,12 @@ export function PerformanceTable({
             {refetchingRanks ? "Refetching…" : `Refetch ${stuckRankCount} unranked`}
           </button>
         )}
+        {translateToggle && translating && (
+          <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin shrink-0" />
+        )}
+        <div className="ml-auto">
+          <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
+        </div>
       </div>
 
       {keywords.length === 0 ? (
@@ -326,7 +363,12 @@ export function PerformanceTable({
                         <button onClick={() => onToggleStar(k.term)} className="shrink-0 transition-colors">
                           <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400" : "text-gray-600"}`} />
                         </button>
-                        <span className="text-sm text-gray-300 truncate">{k.term}</span>
+                        <span className="flex flex-col items-start leading-tight py-0.5 min-w-0">
+                          <span className="text-sm text-gray-300 truncate">{k.term}</span>
+                          {translationFor(k.term) && (
+                            <span className="text-[10px] text-gray-500 truncate">(en) {translationFor(k.term)}</span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-r border-white/[0.04] px-3 py-3">

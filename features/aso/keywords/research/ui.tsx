@@ -1,3 +1,25 @@
+import { LockClosedIcon } from "@heroicons/react/24/outline";
+
+export function TranslateToggle({ checked, onChange, locked }: { checked: boolean; onChange: () => void; locked: boolean }) {
+  if (locked) {
+    return (
+      <div className="flex items-center gap-2 shrink-0" title="Upgrade to Pro to translate keywords to English">
+        <span className="flex items-center gap-1 text-xs text-gray-600 whitespace-nowrap">
+          <LockClosedIcon className="size-3" />
+          Translate to English
+        </span>
+        <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">Pro</span>
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 shrink-0">
+      <span className="text-xs text-gray-500 whitespace-nowrap">Translate to English</span>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
 export function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button

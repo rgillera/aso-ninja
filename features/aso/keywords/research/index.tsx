@@ -6,6 +6,8 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
@@ -31,6 +33,8 @@ function NoAppSelected() {
 export default function KeywordResearchPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
+  const planSlug    = usePlanSlug();
+  const translateLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
@@ -397,16 +401,18 @@ export default function KeywordResearchPage() {
           trackedKeywords={keywords}
           competitors={competitors}
           onCompetitorsChange={handleCompetitorsChange}
-          translateToggle={translateToggle}
-          onTranslateToggle={() => setTranslateToggle((v) => !v)}
+          translateToggle={translateToggle && !translateLocked}
+          translateLocked={translateLocked}
+          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
         />
 
         <KeywordTable
           keywords={keywords}
           store={activeApp?.store ?? "ios"}
           country={activeApp?.country ?? "us"}
-          translateToggle={translateToggle}
-          onTranslateToggle={() => setTranslateToggle((v) => !v)}
+          translateToggle={translateToggle && !translateLocked}
+          translateLocked={translateLocked}
+          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
           adding={pendingAdds > 0}
           onAddKeywords={handleAddKeywords}
           onToggleStar={handleToggleStar}

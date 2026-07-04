@@ -17,7 +17,7 @@ import {
   ClockIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
-import { Toggle, VolumeBar } from "./ui";
+import { TranslateToggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { LiveSearchPanel } from "./LiveSearchPanel";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
@@ -43,6 +43,7 @@ type Props = {
   store: "ios" | "android";
   country: string;
   translateToggle: boolean;
+  translateLocked?: boolean;
   onTranslateToggle: () => void;
   adding?: boolean;
   onAddKeywords: (keywords: string[]) => void;
@@ -109,6 +110,7 @@ export function KeywordTable({
   store,
   country,
   translateToggle,
+  translateLocked = false,
   onTranslateToggle,
   adding = false,
   onAddKeywords,
@@ -491,8 +493,7 @@ export function KeywordTable({
           {translateToggle && translating && (
             <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin" />
           )}
-          <span className="text-xs text-gray-500">Translate to English</span>
-          <Toggle checked={translateToggle} onChange={onTranslateToggle} />
+          <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
         </div>
       </div>
 

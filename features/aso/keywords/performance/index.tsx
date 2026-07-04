@@ -6,6 +6,8 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
@@ -36,9 +38,12 @@ function NoAppSelected() {
 export default function KeywordPerformancePage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
+  const planSlug    = usePlanSlug();
+  const translateLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters,     setFilters]     = useState<Filters>(DEFAULT_FILTERS);
+  const [translateToggle, setTranslateToggle] = useState(false);
   const [snapshots,        setSnapshots]        = useState<Record<string, TermSnapshot>>({});
   const [snapshotsLoading, setSnapshotsLoading]  = useState(false);
   const [tab, setTab] = useState<"chart" | "table">("table");
@@ -499,6 +504,9 @@ export default function KeywordPerformancePage() {
               onRefetchRanks={handleRefetchRanks}
               refetchingRanks={refetchingRanks}
               stuckRankCount={stuckTerms.length}
+              translateToggle={translateToggle && !translateLocked}
+              translateLocked={translateLocked}
+              onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
             />
           </div>
         )}

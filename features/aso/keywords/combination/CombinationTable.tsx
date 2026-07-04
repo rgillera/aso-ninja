@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import {
   PlusIcon,
   XMarkIcon,
@@ -11,7 +11,7 @@ import {
   ArrowsUpDownIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
-import { VolumeBar } from "@/features/aso/keywords/research/ui";
+import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import type { CombinationGroup } from "./types";
 
@@ -28,6 +28,9 @@ type Props = {
   onAddTerms: (terms: string[]) => void;
   onRemoveGroup: (seed: string) => void;
   onLiveSearch: (term: string) => void;
+  translateToggle: boolean;
+  translateLocked?: boolean;
+  onTranslateToggle: () => void;
 };
 
 function formatNum(n: number): string {
@@ -51,15 +54,44 @@ function groupAggregates(group: CombinationGroup) {
 
 export function CombinationTable({
   groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch,
+  translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
   const [sortKey,   setSortKey]   = useState<SortKey | null>(null);
   const [sortDir,   setSortDir]   = useState<"asc" | "desc">("desc");
   const [showAllSeeds, setShowAllSeeds] = useState(false);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
 
   const SEED_PREVIEW_COUNT = 10;
   const visibleSeeds = showAllSeeds ? availableSeeds : availableSeeds.slice(0, SEED_PREVIEW_COUNT);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const allTerms = groups.flatMap((g) => [g.seed, ...g.children.map((c) => c.term)]);
+    const terms = [...new Set(allTerms)].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, groups]);
+
+  function translationFor(term: string): string | undefined {
+    if (!translateToggle) return undefined;
+    const t = translations[term];
+    return t && t.toLowerCase() !== term.toLowerCase() ? t : undefined;
+  }
 
   function handleAdd() {
     const parts = seedInput.split(",").map((s) => s.trim()).filter(Boolean);
@@ -122,6 +154,10 @@ export function CombinationTable({
           <PlusIcon className="size-3.5" />
           Add
         </button>
+        {translateToggle && translating && (
+          <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin shrink-0" />
+        )}
+        <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
       </div>
 
       {availableSeeds.length > 0 && (
@@ -213,6 +249,9 @@ export function CombinationTable({
                           ? <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />
                           : <ChevronRightIcon className="size-3.5 text-gray-500 shrink-0" />}
                         <span className="text-sm font-medium text-white">{group.seed}</span>
+                        {translationFor(group.seed) && (
+                          <span className="text-[10px] text-gray-500">(en) {translationFor(group.seed)}</span>
+                        )}
                         {pendingCount > 0 && (
                           <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
                             <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
@@ -264,6 +303,9 @@ export function CombinationTable({
                         <td className="px-4 py-3 pl-9">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm text-gray-300">{child.term}</span>
+                            {translationFor(child.term) && (
+                              <span className="text-[10px] text-gray-500">(en) {translationFor(child.term)}</span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">—</td>

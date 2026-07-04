@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeftIcon, ChevronRightIcon,
   ChevronDoubleLeftIcon, ChevronDoubleRightIcon,
   MagnifyingGlassIcon, ChevronDownIcon, CheckIcon, XMarkIcon,
   ArrowTrendingUpIcon, ArrowTrendingDownIcon,
 } from "@heroicons/react/24/outline";
-import { VolumeBar } from "@/features/aso/keywords/research/ui";
+import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import {
@@ -22,6 +22,9 @@ type Props = {
   filters: Filters;
   onFiltersChange: (patch: Partial<Filters>) => void;
   onViewVolumeHistory: (term: string) => void;
+  translateToggle: boolean;
+  translateLocked?: boolean;
+  onTranslateToggle: () => void;
 };
 
 const PAGE_SIZE = 25;
@@ -100,11 +103,41 @@ function RangeFields({ min, max, onMin, onMax, cap }: {
   );
 }
 
-export function RankedTable({ keywords, filtered, appName, filters, onFiltersChange, onViewVolumeHistory }: Props) {
+export function RankedTable({
+  keywords, filtered, appName, filters, onFiltersChange, onViewVolumeHistory,
+  translateToggle, translateLocked = false, onTranslateToggle,
+}: Props) {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<"rank" | "volume" | "delta">("rank");
   const [sortAsc, setSortAsc] = useState(true);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const terms = [...new Set(keywords.map((k) => k.term))].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, keywords]);
+
+  function translationFor(term: string): string | undefined {
+    if (!translateToggle) return undefined;
+    const t = translations[term];
+    return t && t.toLowerCase() !== term.toLowerCase() ? t : undefined;
+  }
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -239,6 +272,11 @@ export function RankedTable({ keywords, filtered, appName, filters, onFiltersCha
           </button>
         )}
 
+        {translateToggle && translating && (
+          <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin shrink-0" />
+        )}
+        <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
+
         <span className="ml-auto text-xs text-gray-600">{filtered.length.toLocaleString()} / {keywords.length.toLocaleString()}</span>
       </div>
 
@@ -284,7 +322,14 @@ export function RankedTable({ keywords, filtered, appName, filters, onFiltersCha
                     {kw.prevRank !== null ? `#${kw.prevRank}` : <span className="text-gray-700">—</span>}
                   </td>
                   <td className="px-3 py-2.5"><GrowthCell value={delta} /></td>
-                  <td className="px-3 py-2.5 text-sm text-gray-200">{kw.term}</td>
+                  <td className="px-3 py-2.5 text-sm text-gray-200">
+                    <span className="flex flex-col items-start leading-tight py-0.5">
+                      <span>{kw.term}</span>
+                      {translationFor(kw.term) && (
+                        <span className="text-[10px] text-gray-500">(en) {translationFor(kw.term)}</span>
+                      )}
+                    </span>
+                  </td>
                   <td className="px-3 py-2.5">
                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${branded ? "bg-violet-500/15 text-violet-300" : "bg-gray-700/50 text-gray-400"}`}>
                       {branded ? "Branded" : "Generic"}

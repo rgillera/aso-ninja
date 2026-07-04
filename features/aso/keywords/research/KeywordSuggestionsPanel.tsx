@@ -5,7 +5,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { SUGGESTION_TABS } from "./constants";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { Toggle } from "./ui";
+import { TranslateToggle } from "./ui";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata }   from "./KeywordSuggestionMetadata";
@@ -23,6 +23,7 @@ type Props = {
   competitors: CompetitorApp[];
   onCompetitorsChange: (competitors: CompetitorApp[]) => void;
   translateToggle: boolean;
+  translateLocked?: boolean;
   onTranslateToggle: () => void;
 };
 
@@ -35,6 +36,7 @@ export function KeywordSuggestionsPanel({
   competitors,
   onCompetitorsChange,
   translateToggle,
+  translateLocked = false,
   onTranslateToggle,
 }: Props) {
   const planSlug = usePlanSlug();
@@ -86,9 +88,8 @@ export function KeywordSuggestionsPanel({
                   ) : tab.label}
                 </button>
               ))}
-              <div className="ml-auto flex items-center gap-2 px-3.5 py-3 shrink-0">
-                <span className="text-xs text-gray-500 whitespace-nowrap">Translate to English</span>
-                <Toggle checked={translateToggle} onChange={onTranslateToggle} />
+              <div className="ml-auto flex items-center px-3.5 py-3 shrink-0">
+                <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
               </div>
             </div>
 

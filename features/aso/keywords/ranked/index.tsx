@@ -103,12 +103,14 @@ export default function RankedKeywordsPage() {
   const activeApp = useActiveApp();
   const planSlug  = usePlanSlug();
   const isLocked  = !isPlanAtLeast(planSlug, "pro_plus");
+  const translateLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
   const [history,  setHistory]  = useState<RankedHistoryPoint[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [tab,               setTab]               = useState<"chart" | "table">("table");
   const [filters,           setFilters]           = useState<Filters>(DEFAULT_FILTERS);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
+  const [translateToggle,   setTranslateToggle]   = useState(false);
 
   useEffect(() => {
     const storeId = activeApp?.store_id;
@@ -221,6 +223,9 @@ export default function RankedKeywordsPage() {
                 filters={filters}
                 onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
                 onViewVolumeHistory={setVolumeHistoryTerm}
+                translateToggle={translateToggle && !translateLocked}
+                translateLocked={translateLocked}
+                onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
               />
             )}
           </div>
