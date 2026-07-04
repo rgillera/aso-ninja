@@ -88,6 +88,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const params = { id: pathname.startsWith("/dashboard/apps/") ? rawParams.id : undefined };
 
   const isOnPreview = pathname === "/dashboard/preview";
+  const wsParam = searchParams.get("ws");
   const rawSearch   = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
   const rawSearchClean = (() => {
     if (!rawSearch) return "";
@@ -99,6 +100,15 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
   const [savedPreview, setSavedPreview] = useState<string | undefined>(lastPreview);
   const [savedWorkspaceId, setSavedWorkspaceId] = useState<string | undefined>(lastWorkspaceId);
+
+  // Best-guess active workspace, usable before activeWorkspaceId (below) is
+  // computed — an explicit ?ws= switch wins, then the persisted choice, then
+  // the first workspace. Keeps workspace-scoped localStorage reads/writes
+  // (recently-viewed apps, etc.) from ever falling back to the wrong workspace.
+  const resolvedWorkspaceId =
+    workspaces.find(w => w.id === wsParam)?.id
+    ?? workspaces.find(w => w.id === savedWorkspaceId)?.id
+    ?? workspaces[0]?.id;
 
   // Set by pages (e.g. Keywords) while a save is still in flight, so navigating
   // away — sidebar links, search results, any in-app link — asks for confirmation
@@ -128,11 +138,10 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       document.cookie = `lastAppId=; path=/; max-age=0; SameSite=Lax`;
       setSavedAppId(undefined);
     }
-    for (const ws of workspaces) {
-      const entry = loadRecent(ws.id).find(r => r.trackedId);
-      if (entry?.trackedId) { setRecentAppId(entry.trackedId); return; }
-    }
-  }, []);
+    if (!resolvedWorkspaceId) return;
+    const entry = loadRecent(resolvedWorkspaceId).find(r => r.trackedId);
+    if (entry?.trackedId) setRecentAppId(entry.trackedId);
+  }, [resolvedWorkspaceId]);
 
   useEffect(() => {
     if (params.id) {
@@ -171,7 +180,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       const store    = sp.get("store") as "ios" | "android" | null;
       const name     = sp.get("name");
       if (bundleId && store && name) {
-        saveRecentEntry(workspaces[0]?.id ?? "", {
+        saveRecentEntry(resolvedWorkspaceId ?? "", {
           name,
           iconUrl: sp.get("icon") ?? null,
           store,
@@ -182,7 +191,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         });
       }
     }
-  }, [params.id, isOnPreview, rawSearchClean]);
+  }, [params.id, isOnPreview, rawSearchClean, resolvedWorkspaceId]);
 
   // Resolve sidebar context ─────────────────────────────────────────────────
 
@@ -195,8 +204,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const lastTrackedApp = (params.id ?? savedAppId ?? recentAppId)
     ? allApps.find(a => a.id === (params.id ?? savedAppId ?? recentAppId))
     : undefined;
-
-  const wsParam = searchParams.get("ws");
 
   // Persist an explicit workspace switch (the sidebar switcher navigates to
   // /dashboard?ws=<id>) so it sticks on the next navigation — otherwise it's
@@ -221,6 +228,13 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
   const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
+
+  // allApps spans every workspace the user belongs to (needed to resolve an
+  // app id from the URL regardless of which workspace it lives in) — but the
+  // search dropdown's "Followed Apps"/"Recently Viewed" lists must only ever
+  // show the active workspace's apps, or a follow/click there would tag the
+  // recent-apps entry with the wrong workspace and leak it across workspaces.
+  const activeWorkspaceApps = allApps.filter(a => a.workspace_id === activeWorkspaceId);
 
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
   const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
@@ -377,7 +391,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
           <DashboardSearch
-            apps={allApps}
+            apps={activeWorkspaceApps}
             workspaceId={activeWorkspaceId ?? ""}
             stayInPlace={staysInPlace}
             onSelectApp={selectApp}
