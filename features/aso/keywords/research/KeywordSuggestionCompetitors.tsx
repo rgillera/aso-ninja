@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PlusIcon, CheckIcon, MinusIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
@@ -153,6 +153,15 @@ export function KeywordSuggestionCompetitors({
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating]   = useState(false);
 
+  // Tracks the most recently *started* request's key. Compared against (not
+  // an effect-cleanup flag) because this effect calls setFetchKey on itself,
+  // which re-triggers the same effect (fetchKey is a dependency) — a cleanup
+  // flag would fire on that self-triggered re-run and cancel the request
+  // before it ever resolves. A ref sidesteps that: it only changes when a
+  // genuinely new request starts, and a stale response is simply one whose
+  // captured key no longer matches it.
+  const latestKeyRef = useRef<string | null>(null);
+
   // Fetch keywords whenever the competitor list or app changes
   useEffect(() => {
     if (!activeApp?.store_id || !competitors.length) {
@@ -164,13 +173,13 @@ export function KeywordSuggestionCompetitors({
     setFetchKey(key);
     setLoading(true);
     setData(null);
+    latestKeyRef.current = key;
 
     // Guard against out-of-order responses: the competitor list can change
     // again (e.g. optimistically adding one that then gets rolled back after
     // a plan-limit rejection) before this request resolves. Without this, a
     // slower stale response for the old (larger) competitor set can land
     // after the corrected one and silently overwrite it with wrong data.
-    let cancelled = false;
     const params = new URLSearchParams({
       storeId:       activeApp.store_id,
       country:       activeApp.country ?? "us",
@@ -178,11 +187,9 @@ export function KeywordSuggestionCompetitors({
     });
     fetch(`/api/keywords/competitor-keywords?${params}`)
       .then((r) => r.json())
-      .then((d: CompetitorKeywordsResult) => { if (!cancelled) setData(d); })
-      .catch(() => { if (!cancelled) setData({ appName: "", keywords: [], competitorApps: [] }); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
+      .then((d: CompetitorKeywordsResult) => { if (latestKeyRef.current === key) setData(d); })
+      .catch(() => { if (latestKeyRef.current === key) setData({ appName: "", keywords: [], competitorApps: [] }); })
+      .finally(() => { if (latestKeyRef.current === key) setLoading(false); });
   }, [activeApp?.store_id, activeApp?.country, competitors, fetchKey]);
 
   useEffect(() => {
