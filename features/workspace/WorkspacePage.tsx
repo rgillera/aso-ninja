@@ -1,11 +1,10 @@
 "use client";
 
-import { useActionState, useTransition } from "react";
+import { useActionState, useState, useTransition } from "react";
 import {
   updateWorkspaceAction,
   inviteMemberAction,
   removeMemberAction,
-  updateMemberRoleAction,
   deleteWorkspaceAction,
 } from "./actions";
 import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
@@ -52,7 +51,16 @@ export default function WorkspacePage({
 
   const [generalState, generalAction, generalPending] = useActionState(updateWorkspaceAction, null);
   const [inviteState, inviteAction, invitePending] = useActionState(inviteMemberAction, null);
+  const [localMembers, setLocalMembers] = useState(members);
   const [, startTransition] = useTransition();
+
+  function handleRemove(member: MemberWithProfile) {
+    const name = member.profiles?.full_name ?? member.email ?? "this member";
+    if (!confirm(`Remove ${name} from this workspace?`)) return;
+
+    setLocalMembers((prev) => prev.filter((m) => m.user_id !== member.user_id));
+    startTransition(() => removeMemberAction(workspace.id, member.user_id));
+  }
 
   return (
     <main className="h-full overflow-y-auto">
@@ -122,11 +130,11 @@ export default function WorkspacePage({
             <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base font-semibold text-white">Members</h2>
-                <span className="text-xs text-gray-500">{members.length} member{members.length !== 1 ? "s" : ""}</span>
+                <span className="text-xs text-gray-500">{localMembers.length} member{localMembers.length !== 1 ? "s" : ""}</span>
               </div>
 
               <ul className="divide-y divide-white/[0.07]">
-                {members.map((m) => (
+                {localMembers.map((m) => (
                   <li key={m.user_id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-semibold text-indigo-300">
@@ -143,32 +151,13 @@ export default function WorkspacePage({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <select
-                        defaultValue={m.role}
-                        disabled={!isOwner || m.user_id === currentUserId}
-                        onChange={(e) =>
-                          startTransition(() =>
-                            updateMemberRoleAction(
-                              workspace.id,
-                              m.user_id,
-                              e.target.value as WorkspaceRole
-                            )
-                          )
-                        }
-                        className="rounded-md bg-[#0d0f14] border border-white/[0.07] px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="owner">Owner</option>
-                        <option value="admin">Admin</option>
-                        <option value="member">Member</option>
-                      </select>
+                      <span className="rounded-md bg-[#0d0f14] border border-white/[0.07] px-2.5 py-1 text-xs text-gray-400 capitalize">
+                        {m.role}
+                      </span>
 
                       {isOwner && m.user_id !== currentUserId && (
                         <button
-                          onClick={() =>
-                            startTransition(() =>
-                              removeMemberAction(workspace.id, m.user_id)
-                            )
-                          }
+                          onClick={() => handleRemove(m)}
                           className="text-xs text-gray-600 hover:text-red-400 transition-colors"
                         >
                           Remove
@@ -189,17 +178,9 @@ export default function WorkspacePage({
                       name="email"
                       type="email"
                       required
-                      placeholder="colleague@example.com"
+                      placeholder=""
                       className="flex-1 rounded-lg bg-[#0d0f14] border border-white/[0.07] px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                     />
-                    <select
-                      name="role"
-                      defaultValue="member"
-                      className="rounded-lg bg-[#0d0f14] border border-white/[0.07] px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    >
-                      <option value="admin">Admin</option>
-                      <option value="member">Member</option>
-                    </select>
                     <button
                       type="submit"
                       disabled={invitePending}
@@ -207,6 +188,28 @@ export default function WorkspacePage({
                     >
                       {invitePending ? "Inviting…" : "Invite"}
                     </button>
+                  </div>
+                  <div className="flex gap-5">
+                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="access"
+                        value="aso_intelligence"
+                        defaultChecked
+                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                      />
+                      ASO Intelligence
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="access"
+                        value="market_intelligence"
+                        defaultChecked
+                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                      />
+                      Market Intelligence
+                    </label>
                   </div>
                 </form>
               )}

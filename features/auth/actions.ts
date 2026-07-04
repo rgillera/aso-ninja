@@ -48,13 +48,21 @@ export async function registerAction(
   if (signUpError) return { error: signUpError.message };
   if (!data.user) return { error: "Failed to create account." };
 
-  // Create the default workspace for the new user
-  const { error: workspaceError } = await supabase.rpc("create_default_workspace", {
-    p_user_id: data.user.id,
-    p_name: name,
-  });
+  // The signup trigger already joined any workspace(s) this email was
+  // invited to — only create a default workspace if none of those applied.
+  const { count } = await supabase
+    .from("workspace_members")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", data.user.id);
 
-  if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
+  if (count === 0) {
+    const { error: workspaceError } = await supabase.rpc("create_default_workspace", {
+      p_user_id: data.user.id,
+      p_name: name,
+    });
+
+    if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
+  }
 
   redirect("/dashboard");
 }
@@ -76,4 +84,31 @@ export async function signOutAction() {
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+export async function setPasswordAction(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const name = formData.get("name") as string;
+  const password = formData.get("password") as string;
+  const confirm = formData.get("confirm") as string;
+
+  if (!name || !password || !confirm) return { error: "All fields are required." };
+  if (password.length < 8)
+    return { error: "Password must be at least 8 characters.", field: "password" };
+  if (password !== confirm)
+    return { error: "Passwords do not match.", field: "confirm" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.updateUser({
+    password,
+    data: { full_name: name, invite_pending: false },
+  });
+
+  if (error) return { error: error.message };
+
+  await supabase.from("profiles").update({ full_name: name }).eq("id", data.user.id);
+
+  redirect("/dashboard");
 }

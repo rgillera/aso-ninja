@@ -24,7 +24,7 @@ import {
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
-import type { Workspace } from "@/libs/contracts";
+import type { Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 const metadataLinks = [
   { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
@@ -52,6 +52,8 @@ type Props = {
   metaOverrideHref?: string;
   /** Which preview sub-page is currently active ("" = report, "timeline", etc.) */
   activePreviewPage?: string;
+  /** Which product areas the current member has access to in the active workspace */
+  access: WorkspaceAccess[];
 };
 
 function workspaceInitial(name: string) {
@@ -65,7 +67,10 @@ export default function DashboardSidebar({
   activeAppId,
   metaOverrideHref,
   activePreviewPage,
+  access,
 }: Props) {
+  const hasAsoIntelligence = access.includes("aso_intelligence");
+  const hasMarketIntelligence = access.includes("market_intelligence");
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
   const isOnReport =
     currentPath.startsWith("/dashboard/report") ||
@@ -204,6 +209,7 @@ export default function DashboardSidebar({
           My Apps
         </a>
 
+        {hasAsoIntelligence && (
         <div className="pt-4">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
             ASO Intelligence
@@ -360,7 +366,9 @@ export default function DashboardSidebar({
             )}
           </div>
         </div>
+        )}
 
+        {hasMarketIntelligence && (
         <div className="pt-4">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
             Market Intelligence
@@ -385,6 +393,7 @@ export default function DashboardSidebar({
             })}
           </div>
         </div>
+        )}
 
       </nav>
 

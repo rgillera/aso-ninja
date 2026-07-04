@@ -88,7 +88,15 @@
       "Bash(git -C /Users/bmo/Documents/dev/aso-ninja diff -- features/aso/AppHeader.tsx)",
       "Bash(npx next *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard\")",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard/market/explorer\")"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:3000/dashboard/market/explorer\")",
+      "Bash(git checkout *)",
+      "Bash(ps -p 95053 -o pid,ppid,etime,command)",
+      "Bash(node -e \"console.log\\(require\\('@supabase/supabase-js'\\).createClient ? 'ok' : 'missing'\\)\")",
+      "Bash(node /private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/c712d647-3394-4f7f-a7f3-daf3076e30ff/scratchpad/verify_invite.js)",
+      "Bash(node .scratch_verify_invite.js)",
+      "Bash(supabase stop *)",
+      "Bash(supabase start *)",
+      "Bash(node .scratch_verify_existing.js)"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"

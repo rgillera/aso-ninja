@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
-import type { WorkspaceRole } from "@/libs/contracts";
+import { createAdminClient } from "@/libs/supabase/admin";
+import type { WorkspaceAccess } from "@/libs/contracts";
 
 export type WorkspaceState = { error?: string; success?: string } | null;
 
@@ -32,8 +33,10 @@ export async function inviteMemberAction(
   formData: FormData
 ): Promise<WorkspaceState> {
   const workspaceId = formData.get("workspace_id") as string;
-  const email = formData.get("email") as string;
-  const role = (formData.get("role") as WorkspaceRole) ?? "member";
+  const email = (formData.get("email") as string).trim().toLowerCase();
+  const access = formData.getAll("access") as WorkspaceAccess[];
+
+  if (access.length === 0) return { error: "Select at least one access area." };
 
   const supabase = await createClient();
 
@@ -42,29 +45,41 @@ export async function inviteMemberAction(
     { p_email: email }
   );
 
-  if (lookupError || !userId) return { error: "No user found with that email address." };
+  if (lookupError) return { error: lookupError.message };
+
+  if (!userId) {
+    const {
+      data: { user: invitedBy },
+    } = await supabase.auth.getUser();
+
+    const { error: inviteError } = await supabase
+      .from("workspace_invites")
+      .upsert(
+        { workspace_id: workspaceId, email, role: "member", access, invited_by: invitedBy?.id },
+        { onConflict: "workspace_id,email" }
+      );
+
+    if (inviteError) return { error: inviteError.message };
+
+    const admin = createAdminClient();
+    const { error: sendError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/invite`,
+      data: { invite_pending: true },
+    });
+
+    if (sendError) return { error: sendError.message };
+
+    return { success: `Invite sent to ${email}. They'll join once they register.` };
+  }
 
   const { error } = await supabase
     .from("workspace_members")
-    .insert({ workspace_id: workspaceId, user_id: userId, role });
+    .insert({ workspace_id: workspaceId, user_id: userId, role: "member", access });
 
   if (error?.code === "23505") return { error: "This user is already a member." };
   if (error) return { error: error.message };
 
   return { success: `Invitation sent to ${email}.` };
-}
-
-export async function updateMemberRoleAction(
-  workspaceId: string,
-  userId: string,
-  role: WorkspaceRole
-): Promise<void> {
-  const supabase = await createClient();
-  await supabase
-    .from("workspace_members")
-    .update({ role })
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", userId);
 }
 
 export async function removeMemberAction(

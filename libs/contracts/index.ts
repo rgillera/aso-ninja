@@ -1,6 +1,6 @@
 export type { AuthState } from "./auth";
 export type { Profile } from "./profile";
-export type { WorkspaceRole, Workspace, WorkspaceMember } from "./workspace";
+export type { WorkspaceRole, WorkspaceAccess, Workspace, WorkspaceMember } from "./workspace";
 export type { AppStore, App } from "./app";
 export type { AppSearchResult } from "./app/search";
 export type { StoreData, CategoryBenchmark } from "./app/store-data";

@@ -38,7 +38,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 required
                 className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                placeholder="you@example.com"
+                placeholder=""
               />
             </div>
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
                 className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                placeholder="••••••••"
+                placeholder=""
               />
             </div>
 

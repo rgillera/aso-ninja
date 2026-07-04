@@ -38,7 +38,7 @@ export default function RegistrationPage() {
                 autoComplete="name"
                 required
                 className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                placeholder="Jane Smith"
+                placeholder=""
               />
             </div>
 
@@ -53,7 +53,7 @@ export default function RegistrationPage() {
                 autoComplete="email"
                 required
                 className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                placeholder="you@example.com"
+                placeholder=""
               />
             </div>
 
@@ -70,7 +70,7 @@ export default function RegistrationPage() {
                 className={`w-full rounded-lg bg-gray-900 border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
                   state?.field === "password" ? "border-red-500/50" : "border-white/10"
                 }`}
-                placeholder="Min. 8 characters"
+                placeholder=""
               />
             </div>
 
@@ -87,7 +87,7 @@ export default function RegistrationPage() {
                 className={`w-full rounded-lg bg-gray-900 border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
                   state?.field === "confirm" ? "border-red-500/50" : "border-white/10"
                 }`}
-                placeholder="••••••••"
+                placeholder=""
               />
             </div>
 

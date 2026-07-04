@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useParams, useSearchParams } from "next/navigation";
+import { usePathname, useParams, useSearchParams, useRouter } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider } from "./WorkspaceContext";
@@ -11,7 +11,26 @@ import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
-import type { App, Workspace } from "@/libs/contracts";
+import type { App, Workspace, WorkspaceAccess } from "@/libs/contracts";
+
+// Route prefixes gated behind each access area — mirrors the "ASO Intelligence"
+// / "Market Intelligence" groupings in DashboardSidebar. "My Apps" and Settings
+// stay ungated since every member needs those regardless of access.
+const ASO_INTELLIGENCE_PREFIXES = [
+  "/dashboard/report",
+  "/dashboard/preview",
+  "/dashboard/metadata",
+  "/dashboard/apps",
+  "/dashboard/keywords",
+  "/dashboard/reviews",
+];
+const MARKET_INTELLIGENCE_PREFIXES = ["/dashboard/market"];
+
+function requiredAccessFor(pathname: string): WorkspaceAccess | undefined {
+  if (ASO_INTELLIGENCE_PREFIXES.some((p) => pathname.startsWith(p))) return "aso_intelligence";
+  if (MARKET_INTELLIGENCE_PREFIXES.some((p) => pathname.startsWith(p))) return "market_intelligence";
+  return undefined;
+}
 
 // The only pages where picking an app from search should stay put instead of
 // navigating: app-agnostic ASO Intelligence tools that just swap their active
@@ -45,13 +64,15 @@ type Props = {
   lastAppId?: string;
   lastPreview?: string;
   lastWorkspaceId?: string;
+  accessByWorkspace: Record<string, WorkspaceAccess[]>;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, children }: Props) {
   const pathname     = usePathname();
+  const router       = useRouter();
   const params       = useParams<{ id?: string }>();
   const searchParams = useSearchParams();
 
@@ -187,6 +208,18 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     ? (workspaces.find(w => w.id === wsParam)?.id ?? workspaces[0]?.id)
     : (workspaces.find(w => w.id === savedWorkspaceId)?.id ?? activeApp?.workspace_id ?? workspaces[0]?.id);
 
+  const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
+
+  // Bounce away from a product area the current member's access doesn't cover
+  // for the active workspace — mirrors the sections hidden in DashboardSidebar,
+  // so a stale/bookmarked/typed-in URL can't be used to reach a gated page.
+  useEffect(() => {
+    const required = requiredAccessFor(pathname);
+    if (required && !currentAccess.includes(required)) {
+      router.replace("/dashboard");
+    }
+  }, [pathname, currentAccess, router]);
+
   // Invoked by DashboardSearch when the user picks an app while sitting on an
   // app-agnostic page — updates the active app in place instead of navigating
   // away to Report, which is what URL-driven selection (params.id / preview
@@ -309,6 +342,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           activeAppId={lastTrackedApp?.id}
           metaOverrideHref={metaOverrideHref}
           activePreviewPage={activePreviewPage}
+          access={currentAccess}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
           <DashboardSearch

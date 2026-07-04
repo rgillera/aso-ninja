@@ -74,7 +74,7 @@ const plans: {
   },
   {
     name: "Enterprise",
-    monthly: { price: "$1,499", href: "/signup?plan=enterprise&billing=monthly" },
+    monthly: { price: "$1,999", href: "/signup?plan=enterprise&billing=monthly" },
     yearly: { price: "$1,299", href: "/signup?plan=enterprise&billing=yearly" },
     description: "Unlimited keyword tracking and scale for agencies managing large app portfolios.",
     badge: null,
