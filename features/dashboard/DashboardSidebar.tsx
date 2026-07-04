@@ -22,6 +22,7 @@ import {
   ChatBubbleLeftEllipsisIcon,
   UserCircleIcon,
   CreditCardIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
@@ -89,6 +90,7 @@ export default function DashboardSidebar({
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
+  const isMarketIntelligenceLocked = planSlug !== "enterprise";
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
   const isOnReport =
     currentPath.startsWith("/dashboard/report") ||
@@ -421,7 +423,16 @@ export default function DashboardSidebar({
                   }`}
                 >
                   <link.icon className="size-4 shrink-0" />
-                  {link.label}
+                  <span className="flex-1">{link.label}</span>
+                  {isMarketIntelligenceLocked && (
+                    <span
+                      className="flex items-center gap-1 shrink-0 rounded-full bg-amber-400/10 px-2 py-0.5"
+                      title="Requires the Enterprise plan"
+                    >
+                      <LockClosedIcon className="size-3 text-amber-400" />
+                      <span className="text-xs font-semibold text-amber-400">E</span>
+                    </span>
+                  )}
                 </a>
               );
             })}

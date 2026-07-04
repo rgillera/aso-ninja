@@ -5,6 +5,7 @@ import { usePathname, useParams, useSearchParams, useRouter } from "next/navigat
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider } from "./WorkspaceContext";
+import { PlanProvider } from "./PlanContext";
 import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
@@ -374,6 +375,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   return (
     <WorkspaceProvider value={activeWorkspaceId ?? ""}>
+    <PlanProvider value={planSlug}>
     <ActiveAppProvider value={displayApp}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
       <div className="flex h-screen bg-[#111318] overflow-hidden" onClickCapture={handleNavClickCapture}>
@@ -411,6 +413,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       )}
     </NavigationGuardProvider>
     </ActiveAppProvider>
+    </PlanProvider>
     </WorkspaceProvider>
   );
 }

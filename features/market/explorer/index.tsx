@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { InformationCircleIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { createClient } from "@/libs/supabase/client";
 import { ExplorerFilters } from "./ExplorerFilters";
 import { ExplorerTable } from "./ExplorerTable";
@@ -12,6 +14,7 @@ import type { MarketStatusMap } from "@/app/api/market/status/route";
 
 export default function AppExplorerPage() {
   const workspaceId = useWorkspaceId();
+  const planSlug = usePlanSlug();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [apps, setApps] = useState<ChartApp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,6 +22,8 @@ export default function AppExplorerPage() {
   const [connected, setConnected] = useState<MarketStatusMap>({});
 
   useEffect(() => {
+    // Locked view below ignores loading/apps/error entirely, so skip the fetch outright.
+    if (planSlug !== "enterprise") return;
     setLoading(true);
     setError(null);
     // Apple's chart feed caps at 100 real results, Play's at 200 — both
@@ -44,7 +49,7 @@ export default function AppExplorerPage() {
       .finally(() => setLoading(false));
 
     return () => controller.abort();
-  }, [filters.store, filters.country, filters.device, filters.chart, filters.category]);
+  }, [filters.store, filters.country, filters.device, filters.chart, filters.category, planSlug]);
 
   // Growth team's connected/unconnected status is stored per workspace, keyed
   // by store ID — shared across everyone in the workspace via Postgres (not
@@ -72,7 +77,7 @@ export default function AppExplorerPage() {
   // postgres_changes still enforces market_app_status's existing RLS policy
   // per subscriber, so this can't leak another workspace's rows.
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || planSlug !== "enterprise") return;
     const supabase = createClient();
     const channel = supabase
       .channel(`market_app_status:${workspaceId}`)
@@ -99,6 +104,20 @@ export default function AppExplorerPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId, storeId, store, connected: next }),
     }).catch(() => setConnected((prev) => ({ ...prev, [storeId]: !next })));
+  }
+
+  if (planSlug !== "enterprise") {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+        <div className="flex items-center gap-2 px-6 pt-6">
+          <h1 className="text-xl font-semibold text-white">App Explorer</h1>
+        </div>
+        <FeatureLocked
+          title="Market Intelligence is an Enterprise feature"
+          description="App Explorer and the rest of Market Intelligence are available on the Enterprise plan."
+        />
+      </div>
+    );
   }
 
   return (
