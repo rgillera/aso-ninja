@@ -71,11 +71,17 @@ Reply with ONLY a JSON array of strings. The example below is for JSON formattin
     if (!match) return ruleBasedCombinations(seed, count);
     const parsed = JSON.parse(match[0]) as unknown[];
     const seedLower = seed.toLowerCase();
+    // Compare with whitespace stripped: CJK scripts don't use spaces between
+    // words, so a seed like "营养 成分" (typed/stored with a space) never
+    // reappears verbatim in the model's output — it correctly comes back as
+    // "营养成分…". Requiring an exact match with the space would reject every
+    // valid same-language result and silently produce zero combinations.
+    const seedCompact = seedLower.replace(/\s+/g, "");
     const llmResults = [...new Set(
       parsed
         .filter((k): k is string => typeof k === "string")
         .map((k) => k.toLowerCase().trim())
-        .filter((k) => k.includes(seedLower) && k.length >= seed.length && k.length <= 50)
+        .filter((k) => k.replace(/\s+/g, "").includes(seedCompact) && k.length >= seed.length && k.length <= 50)
     )].slice(0, count);
     return llmResults.length > 0 ? llmResults : ruleBasedCombinations(seed, count);
   } catch { return ruleBasedCombinations(seed, count); }
