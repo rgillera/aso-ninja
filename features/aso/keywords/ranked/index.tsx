@@ -7,7 +7,10 @@ import {
 } from "recharts";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { RankedTable } from "./RankedTable";
 import {
   DEFAULT_FILTERS, isBranded, wordCount,
@@ -98,6 +101,8 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
 
 export default function RankedKeywordsPage() {
   const activeApp = useActiveApp();
+  const planSlug  = usePlanSlug();
+  const isLocked  = !isPlanAtLeast(planSlug, "pro_plus");
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
   const [history,  setHistory]  = useState<RankedHistoryPoint[]>([]);
   const [loading,  setLoading]  = useState(false);
@@ -107,7 +112,7 @@ export default function RankedKeywordsPage() {
 
   useEffect(() => {
     const storeId = activeApp?.store_id;
-    if (!storeId) return;
+    if (!storeId || isLocked) return;
     setLoading(true);
     const params = new URLSearchParams({
       storeId,
@@ -122,7 +127,7 @@ export default function RankedKeywordsPage() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [activeApp?.store_id, activeApp?.store, activeApp?.country]);
+  }, [activeApp?.store_id, activeApp?.store, activeApp?.country, isLocked]);
 
   const filtered = useMemo(() => {
     if (!activeApp) return [];
@@ -143,6 +148,18 @@ export default function RankedKeywordsPage() {
   }, [keywords, filters, activeApp]);
 
   if (!activeApp) return <NoAppSelected />;
+
+  if (isLocked) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+        <AppHeader app={activeApp} title="All Ranked Keywords" />
+        <FeatureLocked
+          title="All Ranked Keywords is a Pro+ feature"
+          description="Upgrade to Pro+ or above to see every keyword your app ranks for over time."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">

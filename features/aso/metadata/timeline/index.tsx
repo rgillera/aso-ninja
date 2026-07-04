@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { TimelineProps, UpdateEvent, ScreenshotItem } from "./types";
 import { ALL_FIELDS, EVENT_TEMPLATES, DAYS_SHOWN } from "./constants";
 import { buildDates, defaultRange, toDateStr } from "./utils";
@@ -10,6 +13,8 @@ import { TimelineGrid } from "./TimelineGrid";
 import { BeforeAfterPanel } from "./BeforeAfterPanel";
 
 export default function Timeline({ app, screenshots = [] }: TimelineProps) {
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
   const { start: defStart, end: defEnd } = defaultRange();
 
   const [rangeStart, setRangeStart]       = useState(defStart);
@@ -82,6 +87,21 @@ export default function Timeline({ app, screenshots = [] }: TimelineProps) {
   function handleRangeChange(start: Date, end: Date) {
     setRangeStart(start);
     setRangeEnd(end);
+  }
+
+  if (isLocked) {
+    return (
+      <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
+        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07]">
+          {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
+          <p className="text-sm font-semibold text-white">{app.name}</p>
+        </div>
+        <FeatureLocked
+          title="Timeline is a Pro feature"
+          description="Upgrade to Pro or above to see your metadata's update history."
+        />
+      </main>
+    );
   }
 
   return (

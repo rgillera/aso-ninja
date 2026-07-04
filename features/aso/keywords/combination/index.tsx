@@ -6,9 +6,12 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CombinationTable } from "./CombinationTable";
 import type { CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
@@ -29,6 +32,8 @@ function NoAppSelected() {
 export default function KeywordCombinationPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
+  const planSlug    = usePlanSlug();
+  const isLocked    = !isPlanAtLeast(planSlug, "pro_plus");
   const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
@@ -68,14 +73,14 @@ export default function KeywordCombinationPage() {
   useEffect(() => {
     const storeId = activeApp?.store_id;
     const store   = activeApp?.store;
-    if (!storeId || !store || loadedSubtitleFor.current === storeId) return;
+    if (!storeId || !store || isLocked || loadedSubtitleFor.current === storeId) return;
     loadedSubtitleFor.current = storeId;
     const country = activeApp?.country ?? "us";
     fetch(`/api/keywords/app-metadata?storeId=${storeId}&store=${store}&country=${country}`)
       .then((r) => r.json())
       .then((d) => setAppSubtitle(d?.subtitle ?? ""))
       .catch(() => {});
-  }, [activeApp?.store_id, activeApp?.store, activeApp?.country]);
+  }, [activeApp?.store_id, activeApp?.store, activeApp?.country, isLocked]);
 
   // Load tracked keywords from DB. Also re-fetches on window focus so that
   // keywords added from other pages (research, performance) are reflected without
@@ -83,7 +88,7 @@ export default function KeywordCombinationPage() {
   // Falls back to workspaceId+bundleId lookup when activeApp.id is undefined
   // (e.g. app shown via savedPreview cookie rather than a formal tracked-app route).
   useEffect(() => {
-    if (!activeApp) return;
+    if (!activeApp || isLocked) return;
 
     const listUrl = activeApp.id
       ? `/api/keywords/list?appId=${activeApp.id}`
@@ -106,7 +111,7 @@ export default function KeywordCombinationPage() {
     refreshTracked();
     window.addEventListener("focus", refreshTracked);
     return () => window.removeEventListener("focus", refreshTracked);
-  }, [activeApp?.id, activeApp?.bundle_id, workspaceId]);
+  }, [activeApp?.id, activeApp?.bundle_id, workspaceId, isLocked]);
 
   async function handleAddSeeds(seeds: string[]) {
     const existing = new Set(groups.map((g) => g.seed.toLowerCase()));
@@ -280,6 +285,18 @@ export default function KeywordCombinationPage() {
 
   if (!activeApp) {
     return <NoAppSelected />;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+        <AppHeader app={activeApp} title="Keyword Combination" />
+        <FeatureLocked
+          title="Keyword Combination is a Pro+ feature"
+          description="Upgrade to Pro+ or above to expand seed keywords into combinations."
+        />
+      </div>
+    );
   }
 
   return (

@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { StatCards } from "./StatCards";
 import { ReviewDistributionChart } from "./ReviewDistributionChart";
 import { ReviewsTable } from "./ReviewsTable";
@@ -30,6 +33,8 @@ function isoDate(d: Date): string {
 
 export default function ReviewsDashboardPage() {
   const activeApp = useActiveApp();
+  const planSlug  = usePlanSlug();
+  const isLocked  = !isPlanAtLeast(planSlug, "pro");
   const [result, setResult] = useState<ReviewsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +48,7 @@ export default function ReviewsDashboardPage() {
 
   useEffect(() => {
     const appId = activeApp?.id;
-    if (!appId) return;
+    if (!appId || isLocked) return;
     const key = `${appId}:${activeApp?.store}:${activeApp?.country}:${from}:${to}`;
     if (loadedKey.current === key) return;
     loadedKey.current = key;
@@ -66,9 +71,21 @@ export default function ReviewsDashboardPage() {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id, from, to]);
+  }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id, from, to, isLocked]);
 
   if (!activeApp) return <NoAppSelected />;
+
+  if (isLocked) {
+    return (
+      <main className="h-full overflow-y-auto bg-[#111318]">
+        <AppHeader app={activeApp} title="Reviews" />
+        <FeatureLocked
+          title="Reviews is a Pro feature"
+          description="Upgrade to Pro or above to browse and track your app's reviews."
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318]">

@@ -22,9 +22,9 @@ import {
   ChatBubbleLeftEllipsisIcon,
   UserCircleIcon,
   CreditCardIcon,
-  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
@@ -34,21 +34,44 @@ const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
 };
 
-const metadataLinks = [
+const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
+  pro: { label: "Pro", className: "bg-red-500/10 text-red-800" },
+  pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-800" },
+  enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-700" },
+};
+
+function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
+  const badge = LOCK_BADGE[minPlan] ?? LOCK_BADGE.enterprise!;
+  return (
+    <span
+      className={`shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold ${badge.className}`}
+      title={`Requires the ${PLAN_BADGE[minPlan].label} plan or above`}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+const metadataLinks: { label: string; appPath: string; fallback: string; previewPage: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
-  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon },
-  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon },
+  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "pro" },
+  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "pro" },
 ];
 
-const keywordLinks = [
+const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Combination", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon },
+  { label: "Combinations", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon, minPlan: "pro_plus" },
   { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
-  { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon },
+  { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
 ];
 
-const marketLinks = [
-  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon },
+const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
+  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon, minPlan: "enterprise" },
+];
+
+const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
+  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "pro" },
+  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "pro" },
 ];
 
 type Props = {
@@ -90,7 +113,6 @@ export default function DashboardSidebar({
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
-  const isMarketIntelligenceLocked = planSlug !== "enterprise";
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
   const isOnReport =
     currentPath.startsWith("/dashboard/report") ||
@@ -305,7 +327,10 @@ export default function DashboardSidebar({
                       }`}
                     >
                       <link.icon className="size-4 shrink-0" />
-                      {link.label}
+                      <span className="flex-1">{link.label}</span>
+                      {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                        <PlanLockBadge minPlan={link.minPlan} />
+                      )}
                     </a>
                   );
                 })}
@@ -349,7 +374,10 @@ export default function DashboardSidebar({
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
-                    {link.label}
+                    <span className="flex-1">{link.label}</span>
+                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                      <PlanLockBadge minPlan={link.minPlan} />
+                    )}
                   </a>
                 ))}
               </div>
@@ -381,10 +409,7 @@ export default function DashboardSidebar({
 
             {reviewsOpen && (
               <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
-                {[
-                  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon },
-                  { label: "Reviews", href: "/dashboard/reviews/reviews", icon: ChatBubbleLeftEllipsisIcon },
-                ].map((link) => (
+                {reviewLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
@@ -395,7 +420,10 @@ export default function DashboardSidebar({
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
-                    {link.label}
+                    <span className="flex-1">{link.label}</span>
+                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                      <PlanLockBadge minPlan={link.minPlan} />
+                    )}
                   </a>
                 ))}
               </div>
@@ -424,14 +452,8 @@ export default function DashboardSidebar({
                 >
                   <link.icon className="size-4 shrink-0" />
                   <span className="flex-1">{link.label}</span>
-                  {isMarketIntelligenceLocked && (
-                    <span
-                      className="flex items-center gap-1 shrink-0 rounded-full bg-amber-400/10 px-2 py-0.5"
-                      title="Requires the Enterprise plan"
-                    >
-                      <LockClosedIcon className="size-3 text-amber-400" />
-                      <span className="text-xs font-semibold text-amber-400">E</span>
-                    </span>
+                  {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                    <PlanLockBadge minPlan={link.minPlan} />
                   )}
                 </a>
               );

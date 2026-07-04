@@ -4,6 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CurrentRatingCard } from "./CurrentRatingCard";
 import { CategoryRatingCard } from "./CategoryRatingCard";
 import { AssessYourApp } from "./AssessYourApp";
@@ -26,6 +29,8 @@ const DAYS_OF_HISTORY = 90;
 
 export default function RatingsDashboardPage() {
   const activeApp = useActiveApp();
+  const planSlug  = usePlanSlug();
+  const isLocked  = !isPlanAtLeast(planSlug, "pro");
   const [result, setResult] = useState<RatingsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +38,7 @@ export default function RatingsDashboardPage() {
 
   useEffect(() => {
     const appId = activeApp?.id;
-    if (!appId) return;
+    if (!appId || isLocked) return;
     const key = `${appId}:${activeApp?.store}:${activeApp?.country}`;
     if (loadedKey.current === key) return;
     loadedKey.current = key;
@@ -59,9 +64,21 @@ export default function RatingsDashboardPage() {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id]);
+  }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id, isLocked]);
 
   if (!activeApp) return <NoAppSelected />;
+
+  if (isLocked) {
+    return (
+      <main className="h-full overflow-y-auto bg-[#111318]">
+        <AppHeader app={activeApp} title="Ratings" />
+        <FeatureLocked
+          title="Ratings is a Pro feature"
+          description="Upgrade to Pro or above to track your app's rating trends over time."
+        />
+      </main>
+    );
+  }
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318]">

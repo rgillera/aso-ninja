@@ -1,8 +1,13 @@
+"use client";
+
 import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
 import { FollowButton } from "@/features/aso/AppHeader";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 type Props = { app: App; storeData: StoreData; benchmark: CategoryBenchmark; daysSinceUpdate?: number };
 
@@ -107,6 +112,23 @@ function EmptyState({ title, message }: { title: string; message: string }) {
 }
 
 export default function MetadataBenchmark({ app, storeData, benchmark, daysSinceUpdate }: Props) {
+  const planSlug = usePlanSlug();
+
+  if (!isPlanAtLeast(planSlug, "pro")) {
+    return (
+      <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
+        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07]">
+          {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
+          <p className="text-sm font-semibold text-white">{app.name}</p>
+        </div>
+        <FeatureLocked
+          title="Benchmark is a Pro feature"
+          description="Upgrade to Pro or above to see how your metadata compares to your category."
+        />
+      </main>
+    );
+  }
+
   if (!storeData) {
     return (
       <EmptyState
