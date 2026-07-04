@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
@@ -114,13 +116,20 @@ function deduplicateAcross(...sections: string[][]): string[][] {
 
 const EMPTY: AISuggestionsResult = { discovery: [], generic: [], branded: [], relevancy: [] };
 
-// GET /api/keywords/ai-suggestions?appName=...&country=us
+// GET /api/keywords/ai-suggestions?appName=...&country=us&workspaceId=...
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const appName     = searchParams.get("appName")     ?? "";
   const description = searchParams.get("description") ?? "";
+  const workspaceId = searchParams.get("workspaceId") ?? "";
 
   if (!appName) return NextResponse.json(EMPTY);
+
+  // AI Suggestions is a Pro+ feature — anything below that plan never
+  // triggers the Ollama LLM pass.
+  const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
     generateKeywords(appName, description, "discovery", 40),

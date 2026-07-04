@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { SUGGESTION_TABS } from "./constants";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata }   from "./KeywordSuggestionMetadata";
@@ -30,6 +32,8 @@ export function KeywordSuggestionsPanel({
   competitors,
   onCompetitorsChange,
 }: Props) {
+  const planSlug = usePlanSlug();
+  const aiLocked = !isPlanAtLeast(planSlug, "pro_plus");
   const [open,       setOpen]       = useState(true);
   const [activeTab,  setActiveTab]  = useState<string>(SUGGESTION_TABS[0].label);
   const [manageOpen, setManageOpen] = useState(false);
@@ -65,9 +69,14 @@ export function KeywordSuggestionsPanel({
                   }`}
                 >
                   {tab.ai ? (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1.5">
                       <span className="text-[10px]">✦</span>
                       {tab.label}
+                      {aiLocked && (
+                        <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">
+                          Pro+
+                        </span>
+                      )}
                     </span>
                   ) : tab.label}
                 </button>

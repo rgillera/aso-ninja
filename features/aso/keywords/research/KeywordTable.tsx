@@ -15,13 +15,28 @@ import {
   SparklesIcon,
   ArrowTrendingUpIcon,
   ClockIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { Toggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { LiveSearchPanel } from "./LiveSearchPanel";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Keyword } from "./types";
+
+function LockedCell() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500"
+      title="Relevancy and Opportunity require the Pro+ plan"
+    >
+      <LockClosedIcon className="size-2.5" />
+      Pro+
+    </span>
+  );
+}
 
 type Props = {
   keywords: Keyword[];
@@ -102,6 +117,8 @@ export function KeywordTable({
   onRemoveSelected,
   onRemoveKeyword,
 }: Props) {
+  const planSlug = usePlanSlug();
+  const relevancyLocked = !isPlanAtLeast(planSlug, "pro_plus");
   const [keywordInput, setKeywordInput] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [tableFilter, setTableFilter] = useState<"all" | "checked" | "starred">("all");
@@ -336,7 +353,9 @@ export function KeywordTable({
         </span>
       );
       case "opportunity": return (
-        row.opportunity !== undefined
+        relevancyLocked
+          ? <LockedCell />
+          : row.opportunity !== undefined && row.opportunity !== null
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
               row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400" :
@@ -357,7 +376,9 @@ export function KeywordTable({
           : <span className="text-sm text-gray-600">—</span>
       );
       case "relevancy":   return (
-        row.relevancy !== undefined
+        relevancyLocked
+          ? <LockedCell />
+          : row.relevancy !== undefined && row.relevancy !== null
           ? (
             <span className={`text-sm font-medium ${row.relevancy >= 70 ? "text-emerald-400" : row.relevancy >= 40 ? "text-yellow-400" : "text-gray-400"}`}>
               {row.relevancy}

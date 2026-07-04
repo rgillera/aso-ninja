@@ -194,6 +194,7 @@ export default function KeywordCombinationPage() {
       country,
       appName: activeApp?.name ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
+      ...(workspaceId ? { workspaceId } : {}),
     };
 
     async function saveKeywords(metrics: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {

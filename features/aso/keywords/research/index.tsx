@@ -183,6 +183,7 @@ export default function KeywordResearchPage() {
       appName: activeApp?.name ?? "",
       fast: "1",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
+      ...(workspaceId ? { workspaceId } : {}),
     });
 
     try {
@@ -223,6 +224,7 @@ export default function KeywordResearchPage() {
       country,
       appName: activeApp?.name ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
+      ...(workspaceId ? { workspaceId } : {}),
     });
 
     try {

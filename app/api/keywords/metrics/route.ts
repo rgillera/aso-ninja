@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -496,6 +498,7 @@ export async function GET(request: NextRequest) {
   const store      = searchParams.get("store") ?? "ios";
   const appName    = searchParams.get("appName") ?? "";
   const appId      = searchParams.get("appId") ?? "";
+  const workspaceId = searchParams.get("workspaceId") ?? "";
   // fast=1 skips the LLM/embedding relevancy pass (the slow part of adding a
   // keyword) — relevancy/opportunity come back null and get back-filled by a
   // follow-up non-fast request.
@@ -505,6 +508,13 @@ export async function GET(request: NextRequest) {
   if (!terms.length) return NextResponse.json({});
 
   const supabase = await createClient();
+
+  // Relevancy/opportunity are Pro+ features — anything below that plan never
+  // triggers the Ollama embedding/LLM pass, and never sees a value even if one
+  // was cached from before a downgrade.
+  const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  const canUseRelevancy = isPlanAtLeast(planSlug, "pro_plus");
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
@@ -536,9 +546,12 @@ export async function GET(request: NextRequest) {
   let freshMetrics: Record<string, Metrics> = {};
   let rateLimited = false;
   if (uncached.length) {
+    const withRelevancy = !fast && canUseRelevancy;
+
     // Fetch app description + embed it once; shared across all keyword lookups.
-    // Skipped entirely in fast mode since it's only used for relevancy.
-    const appMeta: AppMeta = !fast && appName
+    // Skipped entirely when relevancy won't be computed (fast mode, or the
+    // workspace isn't Pro+) since it's only ever used for that pass.
+    const appMeta: AppMeta = withRelevancy && appName
       ? await (store === "android"
           ? fetchAndroidAppMeta(appName, country)
           : fetchIosAppMeta(appName, country))
@@ -550,14 +563,14 @@ export async function GET(request: NextRequest) {
     if (store === "ios") {
       entries = [];
       for (const term of uncached) {
-        const result = await fetchIosMetrics(term, country, appName, appMeta, !fast, supabase);
+        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, supabase);
         if (result === "rate_limited") { rateLimited = true; entries.push([term, null] as const); }
         else entries.push([term, result] as const);
       }
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, !fast);
+          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy);
           return [term, metrics] as const;
         })
       );
@@ -584,5 +597,13 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ...dbCache, ...freshMetrics, ...(rateLimited ? { _rateLimited: true } : {}) });
+  const merged = { ...dbCache, ...freshMetrics };
+  // Strip relevancy/opportunity for anything below Pro+ — including values
+  // read back from the 7-day DB cache, in case the workspace downgraded since
+  // they were computed.
+  if (!canUseRelevancy) {
+    for (const m of Object.values(merged)) { m.relevancy = null; m.opportunity = null; }
+  }
+
+  return NextResponse.json({ ...merged, ...(rateLimited ? { _rateLimited: true } : {}) });
 }

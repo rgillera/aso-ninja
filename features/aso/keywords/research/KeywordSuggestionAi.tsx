@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PlusIcon, CheckIcon, MinusIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, CheckIcon, MinusIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Keyword } from "./types";
 import type { AISuggestionsResult } from "@/app/api/keywords/ai-suggestions/route";
 
@@ -120,24 +123,40 @@ function AISuggestionsSection({
 }
 
 export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword }: Props) {
+  const workspaceId = useWorkspaceId();
+  const planSlug     = usePlanSlug();
+  const locked       = !isPlanAtLeast(planSlug, "pro_plus");
   const [data, setData]       = useState<AISuggestionsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState<string | null>(null);
 
   useEffect(() => {
     const key = `${activeApp?.store_id}-${activeApp?.country}`;
-    if (!activeApp?.name || fetched === key) return;
+    if (!activeApp?.name || locked || fetched === key) return;
     setFetched(key);
     setLoading(true);
     setData(null);
 
-    fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us" })}`)
+    fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us", workspaceId })}`)
       .then((r) => r.json())
       .then((d: AISuggestionsResult) => { setData(d); setLoading(false); })
       .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [] }); setLoading(false); });
-  }, [activeApp?.name, activeApp?.country, activeApp?.store_id, fetched]);
+  }, [activeApp?.name, activeApp?.country, activeApp?.store_id, workspaceId, locked, fetched]);
 
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
+
+  if (locked) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+        <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-500 mb-3">
+          <LockClosedIcon className="size-2.5" />
+          Pro+
+        </span>
+        <p className="text-xs font-medium text-gray-400">AI Suggestions is a Pro+ feature</p>
+        <p className="mt-1 text-xs text-gray-600 max-w-xs">Upgrade to Pro+ or above to generate AI-powered keyword ideas for this app.</p>
+      </div>
+    );
+  }
 
   if (!activeApp?.name) {
     return <p className="px-4 py-4 text-xs text-gray-600 text-center">Select an app to generate AI keyword suggestions.</p>;
