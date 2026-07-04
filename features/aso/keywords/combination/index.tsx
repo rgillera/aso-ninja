@@ -105,7 +105,9 @@ export default function KeywordCombinationPage() {
         .then((r) => r.json())
         .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
           setTrackedKeywords(new Set((saved ?? []).map((s) => s.term.toLowerCase())));
-          setResearchTerms((saved ?? []).map((s) => s.term));
+          // Distinct keyword rows can carry the same displayed term — collapse
+          // those so term-keyed UI (seed suggestion pills) doesn't choke on duplicates.
+          setResearchTerms([...new Map((saved ?? []).map((s) => [s.term.toLowerCase(), s.term])).values()]);
         })
         .catch(() => {});
     }

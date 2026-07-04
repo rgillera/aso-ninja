@@ -6,8 +6,8 @@ export type SavedKeyword = {
   volume: number;
   diff: number;
   chance: number;
-  opportunity: number;
-  relevancy: number;
+  opportunity: number | null;
+  relevancy: number | null;
   rank: number | null;
   hasCachedMetrics: boolean;
 };
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
 
   // Build metrics lookup by keyword_id
-  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number; relevancy: number; rank: number | null }>();
+  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number | null; relevancy: number | null; rank: number | null }>();
   for (const m of metricsResult.data ?? []) {
     metricsMap.set(m.keyword_id, {
       volume:      m.volume,
@@ -85,8 +85,11 @@ export async function GET(request: NextRequest) {
         volume:           m?.volume      ?? 0,
         diff:             m?.diff        ?? 0,
         chance:           m?.chance      ?? 0,
-        opportunity:      m?.opportunity ?? 0,
-        relevancy:        m?.relevancy   ?? 0,
+        // null (as opposed to 0) means relevancy/opportunity were never
+        // computed for this row — e.g. added while below Pro+ — so callers
+        // can tell "not yet scored" apart from a genuine score of 0.
+        opportunity:      m?.opportunity ?? null,
+        relevancy:        m?.relevancy   ?? null,
         rank:             m?.rank        ?? null,
         hasCachedMetrics: !!m,
       } satisfies SavedKeyword;

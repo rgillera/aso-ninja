@@ -35,6 +35,7 @@ export default function KeywordResearchPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const translateLocked = !isPlanAtLeast(planSlug, "pro");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "pro_plus");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
@@ -91,11 +92,28 @@ export default function KeywordResearchPage() {
         });
     fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
-      .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
-        if (!saved?.length) return;
+      .then(({ keywords: savedRaw }: { keywords: SavedKeyword[] }) => {
+        if (!savedRaw?.length) return;
+
+        // Distinct keyword rows can carry the same displayed term (e.g. a
+        // stray duplicate created before normalization was tightened) —
+        // collapse those here so term-keyed UI doesn't choke on duplicates.
+        const seen = new Set<string>();
+        const saved = savedRaw.filter((s) => {
+          const key = s.term.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
 
         const withMetrics    = saved.filter((s) =>  s.hasCachedMetrics);
         const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
+        // Rows saved while the workspace was below Pro+ (or added in fast
+        // mode) have relevancy permanently null. If the plan now allows it,
+        // backfill just those two columns instead of leaving them stuck.
+        const needsRelevancy = canUseRelevancy
+          ? withMetrics.filter((s) => s.relevancy === null).map((s) => s.term)
+          : [];
 
         // Set cached keywords immediately — these are complete, no loading state
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
@@ -105,8 +123,8 @@ export default function KeywordResearchPage() {
             volume:      s.volume,
             diff:        s.diff,
             chance:      s.chance,
-            opportunity: s.opportunity,
-            relevancy:   s.relevancy,
+            opportunity: s.opportunity ?? undefined,
+            relevancy:   s.relevancy ?? undefined,
             rank:        s.rank,
             starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
@@ -118,6 +136,7 @@ export default function KeywordResearchPage() {
         // avoids a stale-closure dedup failure where handleAddKeywords read the
         // old keywords state and prepended them a second time.
         if (needsMetrics.length) handleAddKeywords(needsMetrics);
+        if (needsRelevancy.length) backfillRelevancy(needsRelevancy);
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -301,6 +320,77 @@ export default function KeywordResearchPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ term, store, country, appName: activeApp?.name ?? "" }),
         }).catch(() => {});
+      }
+    }
+  }
+
+  // Fills in relevancy/opportunity for keywords that already have every other
+  // metric cached but were saved while the workspace was below Pro+ (so those
+  // two columns came back null). Runs quietly in the background — the row is
+  // already fully rendered, so there's no loading state or pendingAdds churn,
+  // just the relevancy/opportunity cells swapping from a pending clock icon
+  // to their value once this resolves.
+  //
+  // Chunked and awaited sequentially rather than sent as one request: each
+  // term costs an Ollama embedding + LLM call server-side, so a workspace
+  // upgrading with a large tracked list would otherwise fire one massive
+  // request that either pins the (typically single-threaded) Ollama instance
+  // for a long stretch, or blows past a serverless function's execution
+  // timeout and backfills nothing at all. Small sequential batches keep each
+  // request bounded and let anything else hitting Ollama interleave.
+  const RELEVANCY_BACKFILL_BATCH_SIZE = 5;
+
+  async function backfillRelevancy(terms: string[]) {
+    const store   = activeApp?.store ?? "ios";
+    const country = activeApp?.country ?? "us";
+
+    for (let i = 0; i < terms.length; i += RELEVANCY_BACKFILL_BATCH_SIZE) {
+      const batch = terms.slice(i, i + RELEVANCY_BACKFILL_BATCH_SIZE);
+      const params = new URLSearchParams({
+        terms: batch.join(","),
+        store,
+        country,
+        appName: activeApp?.name ?? "",
+        ...(activeApp?.id ? { appId: activeApp.id } : {}),
+        ...(workspaceId ? { workspaceId } : {}),
+      });
+
+      try {
+        const res  = await fetch(`/api/keywords/metrics?${params}`);
+        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
+
+        setKeywords((prev) =>
+          prev.map((k) => {
+            const m = data[k.keyword];
+            return m && batch.includes(k.keyword)
+              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined }
+              : k;
+          })
+        );
+
+        // Persist so the next load doesn't need to recompute these again.
+        if (workspaceId) {
+          await fetch("/api/keywords/save", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              terms: batch,
+              workspaceId,
+              metrics:   data,
+              appId:     activeApp?.id,
+              bundleId:  activeApp?.bundle_id,
+              storeId:   activeApp?.store_id,
+              appName:   activeApp?.name,
+              iconUrl:   activeApp?.icon_url ?? undefined,
+              store,
+              country,
+            }),
+          });
+        }
+      } catch {
+        // Keep going with the remaining batches even if one fails — a
+        // transient Ollama hiccup on one batch shouldn't strand the rest of
+        // the workspace's keywords at null forever.
       }
     }
   }

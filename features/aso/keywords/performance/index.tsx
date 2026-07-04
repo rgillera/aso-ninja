@@ -103,19 +103,38 @@ export default function KeywordPerformancePage() {
         });
     fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
-      .then(({ keywords: saved }: { keywords: SavedKeyword[] }) => {
-        if (!saved?.length) return;
+      .then(({ keywords: savedRaw }: { keywords: SavedKeyword[] }) => {
+        if (!savedRaw?.length) return;
+        // Distinct keyword rows can carry the same displayed term (e.g. a
+        // stray duplicate created before normalization was tightened) —
+        // collapse those here so callers relying on term as a unique key
+        // (e.g. table row keys) don't choke on duplicates.
+        const seen = new Set<string>();
+        const saved = savedRaw.filter((s) => {
+          const key = s.term.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        const withMetrics  = saved.filter((s) =>  s.hasCachedMetrics);
+        const needsMetrics = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
+
+        // Set cached keywords immediately — these are complete, no loading state.
+        // Keywords without cached metrics go through handleAddKeywords instead of
+        // being included here: it's the one that creates their loading placeholder
+        // rows, so setting them here too would double them up (handleAddKeywords
+        // reads keywords state from its own closure, not this callback's, so it
+        // can't tell they were already added a moment ago).
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
-          saved.map((s) => ({
+          withMetrics.map((s) => ({
             term:    s.term,
             volume:  s.volume,
             rank:    s.rank,
             starred: starred.has(s.term.toLowerCase()),
-            loading: !s.hasCachedMetrics,
+            loading: false,
           }))
         );
-        const needsMetrics = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
         if (needsMetrics.length) handleAddKeywords(needsMetrics);
       })
       .catch(() => {});

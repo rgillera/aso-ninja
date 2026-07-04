@@ -530,6 +530,12 @@ export async function GET(request: NextRequest) {
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
+      // A row saved while the workspace was below Pro+ (or from a fast-mode
+      // add) has relevancy/opportunity permanently null. If this request can
+      // now compute them, don't trust this cache row for this term — let it
+      // fall through to `uncached` below so it actually gets recomputed
+      // instead of staying stuck at null forever.
+      if (!fast && canUseRelevancy && row.relevancy === null && !isBrand) continue;
       const relevancy = isBrand ? 100 : (row.relevancy ?? null);
       const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
       const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
