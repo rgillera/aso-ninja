@@ -21,6 +21,7 @@ type Props = {
   currentUserId: string;
   currentUserRole: WorkspaceRole;
   allWorkspaces: Workspace[];
+  canInviteMembers: boolean;
 };
 
 function Alert({ state }: { state: { error?: string; success?: string } | null }) {
@@ -47,8 +48,11 @@ export default function WorkspacePage({
   members,
   currentUserId,
   currentUserRole,
+  allWorkspaces,
+  canInviteMembers,
 }: Props) {
   const isOwner = currentUserRole === "owner";
+  const isOnlyWorkspace = allWorkspaces.length <= 1;
 
   const [generalState, generalAction, generalPending] = useActionState(updateWorkspaceAction, null);
   const [inviteState, inviteAction, invitePending] = useActionState(inviteMemberAction, null);
@@ -170,7 +174,15 @@ export default function WorkspacePage({
               </ul>
 
               {/* Invite */}
-              {isOwner && (
+              {isOwner && !canInviteMembers && (
+                <p className="mt-5 border-t border-white/[0.07] pt-5 text-sm text-gray-500">
+                  Your current plan doesn't support adding members.{" "}
+                  <a href="/dashboard/subscription" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+                    Upgrade to invite teammates.
+                  </a>
+                </p>
+              )}
+              {isOwner && canInviteMembers && (
                 <form action={inviteAction} className="mt-5 space-y-3 border-t border-white/[0.07] pt-5">
                   <input type="hidden" name="workspace_id" value={workspace.id} />
                   <Alert state={inviteState} />
@@ -223,13 +235,19 @@ export default function WorkspacePage({
                 <p className="text-sm text-gray-400 mb-5">
                   Deleting this workspace permanently removes all apps, keywords, and data. This cannot be undone.
                 </p>
+                {isOnlyWorkspace && (
+                  <p className="text-sm text-amber-400 mb-3">
+                    You can't delete your only workspace.
+                  </p>
+                )}
                 <button
                   onClick={() => {
                     if (confirm(`Delete "${workspace.name}"? This cannot be undone.`)) {
                       startTransition(() => deleteWorkspaceAction(workspace.id));
                     }
                   }}
-                  className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+                  disabled={isOnlyWorkspace}
+                  className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
                 >
                   Delete workspace
                 </button>

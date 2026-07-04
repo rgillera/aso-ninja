@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
 import WorkspacePage from "@/features/workspace/WorkspacePage";
 import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
@@ -18,6 +19,7 @@ export default async function Page({ params }: PageProps) {
     { data: workspace, error: wsError },
     { data: rawMembers },
     { data: allWorkspaces },
+    planState,
   ] = await Promise.all([
     supabase.from("workspaces").select("*").eq("id", id).single(),
     supabase
@@ -29,7 +31,11 @@ export default async function Page({ params }: PageProps) {
       .from("workspaces")
       .select("*")
       .order("created_at", { ascending: true }),
+    getWorkspacePlanState(id),
   ]);
+
+  const canInviteMembers =
+    "plan" in planState ? planState.plan.member_limit !== 0 : true;
 
   if (wsError || !workspace) notFound();
 
@@ -63,6 +69,7 @@ export default async function Page({ params }: PageProps) {
       currentUserId={user.id}
       currentUserRole={currentMember.role as WorkspaceRole}
       allWorkspaces={(allWorkspaces ?? []) as Workspace[]}
+      canInviteMembers={canInviteMembers}
     />
   );
 }

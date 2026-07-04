@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import type { WorkspaceAccess, WorkspaceUsage } from "@/libs/contracts";
@@ -119,11 +120,20 @@ export async function createWorkspaceAction(
   });
 
   if (error) return { error: error.message };
-  redirect(`/dashboard/settings/workspace/${workspaceId}`);
+  revalidatePath("/dashboard", "layout");
+  redirect(`/dashboard?ws=${workspaceId}`);
 }
 
 export async function deleteWorkspaceAction(workspaceId: string): Promise<void> {
   const supabase = await createClient();
+
+  const { count } = await supabase
+    .from("workspaces")
+    .select("id", { count: "exact", head: true });
+
+  if ((count ?? 0) <= 1) return;
+
   await supabase.from("workspaces").delete().eq("id", workspaceId);
+  revalidatePath("/dashboard", "layout");
   redirect("/dashboard");
 }
