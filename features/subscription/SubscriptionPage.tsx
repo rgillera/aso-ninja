@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { PLANS, type PlanId } from "./plans";
@@ -10,6 +13,8 @@ type Props = {
   usage?: WorkspaceUsage;
 };
 
+type Billing = "monthly" | "yearly";
+
 function nameColor(planId: PlanId) {
   if (planId === "pro" || planId === "pro_plus") return "text-red-500";
   if (planId === "enterprise") return "text-amber-400";
@@ -18,6 +23,15 @@ function nameColor(planId: PlanId) {
 
 function formatLimit(n: number | null) {
   return n === null ? "Unlimited" : n.toLocaleString();
+}
+
+// Whole-dollar amounts drop the decimals ("$149" not "$149.00"); anything
+// with cents keeps two decimal places ("$12.49").
+function formatPrice(cents: number) {
+  const dollars = cents / 100;
+  return cents % 100 === 0
+    ? `$${dollars.toLocaleString()}`
+    : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number | null }) {
@@ -44,6 +58,7 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 
 export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
+  const [billing, setBilling] = useState<Billing>("yearly");
 
   return (
     <main className="h-full overflow-y-auto">
@@ -61,9 +76,40 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
           </p>
         </div>
 
+        <div className="mb-8 inline-flex items-center gap-1 rounded-lg bg-white/[0.06] p-1">
+          <button
+            type="button"
+            onClick={() => setBilling("monthly")}
+            className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              billing === "monthly" ? "bg-white/10 text-white" : "text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBilling("yearly")}
+            className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+              billing === "yearly" ? "bg-white/10 text-white" : "text-gray-400 hover:text-gray-200"
+            }`}
+          >
+            Yearly
+            <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+              2 months free
+            </span>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {PLANS.map((plan) => {
             const isCurrent = plan.id === currentPlanId;
+            const isFree = plan.priceMonthlyCents === 0;
+            const displayCents = isFree
+              ? 0
+              : billing === "yearly"
+                ? Math.round(plan.priceYearlyCents / 12)
+                : plan.priceMonthlyCents;
+
             return (
               <div
                 key={plan.id}
@@ -83,9 +129,16 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
                 </div>
 
                 <div className="mt-3 flex items-baseline gap-1.5">
-                  <span className="text-3xl font-bold text-white">{plan.price}</span>
-                  {plan.cadence && <span className="text-xs text-gray-500">{plan.cadence}</span>}
+                  <span className="text-3xl font-bold text-white">
+                    {isFree ? "Free" : formatPrice(displayCents)}
+                  </span>
+                  {!isFree && <span className="text-xs text-gray-500">/ mo</span>}
                 </div>
+                {!isFree && billing === "yearly" && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    billed annually as {formatPrice(plan.priceYearlyCents)}
+                  </p>
+                )}
 
                 <p className="mt-3 text-sm text-gray-400 leading-relaxed">{plan.description}</p>
 
@@ -107,7 +160,7 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
                   </div>
                 )}
 
-                <UpgradeButton planSlug={plan.id} workspaceId={workspaceId} isCurrent={isCurrent} />
+                <UpgradeButton planSlug={plan.id} workspaceId={workspaceId} isCurrent={isCurrent} billing={billing} />
               </div>
             );
           })}

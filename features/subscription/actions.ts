@@ -23,7 +23,8 @@ export async function getWorkspacePlanState(
 
 export async function createCheckoutSessionAction(
   planSlug: PlanSlug,
-  workspaceId: string
+  workspaceId: string,
+  billing: "monthly" | "yearly" = "monthly"
 ): Promise<{ url: string } | { error: string }> {
   const supabase = await createClient();
   const {
@@ -34,12 +35,14 @@ export async function createCheckoutSessionAction(
 
   const { data: plan, error: planError } = await supabase
     .from("plans")
-    .select("id, stripe_price_id")
+    .select("id, stripe_price_id, stripe_price_id_yearly")
     .eq("slug", planSlug)
     .single();
 
   if (planError || !plan) return { error: planError?.message ?? "Plan not found." };
-  if (!plan.stripe_price_id) return { error: "This plan isn't available for checkout yet." };
+
+  const priceId = billing === "yearly" ? plan.stripe_price_id_yearly : plan.stripe_price_id;
+  if (!priceId) return { error: "This plan isn't available for checkout yet." };
 
   const { data: subscription } = await supabase
     .from("subscriptions")
@@ -54,8 +57,8 @@ export async function createCheckoutSessionAction(
     customer: subscription?.stripe_customer_id ?? undefined,
     customer_email: subscription?.stripe_customer_id ? undefined : user.email,
     client_reference_id: user.id,
-    line_items: [{ price: plan.stripe_price_id, quantity: 1 }],
-    metadata: { user_id: user.id, plan_id: plan.id, workspace_id: workspaceId },
+    line_items: [{ price: priceId, quantity: 1 }],
+    metadata: { user_id: user.id, plan_id: plan.id, workspace_id: workspaceId, billing },
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?canceled=1`,
   });

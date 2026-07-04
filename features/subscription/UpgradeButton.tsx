@@ -8,9 +8,10 @@ type Props = {
   planSlug: PlanSlug;
   workspaceId: string;
   isCurrent: boolean;
+  billing: "monthly" | "yearly";
 };
 
-export function UpgradeButton({ planSlug, workspaceId, isCurrent }: Props) {
+export function UpgradeButton({ planSlug, workspaceId, isCurrent, billing }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +35,7 @@ export function UpgradeButton({ planSlug, workspaceId, isCurrent }: Props) {
         onClick={() => {
           setError(null);
           startTransition(async () => {
-            const result = await createCheckoutSessionAction(planSlug, workspaceId);
+            const result = await createCheckoutSessionAction(planSlug, workspaceId, billing);
             if ("error" in result) {
               setError(result.error);
               return;

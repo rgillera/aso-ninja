@@ -3,8 +3,9 @@ export type PlanId = "free" | "pro" | "pro_plus" | "enterprise";
 export type Plan = {
   id: PlanId;
   name: string;
-  price: string;
-  cadence: string;
+  priceMonthlyCents: number;
+  // Already discounted (10x monthly, i.e. 2 months free) — not derived at render time.
+  priceYearlyCents: number;
   description: string;
   badge: string | null;
   features: string[];
@@ -14,8 +15,8 @@ export const PLANS: Plan[] = [
   {
     id: "free",
     name: "Free Plan",
-    price: "Free",
-    cadence: "",
+    priceMonthlyCents: 0,
+    priceYearlyCents: 0,
     description: "Track your first app with no cost and access essential app store metrics.",
     badge: "Always free",
     features: [
@@ -24,13 +25,15 @@ export const PLANS: Plan[] = [
       "1 app & 1 competitor",
       "Metadata optimization",
       "Keyword research",
+      "Keyword & ranking monitoring",
+      "Live chat & email support",
     ],
   },
   {
     id: "pro",
     name: "Pro Plan",
-    price: "$14.99",
-    cadence: "/ mo",
+    priceMonthlyCents: 1499,
+    priceYearlyCents: 14990,
     description: "Advanced tracking and collaboration for teams growing multiple apps.",
     badge: null,
     features: [
@@ -39,13 +42,15 @@ export const PLANS: Plan[] = [
       "5 apps & 5 competitors per app",
       "Metadata optimization",
       "Keyword research",
+      "Keyword & ranking monitoring",
+      "Live chat & email support",
     ],
   },
   {
     id: "pro_plus",
     name: "Pro+ Plan",
-    price: "$149",
-    cadence: "/ mo",
+    priceMonthlyCents: 14900,
+    priceYearlyCents: 149000,
     description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
     badge: "Most popular",
     features: [
@@ -54,13 +59,14 @@ export const PLANS: Plan[] = [
       "20 apps & 15 competitors per app",
       "Advanced keyword research",
       "Keyword & ranking monitoring",
+      "Live chat & email support",
     ],
   },
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "$1,499",
-    cadence: "/ mo",
+    priceMonthlyCents: 149900,
+    priceYearlyCents: 1499000,
     description: "Unlimited keyword tracking and scale for agencies managing large app portfolios.",
     badge: null,
     features: [

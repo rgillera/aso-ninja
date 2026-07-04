@@ -5,6 +5,7 @@ export type Plan = {
   slug: PlanSlug;
   name: string;
   price_monthly_cents: number;
+  price_yearly_cents: number | null;
   keyword_limit: number | null;
   workspace_limit: number | null;
   member_limit: number | null;
@@ -12,6 +13,7 @@ export type Plan = {
   competitor_limit: number | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
+  stripe_price_id_yearly: string | null;
   is_active: boolean;
   sort_order: number;
 };
