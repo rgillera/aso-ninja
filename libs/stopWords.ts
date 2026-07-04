@@ -23,3 +23,22 @@ export const STOP_WORDS = new Set([
   "use","using","used","make","making","need","needs","help","helps","via","per","way","ways","day","days","time",
   "times","lot","lots","much","many","more","less","same","different","great","good","great","simple","smart",
 ]);
+
+// Common Japanese particles, copulas, and verb/adjective inflection fragments.
+// Intl.Segmenter's word-break iterator segments Japanese by dictionary lookup
+// rather than morphology, so conjugated endings (e.g. "しましょう" → "し" +
+// "ましょう") show up as separate "word" tokens — this filters the resulting
+// grammatical noise the same way STOP_WORDS filters English function words.
+export const JP_STOP_WORDS = new Set([
+  "の","を","に","は","が","で","と","も","へ","や","ど","な","だ",
+  "から","まで","より","ので","のに","なら","たり","だり",
+  "です","ます","でし","でした","ません","ない","なく","なかっ",
+  "たい","れる","られる","せる","させる","くれる","もらう","あげる",
+  "この","その","あの","どの","これ","それ","あれ","どれ",
+  "ここ","そこ","あそこ","どこ","こちら","そちら","あちら","どちら",
+  "わたし","わたくし","あなた","かれ","かのじょ","私","貴方","彼","彼女","私達",
+  "しかし","また","そして","でも","けど","けれど","ため","ように","ような",
+  "こと","もの","という","なる","なり","なっ","する","しよう","しましょう",
+  "しました","します","ください","くださ","さい","お","ご","さん","ちゃん","くん",
+  "し","しま","しょう","たら","れば","ながら","って","という","といった",
+]);

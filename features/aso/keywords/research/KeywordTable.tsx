@@ -129,6 +129,8 @@ export function KeywordTable({
   const [colSearch, setColSearch] = useState("");
   const [historyKeyword, setHistoryKeyword] = useState<string | null>(null);
   const [liveSearchKeyword, setLiveSearchKeyword] = useState<string | null>(null);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating] = useState(false);
 
   // Filter state
   const [kwSearch, setKwSearch] = useState("");
@@ -166,6 +168,25 @@ export function KeywordTable({
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [openFilter]);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const terms = keywords.map((k) => k.keyword).filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, keywords]);
 
   function toggleFilterDropdown(key: string, e: React.MouseEvent<HTMLButtonElement>) {
     if (openFilter === key) { setOpenFilter(null); return; }
@@ -467,6 +488,9 @@ export function KeywordTable({
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          {translateToggle && translating && (
+            <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin" />
+          )}
           <span className="text-xs text-gray-500">Translate to English</span>
           <Toggle checked={translateToggle} onChange={onTranslateToggle} />
         </div>
@@ -713,7 +737,16 @@ export function KeywordTable({
                     >
                       <StarIcon className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`} />
                     </button>
-                    <span className="text-sm text-gray-200">{row.keyword}</span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm text-gray-200">{row.keyword}</span>
+                      {translateToggle && (
+                        translations[row.keyword]
+                          ? translations[row.keyword].toLowerCase() !== row.keyword.toLowerCase() && (
+                            <span className="text-[11px] text-gray-500">(en) {translations[row.keyword]}</span>
+                          )
+                          : <span className="h-2.5 w-16 rounded bg-white/[0.06] animate-pulse" />
+                      )}
+                    </div>
                   </div>
                 </td>
                 {row.loading ? (

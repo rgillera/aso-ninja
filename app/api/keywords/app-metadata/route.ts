@@ -11,24 +11,55 @@ export type AppMetadataResult = {
   hasMoreDesc: boolean;
 };
 
-import { STOP_WORDS } from "@/libs/stopWords";
+import { STOP_WORDS, JP_STOP_WORDS } from "@/libs/stopWords";
 
 const DESC_PAGE = 20;
 
+// Word-break segmentation via Intl.Segmenter (not a locale-specific regex) so
+// scripts without space delimiters — Japanese, Chinese, etc — tokenize
+// correctly via ICU's dictionary-based break iterator, alongside plain
+// whitespace-delimited scripts like English. "und" (undetermined) locale still
+// gets script-appropriate segmentation since CJK/Thai/etc breaking is driven
+// by script detection rather than the locale tag.
+const segmenter = new Intl.Segmenter("und", { granularity: "word" });
+
+// Normalizes a raw segment to a comparable term, or null if it should be
+// dropped as noise (punctuation, stop word, too short to be meaningful).
+function normalizeTerm(segment: string): string | null {
+  const isAscii = /^[a-zA-Z0-9]+$/.test(segment);
+  if (isAscii) {
+    const term = segment.toLowerCase();
+    return term.length >= 2 && !STOP_WORDS.has(term) ? term : null;
+  }
+  return segment.length >= 2 && !JP_STOP_WORDS.has(segment) ? segment : null;
+}
+
+function wordTokens(text: string): string[] {
+  const tokens: string[] = [];
+  for (const { segment, isWordLike } of segmenter.segment(text)) {
+    if (isWordLike) tokens.push(segment);
+  }
+  return tokens;
+}
+
 function extractSingles(text: string): string[] {
-  return [...new Set(
-    text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/)
-      .filter((w) => w.length >= 2 && !STOP_WORDS.has(w))
-  )];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of wordTokens(text)) {
+    const term = normalizeTerm(raw);
+    if (term && !seen.has(term)) { seen.add(term); out.push(term); }
+  }
+  return out;
 }
 
 function extractBigrams(text: string): string[] {
-  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
+  const raw = wordTokens(text);
   const seen = new Set<string>();
   const bigrams: string[] = [];
-  for (let i = 0; i < words.length - 1; i++) {
-    const a = words[i], b = words[i + 1];
-    if (a.length >= 2 && !STOP_WORDS.has(a) && b.length >= 2 && !STOP_WORDS.has(b)) {
+  for (let i = 0; i < raw.length - 1; i++) {
+    const a = normalizeTerm(raw[i]);
+    const b = normalizeTerm(raw[i + 1]);
+    if (a && b) {
       const pair = `${a} ${b}`;
       if (!seen.has(pair)) { seen.add(pair); bigrams.push(pair); }
     }

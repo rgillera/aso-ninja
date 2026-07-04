@@ -397,6 +397,8 @@ export default function KeywordResearchPage() {
           trackedKeywords={keywords}
           competitors={competitors}
           onCompetitorsChange={handleCompetitorsChange}
+          translateToggle={translateToggle}
+          onTranslateToggle={() => setTranslateToggle((v) => !v)}
         />
 
         <KeywordTable

@@ -12,13 +12,16 @@ type Props = {
   onAddKeyword: (keyword: string) => void;
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
+  translateToggle?: boolean;
 };
 
-function KeywordPill({ kw, tracked, onAdd, onRemove }: {
+function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
   kw: MetadataKeyword;
   tracked: boolean;
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
+  translation?: string;
+  loadingTranslation?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -41,7 +44,15 @@ function KeywordPill({ kw, tracked, onAdd, onRemove }: {
           : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
         : <PlusIcon className="size-3 text-gray-500 shrink-0" />
       }
-      {kw.term}
+      <span className="flex flex-col items-start leading-tight py-0.5">
+        <span>{kw.term}</span>
+        {translation && (
+          <span className="text-[10px] text-gray-500">(en) {translation}</span>
+        )}
+        {loadingTranslation && !translation && (
+          <span className="h-2 w-10 rounded bg-white/[0.08] animate-pulse" />
+        )}
+      </span>
       {kw.volume > 0 && (
         <span className={`ml-0.5 font-semibold tabular-nums ${tracked ? (hovered ? "text-red-400" : "text-indigo-400") : "text-gray-500"}`}>
           {kw.volume}
@@ -61,6 +72,8 @@ function MetadataSection({
   placeholder,
   onLoadMore,
   loadingMore,
+  translations,
+  translating,
 }: {
   label: string;
   keywords: MetadataKeyword[] | null;
@@ -71,6 +84,8 @@ function MetadataSection({
   placeholder?: React.ReactNode;
   onLoadMore?: () => void;
   loadingMore?: boolean;
+  translations?: Record<string, string>;
+  translating?: boolean;
 }) {
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
@@ -106,7 +121,15 @@ function MetadataSection({
           <>
             <div className="flex flex-wrap gap-1.5">
               {keywords.map((kw) => (
-                <KeywordPill key={kw.term} kw={kw} tracked={trackedSet.has(kw.term)} onAdd={onAdd} onRemove={onRemove} />
+                <KeywordPill
+                  key={kw.term}
+                  kw={kw}
+                  tracked={trackedSet.has(kw.term)}
+                  onAdd={onAdd}
+                  onRemove={onRemove}
+                  translation={translations?.[kw.term]?.toLowerCase() !== kw.term.toLowerCase() ? translations?.[kw.term] : undefined}
+                  loadingTranslation={translating && !(kw.term in (translations ?? {}))}
+                />
               ))}
             </div>
             {onLoadMore && (
@@ -125,13 +148,15 @@ function MetadataSection({
   );
 }
 
-export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword }: Props) {
+export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
   const [data, setData]                 = useState<AppMetadataResult | null>(null);
   const [loading, setLoading]           = useState(false);
   const [descKeywords, setDescKeywords] = useState<MetadataKeyword[]>([]);
   const [hasMoreDesc, setHasMoreDesc]   = useState(false);
   const [descOffset, setDescOffset]     = useState(0);
   const [loadingMore, setLoadingMore]   = useState(false);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
 
   const fetchMetadata = async (storeId: string, store: string, country: string, offset: number, append: boolean) => {
     const params = new URLSearchParams({ storeId, store, country, descOffset: String(offset) });
@@ -168,6 +193,30 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
       .finally(() => setLoadingMore(false));
   };
 
+  useEffect(() => {
+    if (!translateToggle) return;
+    const allTerms = [
+      ...(data?.titleKeywords ?? []),
+      ...(data?.subtitleKeywords ?? []),
+      ...descKeywords,
+    ].map((k) => k.term);
+    const terms = [...new Set(allTerms)].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, data, descKeywords]);
+
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
   if (!activeApp?.store_id) {
@@ -183,6 +232,8 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <MetadataSection
         label="Subtitle Keywords"
@@ -191,6 +242,8 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <MetadataSection
         label="Description Keywords"
@@ -200,6 +253,8 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAddAll={onAddKeywords}
         onLoadMore={hasMoreDesc ? handleLoadMore : undefined}
         loadingMore={loadingMore}
+        translating={translateToggle && translating}
+        translations={translateToggle ? translations : undefined}
       />
     </div>
   );

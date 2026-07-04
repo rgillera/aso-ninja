@@ -5,6 +5,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { SUGGESTION_TABS } from "./constants";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { Toggle } from "./ui";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata }   from "./KeywordSuggestionMetadata";
@@ -21,6 +22,8 @@ type Props = {
   trackedKeywords?: Keyword[];
   competitors: CompetitorApp[];
   onCompetitorsChange: (competitors: CompetitorApp[]) => void;
+  translateToggle: boolean;
+  onTranslateToggle: () => void;
 };
 
 export function KeywordSuggestionsPanel({
@@ -31,6 +34,8 @@ export function KeywordSuggestionsPanel({
   trackedKeywords = [],
   competitors,
   onCompetitorsChange,
+  translateToggle,
+  onTranslateToggle,
 }: Props) {
   const planSlug = usePlanSlug();
   const aiLocked = !isPlanAtLeast(planSlug, "pro_plus");
@@ -81,21 +86,26 @@ export function KeywordSuggestionsPanel({
                   ) : tab.label}
                 </button>
               ))}
+              <div className="ml-auto flex items-center gap-2 px-3.5 py-3 shrink-0">
+                <span className="text-xs text-gray-500 whitespace-nowrap">Translate to English</span>
+                <Toggle checked={translateToggle} onChange={onTranslateToggle} />
+              </div>
             </div>
 
             {/* Always-mounted tabs (preserve state across switches) */}
             <div className={activeTab === "Metadata" ? "" : "hidden"}>
-              <KeywordSuggestionMetadata {...tabProps} />
+              <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} />
             </div>
             <div className={activeTab === "Competitors" ? "" : "hidden"}>
               <KeywordSuggestionCompetitors
                 {...tabProps}
                 competitors={competitors}
                 onManageClick={() => setManageOpen(true)}
+                translateToggle={translateToggle}
               />
             </div>
             <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>
-              <KeywordSuggestionAi {...tabProps} />
+              <KeywordSuggestionAi {...tabProps} translateToggle={translateToggle} />
             </div>
           </>
         )}

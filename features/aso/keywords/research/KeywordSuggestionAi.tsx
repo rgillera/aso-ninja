@@ -15,15 +15,18 @@ type Props = {
   onAddKeyword: (keyword: string) => void;
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
+  translateToggle?: boolean;
 };
 
 const AI_PAGE = 15;
 
-function AiKeywordPill({ kw, tracked, onAdd, onRemove }: {
+function AiKeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
   kw: { term: string; volume: number };
   tracked: boolean;
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
+  translation?: string;
+  loadingTranslation?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -45,7 +48,15 @@ function AiKeywordPill({ kw, tracked, onAdd, onRemove }: {
           : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
         : <PlusIcon className="size-3 text-gray-500 shrink-0" />
       }
-      {kw.term}
+      <span className="flex flex-col items-start leading-tight py-0.5">
+        <span>{kw.term}</span>
+        {translation && (
+          <span className="text-[10px] text-gray-500">(en) {translation}</span>
+        )}
+        {loadingTranslation && !translation && (
+          <span className="h-2 w-10 rounded bg-white/[0.08] animate-pulse" />
+        )}
+      </span>
     </button>
   );
 }
@@ -57,6 +68,8 @@ function AISuggestionsSection({
   onAdd,
   onRemove,
   onAddAll,
+  translations,
+  translating,
 }: {
   label: string;
   keywords: { term: string; volume: number }[] | null;
@@ -64,11 +77,14 @@ function AISuggestionsSection({
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
   onAddAll?: (terms: string[]) => void;
+  translations?: Record<string, string>;
+  translating?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const STEP = 10;
+  const [visibleCount, setVisibleCount] = useState(AI_PAGE);
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
-  const visible = expanded ? keywords : keywords?.slice(0, AI_PAGE);
+  const visible = keywords?.slice(0, visibleCount);
 
   return (
     <div className="py-3 border-b border-white/[0.05] last:border-0">
@@ -105,15 +121,25 @@ function AISuggestionsSection({
           <div className="flex flex-wrap gap-1.5">
             {visible!.map((kw) => {
               const isTracked = trackedSet.has(kw.term);
-              return <AiKeywordPill key={kw.term} kw={kw} tracked={isTracked} onAdd={onAdd} onRemove={onRemove} />;
+              return (
+                <AiKeywordPill
+                  key={kw.term}
+                  kw={kw}
+                  tracked={isTracked}
+                  onAdd={onAdd}
+                  onRemove={onRemove}
+                  translation={translations?.[kw.term]?.toLowerCase() !== kw.term.toLowerCase() ? translations?.[kw.term] : undefined}
+                  loadingTranslation={translating && !(kw.term in (translations ?? {}))}
+                />
+              );
             })}
           </div>
           {keywords.length > AI_PAGE && (
             <button
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => setVisibleCount((v) => v < total ? Math.min(v + STEP, total) : AI_PAGE)}
               className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
             >
-              {expanded ? "Show less" : `Show more (${keywords.length - AI_PAGE} more)`}
+              {visibleCount < total ? `Show more (${Math.min(STEP, total - visibleCount)} more)` : "Show less"}
             </button>
           )}
         </>
@@ -122,13 +148,15 @@ function AISuggestionsSection({
   );
 }
 
-export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword }: Props) {
+export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
   const workspaceId = useWorkspaceId();
   const planSlug     = usePlanSlug();
   const locked       = !isPlanAtLeast(planSlug, "pro_plus");
   const [data, setData]       = useState<AISuggestionsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState<string | null>(null);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
 
   useEffect(() => {
     const key = `${activeApp?.store_id}-${activeApp?.country}`;
@@ -142,6 +170,31 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
       .then((d: AISuggestionsResult) => { setData(d); setLoading(false); })
       .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [] }); setLoading(false); });
   }, [activeApp?.name, activeApp?.country, activeApp?.store_id, workspaceId, locked, fetched]);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const allTerms = [
+      ...(data?.discovery ?? []),
+      ...(data?.generic ?? []),
+      ...(data?.branded ?? []),
+      ...(data?.relevancy ?? []),
+    ].map((k) => k.term);
+    const terms = [...new Set(allTerms)].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, data]);
 
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
@@ -171,6 +224,8 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <AISuggestionsSection
         label="High-Volume Generic Keywords"
@@ -179,6 +234,8 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <AISuggestionsSection
         label="Branded Keywords"
@@ -187,6 +244,8 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <AISuggestionsSection
         label="High-Relevancy Keywords"
@@ -195,6 +254,8 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
     </div>
   );

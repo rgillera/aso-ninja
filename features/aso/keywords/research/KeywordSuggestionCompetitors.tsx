@@ -15,13 +15,16 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   onManageClick: () => void;
+  translateToggle?: boolean;
 };
 
-function CompetitorPill({ kw, tracked, onAdd, onRemove }: {
+function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
   kw: CompetitorKeyword;
   tracked: boolean;
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
+  translation?: string;
+  loadingTranslation?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -45,7 +48,15 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove }: {
           : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
         : <PlusIcon className="size-3 text-gray-500 shrink-0" />
       }
-      {kw.term}
+      <span className="flex flex-col items-start leading-tight py-0.5">
+        <span>{kw.term}</span>
+        {translation && (
+          <span className="text-[10px] text-gray-500">(en) {translation}</span>
+        )}
+        {loadingTranslation && !translation && (
+          <span className="h-2 w-10 rounded bg-white/[0.08] animate-pulse" />
+        )}
+      </span>
       {kw.competitors.length > 1 && (
         <span className={`ml-0.5 text-[10px] tabular-nums rounded px-1 ${
           tracked
@@ -60,7 +71,7 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove }: {
 }
 
 function KeywordSection({
-  label, keywords, trackedSet, onAdd, onRemove, onAddAll,
+  label, keywords, trackedSet, onAdd, onRemove, onAddAll, translations, translating,
 }: {
   label: string;
   keywords: CompetitorKeyword[] | null;
@@ -68,12 +79,15 @@ function KeywordSection({
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
   onAddAll?: (terms: string[]) => void;
+  translations?: Record<string, string>;
+  translating?: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const PAGE    = 20;
+  const PAGE = 20;
+  const STEP = 10;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
-  const visible = expanded ? keywords : keywords?.slice(0, PAGE);
+  const visible = keywords?.slice(0, visibleCount);
 
   return (
     <div className="py-3 border-b border-white/[0.05] last:border-0">
@@ -112,15 +126,17 @@ function KeywordSection({
                 tracked={trackedSet.has(kw.term)}
                 onAdd={onAdd}
                 onRemove={onRemove}
+                translation={translations?.[kw.term]?.toLowerCase() !== kw.term.toLowerCase() ? translations?.[kw.term] : undefined}
+                loadingTranslation={translating && !(kw.term in (translations ?? {}))}
               />
             ))}
           </div>
           {keywords.length > PAGE && (
             <button
-              onClick={() => setExpanded((v) => !v)}
+              onClick={() => setVisibleCount((v) => v < total ? Math.min(v + STEP, total) : PAGE)}
               className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
             >
-              {expanded ? "Show less" : `Show more (${keywords.length - PAGE} more)`}
+              {visibleCount < total ? `Show more (${Math.min(STEP, total - visibleCount)} more)` : "Show less"}
             </button>
           )}
         </>
@@ -130,11 +146,13 @@ function KeywordSection({
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, onManageClick,
+  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, onManageClick, translateToggle,
 }: Props) {
   const [data,    setData]    = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchKey, setFetchKey] = useState<string | null>(null);
+  const [translations, setTranslations] = useState<Record<string, string>>({});
+  const [translating, setTranslating]   = useState(false);
 
   // Fetch keywords whenever the competitor list or app changes
   useEffect(() => {
@@ -159,6 +177,25 @@ export function KeywordSuggestionCompetitors({
       .catch(() => setData({ appName: "", keywords: [], competitorApps: [] }))
       .finally(() => setLoading(false));
   }, [activeApp?.store_id, activeApp?.country, competitors, fetchKey]);
+
+  useEffect(() => {
+    if (!translateToggle) return;
+    const terms = [...new Set((data?.keywords ?? []).map((k) => k.term))].filter((t) => !(t in translations));
+    if (!terms.length) return;
+    setTranslating(true);
+    fetch("/api/keywords/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ terms }),
+    })
+      .then((r) => r.json())
+      .then(({ translations: fresh }: { translations: Record<string, string> }) => {
+        setTranslations((prev) => ({ ...prev, ...fresh }));
+      })
+      .catch(() => {})
+      .finally(() => setTranslating(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translateToggle, data]);
 
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
@@ -223,6 +260,8 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
       <KeywordSection
         label="Used by one competitor"
@@ -231,6 +270,8 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        translations={translateToggle ? translations : undefined}
+        translating={translateToggle && translating}
       />
     </div>
   );
