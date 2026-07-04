@@ -3,7 +3,19 @@ import { SUFFIX_MODIFIERS, PREFIX_MODIFIERS } from "./keywordModifiers";
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
 
+// SUFFIX_MODIFIERS/PREFIX_MODIFIERS are English words — appending them to a
+// non-English seed would produce mixed-language phrases (e.g. "entrenamiento
+// tracker"), which is exactly what the LLM prompt above is trying to avoid.
+// This fallback only runs when Ollama is unreachable, so for a seed that
+// isn't plain ASCII (covers accented/non-Latin scripts — the common case for
+// non-English keywords here) it's safer to return nothing than to guess
+// wrong-language filler.
+function isLikelyNonEnglish(seed: string): boolean {
+  return /[^\x00-\x7F]/.test(seed);
+}
+
 function ruleBasedCombinations(seed: string, count: number): string[] {
+  if (isLikelyNonEnglish(seed)) return [];
   const results = [
     ...SUFFIX_MODIFIERS.map((m) => `${seed} ${m}`),
     ...PREFIX_MODIFIERS.map((m) => `${m} ${seed}`),
@@ -32,12 +44,13 @@ Think about the specific niche and users of this app. Combine "${seed}" with wor
 
 Rules:
 - Each phrase MUST include "${seed}" as a substring
+- Write every phrase entirely in the same language as "${seed}" — if "${seed}" is not English, do not translate it and do not mix in English (or any other language) words. Every word you add around it must be in that same language.
 - 2-4 words total per phrase
 - Lowercase, no punctuation
 - No duplicates
 - No generic filler like "for beginners" or "online" unless it genuinely fits this app
 
-Reply with ONLY a JSON array of strings. Example: ["${seed} tracker","pet ${seed}"]`;
+Reply with ONLY a JSON array of strings. The example below is for JSON formatting only — match its structure, not its language: ["${seed} tracker","pet ${seed}"]`;
 
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
