@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { PlusIcon, CheckIcon, MinusIcon, UserGroupIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, CheckIcon, MinusIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { CompetitorKeywordsResult, CompetitorKeyword } from "@/app/api/keywords/competitor-keywords/route";
@@ -14,7 +14,6 @@ type Props = {
   onAddKeyword: (keyword: string) => void;
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
-  onManageClick: () => void;
   translateToggle?: boolean;
 };
 
@@ -146,7 +145,7 @@ function KeywordSection({
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, onManageClick, translateToggle,
+  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle,
 }: Props) {
   const [data,    setData]    = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -203,25 +202,8 @@ export function KeywordSuggestionCompetitors({
     return <p className="px-4 py-4 text-xs text-gray-600 text-center">Select an app to see competitor keywords.</p>;
   }
 
-  // No competitors added yet — show empty state
   if (!competitors.length) {
-    return (
-      <div className="flex flex-col items-center justify-center py-10 px-4 gap-3">
-        <div className="size-12 rounded-full bg-white/[0.04] flex items-center justify-center">
-          <UserGroupIcon className="size-6 text-gray-600" />
-        </div>
-        <p className="text-sm font-medium text-gray-400">No competitors added yet</p>
-        <p className="text-xs text-gray-600 text-center max-w-xs">
-          Add your competitor apps and we&apos;ll extract keywords from their titles and subtitles.
-        </p>
-        <button
-          onClick={onManageClick}
-          className="mt-1 px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
-        >
-          Add competitors
-        </button>
-      </div>
-    );
+    return <p className="px-4 py-4 text-xs text-gray-600 text-center">Add a competitor above to extract their keywords.</p>;
   }
 
   const multiKeywords  = loading ? null : (data?.keywords.filter((k) => k.competitors.length >= 2) ?? []);
@@ -229,30 +211,6 @@ export function KeywordSuggestionCompetitors({
 
   return (
     <div className="px-4">
-      {/* Competitor apps row + manage button */}
-      <div className="py-3 border-b border-white/[0.05] flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">Analyzing competitors</p>
-          <div className="flex flex-wrap gap-2">
-            {competitors.map((c) => (
-              <div key={c.storeId} title={c.name} className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1">
-                {c.icon && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.icon} alt="" className="size-4 rounded-md" />
-                )}
-                <span className="text-[10px] text-gray-400 max-w-[80px] truncate">{c.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <button
-          onClick={onManageClick}
-          className="shrink-0 text-xs text-indigo-400 hover:text-indigo-300 transition-colors whitespace-nowrap"
-        >
-          Edit
-        </button>
-      </div>
-
       <KeywordSection
         label="Shared by multiple competitors"
         keywords={multiKeywords}
