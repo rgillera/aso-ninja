@@ -6,6 +6,7 @@ import { InformationCircleIcon, DevicePhoneMobileIcon, PlusIcon, CheckIcon } fro
 import { countryFlag } from "@/libs/countries";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { followAppAction, deleteAppAction } from "@/features/app/actions";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 
 type Props = {
@@ -142,7 +143,7 @@ export function FollowButton({ app }: { app: ActiveApp }) {
         <PlusIcon className="size-3.5" />
         {isPending ? "Following…" : "Follow"}
       </button>
-      {error && <span className="text-xs text-red-400/80">{error}</span>}
+      {error && <span className="text-xs text-red-400/80"><PlanLimitMessage message={error} /></span>}
     </div>
   );
 }

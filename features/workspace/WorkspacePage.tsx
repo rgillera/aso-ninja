@@ -7,6 +7,7 @@ import {
   removeMemberAction,
   deleteWorkspaceAction,
 } from "./actions";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
 type MemberWithProfile = WorkspaceMember & {
@@ -30,7 +31,7 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
         ? "bg-red-500/10 text-red-400 ring-red-500/20"
         : "bg-green-500/10 text-green-400 ring-green-500/20"
     }`}>
-      {state.error ?? state.success}
+      {state.error ? <PlanLimitMessage message={state.error} /> : state.success}
     </div>
   );
 }

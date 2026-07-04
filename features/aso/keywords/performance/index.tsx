@@ -8,6 +8,7 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -438,7 +439,7 @@ export default function KeywordPerformancePage() {
       {saveError && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
-          <span className="flex-1">{saveError}</span>
+          <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
             <XMarkIcon className="size-4" />
           </button>

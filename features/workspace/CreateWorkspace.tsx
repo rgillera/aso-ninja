@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { createWorkspaceAction } from "./actions";
 
 type Props = {
@@ -53,7 +54,7 @@ export default function CreateWorkspace({ onClose }: Props) {
         <form action={action} className="space-y-4">
           {state?.error && (
             <p className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400 ring-1 ring-red-500/20">
-              {state.error}
+              <PlanLimitMessage message={state.error} />
             </p>
           )}
 
