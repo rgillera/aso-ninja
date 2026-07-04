@@ -40,7 +40,7 @@ export function VolumeBar({ value, max = 100 }: { value: number; max?: number })
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-300 w-6 text-right shrink-0">{value}</span>
+      <span className="text-sm text-gray-300 shrink-0">{value}</span>
       <div className="w-16 h-1.5 rounded-full bg-white/[0.08] overflow-hidden">
         <div className="h-full rounded-full bg-indigo-500/70" style={{ width: `${pct}%` }} />
       </div>
