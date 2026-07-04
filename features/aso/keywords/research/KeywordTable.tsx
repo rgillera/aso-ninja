@@ -422,7 +422,8 @@ export function KeywordTable({
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
 
-        {/* Relevancy filter */}
+        {/* Relevancy filter — Pro+ only, since the underlying values are locked */}
+        {!relevancyLocked && (
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "relevancy" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
@@ -431,6 +432,7 @@ export function KeywordTable({
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
+        )}
 
         {/* All / checked / starred segment */}
         <div className="flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] p-0.5">
