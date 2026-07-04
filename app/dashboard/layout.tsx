@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -20,11 +20,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const [{ data: workspaces }, { data: apps }, { data: memberships }] = await Promise.all([
     supabase.from("workspaces").select("*").order("created_at", { ascending: true }),
     supabase.from("apps").select("*").order("created_at", { ascending: false }),
-    supabase.from("workspace_members").select("workspace_id, access").eq("user_id", user.id),
+    supabase.from("workspace_members").select("workspace_id, access, role").eq("user_id", user.id),
   ]);
 
   const accessByWorkspace = Object.fromEntries(
     (memberships ?? []).map((m) => [m.workspace_id, m.access as WorkspaceAccess[]])
+  );
+  const roleByWorkspace = Object.fromEntries(
+    (memberships ?? []).map((m) => [m.workspace_id, m.role as WorkspaceRole])
   );
 
   // Best-guess active workspace for the initial paint — mirrors the fallback
@@ -47,6 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         lastPreview={lastPreview}
         lastWorkspaceId={lastWorkspaceId}
         accessByWorkspace={accessByWorkspace}
+        roleByWorkspace={roleByWorkspace}
         initialPlanSlug={initialPlanSlug}
       >
         {children}

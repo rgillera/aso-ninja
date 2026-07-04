@@ -24,7 +24,7 @@ import {
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
-import type { PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   free: { label: "Free", className: "bg-white/5 text-gray-400" },
@@ -61,6 +61,8 @@ type Props = {
   activePreviewPage?: string;
   /** Which product areas the current member has access to in the active workspace */
   access: WorkspaceAccess[];
+  /** The current member's role in the active workspace — only owners can manage billing */
+  role?: WorkspaceRole;
   planSlug?: PlanSlug;
 };
 
@@ -76,9 +78,11 @@ export default function DashboardSidebar({
   metaOverrideHref,
   activePreviewPage,
   access,
+  role,
   planSlug = "free",
 }: Props) {
   const planBadge = PLAN_BADGE[planSlug];
+  const canManagePlan = role === "owner";
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
@@ -409,16 +413,29 @@ export default function DashboardSidebar({
 
       {/* Account footer */}
       <div className="border-t border-white/[0.07] p-3 space-y-0.5">
-        <a
-          href="/dashboard/subscription"
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
-        >
-          <CreditCardIcon className="size-4 shrink-0" />
-          <span className="flex-1">Manage Plan</span>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
-            {planBadge.label}
-          </span>
-        </a>
+        {canManagePlan ? (
+          <a
+            href="/dashboard/subscription"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            <CreditCardIcon className="size-4 shrink-0" />
+            <span className="flex-1">Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
+              {planBadge.label}
+            </span>
+          </a>
+        ) : (
+          <div
+            title="Only the workspace owner can manage the plan"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-600 cursor-not-allowed"
+          >
+            <CreditCardIcon className="size-4 shrink-0" />
+            <span className="flex-1">Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${planBadge.className}`}>
+              {planBadge.label}
+            </span>
+          </div>
+        )}
         <a
           href="/dashboard/settings/account"
           className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"

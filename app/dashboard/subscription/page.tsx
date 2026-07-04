@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import SubscriptionPage from "@/features/subscription/SubscriptionPage";
@@ -9,6 +10,10 @@ export default async function Page({ searchParams }: PageProps) {
   const { ws: wsParam } = await searchParams;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: workspaces } = await supabase
     .from("workspaces")
     .select("*")
@@ -19,6 +24,15 @@ export default async function Page({ searchParams }: PageProps) {
   if (!activeWorkspaceId) {
     return <SubscriptionPage currentPlanId="free" workspaceId="" />;
   }
+
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("role")
+    .eq("workspace_id", activeWorkspaceId)
+    .eq("user_id", user?.id ?? "")
+    .single();
+
+  if (membership?.role !== "owner") redirect("/dashboard");
 
   const state = await getWorkspacePlanState(activeWorkspaceId);
 

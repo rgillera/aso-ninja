@@ -12,7 +12,7 @@ import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 // Route prefixes gated behind each access area — mirrors the "ASO Intelligence"
 // / "Market Intelligence" groupings in DashboardSidebar. "My Apps" and Settings
@@ -66,13 +66,14 @@ type Props = {
   lastPreview?: string;
   lastWorkspaceId?: string;
   accessByWorkspace: Record<string, WorkspaceAccess[]>;
+  roleByWorkspace: Record<string, WorkspaceRole>;
   initialPlanSlug?: PlanSlug;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, initialPlanSlug, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, children }: Props) {
   const pathname     = usePathname();
   const router       = useRouter();
   const params       = useParams<{ id?: string }>();
@@ -211,6 +212,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     : (workspaces.find(w => w.id === savedWorkspaceId)?.id ?? activeApp?.workspace_id ?? workspaces[0]?.id);
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
+  const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
 
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
   useEffect(() => {
@@ -357,6 +359,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           metaOverrideHref={metaOverrideHref}
           activePreviewPage={activePreviewPage}
           access={currentAccess}
+          role={currentRole}
           planSlug={planSlug}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">

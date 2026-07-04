@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
-import type { WorkspaceAccess } from "@/libs/contracts";
+import type { WorkspaceAccess, WorkspaceUsage } from "@/libs/contracts";
 
 export type WorkspaceState = { error?: string; success?: string } | null;
 
@@ -39,6 +39,18 @@ export async function inviteMemberAction(
   if (access.length === 0) return { error: "Select at least one access area." };
 
   const supabase = await createClient();
+
+  const { data: usageData, error: usageError } = await supabase
+    .rpc("get_workspace_usage", { p_workspace_id: workspaceId })
+    .single();
+
+  if (usageError) return { error: usageError.message };
+  const usage = usageData as WorkspaceUsage;
+  if (usage.member_limit !== null && usage.member_count >= usage.member_limit) {
+    return {
+      error: `Member limit reached for this workspace's plan (${usage.member_limit} members). Upgrade to add more.`,
+    };
+  }
 
   const { data: userId, error: lookupError } = await supabase.rpc(
     "get_user_id_by_email",
