@@ -165,6 +165,12 @@ export function KeywordSuggestionCompetitors({
     setLoading(true);
     setData(null);
 
+    // Guard against out-of-order responses: the competitor list can change
+    // again (e.g. optimistically adding one that then gets rolled back after
+    // a plan-limit rejection) before this request resolves. Without this, a
+    // slower stale response for the old (larger) competitor set can land
+    // after the corrected one and silently overwrite it with wrong data.
+    let cancelled = false;
     const params = new URLSearchParams({
       storeId:       activeApp.store_id,
       country:       activeApp.country ?? "us",
@@ -172,9 +178,11 @@ export function KeywordSuggestionCompetitors({
     });
     fetch(`/api/keywords/competitor-keywords?${params}`)
       .then((r) => r.json())
-      .then((d: CompetitorKeywordsResult) => setData(d))
-      .catch(() => setData({ appName: "", keywords: [], competitorApps: [] }))
-      .finally(() => setLoading(false));
+      .then((d: CompetitorKeywordsResult) => { if (!cancelled) setData(d); })
+      .catch(() => { if (!cancelled) setData({ appName: "", keywords: [], competitorApps: [] }); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [activeApp?.store_id, activeApp?.country, competitors, fetchKey]);
 
   useEffect(() => {

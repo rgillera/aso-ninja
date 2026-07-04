@@ -51,23 +51,74 @@ export default function KeywordResearchPage() {
     return () => setGuardMessage(null);
   }, [pendingAdds, setGuardMessage]);
 
-  // Load/save competitors per app in localStorage
-  useEffect(() => {
-    const appId = activeApp?.id ?? activeApp?.store_id;
-    if (!appId) return;
-    try {
-      const raw = localStorage.getItem(`competitors-${appId}`);
-      setCompetitors(raw ? (JSON.parse(raw) as CompetitorApp[]) : []);
-    } catch {
-      setCompetitors([]);
-    }
-  }, [activeApp?.id, activeApp?.store_id]);
+  // Competitors are persisted server-side in app_competitors (not
+  // localStorage) so the workspace's plan limit can actually be enforced.
+  const competitorsAppId = useRef<string | undefined>(undefined);
 
-  function handleCompetitorsChange(updated: CompetitorApp[]) {
+  useEffect(() => {
+    competitorsAppId.current = undefined;
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key) return;
+    const params = activeApp?.id
+      ? new URLSearchParams({ appId: activeApp.id })
+      : new URLSearchParams({
+          workspaceId: workspaceId ?? "",
+          bundleId: activeApp?.bundle_id ?? "",
+          store: activeApp?.store ?? "ios",
+          country: activeApp?.country ?? "us",
+        });
+    fetch(`/api/competitors?${params}`)
+      .then((r) => r.json())
+      .then((data: { appId: string | null; competitors: CompetitorApp[] }) => {
+        competitorsAppId.current = data.appId ?? undefined;
+        setCompetitors(data.competitors ?? []);
+      })
+      .catch(() => setCompetitors([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeApp?.id, activeApp?.bundle_id]);
+
+  async function handleCompetitorsChange(updated: CompetitorApp[]) {
+    const previous = competitors;
     setCompetitors(updated);
-    const appId = activeApp?.id ?? activeApp?.store_id;
-    if (appId) {
-      try { localStorage.setItem(`competitors-${appId}`, JSON.stringify(updated)); } catch {}
+
+    const additions = updated.filter((u) => !previous.some((p) => p.storeId === u.storeId));
+    const removals  = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
+
+    for (const removed of removals) {
+      if (!competitorsAppId.current) continue;
+      fetch("/api/competitors", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId: competitorsAppId.current, storeId: removed.storeId }),
+      }).catch(() => {});
+    }
+
+    for (const added of additions) {
+      const res = await fetch("/api/competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          appId:    competitorsAppId.current,
+          bundleId: activeApp?.bundle_id,
+          storeId:  activeApp?.store_id,
+          appName:  activeApp?.name,
+          iconUrl:  activeApp?.icon_url ?? undefined,
+          store:    activeApp?.store,
+          country:  activeApp?.country,
+          competitor: added,
+        }),
+      }).catch(() => null);
+
+      if (!res || !res.ok) {
+        const body: { error?: string } = res ? await res.json().catch(() => ({})) : {};
+        setSaveError(body.error ?? "Couldn't save this competitor.");
+        setCompetitors((prev) => prev.filter((c) => c.storeId !== added.storeId));
+        continue;
+      }
+
+      const data: { appId: string } = await res.json();
+      competitorsAppId.current = data.appId;
     }
   }
 
