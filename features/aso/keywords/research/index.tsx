@@ -75,6 +75,7 @@ export default function KeywordResearchPage() {
     const key = activeApp?.id ?? activeApp?.bundle_id;
     if (!key || loadedAppId.current === key) return;
     loadedAppId.current = key;
+    setKeywords([]);
     const params = activeApp?.id
       ? new URLSearchParams({ appId: activeApp.id })
       : new URLSearchParams({
