@@ -11,7 +11,7 @@ export type AppMetadataResult = {
   hasMoreDesc: boolean;
 };
 
-import { STOP_WORDS, JP_STOP_WORDS } from "@/libs/stopWords";
+import { ALL_STOP_WORDS } from "@/libs/stopWords";
 
 const DESC_PAGE = 20;
 
@@ -25,13 +25,11 @@ const segmenter = new Intl.Segmenter("und", { granularity: "word" });
 
 // Normalizes a raw segment to a comparable term, or null if it should be
 // dropped as noise (punctuation, stop word, too short to be meaningful).
+// Stop words are checked against the union of all supported languages, since
+// app-store metadata can be in any of ~150 storefront locales.
 function normalizeTerm(segment: string): string | null {
-  const isAscii = /^[a-zA-Z0-9]+$/.test(segment);
-  if (isAscii) {
-    const term = segment.toLowerCase();
-    return term.length >= 2 && !STOP_WORDS.has(term) ? term : null;
-  }
-  return segment.length >= 2 && !JP_STOP_WORDS.has(segment) ? segment : null;
+  const term = segment.toLowerCase();
+  return term.length >= 2 && !ALL_STOP_WORDS.has(term) ? term : null;
 }
 
 function wordTokens(text: string): string[] {

@@ -1,14 +1,7 @@
+import { SUFFIX_MODIFIERS, PREFIX_MODIFIERS } from "./keywordModifiers";
+
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
-
-const SUFFIX_MODIFIERS = [
-  "app", "free", "tracker", "planner", "log", "diary", "manager",
-  "pro", "daily", "simple", "easy", "best", "tips", "guide",
-  "for beginners", "for kids", "for seniors", "online", "offline",
-];
-const PREFIX_MODIFIERS = [
-  "best", "free", "simple", "easy", "daily", "top",
-];
 
 function ruleBasedCombinations(seed: string, count: number): string[] {
   const results = [

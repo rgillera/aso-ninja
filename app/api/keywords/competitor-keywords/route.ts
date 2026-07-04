@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { STOP_WORDS } from "@/libs/stopWords";
+import { ALL_STOP_WORDS } from "@/libs/stopWords";
 
 export type CompetitorKeyword = {
   term: string;
@@ -13,15 +13,28 @@ export type CompetitorKeywordsResult = {
 
 const EMPTY: CompetitorKeywordsResult = { appName: "", keywords: [], competitorApps: [] };
 
+// Word-break segmentation via Intl.Segmenter (not whitespace-splitting) so
+// scripts without space delimiters — Japanese, Chinese, Thai, etc — tokenize
+// correctly, alongside plain whitespace-delimited scripts like English.
+const segmenter = new Intl.Segmenter("und", { granularity: "word" });
+
+function wordTokens(text: string): string[] {
+  const tokens: string[] = [];
+  for (const { segment, isWordLike } of segmenter.segment(text.toLowerCase())) {
+    if (isWordLike) tokens.push(segment);
+  }
+  return tokens;
+}
+
 function extractTerms(text: string): string[] {
-  const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter(Boolean);
-  const singles = [...new Set(words.filter((w) => w.length >= 2 && !STOP_WORDS.has(w)))];
+  const words = wordTokens(text);
+  const singles = [...new Set(words.filter((w) => w.length >= 2 && !ALL_STOP_WORDS.has(w)))];
 
   const bigrams: string[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < words.length - 1; i++) {
     const a = words[i], b = words[i + 1];
-    if (a.length >= 2 && !STOP_WORDS.has(a) && b.length >= 2 && !STOP_WORDS.has(b)) {
+    if (a.length >= 2 && !ALL_STOP_WORDS.has(a) && b.length >= 2 && !ALL_STOP_WORDS.has(b)) {
       const pair = `${a} ${b}`;
       if (!seen.has(pair)) { seen.add(pair); bigrams.push(pair); }
     }
