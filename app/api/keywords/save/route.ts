@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // leaving appId unresolved and silently dropping the app_keywords link.
     // DO UPDATE (vs DO NOTHING) makes Postgres return the row atomically
     // either way, so every concurrent caller resolves the same id.
-    const { data: app } = await supabase
+    const { data: app, error: appErr } = await supabase
       .from("apps")
       .upsert(
         { workspace_id: workspaceId, name: appName, store, bundle_id: bundleId, store_id: storeId, icon_url: iconUrl ?? null, country: normalCountry, updated_at: new Date().toISOString() },
@@ -51,6 +51,11 @@ export async function POST(request: NextRequest) {
       .select("id")
       .single();
 
+    // A rejected upsert here (e.g. the workspace's plan app limit trigger)
+    // must stop the request — otherwise the keyword upsert below would still
+    // run and burn the workspace's keyword quota on terms for an app that
+    // was never actually tracked.
+    if (appErr) return NextResponse.json({ error: appErr.message }, { status: 403 });
     if (app) appId = app.id;
   }
 

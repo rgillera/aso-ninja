@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AdjustmentsHorizontalIcon } from "@heroicons/react/24/outline";
+import { AdjustmentsHorizontalIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -39,6 +39,7 @@ export default function KeywordCombinationPage() {
   const [researchTerms,   setResearchTerms]   = useState<string[]>([]);
   const [liveSearchTerm,  setLiveSearchTerm]  = useState<string | null>(null);
   const [appSubtitle,     setAppSubtitle]     = useState<string>("");
+  const [saveError,       setSaveError]       = useState<string | null>(null);
 
   const appId = activeApp?.id ?? activeApp?.store_id;
 
@@ -189,24 +190,33 @@ export default function KeywordCombinationPage() {
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
     };
 
-    async function saveKeywords(metrics: Record<string, unknown>) {
-      if (!workspaceId) return;
-      await fetch("/api/keywords/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          terms: fresh,
-          workspaceId,
-          metrics,
-          appId:    activeApp?.id,
-          bundleId: activeApp?.bundle_id,
-          storeId:  activeApp?.store_id,
-          appName:  activeApp?.name,
-          iconUrl:  activeApp?.icon_url ?? undefined,
-          store,
-          country,
-        }),
-      });
+    async function saveKeywords(metrics: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
+      if (!workspaceId) return { ok: true };
+      try {
+        const res = await fetch("/api/keywords/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            terms: fresh,
+            workspaceId,
+            metrics,
+            appId:    activeApp?.id,
+            bundleId: activeApp?.bundle_id,
+            storeId:  activeApp?.store_id,
+            appName:  activeApp?.name,
+            iconUrl:  activeApp?.icon_url ?? undefined,
+            store,
+            country,
+          }),
+        });
+        if (!res.ok) {
+          const body: { error?: string } = await res.json().catch(() => ({}));
+          return { ok: false, error: body.error ?? "Couldn't save this keyword." };
+        }
+        return { ok: true };
+      } catch {
+        return { ok: true };
+      }
     }
 
     // Save immediately with empty metrics so the keyword is persisted even if
@@ -214,7 +224,17 @@ export default function KeywordCombinationPage() {
     // Await it (don't fire-and-forget) so we confirm it's in the DB before
     // updating local tracked state — prevents phantom "tracked" entries that
     // disappear after a reload because the save actually failed silently.
-    try { await saveKeywords({}); } catch {}
+    //
+    // Only this first call is checked: it's the one that creates the apps
+    // row (if this app isn't tracked yet), so a rejection here (e.g. the
+    // workspace's plan app limit) will reject identically on every later
+    // call too — there's nothing to gain from re-attempting.
+    const firstSave = await saveKeywords({});
+    if (!firstSave.ok) {
+      setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
+      setSaveError(firstSave.error ?? "Couldn't save this keyword.");
+      return;
+    }
     setTrackedKeywords((prev) => new Set([...prev, ...freshLower]));
 
     try {
@@ -264,6 +284,16 @@ export default function KeywordCombinationPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={activeApp ?? null} title="Keyword Combination" />
+
+      {saveError && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto pt-4">
         <CombinationTable

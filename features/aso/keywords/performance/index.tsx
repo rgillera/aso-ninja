@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -49,6 +49,7 @@ export default function KeywordPerformancePage() {
   // button in a loading state until the keyword is actually persisted, so
   // users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingAdds > 0 ? "A keyword is still being added. Leaving now may lose it." : null);
@@ -153,7 +154,7 @@ export default function KeywordPerformancePage() {
       );
 
       if (workspaceId) {
-        await fetch("/api/keywords/save", {
+        const saveRes = await fetch("/api/keywords/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -169,6 +170,17 @@ export default function KeywordPerformancePage() {
             country,
           }),
         });
+
+        // A non-OK response means the save was rejected server-side (e.g.
+        // this app can't be tracked because the workspace's plan app limit
+        // is already used) — pull the keyword back out instead of leaving it
+        // showing as successfully added.
+        if (!saveRes.ok) {
+          const body: { error?: string } = await saveRes.json().catch(() => ({}));
+          setSaveError(body.error ?? "Couldn't save this keyword.");
+          setKeywords((prev) => prev.filter((k) => !newTerms.includes(k.term)));
+          return;
+        }
       }
 
       // Quietly back-fill a rank for each newly tracked keyword — same one
@@ -389,6 +401,16 @@ export default function KeywordPerformancePage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
+
+      {saveError && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto">
         <div className="flex items-center gap-1 px-6 pt-3">

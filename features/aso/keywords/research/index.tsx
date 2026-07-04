@@ -38,6 +38,7 @@ export default function KeywordResearchPage() {
   // persisted, so users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
   const [rateLimited, setRateLimited] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingAdds > 0 ? "A keyword is still being added. Leaving now may lose it." : null);
@@ -208,7 +209,7 @@ export default function KeywordResearchPage() {
 
       // Persist keywords + freshly computed metrics to Supabase
       if (workspaceId) {
-        await fetch("/api/keywords/save", {
+        const saveRes = await fetch("/api/keywords/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -224,8 +225,22 @@ export default function KeywordResearchPage() {
             country,
           }),
         });
+
+        // A non-OK response here means the save was rejected server-side
+        // (e.g. this app can't be tracked because the workspace's plan app
+        // limit is already used) — the keyword never actually persisted, so
+        // pull it back out of the table instead of leaving it showing as
+        // successfully added.
+        if (!saveRes.ok) {
+          const body: { error?: string } = await saveRes.json().catch(() => ({}));
+          setSaveError(body.error ?? "Couldn't save this keyword.");
+          setKeywords((prev) => prev.filter((k) => !newKeywords.includes(k.keyword)));
+          return;
+        }
       }
-    } catch {}
+    } catch {
+      return;
+    }
 
     // Quietly back-fill a rank for each newly tracked keyword — same one
     // request a user would've made by hand via the Performance tab's Live
@@ -324,6 +339,16 @@ export default function KeywordResearchPage() {
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1">Apple&apos;s App Store API rate limit reached. Some keywords are missing data. Wait a minute and re-add them.</span>
           <button onClick={() => setRateLimited(false)} className="shrink-0 hover:text-amber-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {saveError && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
             <XMarkIcon className="size-4" />
           </button>
         </div>
