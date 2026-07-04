@@ -560,14 +560,6 @@ export function KeywordTable({
         document.body
       )}
 
-      {/* Add competitors */}
-      <div className="px-4 py-2.5 border-b border-white/[0.07]">
-        <button className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-400 transition-colors">
-          <PlusIcon className="size-3.5" />
-          Add competitors to compare
-        </button>
-      </div>
-
       {/* Add keyword input + Edit columns */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
         <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
