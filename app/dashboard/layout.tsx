@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
-import type { App, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -26,6 +27,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (memberships ?? []).map((m) => [m.workspace_id, m.access as WorkspaceAccess[]])
   );
 
+  // Best-guess active workspace for the initial paint — mirrors the fallback
+  // chain in DashboardShell (saved workspace, then first workspace) closely
+  // enough to avoid a free->real-plan flicker on first load.
+  const initialWorkspaceId =
+    (workspaces ?? []).find((w) => w.id === lastWorkspaceId)?.id ?? workspaces?.[0]?.id;
+  const initialPlanState = initialWorkspaceId
+    ? await getWorkspacePlanState(initialWorkspaceId)
+    : undefined;
+  const initialPlanSlug: PlanSlug =
+    initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.slug : "free";
+
   return (
     <Suspense>
       <DashboardShell
@@ -35,6 +47,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         lastPreview={lastPreview}
         lastWorkspaceId={lastWorkspaceId}
         accessByWorkspace={accessByWorkspace}
+        initialPlanSlug={initialPlanSlug}
       >
         {children}
       </DashboardShell>

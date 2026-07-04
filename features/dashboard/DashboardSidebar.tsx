@@ -24,7 +24,14 @@ import {
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
-import type { Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+
+const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
+  free: { label: "Free", className: "bg-white/5 text-gray-400" },
+  pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
+  pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-500" },
+  enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
+};
 
 const metadataLinks = [
   { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
@@ -54,6 +61,7 @@ type Props = {
   activePreviewPage?: string;
   /** Which product areas the current member has access to in the active workspace */
   access: WorkspaceAccess[];
+  planSlug?: PlanSlug;
 };
 
 function workspaceInitial(name: string) {
@@ -68,7 +76,9 @@ export default function DashboardSidebar({
   metaOverrideHref,
   activePreviewPage,
   access,
+  planSlug = "free",
 }: Props) {
+  const planBadge = PLAN_BADGE[planSlug];
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
@@ -405,8 +415,8 @@ export default function DashboardSidebar({
         >
           <CreditCardIcon className="size-4 shrink-0" />
           <span className="flex-1">Manage Plan</span>
-          <span className="shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-xs font-medium text-gray-400">
-            Free
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
+            {planBadge.label}
           </span>
         </a>
         <a

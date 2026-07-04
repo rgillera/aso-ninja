@@ -46,10 +46,6 @@ function nameColor(planId: PlanId) {
   return "text-white";
 }
 
-function formatLimit(n: number | null) {
-  return n === null ? "Unlimited" : n.toLocaleString();
-}
-
 // Whole-dollar amounts drop the decimals ("$149" not "$149.00"); anything
 // with cents keeps two decimal places ("$12.49").
 function formatPrice(cents: number) {
@@ -66,7 +62,7 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
       <div className="flex items-center justify-between text-xs text-gray-400">
         <span>{label}</span>
         <span>
-          {used.toLocaleString()} / {formatLimit(limit)}
+          {limit === null ? used.toLocaleString() : `${used.toLocaleString()} / ${limit.toLocaleString()}`}
         </span>
       </div>
       <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06]">
@@ -83,6 +79,7 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 
 export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
+  const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
   const [billing, setBilling] = useState<Billing>("yearly");
   const searchParams = useSearchParams();
   useRefreshUntilUpgraded(searchParams.get("success") === "1");
@@ -128,8 +125,9 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {PLANS.map((plan) => {
+          {PLANS.map((plan, index) => {
             const isCurrent = plan.id === currentPlanId;
+            const isDowngrade = index < currentPlanIndex;
             const isFree = plan.priceMonthlyCents === 0;
             const displayCents = isFree
               ? 0
@@ -187,7 +185,13 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
                   </div>
                 )}
 
-                <UpgradeButton planSlug={plan.id} workspaceId={workspaceId} isCurrent={isCurrent} billing={billing} />
+                <UpgradeButton
+                  planSlug={plan.id}
+                  workspaceId={workspaceId}
+                  isCurrent={isCurrent}
+                  isDowngrade={isDowngrade}
+                  billing={billing}
+                />
               </div>
             );
           })}

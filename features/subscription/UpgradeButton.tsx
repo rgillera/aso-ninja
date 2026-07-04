@@ -8,10 +8,11 @@ type Props = {
   planSlug: PlanSlug;
   workspaceId: string;
   isCurrent: boolean;
+  isDowngrade: boolean;
   billing: "monthly" | "yearly";
 };
 
-export function UpgradeButton({ planSlug, workspaceId, isCurrent, billing }: Props) {
+export function UpgradeButton({ planSlug, workspaceId, isCurrent, isDowngrade, billing }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ export function UpgradeButton({ planSlug, workspaceId, isCurrent, billing }: Pro
         }}
         className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400 disabled:opacity-60"
       >
-        {isPending ? "Redirecting…" : "Upgrade"}
+        {isPending ? "Redirecting…" : isDowngrade ? "Downgrade" : "Upgrade"}
       </button>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
     </div>

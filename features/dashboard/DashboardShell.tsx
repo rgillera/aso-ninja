@@ -11,7 +11,8 @@ import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
-import type { App, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 // Route prefixes gated behind each access area — mirrors the "ASO Intelligence"
 // / "Market Intelligence" groupings in DashboardSidebar. "My Apps" and Settings
@@ -65,12 +66,13 @@ type Props = {
   lastPreview?: string;
   lastWorkspaceId?: string;
   accessByWorkspace: Record<string, WorkspaceAccess[]>;
+  initialPlanSlug?: PlanSlug;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, initialPlanSlug, children }: Props) {
   const pathname     = usePathname();
   const router       = useRouter();
   const params       = useParams<{ id?: string }>();
@@ -210,6 +212,18 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
 
+  const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
+  useEffect(() => {
+    if (!activeWorkspaceId) return;
+    let cancelled = false;
+    getWorkspacePlanState(activeWorkspaceId).then((result) => {
+      if (!cancelled && !("error" in result)) setPlanSlug(result.plan.slug);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeWorkspaceId]);
+
   // Bounce away from a product area the current member's access doesn't cover
   // for the active workspace — mirrors the sections hidden in DashboardSidebar,
   // so a stale/bookmarked/typed-in URL can't be used to reach a gated page.
@@ -343,6 +357,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           metaOverrideHref={metaOverrideHref}
           activePreviewPage={activePreviewPage}
           access={currentAccess}
+          planSlug={planSlug}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
           <DashboardSearch
