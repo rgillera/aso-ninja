@@ -73,7 +73,7 @@ export async function followAppAction(
         bundle_id: input.bundleId,
         store_id: input.storeId,
         icon_url: input.iconUrl,
-        country: input.country,
+        country: input.country?.toUpperCase() ?? null,
       },
       { onConflict: "workspace_id,store,bundle_id,country" }
     )
