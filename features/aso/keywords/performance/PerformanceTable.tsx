@@ -44,6 +44,7 @@ type Props = {
   onRemoveSelected: (terms: string[]) => void;
   onLiveSearch: (term: string) => void;
   onViewVolumeHistory: (term: string) => void;
+  onViewRankHistory: (term: string, storeId: string) => void;
   onRefetchRanks: () => void;
   refetchingRanks: boolean;
   stuckRankCount: number;
@@ -58,7 +59,7 @@ const PAGE_SIZE = 25;
 // used to compute how much room is left for the Keyword column to grow into.
 const CHECKBOX_COL_W = 40;    // w-10
 const VOLUME_COL_W = 208;     // w-52
-const RANK_GROUP_W = 448;     // w-40 + w-40 + w-32
+const RANK_GROUP_W = 288;     // w-40 + w-32
 const ACTIONS_COL_W = 80;     // w-20
 const KEYWORD_MIN_W = 320;    // w-80
 
@@ -73,14 +74,17 @@ function GrowthCell({ value }: { value: number | null }) {
   );
 }
 
-function RankCell({ value, date }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null }) {
+function RankCell({ value, date, onClick }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null; onClick: () => void }) {
   const label = formatRank(value);
   const muted = label === "Unknown" || label === "Unranked";
   return (
-    <div>
-      <span className={`text-sm tabular-nums ${muted ? "text-gray-600" : "text-gray-300"}`}>{label}</span>
+    <button onClick={onClick} title="View rank history" className="flex flex-col items-start rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors text-left">
+      <span className={`inline-flex items-center gap-1 text-sm tabular-nums ${muted ? "text-gray-600" : "text-gray-300"}`}>
+        {label}
+        <ArrowTrendingUpIcon className="size-3 text-gray-600 shrink-0" />
+      </span>
       {date && <p className="text-[10px] text-gray-600">{formatSnapshotDate(date)}</p>}
-    </div>
+    </button>
   );
 }
 
@@ -101,7 +105,7 @@ export function PerformanceTable({
   keywords, filtered, appName, appIcon, activeApp, competitors, onCompetitorsChange,
   filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
   onAddKeywords, onToggleStar, onStarSelected, onRemoveKeyword, onRemoveSelected,
-  onLiveSearch, onViewVolumeHistory,
+  onLiveSearch, onViewVolumeHistory, onViewRankHistory,
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
@@ -291,11 +295,9 @@ export function PerformanceTable({
               <col style={{ width: keywordWidth, minWidth: keywordWidth }} />
               <col className="w-52" />
               <col className="w-40" />
-              <col className="w-40" />
               <col className="w-32" />
               {competitors.map((c) => (
                 <Fragment key={c.storeId}>
-                  <col className="w-40" />
                   <col className="w-40" />
                   <col className="w-32" />
                 </Fragment>
@@ -314,7 +316,7 @@ export function PerformanceTable({
                 </th>
                 <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Keyword</th>
                 <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">Volume</th>
-                <th colSpan={3} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
+                <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={appIcon} alt="" className="size-4 rounded shrink-0" />
@@ -322,7 +324,7 @@ export function PerformanceTable({
                   </div>
                 </th>
                 {competitors.map((c) => (
-                  <th key={c.storeId} colSpan={3} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
+                  <th key={c.storeId} colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={c.icon} alt="" className="size-4 rounded shrink-0" />
@@ -333,13 +335,11 @@ export function PerformanceTable({
                 <th rowSpan={2} className="sticky right-0 z-20 bg-[#1a1d24] border-l border-white/[0.07] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Actions</th>
               </tr>
               <tr className="border-b border-white/[0.07]">
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Prev</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Latest</th>
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Growth</th>
                 {competitors.map((c) => (
                   <Fragment key={c.storeId}>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Prev</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Latest</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Growth</th>
                   </Fragment>
                 ))}
@@ -383,18 +383,24 @@ export function PerformanceTable({
                       )}
                     </td>
                     {k.loading ? (
-                      <td colSpan={3 + competitors.length * 3} className="px-4 py-3"><div className="h-3 w-full rounded bg-white/[0.06] animate-pulse" /></td>
+                      <td colSpan={2 + competitors.length * 2} className="px-4 py-3"><div className="h-3 w-full rounded bg-white/[0.06] animate-pulse" /></td>
                     ) : (
                       <>
-                        <td className="px-3 py-3 border-l border-white/[0.04]"><RankCell value={s?.rankPrev} date={s?.rankPrevDate} /></td>
-                        <td className="px-3 py-3"><RankCell value={s?.rankLatest ?? (k.rank ?? "unknown")} date={s?.rankLatestDate} /></td>
+                        <td className="px-3 py-3 border-l border-white/[0.04]">
+                          <RankCell
+                            value={s?.rankLatest ?? (k.rank ?? "unknown")}
+                            date={s?.rankLatestDate}
+                            onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
+                          />
+                        </td>
                         <td className="px-3 py-3"><GrowthCell value={rankGrowth(s?.rankPrev, s?.rankLatest)} /></td>
                         {competitors.map((c) => {
                           const cs = s?.competitors?.[c.storeId];
                           return (
                             <Fragment key={c.storeId}>
-                              <td className="px-3 py-3 border-l border-white/[0.04]"><RankCell value={cs?.rankPrev} date={cs?.rankPrevDate} /></td>
-                              <td className="px-3 py-3"><RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} /></td>
+                              <td className="px-3 py-3 border-l border-white/[0.04]">
+                                <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} onClick={() => onViewRankHistory(k.term, c.storeId)} />
+                              </td>
                               <td className="px-3 py-3"><GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} /></td>
                             </Fragment>
                           );
@@ -428,11 +434,10 @@ export function PerformanceTable({
                 <td className="sticky left-0 z-10 bg-[#1c1f27] border-r border-white/[0.07]" />
                 <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] border-r border-white/[0.07] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
                 <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] border-l border-r border-white/[0.07] px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.volumeLatest ?? "-"}</td>
-                <td className="px-3 py-3 border-l border-white/[0.04]" />
-                <td className="px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.rankLatest ?? "-"}</td>
+                <td className="px-3 py-3 border-l border-white/[0.04] text-sm text-gray-300 tabular-nums">{summary.rankLatest ?? "-"}</td>
                 <td className="px-3 py-3" />
                 {competitors.map((c) => (
-                  <td key={c.storeId} colSpan={3} className="px-3 py-3 border-l border-white/[0.04]" />
+                  <td key={c.storeId} colSpan={2} className="px-3 py-3 border-l border-white/[0.04]" />
                 ))}
                 <td className="sticky right-0 z-10 bg-[#1c1f27] border-l border-white/[0.07] pr-4 py-3" />
               </tr>

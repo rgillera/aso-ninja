@@ -14,6 +14,7 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
+import { RankHistoryPanel } from "./RankHistoryPanel";
 import {
   DEFAULT_FILTERS, wordCount,
   type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
@@ -51,6 +52,7 @@ export default function KeywordPerformancePage() {
   const [visibilityLoading, setVisibilityLoading]  = useState(false);
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
+  const [rankHistory, setRankHistory] = useState<{ term: string; storeId: string } | null>(null);
   // Counts in-flight adds (fast metrics → Supabase save) — keeps the Add
   // button in a loading state until the keyword is actually persisted, so
   // users don't refresh mid-add and lose it.
@@ -520,6 +522,7 @@ export default function KeywordPerformancePage() {
               onRemoveSelected={handleRemoveSelected}
               onLiveSearch={setLiveSearchTerm}
               onViewVolumeHistory={setVolumeHistoryTerm}
+              onViewRankHistory={(term, storeId) => setRankHistory({ term, storeId })}
               onRefetchRanks={handleRefetchRanks}
               refetchingRanks={refetchingRanks}
               stuckRankCount={stuckTerms.length}
@@ -549,6 +552,16 @@ export default function KeywordPerformancePage() {
           store={activeApp.store ?? "ios"}
           country={activeApp.country ?? "us"}
           onClose={() => setVolumeHistoryTerm(null)}
+        />
+      )}
+
+      {rankHistory && (
+        <RankHistoryPanel
+          term={rankHistory.term}
+          storeId={rankHistory.storeId}
+          store={activeApp.store ?? "ios"}
+          country={activeApp.country ?? "us"}
+          onClose={() => setRankHistory(null)}
         />
       )}
     </div>
