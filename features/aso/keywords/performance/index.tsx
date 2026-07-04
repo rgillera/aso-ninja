@@ -121,14 +121,47 @@ export default function KeywordPerformancePage() {
     if (!fresh.length) return;
     newTerms = fresh;
 
+    const store   = activeApp?.store ?? "ios";
+    const country = activeApp?.country ?? "us";
+
+    setPendingAdds((n) => n + 1);
+
+    // Reserve the keyword(s) server-side before showing anything — this is
+    // what actually creates/links the app row, so a plan-limit rejection
+    // (e.g. this app can't be tracked because the workspace's app limit is
+    // already used) surfaces before a row ever appears, instead of one
+    // flashing in with real metrics and then vanishing.
+    if (workspaceId) {
+      const reserveRes = await fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms:    newTerms,
+          workspaceId,
+          appId:    activeApp?.id,
+          bundleId: activeApp?.bundle_id,
+          storeId:  activeApp?.store_id,
+          appName:  activeApp?.name,
+          iconUrl:  activeApp?.icon_url ?? undefined,
+          store,
+          country,
+        }),
+      }).catch(() => null);
+
+      if (reserveRes && !reserveRes.ok) {
+        const body: { error?: string } = await reserveRes.json().catch(() => ({}));
+        setSaveError(body.error ?? "Couldn't save this keyword.");
+        setPendingAdds((n) => n - 1);
+        return;
+      }
+    }
+
     const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
     setKeywords((prev) => [
       ...newTerms.map((term) => ({ term, volume: 0, rank: null, starred: starred.has(term.toLowerCase()), loading: true })),
       ...prev,
     ]);
 
-    const store   = activeApp?.store ?? "ios";
-    const country = activeApp?.country ?? "us";
     const params  = new URLSearchParams({
       terms: newTerms.join(","),
       store,
@@ -140,7 +173,6 @@ export default function KeywordPerformancePage() {
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
     });
 
-    setPendingAdds((n) => n + 1);
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
       const data: Record<string, { volume: number; rank: number | null }> = await res.json();

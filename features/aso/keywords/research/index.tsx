@@ -126,6 +126,41 @@ export default function KeywordResearchPage() {
     if (!fresh.length) return;
     newKeywords = fresh;
 
+    const store   = activeApp?.store ?? "ios";
+    const country = activeApp?.country ?? "us";
+
+    setPendingAdds((n) => n + 1);
+
+    // Reserve the keyword(s) server-side before showing anything — this is
+    // what actually creates/links the app row, so a plan-limit rejection
+    // (e.g. this app can't be tracked because the workspace's app limit is
+    // already used) surfaces before a row ever appears, instead of one
+    // flashing in with real metrics and then vanishing.
+    if (workspaceId) {
+      const reserveRes = await fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms:     newKeywords,
+          workspaceId,
+          appId:     activeApp?.id,
+          bundleId:  activeApp?.bundle_id,
+          storeId:   activeApp?.store_id,
+          appName:   activeApp?.name,
+          iconUrl:   activeApp?.icon_url ?? undefined,
+          store,
+          country,
+        }),
+      }).catch(() => null);
+
+      if (reserveRes && !reserveRes.ok) {
+        const body: { error?: string } = await reserveRes.json().catch(() => ({}));
+        setSaveError(body.error ?? "Couldn't save this keyword.");
+        setPendingAdds((n) => n - 1);
+        return;
+      }
+    }
+
     const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
     setKeywords((prev) => [
       ...newKeywords.map((kw) => ({
@@ -135,11 +170,6 @@ export default function KeywordResearchPage() {
       })),
       ...prev,
     ]);
-
-    const store   = activeApp?.store ?? "ios";
-    const country = activeApp?.country ?? "us";
-
-    setPendingAdds((n) => n + 1);
 
     // Phase 1: fast metrics (volume/diff/chance/rank) — skips the slow LLM
     // relevancy pass so basic numbers show up immediately. Relevancy/
