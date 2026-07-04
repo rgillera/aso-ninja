@@ -10,3 +10,10 @@ export type { KeywordRank } from "./keyword/rank";
 export type { MetadataStatus, MetadataDraft } from "./metadata";
 export type { Review } from "./review";
 export type { AlertCondition, RankAlert } from "./rank-alert";
+export type {
+  PlanSlug,
+  Plan,
+  SubscriptionStatus,
+  Subscription,
+  WorkspaceUsage,
+} from "./plan";

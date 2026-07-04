@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { PLANS, type PlanId } from "./plans";
+import { UpgradeButton } from "./UpgradeButton";
+import type { WorkspaceUsage } from "@/libs/contracts";
 
 type Props = {
   currentPlanId: PlanId;
+  workspaceId: string;
+  usage?: WorkspaceUsage;
 };
 
 function nameColor(planId: PlanId) {
@@ -12,7 +16,33 @@ function nameColor(planId: PlanId) {
   return "text-white";
 }
 
-export default function SubscriptionPage({ currentPlanId }: Props) {
+function formatLimit(n: number | null) {
+  return n === null ? "Unlimited" : n.toLocaleString();
+}
+
+function UsageBar({ label, used, limit }: { label: string; used: number; limit: number | null }) {
+  const pct = limit === null ? 0 : Math.min(100, (used / Math.max(limit, 1)) * 100);
+  return (
+    <div>
+      <div className="flex items-center justify-between text-xs text-gray-400">
+        <span>{label}</span>
+        <span>
+          {used.toLocaleString()} / {formatLimit(limit)}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06]">
+        {limit !== null && (
+          <div
+            className="h-full rounded-full bg-indigo-500"
+            style={{ width: `${pct}%` }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
 
   return (
@@ -68,17 +98,16 @@ export default function SubscriptionPage({ currentPlanId }: Props) {
                   ))}
                 </ul>
 
-                <button
-                  type="button"
-                  disabled={isCurrent}
-                  className={`mt-6 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${
-                    isCurrent
-                      ? "bg-white/[0.06] text-gray-500 cursor-default"
-                      : "bg-indigo-500 text-white hover:bg-indigo-400"
-                  }`}
-                >
-                  {isCurrent ? "Current plan" : "Upgrade"}
-                </button>
+                {isCurrent && usage && (
+                  <div className="mt-5 space-y-3 border-t border-white/[0.08] pt-5">
+                    <UsageBar label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} />
+                    <UsageBar label="Apps" used={usage.app_count} limit={usage.app_limit} />
+                    <UsageBar label="Members" used={usage.member_count} limit={usage.member_limit} />
+                    <UsageBar label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
+                  </div>
+                )}
+
+                <UpgradeButton planSlug={plan.id} workspaceId={workspaceId} isCurrent={isCurrent} />
               </div>
             );
           })}

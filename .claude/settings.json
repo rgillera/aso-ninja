@@ -96,7 +96,10 @@
       "Bash(node .scratch_verify_invite.js)",
       "Bash(supabase stop *)",
       "Bash(supabase start *)",
-      "Bash(node .scratch_verify_existing.js)"
+      "Bash(node .scratch_verify_existing.js)",
+      "Bash(node /private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/6cbb3137-65c4-40a6-8f31-23cb69edb016/scratchpad/verify-subscription.mjs)",
+      "Bash(npm root *)",
+      "Read(//Users/bmo/.npm/_npx/**)"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"
