@@ -1,11 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { PLANS, type PlanId } from "./plans";
 import { UpgradeButton } from "./UpgradeButton";
 import type { WorkspaceUsage } from "@/libs/contracts";
+
+// Stripe redirects back here as soon as checkout completes, but the plan
+// upgrade itself lands a moment later via webhook. Poll a few times so the
+// page catches up without the user having to refresh manually.
+function useRefreshUntilUpgraded(success: boolean) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!success) return;
+
+    let attempts = 0;
+    const id = setInterval(() => {
+      attempts += 1;
+      router.refresh();
+      if (attempts >= 6) {
+        clearInterval(id);
+        router.replace(pathname);
+      }
+    }, 1500);
+
+    return () => clearInterval(id);
+  }, [success, router, pathname]);
+}
 
 type Props = {
   currentPlanId: PlanId;
@@ -59,6 +84,8 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
 export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const [billing, setBilling] = useState<Billing>("yearly");
+  const searchParams = useSearchParams();
+  useRefreshUntilUpgraded(searchParams.get("success") === "1");
 
   return (
     <main className="h-full overflow-y-auto">

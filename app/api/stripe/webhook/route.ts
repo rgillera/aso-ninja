@@ -23,7 +23,7 @@ async function upsertFromStripeSubscription(
     const { data: plan } = await admin
       .from("plans")
       .select("id")
-      .eq("stripe_price_id", priceId)
+      .or(`stripe_price_id.eq.${priceId},stripe_price_id_yearly.eq.${priceId}`)
       .maybeSingle();
     planId = plan?.id;
   }
