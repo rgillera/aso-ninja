@@ -99,6 +99,15 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   })();
 
   const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
+  // lastPreview is handed to us already url-decoded — Next's cookie parser
+  // (next/headers cookies(), via the `cookie` package) calls decodeURIComponent
+  // on every cookie value it reads, undoing the single encodeURIComponent()
+  // layer applied when this cookie was written below. So savedPreview holds
+  // the same plain query-string shape here as it does when set directly from
+  // client code (selectApp, the isOnPreview effect) — never re-decode it:
+  // doing so turns a name's escaped "&" (%26) into a literal "&", which
+  // URLSearchParams then misreads as a second param boundary and silently
+  // truncates the value at that point.
   const [savedPreview, setSavedPreview] = useState<string | undefined>(lastPreview);
   const [savedWorkspaceId, setSavedWorkspaceId] = useState<string | undefined>(lastWorkspaceId);
 
@@ -327,7 +336,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const metaOverrideHref = isOnPreview
     ? `/dashboard/preview${rawSearchClean}`
     : savedPreview
-    ? `/dashboard/preview${decodeURIComponent(savedPreview)}`
+    ? `/dashboard/preview${savedPreview}`
     : undefined;
 
   const activePreviewPage = isOnPreview ? (searchParams.get("page") ?? "") : undefined;
@@ -336,7 +345,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // Recency determines priority: navigating to a tracked app always clears savedPreview,
   // so savedPreview being set means a preview was visited MORE RECENTLY than the tracked app.
   const displayApp: ActiveApp | undefined = (() => {
-    const previewStr = isOnPreview ? rawSearchClean : (savedPreview ? decodeURIComponent(savedPreview) : "");
+    const previewStr = isOnPreview ? rawSearchClean : (savedPreview ?? "");
     const previewApp: ActiveApp | undefined = (() => {
       if (!previewStr) return undefined;
       const sp = new URLSearchParams(previewStr.slice(1));

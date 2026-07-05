@@ -1,7 +1,7 @@
 const testimonials = [
   {
     quote:
-      "AppASO cut our keyword research time in half. We went from guessing to knowing exactly which terms drive downloads.",
+      "AppASO cut our keyword research time in half, and tracking daily rank changes told us exactly which terms were actually moving the needle.",
     name: "Mia Chen",
     title: "Growth Lead, Lumio Apps",
     avatar: "MC",
@@ -9,15 +9,15 @@ const testimonials = [
   {
     quote:
       "The workspace model is perfect for our agency. Each client gets their own space and we manage everything from one dashboard.",
-    name: "Daniel Torres",
-    title: "Founder, Appify Agency",
+    name: "Rex Torres",
+    title: "Founder, NutriSnap",
     avatar: "DT",
   },
   {
     quote:
-      "Rank alerts saved us from a silent drop that would've gone unnoticed for weeks. We caught it in hours and responded fast.",
-    name: "Sara Kim",
-    title: "ASO Manager, Orbit Studio",
+      "Keyword research told us which terms to go after, and keyword combinations surfaced long-tail variants we would've never thought to search for. Adding them for tracking is very convenient.",
+    name: "Rodel Gillera",
+    title: "ASO Manager, ASO Ninja",
     avatar: "SK",
   },
 ];

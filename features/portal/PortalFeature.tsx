@@ -4,6 +4,7 @@ import {
   ChartBarIcon,
   StarIcon,
   GlobeAltIcon,
+  UsersIcon,
 } from "@heroicons/react/24/outline";
 
 const features = [
@@ -14,9 +15,15 @@ const features = [
     icon: MagnifyingGlassIcon,
   },
   {
+    name: "Keyword Research",
+    description:
+      "Discover competitor apps, compare keyword overlap, and find opportunities your competition is already capitalizing on.",
+    icon: GlobeAltIcon,
+  },
+  {
     name: "Metadata Editor",
     description:
-      "Edit your app title, subtitle, description, and keyword field per locale. Keep draft versions and publish when you're ready.",
+      "Edit your app title, subtitle, description, and keyword field per locale. Check keyword density, preview search results, and benchmark against your category before you save.",
     icon: DocumentTextIcon,
   },
   {
@@ -32,10 +39,10 @@ const features = [
     icon: StarIcon,
   },
   {
-    name: "Explore",
+    name: "Team Workspaces",
     description:
-      "Discover competitor apps, compare keyword overlap, and find opportunities your competition is already capitalizing on.",
-    icon: GlobeAltIcon,
+      "Invite your team into a shared workspace with one source of truth. Everyone sees the same data, no spreadsheets required.",
+    icon: UsersIcon,
   },
 ];
 
@@ -57,7 +64,7 @@ export default function PortalFeature() {
           {features.map((f) => (
             <div
               key={f.name}
-              className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8 hover:bg-gray-800/80 transition-colors"
+              className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8 transition-colors hover:bg-gray-800/80 hover:ring-indigo-500/30"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
                 <f.icon className="size-5 text-indigo-400" aria-hidden="true" />

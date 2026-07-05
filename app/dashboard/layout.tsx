@@ -14,7 +14,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const cookieStore = await cookies();
   const lastAppId       = cookieStore.get("lastAppId")?.value;
-  const lastPreview     = cookieStore.get("lastPreview")?.value; // encoded search string
+  // cookies().get().value is already url-decoded by Next's cookie parser —
+  // this is the plain "?bundleId=...&name=...&..." search string, not the
+  // encodeURIComponent-wrapped form it was written as.
+  const lastPreview     = cookieStore.get("lastPreview")?.value;
   const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
 
   const [{ data: workspaces }, { data: apps }, { data: memberships }] = await Promise.all([
