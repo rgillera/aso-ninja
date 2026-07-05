@@ -62,7 +62,7 @@ const plans: {
     badge: "Most popular",
     features: [
       "2 workspaces",
-      "2,500 keywords",
+      "3,000 keywords",
       "20 apps & 15 competitors per app",
       "Metadata optimization",
       "Advanced keyword research",

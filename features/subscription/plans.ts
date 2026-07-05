@@ -55,7 +55,7 @@ export const PLANS: Plan[] = [
     badge: "Most popular",
     features: [
       "2 workspaces",
-      "2,500 keywords",
+      "3,000 keywords",
       "20 apps & 15 competitors per app",
       "Advanced keyword research",
       "Keyword & ranking monitoring",
