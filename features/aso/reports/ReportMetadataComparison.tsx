@@ -424,22 +424,24 @@ function DescriptionCard({
               <Badge tone={lengthTone(displayText.length, limit)}>{displayText.length} characters</Badge>
               {hint && <span className="text-xs text-gray-500">{hint}</span>}
             </div>
-            <button
-              onClick={() => {
-                const next = !testing;
-                setTesting(next);
-                if (next) setTestDraft(active.text);
-                else setAppliedTest(null);
-              }}
-              className="flex items-center gap-1.5 rounded-lg ring-1 ring-white/[0.1] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:ring-white/20 transition-colors"
-            >
-              <PencilSquareIcon className="size-3.5" />
-              Test a new description
-              <ChevronDownIcon className={`size-3.5 transition-transform ${testing ? "rotate-180" : ""}`} />
-            </button>
+            {activeKey === "primary" && (
+              <button
+                onClick={() => {
+                  const next = !testing;
+                  setTesting(next);
+                  if (next) setTestDraft(active.text);
+                  else setAppliedTest(null);
+                }}
+                className="flex items-center gap-1.5 rounded-lg ring-1 ring-white/[0.1] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:ring-white/20 transition-colors"
+              >
+                <PencilSquareIcon className="size-3.5" />
+                Test a new description
+                <ChevronDownIcon className={`size-3.5 transition-transform ${testing ? "rotate-180" : ""}`} />
+              </button>
+            )}
           </div>
 
-          {testing && (
+          {activeKey === "primary" && testing && (
             <div className="mx-5 mb-4 rounded-xl bg-white/[0.02] p-4 ring-1 ring-white/[0.08]">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <PencilSquareIcon className="size-4 text-gray-400" />
