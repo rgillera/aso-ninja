@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { ClockIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
-import { loadRecent, saveRecentEntry } from "./recentApps";
+import { saveRecentEntry, pruneDeletedApps } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { useWorkspaceId } from "./WorkspaceContext";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
+import type { App } from "@/libs/contracts";
 
 function IosIcon() {
   return <img src="/app-store.svg" alt="App Store" className="size-3.5" />;
@@ -56,25 +57,27 @@ function AppCard({ entry, onNavigate }: { entry: RecentEntry; onNavigate: (e: Re
   );
 }
 
-export function RecentlyViewedApps() {
+export function RecentlyViewedApps({ apps }: { apps: App[] }) {
   const workspaceId = useWorkspaceId();
+  const liveAppIds = apps.map((a) => a.id);
   const [entries, setEntries] = useState<RecentEntry[]>([]);
 
   useEffect(() => {
-    setEntries(loadRecent(workspaceId));
+    setEntries(pruneDeletedApps(workspaceId, liveAppIds));
 
     function onStorage(e: StorageEvent) {
-      if (e.key === `aso_recently_viewed_${workspaceId}`) setEntries(loadRecent(workspaceId));
+      if (e.key === `aso_recently_viewed_${workspaceId}`) setEntries(pruneDeletedApps(workspaceId, liveAppIds));
     }
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [workspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- liveAppIds is derived fresh every render; apps itself is the real dependency
+  }, [workspaceId, apps]);
 
   if (entries.length === 0) return null;
 
   function handleNavigate(entry: RecentEntry) {
     saveRecentEntry(workspaceId, entry);
-    setEntries(loadRecent(workspaceId));
+    setEntries(pruneDeletedApps(workspaceId, liveAppIds));
   }
 
   return (

@@ -10,7 +10,7 @@ type Props = {
 export default function DashboardPage({ activeWorkspaceId, apps }: Props) {
   return (
     <div className="h-full overflow-y-auto">
-      <RecentlyViewedApps />
+      <RecentlyViewedApps apps={apps} />
       <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
     </div>
   );

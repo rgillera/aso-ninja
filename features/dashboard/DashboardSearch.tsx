@@ -8,7 +8,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { searchStoreApps, type SearchStoreResult } from "./searchAction";
-import { loadRecent, saveRecentEntry } from "./recentApps";
+import { saveRecentEntry, pruneDeletedApps } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import type { App, AppSearchResult } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
@@ -93,8 +93,13 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
   const [isPending, startTransition]  = useTransition();
   const [recentlyViewed, setRecentlyViewed] = useState<RecentEntry[]>([]);
 
-  // Reload recently viewed whenever the popup opens or workspace changes
-  useEffect(() => { setRecentlyViewed(loadRecent(workspaceId)); }, [open, workspaceId]);
+  // Reload recently viewed whenever the popup opens or workspace changes,
+  // pruning entries for apps deleted since they were last viewed (deleted
+  // here, or by another workspace member — localStorage isn't synced).
+  useEffect(() => {
+    setRecentlyViewed(pruneDeletedApps(workspaceId, apps.map(a => a.id)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- apps.map(...) is derived fresh every render; apps itself is the real dependency
+  }, [open, workspaceId, apps]);
 
   const wrapRef    = useRef<HTMLDivElement>(null);
   const inputRef   = useRef<HTMLInputElement>(null);
@@ -227,7 +232,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
 
   function handleResultClick(e: React.MouseEvent, entry: Omit<RecentEntry, "timestamp">) {
     saveRecentEntry(workspaceId, entry);
-    setRecentlyViewed(loadRecent(workspaceId));
+    setRecentlyViewed(pruneDeletedApps(workspaceId, apps.map(a => a.id)));
     setOpen(false);
     if (stayInPlace) {
       e.preventDefault();

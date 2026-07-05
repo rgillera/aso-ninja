@@ -41,3 +41,15 @@ export function saveRecentEntry(workspaceId: string, entry: Omit<RecentEntry, "t
   const updated = [{ ...entry, timestamp: Date.now() }, ...existing].slice(0, RECENT_MAX);
   localStorage.setItem(key, JSON.stringify(updated));
 }
+
+// A tracked entry whose app no longer exists (deleted here, or by another
+// workspace member — localStorage isn't synced across users/tabs) would
+// otherwise sit in "recently viewed" forever, still clickable, and bounce
+// through the report page's dead-app fallback when clicked.
+export function pruneDeletedApps(workspaceId: string, liveAppIds: string[]): RecentEntry[] {
+  const loaded = loadRecent(workspaceId);
+  const stale = loaded.filter(e => e.trackedId && !liveAppIds.includes(e.trackedId));
+  if (stale.length === 0) return loaded;
+  for (const e of stale) removeRecentEntry(workspaceId, e.bundleId, e.store);
+  return loadRecent(workspaceId);
+}
