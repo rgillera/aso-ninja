@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
 import { fetchStoreData } from "@/libs/store/load-benchmark";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import { computeAsoScoreSummary } from "@/features/aso/reports/asoScore";
 
 type CompetitorRow = { store_id: string; name: string; icon_url: string | null; developer: string | null };
+
+// Matches the revalidate window the underlying store-data fetchers already
+// use (libs/store/appstore.ts, libs/store/googleplay.ts) — no point caching
+// this layer longer than the data it's derived from.
+const CACHE_REVALIDATE_SECONDS = 6 * 60 * 60;
 
 function toCompetitorApp(row: CompetitorRow) {
   return { storeId: row.store_id, name: row.name, icon: row.icon_url ?? "", developer: row.developer ?? "" };
@@ -16,19 +22,22 @@ function toCompetitorApp(row: CompetitorRow) {
 // benchmark is fetched per competitor (that would be an expensive N+1 of
 // category-peer scrapes just for this table), so competitor scores fall back
 // to the same fixed ASO reference thresholds used when no benchmark exists.
-async function withScore(row: CompetitorRow, store: string, country: string) {
-  const base = toCompetitorApp(row);
-  const storeData = await fetchStoreData(store, row.store_id, row.store_id, country);
-  const summary = computeAsoScoreSummary(storeData, base.name, null, store === "ios");
+//
+// Cached separately from fetchStoreData: that cache only saves the scrape
+// itself, but every /api/competitors GET still re-ran computeAsoScoreSummary
+// for every competitor on every report page load. Caching the whole scored
+// result (keyed on the same storeId/store/country identity) skips that too.
+async function computeCompetitorScore(storeId: string, name: string, store: string, country: string) {
+  const storeData = await fetchStoreData(store, storeId, storeId, country);
+  const summary = computeAsoScoreSummary(storeData, name, null, store === "ios");
   const categoryPercents = summary.map((s) => s.percent);
   const categoryTags = summary.map((s) => s.tags);
   const overallPercent = Math.round(categoryPercents.reduce((sum, p) => sum + p, 0) / categoryPercents.length);
   return {
-    ...base,
     overallPercent,
     categoryPercents,
     categoryTags,
-    title: storeData?.name || base.name,
+    title: storeData?.name || name,
     subtitle: storeData?.subtitle ?? "",
     description: storeData?.description ?? "",
     releaseNotes: storeData?.releaseNotes ?? "",
@@ -40,6 +49,14 @@ async function withScore(row: CompetitorRow, store: string, country: string) {
     daysSinceUpdate: daysSince(storeData?.lastUpdatedAt),
     languageCount: storeData?.languageCount,
   };
+}
+
+const cachedComputeCompetitorScore = unstable_cache(computeCompetitorScore, ["competitor-score"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
+async function withScore(row: CompetitorRow, store: string, country: string) {
+  const base = toCompetitorApp(row);
+  const scored = await cachedComputeCompetitorScore(row.store_id, base.name, store, country);
+  return { ...base, ...scored };
 }
 
 // GET /api/competitors?appId=...
