@@ -61,7 +61,7 @@ const metadataLinks: { label: string; appPath: string; fallback: string; preview
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
   { label: "Combinations", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon, minPlan: "pro_plus" },
-  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
+  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon,        minPlan: "pro" },
   { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
 ];
 

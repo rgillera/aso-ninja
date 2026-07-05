@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -11,6 +11,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -40,6 +41,7 @@ export default function KeywordPerformancePage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
+  const isLocked    = !isPlanAtLeast(planSlug, "pro");
   const translateLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
@@ -72,7 +74,7 @@ export default function KeywordPerformancePage() {
   useEffect(() => {
     competitorsAppId.current = undefined;
     const key = activeApp?.id ?? activeApp?.bundle_id;
-    if (!key) return;
+    if (!key || isLocked) return;
     const params = activeApp?.id
       ? new URLSearchParams({ appId: activeApp.id })
       : new URLSearchParams({
@@ -89,7 +91,7 @@ export default function KeywordPerformancePage() {
       })
       .catch(() => setCompetitors([]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id, activeApp?.bundle_id]);
+  }, [activeApp?.id, activeApp?.bundle_id, isLocked]);
 
   async function handleCompetitorsChange(updated: CompetitorApp[]) {
     const previous = competitors;
@@ -144,7 +146,7 @@ export default function KeywordPerformancePage() {
   const loadedAppId = useRef<string | undefined>(undefined);
   useEffect(() => {
     const key = activeApp?.id ?? activeApp?.bundle_id;
-    if (!key || loadedAppId.current === key) return;
+    if (!key || isLocked || loadedAppId.current === key) return;
     loadedAppId.current = key;
     setKeywords([]);
     const params = activeApp?.id
@@ -193,7 +195,7 @@ export default function KeywordPerformancePage() {
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id, activeApp?.bundle_id]);
+  }, [activeApp?.id, activeApp?.bundle_id, isLocked]);
 
   async function handleAddKeywords(newTerms: string[]) {
     const existing = new Set(keywords.filter((k) => !k.loading).map((k) => k.term.toLowerCase()));
@@ -420,7 +422,7 @@ export default function KeywordPerformancePage() {
   const autoRetriedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!activeApp || !trackedTerms) return;
+    if (!activeApp || !trackedTerms || isLocked) return;
     const t = setTimeout(() => {
       setSnapshotsLoading(true);
       const params = new URLSearchParams({
@@ -453,7 +455,7 @@ export default function KeywordPerformancePage() {
         .finally(() => setSnapshotsLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp, trackedTerms, snapshotsRefreshKey, competitors]);
+  }, [activeApp, trackedTerms, snapshotsRefreshKey, competitors, isLocked]);
 
   // Visibility Score: our own derived metric (real Volume x real Rank-position
   // weight, summed across tracked keywords), not an Apple/Google-reported number.
@@ -468,7 +470,7 @@ export default function KeywordPerformancePage() {
   }, [activeApp, competitors]);
 
   useEffect(() => {
-    if (!activeApp || !trackedTerms || !chartApps.length) return;
+    if (!activeApp || !trackedTerms || !chartApps.length || isLocked) return;
     const t = setTimeout(() => {
       setVisibilityLoading(true);
       const today = new Date();
@@ -490,7 +492,7 @@ export default function KeywordPerformancePage() {
         .finally(() => setVisibilityLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp, trackedTerms, chartApps]);
+  }, [activeApp, trackedTerms, chartApps, isLocked]);
 
   const filtered = useMemo(() => {
     if (!activeApp) return [];
@@ -508,6 +510,25 @@ export default function KeywordPerformancePage() {
 
   if (!activeApp) {
     return <NoAppSelected />;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+        <AppHeader app={activeApp} title="Monitor Performance" />
+        <FeatureLocked
+          minPlan="pro"
+          icon={ArrowTrendingUpIcon}
+          title="Keyword Performance is a Pro feature"
+          description="Upgrade to Pro or above to monitor keyword rankings and visibility over time."
+          benefits={[
+            "Track search volume and rank for every tracked keyword",
+            "See your Visibility Score trend across the last 30 days",
+            "Compare performance against competitor apps",
+          ]}
+        />
+      </div>
+    );
   }
 
   return (
