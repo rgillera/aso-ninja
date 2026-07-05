@@ -1,0 +1,96 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
+
+const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
+const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
+
+type RequestBody = {
+  workspaceId?: string;
+  appName: string;
+  isIos: boolean;
+  title: string;
+  subtitle: string;
+  description: string;
+  category?: string;
+  rating?: number;
+  ratingCount?: number;
+  daysSinceUpdate?: number;
+  screenshotCount: number;
+  hasPreviewVideo: boolean;
+  // Titles of suggestions the deterministic checks already surfaced, so the
+  // model adds to that list instead of restating it.
+  alreadyFlagged: string[];
+};
+
+async function generateSuggestions(body: RequestBody): Promise<Suggestion[]> {
+  const store = body.isIos ? "iOS App Store" : "Google Play";
+  const prompt = `You are a senior App Store Optimization (ASO) specialist reviewing a real app's store listing. Give specific, actionable ASO recommendations for THIS app based on the actual metadata below — not generic advice that could apply to any app.
+
+App name: ${body.appName}
+Platform: ${store}
+Category: ${body.category || "Unknown"}
+Title: ${body.title}
+Subtitle: ${body.subtitle}
+Description (excerpt): ${body.description.slice(0, 800)}
+Rating: ${body.rating ?? "N/A"} (${body.ratingCount ?? 0} ratings)
+Days since last update: ${body.daysSinceUpdate ?? "Unknown"}
+Screenshot count: ${body.screenshotCount}
+Has preview video: ${body.hasPreviewVideo ? "Yes" : "No"}
+
+These issues were already flagged by a separate rules-based checker — do NOT repeat them or suggest close variations of them:
+${body.alreadyFlagged.length ? body.alreadyFlagged.map((t) => `- ${t}`).join("\n") : "(none)"}
+
+Give as many NEW ASO recommendations as you can genuinely justify from the metadata above — don't pad the list with generic filler, but don't stop at just one or two either. Cover different angles: missing keyword opportunities given the category, weak or missing calls to action, underused features not mentioned in the description, localization gaps, stale update cadence, thin visual assets, positioning against likely competitors, and anything else a specialist reviewing this exact listing would flag. Skip anything you're not confident applies to this specific app.
+
+Reply with ONLY a JSON array of objects, nothing else. Example:
+[{"title":"Short, specific title","description":"1-2 sentence explanation of the issue and fix."}]`;
+
+  try {
+    const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: OLLAMA_LLM_MODEL,
+        prompt,
+        stream: false,
+        options: { temperature: 0.4 },
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const raw = (data.response ?? "") as string;
+    const match = raw.match(/\[[\s\S]*\]/);
+    if (!match) return [];
+    const parsed = JSON.parse(match[0]) as unknown[];
+    return parsed
+      .filter((s): s is Suggestion =>
+        !!s && typeof s === "object" &&
+        typeof (s as Suggestion).title === "string" &&
+        typeof (s as Suggestion).description === "string"
+      )
+      .slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+// POST /api/reports/aso-suggestions
+// LLM-generated ASO recommendations layered on top of the always-on
+// deterministic checks in features/aso/reports/asoSuggestions.ts — gated to
+// Pro+ same as the other Ollama-backed feature (/api/keywords/ai-suggestions),
+// since both hit the same local Ollama instance.
+export async function POST(request: NextRequest) {
+  const body = (await request.json()) as RequestBody;
+
+  if (!body.appName || !body.title) return NextResponse.json({ suggestions: [] });
+
+  const planState = body.workspaceId ? await getWorkspacePlanState(body.workspaceId) : null;
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ suggestions: [] });
+
+  const suggestions = await generateSuggestions(body);
+  return NextResponse.json({ suggestions });
+}

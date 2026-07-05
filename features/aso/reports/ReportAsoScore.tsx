@@ -135,15 +135,18 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
             </tr>
             {summaryItems.map((item, idx) => (
               <Fragment key={item.label}>
-                <tr className="border-t border-white/[0.06]">
+                <tr
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setExpanded(expanded === item.label ? null : item.label)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(expanded === item.label ? null : item.label); } }}
+                  className="cursor-pointer border-t border-white/[0.06] transition-colors hover:bg-white/[0.03]"
+                >
                   <td className="px-5 py-3">
-                    <button
-                      onClick={() => setExpanded(expanded === item.label ? null : item.label)}
-                      className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 transition-colors hover:text-white"
-                    >
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
                       {item.label}
                       <ChevronRightIcon className={`size-3.5 text-gray-600 transition-transform ${expanded === item.label ? "rotate-90" : ""}`} />
-                    </button>
+                    </span>
                   </td>
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3">

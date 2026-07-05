@@ -8,6 +8,7 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { ReportAsoScore, type CompetitorColumn, type ScoreTag } from "./ReportAsoScore";
 import { computeAsoScoreSummary } from "./asoScore";
 import { ReportSuggestions } from "./ReportSuggestions";
+import { computeDeterministicSuggestions, type Suggestion } from "./asoSuggestions";
 import { ReportMetadataComparison } from "./ReportMetadataComparison";
 import { ManageCompetitorsModal, type CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
@@ -167,28 +168,60 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
     categoryPercents: c.categoryPercents,
     categoryTags: c.categoryTags,
   }));
-  const topKeyword = [...keywordMetrics].sort((a, b) => b.volume - a.volume || b.chance - a.chance)[0];
-  const suggestions = topKeyword
-    ? [
-        {
-          title: `Lead with ${topKeyword.term}`,
-          description: `Use ${topKeyword.term} in the title and subtitle to capture more of the demand behind this keyword.`,
-        },
-        {
-          title: "Strengthen your app description",
-          description: "Add a more natural, benefit-led description that matches the highest-opportunity terms you are tracking.",
-        },
-        {
-          title: "Refresh creative assets",
-          description: "Pair stronger metadata with updated screenshots and preview text to improve conversion from relevant traffic.",
-        },
-      ]
-    : [
-        {
-          title: "Start tracking keywords",
-          description: "Add target terms to unlock more precise ASO recommendations and visibility insights.",
-        },
-      ];
+  const isIos = app.store === "ios";
+  const subtitleLimit = isIos ? 30 : 80;
+  const title = storeData?.name || app.name;
+  const subtitle = storeData?.subtitle ?? "";
+  const deterministicSuggestions = computeDeterministicSuggestions({
+    appName: app.name,
+    title,
+    subtitle,
+    description: storeData?.description ?? "",
+    releaseNotes: storeData?.releaseNotes ?? "",
+    isIos,
+    nameLimit: 30,
+    subtitleLimit,
+    screenshotCount: storeData?.screenshotUrls.length ?? 0,
+    hasPreviewVideo: !!storeData?.hasPreviewVideo,
+    rating: storeData?.rating,
+    ratingCount: storeData?.ratingCount,
+    daysSinceUpdate: daysSince(storeData?.lastUpdatedAt),
+    languageCount: storeData?.languageCount,
+    keywordMetrics,
+    benchmark,
+  });
+
+  const [aiSuggestions, setAiSuggestions] = useState<Suggestion[]>([]);
+  useEffect(() => {
+    if (!storeData) return;
+    let cancelled = false;
+    fetch("/api/reports/aso-suggestions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        workspaceId: app.workspace_id,
+        appName: app.name,
+        isIos,
+        title,
+        subtitle,
+        description: storeData.description ?? "",
+        category: storeData.primaryGenreName,
+        rating: storeData.rating,
+        ratingCount: storeData.ratingCount,
+        daysSinceUpdate: daysSince(storeData.lastUpdatedAt),
+        screenshotCount: storeData.screenshotUrls.length,
+        hasPreviewVideo: !!storeData.hasPreviewVideo,
+        alreadyFlagged: deterministicSuggestions.map((s) => s.title),
+      }),
+    })
+      .then((r) => r.json())
+      .then((data: { suggestions?: Suggestion[] }) => { if (!cancelled) setAiSuggestions(data.suggestions ?? []); })
+      .catch(() => { if (!cancelled) setAiSuggestions([]); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on app identity + store data, not the derived deterministicSuggestions array
+  }, [app.id, storeData]);
+
+  const suggestions = [...deterministicSuggestions, ...aiSuggestions];
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318]">
@@ -222,8 +255,8 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
           primaryApp={{
             name: app.name,
             iconUrl: app.icon_url,
-            title: storeData?.name || app.name,
-            subtitle: storeData?.subtitle ?? "",
+            title,
+            subtitle,
             description: storeData?.description ?? "",
             releaseNotes: storeData?.releaseNotes ?? "",
             screenshotUrls: storeData?.screenshotUrls ?? [],
@@ -250,9 +283,9 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
             daysSinceUpdate: c.daysSinceUpdate,
             languageCount: c.languageCount,
           }))}
-          isIos={app.store === "ios"}
+          isIos={isIos}
           nameLimit={30}
-          subtitleLimit={app.store === "ios" ? 30 : 80}
+          subtitleLimit={subtitleLimit}
           onRemoveCompetitor={handleRemoveCompetitor}
         />
       </div>
