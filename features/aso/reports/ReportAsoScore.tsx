@@ -121,9 +121,9 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
           <tbody>
             <tr className="border-t border-white/[0.06]">
               <td className="px-5 py-3">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
                   ASO Score
-                  <InformationCircleIcon className="size-3.5 text-gray-600" />
+                 
                 </span>
               </td>
               {columns.map((col) => (
@@ -161,7 +161,7 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                   const anchor = TAG_ANCHOR[tag.label];
                   return (
                     <tr key={tag.label} className="border-t border-white/[0.04] bg-[#14171d]">
-                      <td className="py-2.5 pl-9 pr-5">
+                      <td className="whitespace-nowrap py-2.5 pl-9 pr-5">
                         {anchor ? (
                           <button
                             onClick={() => scrollToAnchor(anchor)}
