@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import ReportPage from "@/features/aso/reports/ReportPage";
-import { fetchIosStoreData } from "@/libs/store/appstore";
-import { fetchAndroidStoreData } from "@/libs/store/googleplay";
+import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import type { App } from "@/libs/contracts";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -30,13 +29,10 @@ export default async function Page({ params }: PageProps) {
   const country = app.country ?? "US";
   const [{ data: allApps }, storeData, { data: metricsRows }] = await Promise.all([
     supabase.from("apps").select("*").eq("workspace_id", app.workspace_id).order("created_at", { ascending: false }),
-    app.store === "ios" && app.store_id
-      ? fetchIosStoreData(app.store_id, country)
-      : app.store === "android" && app.bundle_id
-        ? fetchAndroidStoreData(app.bundle_id, country)
-        : Promise.resolve(null),
+    fetchStoreData(app.store, app.store_id, app.bundle_id, country),
     supabase.from("keyword_metrics").select("keyword_id, volume, diff, chance, keywords!inner(term)").eq("app_id", id),
   ]);
+  const benchmark = await loadCategoryBenchmark(app.store, app.store_id, app.bundle_id, country, storeData);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const keywordMetrics = (metricsRows ?? []).map((r: any) => {
@@ -49,6 +45,7 @@ export default async function Page({ params }: PageProps) {
       app={app as App}
       allApps={(allApps ?? []) as App[]}
       storeData={storeData}
+      benchmark={benchmark}
       keywordMetrics={keywordMetrics}
     />
   );

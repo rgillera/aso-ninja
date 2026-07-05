@@ -21,7 +21,7 @@ const STOPWORDS = new Set([
   "during", "without", "within", "per", "via", "new",
 ]);
 
-function tokenizeWords(text: string): string[] {
+export function tokenizeWords(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
@@ -29,7 +29,7 @@ function tokenizeWords(text: string): string[] {
     .filter(Boolean);
 }
 
-function computeTermFrequencies(text: string): Map<string, number> {
+export function computeTermFrequencies(text: string): Map<string, number> {
   const words = tokenizeWords(text);
   const freq = new Map<string, number>();
 
@@ -48,9 +48,9 @@ function computeTermFrequencies(text: string): Map<string, number> {
   return freq;
 }
 
-type DensityRow = { keywords: string[]; count: number; density: number };
+export type DensityRow = { keywords: string[]; count: number; density: number };
 
-function computeKeywordDensity(text: string, minCount = 2, maxRows = 10): DensityRow[] {
+export function computeKeywordDensity(text: string, minCount = 2, maxRows = 10): DensityRow[] {
   const totalWords = tokenizeWords(text).length;
   if (totalWords === 0) return [];
 
@@ -76,7 +76,7 @@ function formatPct(n: number) {
   return `${Number(n.toFixed(2))}%`;
 }
 
-function DensityTable({ rows }: { rows: DensityRow[] }) {
+export function DensityTable({ rows }: { rows: DensityRow[] }) {
   if (rows.length === 0) {
     return <p className="px-5 py-8 text-center text-sm text-gray-600">Not enough description text yet to analyze.</p>;
   }

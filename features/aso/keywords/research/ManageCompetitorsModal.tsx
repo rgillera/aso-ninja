@@ -44,7 +44,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
     try {
       const params = new URLSearchParams({
         q:       term,
-        store:   "ios",
+        store:   activeApp.store,
         country: (activeApp.country ?? "us").toUpperCase(),
       });
       const res  = await fetch(`/api/apps/search?${params}`);
@@ -55,7 +55,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
     } finally {
       setSearching(false);
     }
-  }, [activeApp.country, activeApp.store_id]);
+  }, [activeApp.country, activeApp.store, activeApp.store_id]);
 
   useEffect(() => {
     const t = setTimeout(() => doSearch(query), 400);

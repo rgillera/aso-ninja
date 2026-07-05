@@ -1,10 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { fetchStoreData } from "@/libs/store/load-benchmark";
+import { daysSince } from "@/libs/store/benchmark-utils";
+import { computeAsoScoreSummary } from "@/features/aso/reports/asoScore";
 
 type CompetitorRow = { store_id: string; name: string; icon_url: string | null; developer: string | null };
 
 function toCompetitorApp(row: CompetitorRow) {
   return { storeId: row.store_id, name: row.name, icon: row.icon_url ?? "", developer: row.developer ?? "" };
+}
+
+// Competitors are tracked by storeId only (no per-row store/country), so we
+// assume they're on the same store platform and country as the primary app —
+// the same assumption the "add competitor" search UI already makes. No peer
+// benchmark is fetched per competitor (that would be an expensive N+1 of
+// category-peer scrapes just for this table), so competitor scores fall back
+// to the same fixed ASO reference thresholds used when no benchmark exists.
+async function withScore(row: CompetitorRow, store: string, country: string) {
+  const base = toCompetitorApp(row);
+  const storeData = await fetchStoreData(store, row.store_id, row.store_id, country);
+  const categoryPercents = computeAsoScoreSummary(storeData, base.name, null, store === "ios").map((s) => s.percent);
+  const overallPercent = Math.round(categoryPercents.reduce((sum, p) => sum + p, 0) / categoryPercents.length);
+  return {
+    ...base,
+    overallPercent,
+    categoryPercents,
+    title: storeData?.name || base.name,
+    subtitle: storeData?.subtitle ?? "",
+    description: storeData?.description ?? "",
+    releaseNotes: storeData?.releaseNotes ?? "",
+    screenshotUrls: storeData?.screenshotUrls ?? [],
+    screenshotCount: storeData?.screenshotUrls.length ?? 0,
+    hasPreviewVideo: !!storeData?.hasPreviewVideo,
+    rating: storeData?.rating,
+    ratingCount: storeData?.ratingCount,
+    daysSinceUpdate: daysSince(storeData?.lastUpdatedAt),
+    languageCount: storeData?.languageCount,
+  };
 }
 
 // GET /api/competitors?appId=...
@@ -34,13 +66,24 @@ export async function GET(request: NextRequest) {
 
   if (!appId) return NextResponse.json({ appId: null, competitors: [] });
 
-  const { data: rows } = await supabase
-    .from("app_competitors")
-    .select("store_id, name, icon_url, developer")
-    .eq("app_id", appId)
-    .order("created_at", { ascending: true });
+  const [{ data: appRow }, { data: rows }] = await Promise.all([
+    supabase.from("apps").select("store, country").eq("id", appId).maybeSingle(),
+    supabase
+      .from("app_competitors")
+      .select("store_id, name, icon_url, developer")
+      .eq("app_id", appId)
+      .order("created_at", { ascending: true }),
+  ]);
 
-  return NextResponse.json({ appId, competitors: (rows ?? []).map(toCompetitorApp) });
+  if (!appRow?.store) {
+    return NextResponse.json({ appId, competitors: (rows ?? []).map(toCompetitorApp) });
+  }
+
+  const competitors = await Promise.all(
+    (rows ?? []).map((row) => withScore(row, appRow.store, appRow.country ?? "us"))
+  );
+
+  return NextResponse.json({ appId, competitors });
 }
 
 // POST /api/competitors

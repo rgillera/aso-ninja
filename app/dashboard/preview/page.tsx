@@ -4,10 +4,9 @@ import ReportPage from "@/features/aso/reports/ReportPage";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import Timeline from "@/features/aso/metadata/timeline";
 import MetadataBenchmark from "@/features/aso/metadata/benchmark";
-import { fetchIosStoreData, fetchIosCategoryPeers } from "@/libs/store/appstore";
-import { fetchAndroidStoreData, fetchAndroidCategoryPeers } from "@/libs/store/googleplay";
+import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import { daysSince } from "@/libs/store/benchmark-utils";
-import type { App, Workspace, StoreData, CategoryBenchmark } from "@/libs/contracts";
+import type { App, Workspace } from "@/libs/contracts";
 
 type PageProps = {
   searchParams: Promise<{
@@ -21,16 +20,6 @@ type PageProps = {
     page?: string; // "preview" | "timeline" | "benchmark" | "report" | undefined → preview
   }>;
 };
-
-async function loadBenchmark(store: string, storeId: string, bundleId: string, country: string, storeData: StoreData): Promise<CategoryBenchmark> {
-  if (store === "ios" && storeData?.primaryGenreId) {
-    return fetchIosCategoryPeers(storeData.primaryGenreId, country, storeId);
-  }
-  if (store === "android" && storeData?.primaryGenreId) {
-    return fetchAndroidCategoryPeers(storeData.primaryGenreId, storeData.primaryGenreName, country, bundleId);
-  }
-  return null;
-}
 
 export default async function Page({ searchParams }: PageProps) {
   const { bundleId, storeId, store, name, icon, country, page } = await searchParams;
@@ -76,11 +65,7 @@ export default async function Page({ searchParams }: PageProps) {
     updated_at:   new Date().toISOString(),
   };
 
-  const storeData = store === "ios" && resolvedStoreId
-    ? await fetchIosStoreData(resolvedStoreId, resolvedCountry)
-    : store === "android" && bundleId
-      ? await fetchAndroidStoreData(bundleId, resolvedCountry)
-      : null;
+  const storeData = await fetchStoreData(store, resolvedStoreId, bundleId, resolvedCountry);
 
   if (page === "preview") {
     return <AppPagePreview app={syntheticApp} allApps={allApps} storeData={storeData} />;
@@ -88,8 +73,8 @@ export default async function Page({ searchParams }: PageProps) {
   if (page === "timeline") {
     return <Timeline app={syntheticApp} allApps={allApps} screenshots={storeData?.screenshotUrls ?? []} />;
   }
+  const benchmark = await loadCategoryBenchmark(store, resolvedStoreId, bundleId, resolvedCountry, storeData);
   if (page === "benchmark") {
-    const benchmark = await loadBenchmark(store, resolvedStoreId, bundleId, resolvedCountry, storeData);
     return (
       <MetadataBenchmark
         app={syntheticApp}
@@ -99,5 +84,5 @@ export default async function Page({ searchParams }: PageProps) {
       />
     );
   }
-  return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} />;
+  return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} benchmark={benchmark} />;
 }

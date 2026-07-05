@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import MetadataBenchmark from "@/features/aso/metadata/benchmark";
-import { fetchIosStoreData, fetchIosCategoryPeers } from "@/libs/store/appstore";
-import { fetchAndroidStoreData, fetchAndroidCategoryPeers } from "@/libs/store/googleplay";
+import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
 
@@ -10,28 +9,11 @@ type PageProps = { params: Promise<{ id: string }> };
 
 type BenchmarkData = { storeData: StoreData; benchmark: CategoryBenchmark; daysSinceUpdate?: number };
 
-function withDaysSinceUpdate(storeData: StoreData, benchmark: CategoryBenchmark): BenchmarkData {
-  return { storeData, benchmark, daysSinceUpdate: daysSince(storeData?.lastUpdatedAt) };
-}
-
 async function loadBenchmarkData(app: App): Promise<BenchmarkData> {
   const country = app.country ?? "US";
-
-  if (app.store === "ios" && app.store_id) {
-    const storeData = await fetchIosStoreData(app.store_id, country);
-    if (!storeData?.primaryGenreId) return withDaysSinceUpdate(storeData, null);
-    const benchmark = await fetchIosCategoryPeers(storeData.primaryGenreId, country, app.store_id);
-    return withDaysSinceUpdate(storeData, benchmark);
-  }
-
-  if (app.store === "android" && app.bundle_id) {
-    const storeData = await fetchAndroidStoreData(app.bundle_id, country);
-    if (!storeData?.primaryGenreId) return withDaysSinceUpdate(storeData, null);
-    const benchmark = await fetchAndroidCategoryPeers(storeData.primaryGenreId, storeData.primaryGenreName, country, app.bundle_id);
-    return withDaysSinceUpdate(storeData, benchmark);
-  }
-
-  return withDaysSinceUpdate(null, null);
+  const storeData = await fetchStoreData(app.store, app.store_id, app.bundle_id, country);
+  const benchmark = await loadCategoryBenchmark(app.store, app.store_id, app.bundle_id, country, storeData);
+  return { storeData, benchmark, daysSinceUpdate: daysSince(storeData?.lastUpdatedAt) };
 }
 
 export default async function Page({ params }: PageProps) {
