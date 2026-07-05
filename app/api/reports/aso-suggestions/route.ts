@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
 
   const planState = body.workspaceId ? await getWorkspacePlanState(body.workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ suggestions: [] });
+  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ suggestions: [] });
 
   const suggestions = await cachedGenerateSuggestions(body);
   return NextResponse.json({ suggestions });

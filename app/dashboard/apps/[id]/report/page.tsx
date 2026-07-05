@@ -1,7 +1,9 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import ReportPage from "@/features/aso/reports/ReportPage";
 import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
+import { dismissedSuggestionsCookieName, parseDismissedSuggestionsCookie } from "@/features/aso/reports/dismissedSuggestions";
 import type { App } from "@/libs/contracts";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -40,6 +42,11 @@ export default async function Page({ params }: PageProps) {
     return { term: kw?.term as string, volume: r.volume as number, diff: r.diff as number, chance: r.chance as number };
   }).filter((r) => !!r.term).sort((a, b) => b.volume - a.volume);
 
+  const cookieStore = await cookies();
+  const initialDismissedSuggestions = parseDismissedSuggestionsCookie(
+    cookieStore.get(dismissedSuggestionsCookieName(app.bundle_id, app.store))?.value
+  );
+
   return (
     <ReportPage
       app={app as App}
@@ -47,6 +54,7 @@ export default async function Page({ params }: PageProps) {
       storeData={storeData}
       benchmark={benchmark}
       keywordMetrics={keywordMetrics}
+      initialDismissedSuggestions={initialDismissedSuggestions}
     />
   );
 }

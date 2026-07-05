@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChevronUpIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { loadDismissedSuggestions, dismissSuggestion } from "./dismissedSuggestions";
+import { dismissSuggestion } from "./dismissedSuggestions";
 
 type Suggestion = {
   title: string;
@@ -10,19 +10,21 @@ type Suggestion = {
 };
 
 type ReportSuggestionsProps = {
-  appId: string;
+  bundleId: string;
+  store: "ios" | "android";
+  // Computed server-side from the dismissed-suggestions cookie (see
+  // parseDismissedSuggestionsCookie) so the first paint already reflects it —
+  // no client-only effect, no flash of a dismissed item before it disappears.
+  initialDismissed: string[];
   suggestions: Suggestion[];
 };
 
-export function ReportSuggestions({ appId, suggestions }: ReportSuggestionsProps) {
+export function ReportSuggestions({ bundleId, store, initialDismissed, suggestions }: ReportSuggestionsProps) {
   const [expanded, setExpanded] = useState(true);
-  // Lazy initializer, not an effect: appId only ever changes via a full page
-  // navigation (different report route), which remounts this component anyway.
-  const [dismissed, setDismissed] = useState<string[]>(() => loadDismissedSuggestions(appId));
+  const [dismissed, setDismissed] = useState<string[]>(initialDismissed);
 
   function handleDismiss(title: string) {
-    dismissSuggestion(appId, title);
-    setDismissed((prev) => [...prev, title]);
+    setDismissed((prev) => dismissSuggestion(bundleId, store, title, prev));
   }
 
   const visible = suggestions.filter((s) => !dismissed.includes(s.title));

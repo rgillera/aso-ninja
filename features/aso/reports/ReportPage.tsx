@@ -40,11 +40,12 @@ type Props = {
   storeData: StoreData;
   benchmark?: CategoryBenchmark;
   keywordMetrics?: KeywordMetric[];
+  initialDismissedSuggestions?: string[];
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function ReportPage({ app, storeData, benchmark = null, keywordMetrics = [] }: Props) {
+export default function ReportPage({ app, storeData, benchmark = null, keywordMetrics = [], initialDismissedSuggestions = [] }: Props) {
   const [competitors, setCompetitors] = useState<CompetitorWithScore[]>([]);
   const [showCompetitorModal, setShowCompetitorModal] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -250,7 +251,12 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
           />
         </div>
 
-        <ReportSuggestions appId={app.id} suggestions={suggestions} />
+        <ReportSuggestions
+          bundleId={app.bundle_id}
+          store={app.store}
+          initialDismissed={initialDismissedSuggestions}
+          suggestions={suggestions}
+        />
 
         <ReportDetailNav isIos={isIos} />
 

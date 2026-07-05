@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import ReportPage from "@/features/aso/reports/ReportPage";
@@ -6,6 +7,7 @@ import Timeline from "@/features/aso/metadata/timeline";
 import MetadataBenchmark from "@/features/aso/metadata/benchmark";
 import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import { daysSince } from "@/libs/store/benchmark-utils";
+import { dismissedSuggestionsCookieName, parseDismissedSuggestionsCookie } from "@/features/aso/reports/dismissedSuggestions";
 import type { App, Workspace } from "@/libs/contracts";
 
 type PageProps = {
@@ -84,5 +86,18 @@ export default async function Page({ searchParams }: PageProps) {
       />
     );
   }
-  return <ReportPage app={syntheticApp} allApps={allApps} storeData={storeData} benchmark={benchmark} />;
+  const cookieStore = await cookies();
+  const initialDismissedSuggestions = parseDismissedSuggestionsCookie(
+    cookieStore.get(dismissedSuggestionsCookieName(bundleId, store))?.value
+  );
+
+  return (
+    <ReportPage
+      app={syntheticApp}
+      allApps={allApps}
+      storeData={storeData}
+      benchmark={benchmark}
+      initialDismissedSuggestions={initialDismissedSuggestions}
+    />
+  );
 }
