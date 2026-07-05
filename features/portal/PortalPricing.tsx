@@ -2,94 +2,46 @@
 
 import { useState } from "react";
 import { CheckIcon } from "@heroicons/react/20/solid";
+import { PLANS, type PlanId } from "@/features/subscription/plans";
 
 type Variant = "default" | "featured" | "premium";
 
-const plans: {
-  name: string;
-  monthly: { price: string; href: string };
-  yearly: { price: string; href: string };
-  description: string;
-  badge: string | null;
-  features: string[];
-  cta: string;
-  variant: Variant;
-  contactSales: boolean;
-}[] = [
-  {
-    name: "Free",
-    monthly: { price: "Free", href: "/signup?plan=free&billing=monthly" },
-    yearly: { price: "Free", href: "/signup?plan=free&billing=yearly" },
-    description: "Track your first app with no cost and access essential app store metrics.",
-    badge: "Always free",
-    features: [
-      "1 workspace",
-      "20 keywords",
-      "1 app & 1 competitor",
-      "Metadata optimization",
-      "Keyword research",
-      "Keyword & ranking monitoring",
-      "Live chat & email support",
-    ],
-    cta: "Create free account",
-    variant: "default",
+const variantByPlan: Record<PlanId, Variant> = {
+  free: "default",
+  pro: "default",
+  pro_plus: "featured",
+  enterprise: "premium",
+};
+
+// Whole-dollar amounts drop the decimals ("$149" not "$149.00"); anything
+// with cents keeps two decimal places ("$14.99").
+function formatPrice(cents: number) {
+  const dollars = cents / 100;
+  return cents % 100 === 0
+    ? `$${dollars.toLocaleString()}`
+    : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+const plans = PLANS.map((plan) => {
+  const isFree = plan.priceMonthlyCents === 0;
+  return {
+    name: plan.name.replace(/ Plan$/, ""),
+    monthly: {
+      price: isFree ? "Free" : formatPrice(plan.priceMonthlyCents),
+      href: `/signup?plan=${plan.id}&billing=monthly`,
+    },
+    yearly: {
+      price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
+      href: `/signup?plan=${plan.id}&billing=yearly`,
+    },
+    description: plan.description,
+    badge: plan.badge,
+    features: plan.features,
+    cta: isFree ? "Create free account" : "Upgrade now",
+    variant: variantByPlan[plan.id],
     contactSales: false,
-  },
-  {
-    name: "Pro",
-    monthly: { price: "$14.99", href: "/signup?plan=pro&billing=monthly" },
-    yearly: { price: "$9.99", href: "/signup?plan=pro&billing=yearly" },
-    description: "Advanced tracking and collaboration for teams growing multiple apps.",
-    badge: null,
-    features: [
-      "1 workspace",
-      "500 keywords",
-      "5 apps & 5 competitors per app",
-      "Metadata optimization",
-      "Keyword research",
-      "Keyword & ranking monitoring",
-      "Live chat & email support",
-    ],
-    cta: "Upgrade now",
-    variant: "default",
-    contactSales: false,
-  },
-  {
-    name: "Pro+",
-    monthly: { price: "$149", href: "/signup?plan=pro_plus&billing=monthly" },
-    yearly: { price: "$129", href: "/signup?plan=pro_plus&billing=yearly" },
-    description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
-    badge: "Most popular",
-    features: [
-      "2 workspaces",
-      "3,000 keywords",
-      "20 apps & 15 competitors per app",
-      "Metadata optimization",
-      "Advanced keyword research",
-      "Keyword & ranking monitoring","Live chat & email support",
-    ],
-    cta: "Upgrade now",
-    variant: "featured",
-    contactSales: false,
-  },
-  {
-    name: "Enterprise",
-    monthly: { price: "$1,999", href: "/signup?plan=enterprise&billing=monthly" },
-    yearly: { price: "$1,299", href: "/signup?plan=enterprise&billing=yearly" },
-    description: "Unlimited keyword tracking and scale for agencies managing large app portfolios.",
-    badge: null,
-    features: [
-      "All Pro+ features, plus:",
-      "Unlimited workspaces & apps",
-      "Unlimited keywords tracked",
-      "Unlimited competitors per app",
-      "Live chat & email support",
-    ],
-    cta: "Upgrade now",
-    variant: "premium",
-    contactSales: false,
-  },
-];
+  };
+});
 
 const cardStyles: Record<Variant, {
   card: string;
@@ -230,13 +182,6 @@ export default function PortalPricing() {
                     </li>
                   ))}
                 </ul>
-
-                <a
-                  href={billing.href}
-                  className={`mt-8 block rounded-md px-4 py-3 text-center text-sm font-semibold transition-colors ${s.cta}`}
-                >
-                  {plan.cta}
-                </a>
               </div>
             );
           })}
