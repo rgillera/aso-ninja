@@ -23,6 +23,21 @@ export function boolScore(value: boolean): number {
   return value ? 100 : 0;
 }
 
+// Maps a summary tag's label to the DOM id of its matching card in
+// ReportMetadataComparison, so the expanded summary rows can jump straight to
+// the detail card for that metric.
+export const TAG_ANCHOR: Record<string, string> = {
+  Title: "name",
+  Subtitle: "subtitle",
+  Description: "description",
+  "Release Notes": "release-notes",
+  Screenshots: "screenshots",
+  "Preview Video": "preview-video",
+  "Reviews and Ratings": "reviews-and-ratings",
+  "Recently Updated": "recently-updated",
+  Localization: "localization",
+};
+
 // Fixed ASO best-practice references used whenever no category benchmark is
 // available yet — the same fallbacks computeAsoScoreSummary scores against.
 export const ASO_REFERENCE = {

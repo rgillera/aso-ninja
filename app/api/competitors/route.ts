@@ -19,12 +19,15 @@ function toCompetitorApp(row: CompetitorRow) {
 async function withScore(row: CompetitorRow, store: string, country: string) {
   const base = toCompetitorApp(row);
   const storeData = await fetchStoreData(store, row.store_id, row.store_id, country);
-  const categoryPercents = computeAsoScoreSummary(storeData, base.name, null, store === "ios").map((s) => s.percent);
+  const summary = computeAsoScoreSummary(storeData, base.name, null, store === "ios");
+  const categoryPercents = summary.map((s) => s.percent);
+  const categoryTags = summary.map((s) => s.tags);
   const overallPercent = Math.round(categoryPercents.reduce((sum, p) => sum + p, 0) / categoryPercents.length);
   return {
     ...base,
     overallPercent,
     categoryPercents,
+    categoryTags,
     title: storeData?.name || base.name,
     subtitle: storeData?.subtitle ?? "",
     description: storeData?.description ?? "",

@@ -5,7 +5,7 @@ import { ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import type { App, Workspace, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { ReportAsoScore, type CompetitorColumn } from "./ReportAsoScore";
+import { ReportAsoScore, type CompetitorColumn, type ScoreTag } from "./ReportAsoScore";
 import { computeAsoScoreSummary } from "./asoScore";
 import { ReportSuggestions } from "./ReportSuggestions";
 import { ReportMetadataComparison } from "./ReportMetadataComparison";
@@ -17,6 +17,7 @@ type KeywordMetric = { term: string; volume: number; diff: number; chance: numbe
 type CompetitorWithScore = CompetitorApp & {
   overallPercent: number;
   categoryPercents: number[];
+  categoryTags: ScoreTag[][];
   title: string;
   subtitle: string;
   description: string;
@@ -74,6 +75,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
         ...u,
         overallPercent: 0,
         categoryPercents: [0, 0, 0],
+        categoryTags: [[], [], []],
         title: u.name,
         subtitle: "",
         description: "",
@@ -163,6 +165,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
     iconUrl: c.icon || null,
     overallPercent: c.overallPercent,
     categoryPercents: c.categoryPercents,
+    categoryTags: c.categoryTags,
   }));
   const topKeyword = [...keywordMetrics].sort((a, b) => b.volume - a.volume || b.chance - a.chance)[0];
   const suggestions = topKeyword

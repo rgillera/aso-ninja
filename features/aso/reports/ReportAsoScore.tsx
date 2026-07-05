@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { InformationCircleIcon, PlusIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { TAG_ANCHOR } from "./asoScore";
 
 export type ScoreTag = { label: string; tone: "emerald" | "amber" | "rose" };
 export type ScoreSummaryItem = { label: string; percent: number; tags: ScoreTag[] };
@@ -12,15 +13,10 @@ export type CompetitorColumn = {
   iconUrl: string | null;
   overallPercent: number;
   categoryPercents: number[];
+  categoryTags: ScoreTag[][];
 };
 
 type Tone = "emerald" | "amber" | "rose";
-
-const TAG_CLASS: Record<Tone, string> = {
-  emerald: "border-emerald-500 bg-emerald-500/10 text-emerald-300",
-  amber: "border-amber-500 bg-amber-500/10 text-amber-300",
-  rose: "border-rose-500 bg-rose-500/10 text-rose-300",
-};
 
 const DOT_CLASS: Record<Tone, string> = {
   emerald: "bg-emerald-500",
@@ -72,9 +68,21 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const columns = [
-    { key: "primary", name: primaryApp.name, iconUrl: primaryApp.iconUrl, overallPercent: score, categoryPercents: summaryItems.map((i) => i.percent) },
+    {
+      key: "primary",
+      name: primaryApp.name,
+      iconUrl: primaryApp.iconUrl,
+      overallPercent: score,
+      categoryPercents: summaryItems.map((i) => i.percent),
+      categoryTags: summaryItems.map((i) => i.tags),
+    },
     ...competitors,
   ];
+
+  function scrollToAnchor(anchor: string | undefined) {
+    if (!anchor) return;
+    document.getElementById(anchor)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="rounded-3xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
@@ -146,20 +154,33 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                   ))}
                   <td />
                 </tr>
-                {expanded === item.label && (
-                  <tr className="border-t border-white/[0.04] bg-[#14171d]">
-                    <td colSpan={columns.length + 2} className="px-5 py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {item.tags.map((tag) => (
-                          <span key={tag.label} className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${TAG_CLASS[tag.tone]}`}>
+                {expanded === item.label && item.tags.map((tag, tagIdx) => {
+                  const anchor = TAG_ANCHOR[tag.label];
+                  return (
+                    <tr key={tag.label} className="border-t border-white/[0.04] bg-[#14171d]">
+                      <td className="py-2.5 pl-9 pr-5">
+                        {anchor ? (
+                          <button
+                            onClick={() => scrollToAnchor(anchor)}
+                            className="text-xs font-medium text-gray-400 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-white"
+                          >
                             {tag.label}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="mt-2 text-[11px] text-gray-600">Detailed breakdown shown for {primaryApp.name}.</p>
-                    </td>
-                  </tr>
-                )}
+                          </button>
+                        ) : (
+                          <span className="text-xs font-medium text-gray-400">{tag.label}</span>
+                        )}
+                      </td>
+                      {columns.map((col) => (
+                        <td key={col.key} className="px-4 py-2.5">
+                          <div className="flex justify-center">
+                            <span className={`size-3 rounded-full ${DOT_CLASS[col.key === "primary" ? tag.tone : col.categoryTags[idx]?.[tagIdx]?.tone ?? "rose"]}`} />
+                          </div>
+                        </td>
+                      ))}
+                      <td />
+                    </tr>
+                  );
+                })}
               </Fragment>
             ))}
           </tbody>

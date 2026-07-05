@@ -141,8 +141,9 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
 }
 
 function CardShell({
-  label, tone, children, toggle,
+  id, label, tone, children, toggle,
 }: {
+  id?: string;
   label: string;
   tone?: Tone;
   children: React.ReactNode;
@@ -150,7 +151,7 @@ function CardShell({
 }) {
   const [expanded, setExpanded] = useState(true);
   return (
-    <div className="rounded-3xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+    <div id={id} className="scroll-mt-4 rounded-3xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <div className="flex items-center gap-2">
           {tone && <span className={`size-2.5 rounded-full ${DOT_CLASS[tone]}`} />}
@@ -191,8 +192,9 @@ function Row({
 }
 
 function TextFieldCard({
-  label, field, limit, multiline = false, primary, rows, onRemoveCompetitor,
+  id, label, field, limit, multiline = false, primary, rows, onRemoveCompetitor,
 }: {
+  id?: string;
   label: string;
   field: TextField;
   limit: number;
@@ -211,7 +213,7 @@ function TextFieldCard({
   const primaryHint = lengthHint(field, primary.text.length, limit);
 
   return (
-    <CardShell label={label} tone={lengthTone(primary.text.length, limit)} toggle={{ checked: highlight, onChange: () => setHighlight((v) => !v) }}>
+    <CardShell id={id} label={label} tone={lengthTone(primary.text.length, limit)} toggle={{ checked: highlight, onChange: () => setHighlight((v) => !v) }}>
       <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06]">
         <PencilSquareIcon className="size-4 text-gray-500 shrink-0" />
         <div className="flex-1 flex items-center gap-3 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] px-3 py-2">
@@ -373,7 +375,7 @@ function DescriptionCard({
   );
 
   return (
-    <CardShell label="Description" tone={lengthTone(primary.text.length, limit)}>
+    <CardShell id="description" label="Description" tone={lengthTone(primary.text.length, limit)}>
       <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
         {apps.map((a) => (
           // AppIconCell renders its own remove <button>, so this tab can't be a
@@ -517,7 +519,7 @@ function ScreenshotsCard({
   const hint = (count: number) => (count >= target ? "Good screenshot coverage!" : `Add ${target - count} more to reach the recommended minimum of ${target}.`);
 
   return (
-    <CardShell label="Screenshots" tone={toneForCount(primary.screenshotCount)}>
+    <CardShell id="screenshots" label="Screenshots" tone={toneForCount(primary.screenshotCount)}>
       <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
         {apps.map((a) => (
           <div
@@ -578,7 +580,7 @@ function PreviewVideoCard({
 }) {
   const toneForVideo = (has: boolean) => toneFor(boolScore(has));
   return (
-    <CardShell label="Preview Video" tone={toneForVideo(primary.hasPreviewVideo)}>
+    <CardShell id="preview-video" label="Preview Video" tone={toneForVideo(primary.hasPreviewVideo)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
         <p className="flex-1 min-w-0 text-sm text-white">{primary.hasPreviewVideo ? "Has a preview video" : "No preview video"}</p>
         <Badge tone={toneForVideo(primary.hasPreviewVideo)}>{primary.hasPreviewVideo ? "Yes" : "No"}</Badge>
@@ -626,7 +628,7 @@ function ReviewsCard({
   );
 
   return (
-    <CardShell label="Reviews and Ratings" tone={toneForReviews(primary.rating, primary.ratingCount)}>
+    <CardShell id="reviews-and-ratings" label="Reviews and Ratings" tone={toneForReviews(primary.rating, primary.ratingCount)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
         <p className="flex-1 min-w-0 text-sm text-white">{summary(primary.rating, primary.ratingCount)}</p>
         <Badge tone={toneForReviews(primary.rating, primary.ratingCount)}>{(primary.ratingCount ?? 0).toLocaleString()} ratings</Badge>
@@ -652,7 +654,7 @@ function FreshnessCard({
   const label = (days?: number) => (days === undefined ? "Unknown" : days === 0 ? "Updated today" : `${days} days ago`);
 
   return (
-    <CardShell label="Recently Updated" tone={toneForDays(primary.daysSinceUpdate)}>
+    <CardShell id="recently-updated" label="Recently Updated" tone={toneForDays(primary.daysSinceUpdate)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
         <p className="flex-1 min-w-0 text-sm text-white">Last updated {label(primary.daysSinceUpdate).toLowerCase()}</p>
         <Badge tone={toneForDays(primary.daysSinceUpdate)}>{label(primary.daysSinceUpdate)}</Badge>
@@ -678,7 +680,7 @@ function LocalizationCard({
   const label = (count?: number) => `${count ?? 1} language${(count ?? 1) === 1 ? "" : "s"}`;
 
   return (
-    <CardShell label="Localization" tone={toneForLangs(primary.languageCount)}>
+    <CardShell id="localization" label="Localization" tone={toneForLangs(primary.languageCount)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
         <p className="flex-1 min-w-0 text-sm text-white">Available in {label(primary.languageCount)}</p>
         <Badge tone={toneForLangs(primary.languageCount)}>{label(primary.languageCount)}</Badge>
@@ -702,6 +704,7 @@ export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameL
   return (
     <div className="space-y-5">
       <TextFieldCard
+        id="name"
         label="Name"
         field="App Name"
         limit={nameLimit}
@@ -710,6 +713,7 @@ export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameL
         onRemoveCompetitor={onRemoveCompetitor}
       />
       <TextFieldCard
+        id="subtitle"
         label={subtitleField}
         field={subtitleField}
         limit={subtitleLimit}
@@ -724,6 +728,7 @@ export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameL
         onRemoveCompetitor={onRemoveCompetitor}
       />
       <TextFieldCard
+        id="release-notes"
         label="Release Notes"
         field="Release Notes"
         limit={releaseNotesLimit}
