@@ -159,7 +159,6 @@ export default function RankedKeywordsPage() {
           description="Upgrade to Pro+ or above to see every keyword your app ranks for over time."
           benefits={[
             "See every keyword your app currently ranks for, not just the ones you track",
-            "Filter by branded vs. generic, word count, volume, and rank",
             "Watch your ranked-keyword count grow over time on one chart",
           ]}
         />
