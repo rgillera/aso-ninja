@@ -25,7 +25,6 @@ export const PLANS: Plan[] = [
       "1 app & 1 competitor",
       "Metadata optimization",
       "Keyword research",
-      "Keyword & ranking monitoring",
       "Live chat & email support",
     ],
   },

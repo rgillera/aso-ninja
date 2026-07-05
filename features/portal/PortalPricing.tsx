@@ -122,7 +122,7 @@ export default function PortalPricing() {
             >
               Yearly
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-500/20 text-indigo-400"}`}>
-                Save 20%
+                2 months free
               </span>
             </button>
           </div>
