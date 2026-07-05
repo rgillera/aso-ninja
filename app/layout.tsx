@@ -34,18 +34,19 @@ const maintenanceEnabled =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "AppASO - Free App Store Optimization Tool",
+    default: "AppASO - Free ASO Tool",
     template: "%s | AppASO",
   },
   description:
     "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
   keywords: [
-    "ASO",
+    "aso",
     "app store optimization",
     "keyword tracking",
     "App Store rankings",
     "Google Play rankings",
     "mobile app marketing",
+    "mobile aso tool",
     "app metadata optimization",
     "ASO tool",
     "app store analytics",
@@ -75,16 +76,16 @@ export const metadata: Metadata = {
     type: "website",
     url: "/",
     siteName: "AppASO",
-    title: "AppASO - Free App Store Optimization Tool",
+    title: "AppASO - Free ASO Tool",
     description:
-      "Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
+      "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AppASO - Free App Store Optimization Tool",
+    title: "AppASO - Free ASO Tool",
     description:
-      "Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
+      "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
   },
   icons: {
     icon: "/favicon.ico",

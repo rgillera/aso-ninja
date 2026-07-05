@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import PortalPage from "@/features/portal/PortalPage";
 
 export const metadata: Metadata = {
-  title: "AppASO - Free App Store Optimization Tool",
+  title: "AppASO - Free ASO Tool",
   alternates: {
     canonical: "/",
   },
