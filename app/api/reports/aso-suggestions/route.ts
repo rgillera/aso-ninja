@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
 
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
+
+// Matches the revalidate window the store-data fetchers already use
+// (libs/store/appstore.ts, libs/store/googleplay.ts) — the metadata driving
+// this prompt doesn't change faster than that, and an LLM call is far more
+// expensive than a cache hit.
+const CACHE_REVALIDATE_SECONDS = 6 * 60 * 60;
 
 type RequestBody = {
   workspaceId?: string;
@@ -77,6 +84,8 @@ Reply with ONLY a JSON array of objects, nothing else. Example:
   }
 }
 
+const cachedGenerateSuggestions = unstable_cache(generateSuggestions, ["report-aso-suggestions"], { revalidate: CACHE_REVALIDATE_SECONDS });
+
 // POST /api/reports/aso-suggestions
 // LLM-generated ASO recommendations layered on top of the always-on
 // deterministic checks in features/aso/reports/asoSuggestions.ts — gated to
@@ -91,6 +100,6 @@ export async function POST(request: NextRequest) {
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
   if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ suggestions: [] });
 
-  const suggestions = await generateSuggestions(body);
+  const suggestions = await cachedGenerateSuggestions(body);
   return NextResponse.json({ suggestions });
 }

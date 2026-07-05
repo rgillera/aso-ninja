@@ -8,6 +8,7 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { ReportAsoScore, type CompetitorColumn, type ScoreTag } from "./ReportAsoScore";
 import { computeAsoScoreSummary } from "./asoScore";
 import { ReportSuggestions } from "./ReportSuggestions";
+import { ReportDetailNav } from "./ReportDetailNav";
 import { computeDeterministicSuggestions, type Suggestion } from "./asoSuggestions";
 import { ReportMetadataComparison } from "./ReportMetadataComparison";
 import { ManageCompetitorsModal, type CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -249,7 +250,9 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
           />
         </div>
 
-        <ReportSuggestions suggestions={suggestions} />
+        <ReportSuggestions appId={app.id} suggestions={suggestions} />
+
+        <ReportDetailNav isIos={isIos} />
 
         <ReportMetadataComparison
           primaryApp={{
