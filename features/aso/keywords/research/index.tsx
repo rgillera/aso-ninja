@@ -303,14 +303,14 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean } = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _ollamaDown?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
 
       setKeywords((prev) =>
         prev.map((k) => {
           const m = data[k.keyword];
           return m && newKeywords.includes(k.keyword)
-            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined }
+            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, ollamaDown: data._ollamaDown }
             : k;
         })
       );
@@ -408,13 +408,13 @@ export default function KeywordResearchPage() {
 
       try {
         const res  = await fetch(`/api/keywords/metrics?${params}`);
-        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> = await res.json();
+        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _ollamaDown?: boolean } = await res.json();
 
         setKeywords((prev) =>
           prev.map((k) => {
             const m = data[k.keyword];
             return m && batch.includes(k.keyword)
-              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined }
+              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, ollamaDown: data._ollamaDown }
               : k;
           })
         );

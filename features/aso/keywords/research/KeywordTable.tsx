@@ -378,6 +378,8 @@ export function KeywordTable({
       case "opportunity": return (
         relevancyLocked
           ? <LockedCell />
+          : row.ollamaDown && row.opportunity === null
+          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.opportunity !== undefined && row.opportunity !== null
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
@@ -401,9 +403,15 @@ export function KeywordTable({
       case "relevancy":   return (
         relevancyLocked
           ? <LockedCell />
+          : row.ollamaDown && row.relevancy === null
+          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.relevancy !== undefined && row.relevancy !== null
           ? (
-            <span className={`text-sm font-medium ${row.relevancy >= 70 ? "text-emerald-400" : row.relevancy >= 40 ? "text-yellow-400" : "text-gray-400"}`}>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
+              row.relevancy >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+              row.relevancy >= 40 ? "bg-yellow-500/15 text-yellow-400" :
+                                    "bg-gray-500/10 text-gray-500"
+            }`}>
               {row.relevancy}
             </span>
           )
