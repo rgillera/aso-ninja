@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
 
 // Matches the revalidate window the store-data fetchers already use
 // (libs/store/appstore.ts, libs/store/googleplay.ts) — the metadata driving
@@ -58,7 +58,7 @@ Give as many NEW ASO recommendations as you can genuinely justify from the metad
 Reply with ONLY a JSON array of objects, nothing else. Example:
 [{"title":"Short, specific title","description":"1-2 sentence explanation of the issue and fix."}]`;
 
-  const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+  const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
     method: "POST",
     headers: ollamaHeaders(),
     body: JSON.stringify({
@@ -68,7 +68,7 @@ Reply with ONLY a JSON array of objects, nothing else. Example:
       options: { temperature: 0.4 },
     }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any);
+  } as any));
   if (!res.ok) throw new Error(`ollama generate failed: ${res.status}`);
   const data = await res.json();
   const raw = (data.response ?? "") as string;

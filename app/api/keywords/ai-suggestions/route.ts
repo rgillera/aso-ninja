@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
 
 export type AISuggestionsResult = {
   discovery:  { term: string; volume: number }[];
@@ -74,7 +74,7 @@ Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`
   };
 
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: ollamaHeaders(),
       body: JSON.stringify({
@@ -84,7 +84,7 @@ Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`
         options: { temperature: 0.4 },
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any));
     if (!res.ok) return [];
     const data = await res.json();
     const raw = (data.response ?? "") as string;
@@ -130,10 +130,10 @@ export async function GET(request: NextRequest) {
   if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
-    generateKeywords(appName, description, "discovery", 40),
-    generateKeywords(appName, description, "generic",   50),
-    generateKeywords(appName, description, "branded",   30),
-    generateKeywords(appName, description, "relevancy", 30),
+    generateKeywords(appName, description, "discovery", 10),
+    generateKeywords(appName, description, "generic",   10),
+    generateKeywords(appName, description, "branded",   10),
+    generateKeywords(appName, description, "relevancy", 10),
   ]);
 
   const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =

@@ -114,7 +114,8 @@
       "Bash(curl -s https://www.appaso.io/)",
       "Bash(curl -s https://www.appaso.io/ -o /private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/0acbf34f-8c38-466c-9869-7e51c0bed43b/scratchpad/home.html)",
       "Bash(npx --yes vercel logs https://www.appaso.io -f error)",
-      "Bash(npx --yes vercel logs --help)"
+      "Bash(npx --yes vercel logs --help)",
+      "Bash(grep -rn \"fetch\\(\\\\`\\\\${OLLAMA_HOST}\\\\|fetch\\(\\\\`\\\\\\\\\\\\${OLLAMA_HOST}\" /Users/bmo/Documents/dev/aso-ninja --include=\"*.ts\")"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"
