@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
+import { generateText } from "@/libs/gemini";
 
 // Terms are keyword fragments, not sentences, and never change meaning between
 // apps — cache process-wide so re-toggling translation (or another user
@@ -19,16 +19,9 @@ async function translateBatch(terms: string[]): Promise<Record<string, string>> 
 Reply with ONLY a JSON array of strings, same length and order as the input, no explanation:
 ${JSON.stringify(terms)}`;
 
-  const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
-    method: "POST",
-    headers: ollamaHeaders(),
-    body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any));
-  if (!res.ok) return {};
-
-  const data = await res.json();
-  const raw = ((data.response ?? "") as string).trim();
+  const response = await generateText(prompt, 0);
+  if (!response) return {};
+  const raw = response.trim();
   const match = raw.match(/\[[\s\S]*\]/);
   if (!match) return {};
 

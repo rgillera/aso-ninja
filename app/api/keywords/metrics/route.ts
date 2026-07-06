@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { OLLAMA_HOST, OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
+import { isGeminiReachable, generateText, embedText } from "@/libs/gemini";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -23,7 +23,7 @@ type AppMeta = {
   embedding: number[] | null;
 };
 
-// ── Embedding (Ollama + BGE-M3) ───────────────────────────────────────────────
+// ── Embedding (Gemini) ────────────────────────────────────────────────────────
 
 // Process-level caches.
 const embeddingCache = new Map<string, number[]>();
@@ -31,35 +31,11 @@ const llmScoreCache  = new Map<string, number>();          // key: `${keyword}||
 const appMetaCache   = new Map<string, { meta: AppMeta; ts: number }>();
 const APP_META_TTL   = 5 * 60 * 1000;
 
-async function isOllamaReachable(): Promise<boolean> {
-  try {
-    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/tags`, {
-      headers: ollamaHeaders(),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
 async function getEmbedding(text: string): Promise<number[] | null> {
   if (embeddingCache.has(text)) return embeddingCache.get(text)!;
-  try {
-    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/embeddings`, {
-      method: "POST",
-      headers: ollamaHeaders(),
-      body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, prompt: text }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
-    if (!res.ok) return null;
-    const data = await res.json();
-    const embedding = (data.embedding as number[]) ?? (data.embeddings?.[0] as number[]) ?? null;
-    if (embedding) embeddingCache.set(text, embedding);
-    return embedding;
-  } catch {
-    return null;
-  }
+  const embedding = await embedText(text);
+  if (embedding) embeddingCache.set(text, embedding);
+  return embedding;
 }
 
 async function embeddingDescScore(keyword: string, description: string): Promise<number> {
@@ -92,18 +68,12 @@ Rules — apply in order, stop at first match:
 Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).
 
 Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
-    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: "POST",
-      headers: ollamaHeaders(),
-      body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
-    if (!res.ok) return embeddingDescScore(keyword, description);
-    const data = await res.json();
-    const num = parseInt(((data.response ?? "") as string).trim().match(/\d+/)?.[0] ?? "", 10);
+    const raw = await generateText(prompt, 0);
+    if (!raw) return embeddingDescScore(keyword, description);
+    const num = parseInt(raw.trim().match(/\d+/)?.[0] ?? "", 10);
     if (isNaN(num)) return embeddingDescScore(keyword, description);
     const score = Math.max(0, Math.min(100, num));
-    console.log(`[llm-desc] "${keyword}" → raw="${(data.response as string).trim()}" score=${score}`);
+    console.log(`[llm-desc] "${keyword}" → raw="${raw.trim()}" score=${score}`);
     llmScoreCache.set(cacheKey, score);
     return score;
   } catch {
@@ -368,7 +338,7 @@ async function persistIosSearch(
   }
 }
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, ollamaReachable: boolean, supabase: SupabaseClient): Promise<Metrics | null | "rate_limited"> {
+async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient): Promise<Metrics | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
     let fresh = false;
@@ -422,12 +392,12 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;
-    // Ollama down → leave both null rather than guessing. A null relevancy is
+    // AI provider down → leave both null rather than guessing. A null relevancy is
     // what already signals "needs (re)computing" everywhere downstream (DB
     // cache eligibility, mount-time backfill), so this keyword is retried —
-    // and re-flagged via _ollamaDown — on the very next fetch instead of
+    // and re-flagged via _aiDown — on the very next fetch instead of
     // getting stuck behind a fake persisted score.
-    if (withRelevancy && ollamaReachable) {
+    if (withRelevancy && aiReachable) {
       const topTitles = apps.slice(0, 10).map((r) => r.trackName);
       relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
       const base = Math.sqrt(volume * chance);
@@ -440,7 +410,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
   }
 }
 
-async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, ollamaReachable: boolean): Promise<Metrics | null> {
+async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean): Promise<Metrics | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -486,8 +456,8 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;
-    // Ollama down → leave both null (see comment in fetchIosMetrics).
-    if (withRelevancy && ollamaReachable) {
+    // AI provider down → leave both null (see comment in fetchIosMetrics).
+    if (withRelevancy && aiReachable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
       relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
@@ -525,7 +495,7 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   // Relevancy/opportunity are Pro+ features — anything below that plan never
-  // triggers the Ollama embedding/LLM pass, and never sees a value even if one
+  // triggers the Gemini embedding/LLM pass, and never sees a value even if one
   // was cached from before a downgrade.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
@@ -566,19 +536,19 @@ export async function GET(request: NextRequest) {
 
   let freshMetrics: Record<string, Metrics> = {};
   let rateLimited = false;
-  let ollamaReachable = true;
+  let aiReachable = true;
   if (uncached.length) {
     const withRelevancy = !fast && canUseRelevancy;
-    // Ollama down → skip the LLM/embedding pass entirely and leave
+    // Gemini down → skip the LLM/embedding pass entirely and leave
     // relevancy/opportunity null instead of silently falling back to guessed
     // scores (see fetchIosMetrics/fetchAndroidMetrics).
-    ollamaReachable = withRelevancy ? await isOllamaReachable() : true;
+    aiReachable = withRelevancy ? await isGeminiReachable() : true;
 
     // Fetch app description + embed it once; shared across all keyword lookups.
     // Skipped entirely when relevancy won't be computed (fast mode, the
-    // workspace isn't Pro+, or Ollama is unreachable) since it's only ever
+    // workspace isn't Pro+, or Gemini is unreachable) since it's only ever
     // used for that pass.
-    const appMeta: AppMeta = withRelevancy && ollamaReachable && appName
+    const appMeta: AppMeta = withRelevancy && aiReachable && appName
       ? await (store === "android"
           ? fetchAndroidAppMeta(appName, country)
           : fetchIosAppMeta(appName, country))
@@ -590,14 +560,14 @@ export async function GET(request: NextRequest) {
     if (store === "ios") {
       entries = [];
       for (const term of uncached) {
-        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, ollamaReachable, supabase);
+        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase);
         if (result === "rate_limited") { rateLimited = true; entries.push([term, null] as const); }
         else entries.push([term, result] as const);
       }
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, ollamaReachable);
+          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable);
           return [term, metrics] as const;
         })
       );
@@ -635,6 +605,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     ...merged,
     ...(rateLimited ? { _rateLimited: true } : {}),
-    ...(!ollamaReachable ? { _ollamaDown: true } : {}),
+    ...(!aiReachable ? { _aiDown: true } : {}),
   });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
+import { generateText } from "@/libs/gemini";
 
 export type AISuggestionsResult = {
   discovery:  { term: string; volume: number }[];
@@ -74,20 +74,8 @@ Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`
   };
 
   try {
-    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: "POST",
-      headers: ollamaHeaders(),
-      body: JSON.stringify({
-        model: OLLAMA_LLM_MODEL,
-        prompt: prompts[category],
-        stream: false,
-        options: { temperature: 0.4 },
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
-    if (!res.ok) return [];
-    const data = await res.json();
-    const raw = (data.response ?? "") as string;
+    const raw = await generateText(prompts[category], 0.4);
+    if (!raw) return [];
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return [];
     const parsed = JSON.parse(match[0]) as unknown[];
@@ -124,7 +112,7 @@ export async function GET(request: NextRequest) {
   if (!appName) return NextResponse.json(EMPTY);
 
   // AI Suggestions is a Pro+ feature — anything below that plan never
-  // triggers the Ollama LLM pass.
+  // triggers the Gemini LLM pass.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
   if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json(EMPTY);

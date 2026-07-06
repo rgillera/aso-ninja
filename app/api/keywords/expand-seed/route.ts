@@ -36,7 +36,7 @@ function computeVolume(apps: any[], term: string) {
 export async function POST(req: Request) {
   const { term, store, country = "us", appName = "", appSubtitle = "", terms } = await req.json() as {
     term: string; store: string; country?: string; appName?: string; appSubtitle?: string;
-    terms?: string[]; // explicit phrases to cache — skips Ollama generation
+    terms?: string[]; // explicit phrases to cache — skips Gemini generation
   };
 
   if (!term || store !== "ios") {

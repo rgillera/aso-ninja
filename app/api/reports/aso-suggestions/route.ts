@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
+import { generateText } from "@/libs/gemini";
 
 // Matches the revalidate window the store-data fetchers already use
 // (libs/store/appstore.ts, libs/store/googleplay.ts) — the metadata driving
@@ -31,7 +31,7 @@ type RequestBody = {
 
 // Throws instead of returning [] on any failure — unstable_cache only caches
 // a *resolved* value, so a rejected call is never persisted. Letting an
-// empty/unparseable Ollama response reject here (instead of silently
+// empty/unparseable Gemini response reject here (instead of silently
 // caching "no suggestions") means a transient hiccup or an off run of the
 // model gets retried fresh next time, not frozen for the whole revalidate
 // window.
@@ -58,22 +58,10 @@ Give as many NEW ASO recommendations as you can genuinely justify from the metad
 Reply with ONLY a JSON array of objects, nothing else. Example:
 [{"title":"Short, specific title","description":"1-2 sentence explanation of the issue and fix."}]`;
 
-  const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
-    method: "POST",
-    headers: ollamaHeaders(),
-    body: JSON.stringify({
-      model: OLLAMA_LLM_MODEL,
-      prompt,
-      stream: false,
-      options: { temperature: 0.4 },
-    }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any));
-  if (!res.ok) throw new Error(`ollama generate failed: ${res.status}`);
-  const data = await res.json();
-  const raw = (data.response ?? "") as string;
+  const raw = await generateText(prompt, 0.4);
+  if (!raw) throw new Error("gemini generate failed");
   const match = raw.match(/\[[\s\S]*\]/);
-  if (!match) throw new Error("ollama response had no JSON array");
+  if (!match) throw new Error("gemini response had no JSON array");
   const parsed = JSON.parse(match[0]) as unknown[];
   const suggestions = parsed
     .filter((s): s is Suggestion =>
@@ -82,7 +70,7 @@ Reply with ONLY a JSON array of objects, nothing else. Example:
       typeof (s as Suggestion).description === "string"
     )
     .slice(0, 12);
-  if (suggestions.length === 0) throw new Error("ollama returned no usable suggestions");
+  if (suggestions.length === 0) throw new Error("gemini returned no usable suggestions");
   return suggestions;
 }
 
@@ -91,8 +79,7 @@ const cachedGenerateSuggestions = unstable_cache(generateSuggestions, ["report-a
 // POST /api/reports/aso-suggestions
 // LLM-generated ASO recommendations layered on top of the always-on
 // deterministic checks in features/aso/reports/asoSuggestions.ts — gated to
-// Pro+ same as the other Ollama-backed feature (/api/keywords/ai-suggestions),
-// since both hit the same local Ollama instance.
+// Pro+ same as the other Gemini-backed feature (/api/keywords/ai-suggestions).
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as RequestBody;
 

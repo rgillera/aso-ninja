@@ -303,14 +303,14 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _ollamaDown?: boolean } = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
 
       setKeywords((prev) =>
         prev.map((k) => {
           const m = data[k.keyword];
           return m && newKeywords.includes(k.keyword)
-            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, ollamaDown: data._ollamaDown }
+            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, aiDown: data._aiDown }
             : k;
         })
       );
@@ -383,12 +383,12 @@ export default function KeywordResearchPage() {
   // to their value once this resolves.
   //
   // Chunked and awaited sequentially rather than sent as one request: each
-  // term costs an Ollama embedding + LLM call server-side, so a workspace
+  // term costs a Gemini embedding + LLM call server-side, so a workspace
   // upgrading with a large tracked list would otherwise fire one massive
-  // request that either pins the (typically single-threaded) Ollama instance
-  // for a long stretch, or blows past a serverless function's execution
-  // timeout and backfills nothing at all. Small sequential batches keep each
-  // request bounded and let anything else hitting Ollama interleave.
+  // request that either blows past Gemini's rate limit for a long stretch,
+  // or blows past a serverless function's execution timeout and backfills
+  // nothing at all. Small sequential batches keep each request bounded and
+  // let anything else hitting Gemini interleave.
   const RELEVANCY_BACKFILL_BATCH_SIZE = 5;
 
   async function backfillRelevancy(terms: string[]) {
@@ -408,13 +408,13 @@ export default function KeywordResearchPage() {
 
       try {
         const res  = await fetch(`/api/keywords/metrics?${params}`);
-        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _ollamaDown?: boolean } = await res.json();
+        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _aiDown?: boolean } = await res.json();
 
         setKeywords((prev) =>
           prev.map((k) => {
             const m = data[k.keyword];
             return m && batch.includes(k.keyword)
-              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, ollamaDown: data._ollamaDown }
+              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, aiDown: data._aiDown }
               : k;
           })
         );
@@ -440,7 +440,7 @@ export default function KeywordResearchPage() {
         }
       } catch {
         // Keep going with the remaining batches even if one fails — a
-        // transient Ollama hiccup on one batch shouldn't strand the rest of
+        // transient Gemini hiccup on one batch shouldn't strand the rest of
         // the workspace's keywords at null forever.
       }
     }

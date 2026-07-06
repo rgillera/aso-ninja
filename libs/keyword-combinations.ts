@@ -1,10 +1,10 @@
 import { SUFFIX_MODIFIERS, PREFIX_MODIFIERS } from "./keywordModifiers";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "./ollama";
+import { generateText } from "./gemini";
 
 // SUFFIX_MODIFIERS/PREFIX_MODIFIERS are English words — appending them to a
 // non-English seed would produce mixed-language phrases (e.g. "entrenamiento
 // tracker"), which is exactly what the LLM prompt above is trying to avoid.
-// This fallback only runs when Ollama is unreachable, so for a seed that
+// This fallback only runs when Gemini is unreachable, so for a seed that
 // isn't plain ASCII (covers accented/non-Latin scripts — the common case for
 // non-English keywords here) it's safer to return nothing than to guess
 // wrong-language filler.
@@ -51,20 +51,8 @@ Rules:
 Reply with ONLY a JSON array of strings. The example below is for JSON formatting only — match its structure, not its language: ["${seed} tracker","pet ${seed}"]`;
 
   try {
-    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: "POST",
-      headers: ollamaHeaders(),
-      body: JSON.stringify({
-        model: OLLAMA_LLM_MODEL,
-        prompt,
-        stream: false,
-        options: { temperature: 0.5 },
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
-    if (!res.ok) return ruleBasedCombinations(seed, count);
-    const data = await res.json();
-    const raw = (data.response ?? "") as string;
+    const raw = await generateText(prompt, 0.5);
+    if (!raw) return ruleBasedCombinations(seed, count);
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return ruleBasedCombinations(seed, count);
     const parsed = JSON.parse(match[0]) as unknown[];
