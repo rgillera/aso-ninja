@@ -14,6 +14,7 @@ type Props = {
   title: string;
 };
 
+
 function ConfirmUnfollowDialog({
   name,
   onConfirm,
@@ -148,6 +149,33 @@ export function FollowButton({ app }: { app: ActiveApp }) {
   );
 }
 
+function StoreLinkButton({ app }: { app: ActiveApp }) {
+  if (!app.store_id) return null;
+
+  const country = (app.country ?? "us").toLowerCase();
+  const url =
+    app.store === "ios"
+      ? `https://apps.apple.com/${country}/app/id${app.store_id}`
+      : `https://play.google.com/store/apps/details?id=${app.store_id}&hl=en&gl=${country}`;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={app.store === "ios" ? "View on App Store" : "View on Google Play"}
+      className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 ring-1 ring-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
+    >
+      {app.store === "ios" ? (
+        <img src="/app-store.svg" alt="" className="size-3.5" />
+      ) : (
+        <img src="/google-play.svg" alt="" className="size-3.5" />
+      )}
+      {app.store === "ios" ? "App Store" : "Play Store"}
+    </a>
+  );
+}
+
 export function AppHeader({ app, title }: Props) {
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
@@ -163,7 +191,12 @@ export function AppHeader({ app, title }: Props) {
             )}
             <div>
               <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
-              <p className="text-xs text-gray-500 leading-tight">
+              <p className="text-xs text-gray-500 leading-tight flex items-center gap-1">
+                {app.store === "ios" ? (
+                  <img src="/app-store.svg" alt="" className="size-3" />
+                ) : (
+                  <img src="/google-play.svg" alt="" className="size-3" />
+                )}
                 {app.store === "ios" ? "App Store" : "Google Play"}
                 {app.country && (
                   <span className="ml-1.5">
@@ -173,6 +206,7 @@ export function AppHeader({ app, title }: Props) {
               </p>
             </div>
             <FollowButton app={app} />
+            <StoreLinkButton app={app} />
           </>
         ) : (
           <>

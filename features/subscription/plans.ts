@@ -37,8 +37,8 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "1 workspace",
-      "500 keywords",
-      "5 apps & 5 competitors per app",
+      "400 keywords",
+      "5 apps & 2 competitors per app",
       "Metadata optimization",
       "Keyword research",
       "Keyword & ranking monitoring",
@@ -55,7 +55,7 @@ export const PLANS: Plan[] = [
     features: [
       "2 workspaces",
       "3,000 keywords",
-      "20 apps & 15 competitors per app",
+      "20 apps & 10 competitors per app",
       "Advanced keyword research",
       "Keyword & ranking monitoring",
       "Live chat & email support",
