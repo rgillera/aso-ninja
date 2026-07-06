@@ -6,6 +6,7 @@ import type { App, Workspace, StoreData, CategoryBenchmark } from "@/libs/contra
 import { daysSince } from "@/libs/store/benchmark-utils";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { ReportAsoScore, type CompetitorColumn, type ScoreTag } from "./ReportAsoScore";
+import { ReportAsoScoreSingle } from "./ReportAsoScoreSingle";
 import { computeAsoScoreSummary } from "./asoScore";
 import { ReportSuggestions } from "./ReportSuggestions";
 import { ReportDetailNav } from "./ReportDetailNav";
@@ -248,14 +249,22 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
 
       <div className="p-6 space-y-5">
         <div className="space-y-5">
-          <ReportAsoScore
-            score={appScore}
-            summaryItems={scoreSummaryItems}
-            primaryApp={{ name: app.name, iconUrl: app.icon_url }}
-            competitors={competitorColumns}
-            onAddCompetitor={() => setShowCompetitorModal(true)}
-            onRemoveCompetitor={handleRemoveCompetitor}
-          />
+          {competitors.length === 0 ? (
+            <ReportAsoScoreSingle
+              score={appScore}
+              summaryItems={scoreSummaryItems}
+              onAddCompetitor={() => setShowCompetitorModal(true)}
+            />
+          ) : (
+            <ReportAsoScore
+              score={appScore}
+              summaryItems={scoreSummaryItems}
+              primaryApp={{ name: app.name, iconUrl: app.icon_url }}
+              competitors={competitorColumns}
+              onAddCompetitor={() => setShowCompetitorModal(true)}
+              onRemoveCompetitor={handleRemoveCompetitor}
+            />
+          )}
         </div>
 
         <ReportSuggestions
