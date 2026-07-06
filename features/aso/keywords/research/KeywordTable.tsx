@@ -378,7 +378,7 @@ export function KeywordTable({
       case "opportunity": return (
         relevancyLocked
           ? <LockedCell />
-          : row.ollamaDown && row.opportunity === null
+          : row.ollamaDown && row.opportunity == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.opportunity !== undefined && row.opportunity !== null
           ? (
@@ -403,7 +403,7 @@ export function KeywordTable({
       case "relevancy":   return (
         relevancyLocked
           ? <LockedCell />
-          : row.ollamaDown && row.relevancy === null
+          : row.ollamaDown && row.relevancy == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.relevancy !== undefined && row.relevancy !== null
           ? (
