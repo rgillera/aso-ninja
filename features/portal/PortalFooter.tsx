@@ -2,7 +2,6 @@ const links = {
   Product: [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
-    { label: "Changelog", href: "/changelog" },
   ],
   Company: [
     { label: "About", href: "/about" },

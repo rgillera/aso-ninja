@@ -8,14 +8,14 @@ const testimonials = [
   },
   {
     quote:
-      "The workspace model is perfect for our agency. Each client gets their own space and we manage everything from one dashboard.",
+      "Keyword research told us which terms to go after, and keyword combinations surfaced long-tail variants we would've never thought to search for. Adding them for tracking is very convenient.",
     name: "Rex Torres",
     title: "Founder, NutriSnap",
     avatar: "DT",
   },
   {
     quote:
-      "Keyword research told us which terms to go after, and keyword combinations surfaced long-tail variants we would've never thought to search for. Adding them for tracking is very convenient.",
+      "The workspace model is perfect for our agency. Each client gets their own space and we manage everything from one dashboard.",
     name: "Rodel Gillera",
     title: "ASO Manager, ASO Ninja",
     avatar: "SK",
