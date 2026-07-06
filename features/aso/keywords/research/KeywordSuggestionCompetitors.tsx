@@ -15,6 +15,7 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   translateToggle?: boolean;
+  analyzeAllLocked?: boolean;
 };
 
 function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
@@ -70,7 +71,7 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTran
 }
 
 function KeywordSection({
-  label, keywords, trackedSet, onAdd, onRemove, onAddAll, translations, translating,
+  label, keywords, trackedSet, onAdd, onRemove, onAddAll, translations, translating, analyzeAllLocked,
 }: {
   label: string;
   keywords: CompetitorKeyword[] | null;
@@ -80,6 +81,7 @@ function KeywordSection({
   onAddAll?: (terms: string[]) => void;
   translations?: Record<string, string>;
   translating?: boolean;
+  analyzeAllLocked?: boolean;
 }) {
   const PAGE = 20;
   const STEP = 10;
@@ -95,16 +97,18 @@ function KeywordSection({
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
           {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
         </div>
-        <button
-          onClick={() => {
-            const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
-            if (!untracked.length) return;
-            if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
-          }}
-          className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
-          + Analyze all
-        </button>
+        {!analyzeAllLocked && (
+          <button
+            onClick={() => {
+              const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
+              if (!untracked.length) return;
+              if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
+            }}
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            + Analyze all
+          </button>
+        )}
       </div>
 
       {keywords === null ? (
@@ -145,7 +149,7 @@ function KeywordSection({
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle,
+  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, analyzeAllLocked,
 }: Props) {
   const [data,    setData]    = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -233,6 +237,7 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -243,6 +248,7 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />

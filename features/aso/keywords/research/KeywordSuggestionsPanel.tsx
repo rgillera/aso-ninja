@@ -101,13 +101,14 @@ export function KeywordSuggestionsPanel({
 
           {/* Always-mounted tabs (preserve state across switches) */}
           <div className={activeTab === "Metadata" ? "" : "hidden"}>
-            <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} />
+            <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} analyzeAllLocked={aiLocked} />
           </div>
           <div className={activeTab === "Competitors" ? "" : "hidden"}>
             <KeywordSuggestionCompetitors
               {...tabProps}
               competitors={competitors}
               translateToggle={translateToggle}
+              analyzeAllLocked={aiLocked}
             />
           </div>
           <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>

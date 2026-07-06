@@ -13,6 +13,7 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   translateToggle?: boolean;
+  analyzeAllLocked?: boolean;
 };
 
 function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
@@ -74,6 +75,7 @@ function MetadataSection({
   loadingMore,
   translations,
   translating,
+  analyzeAllLocked,
 }: {
   label: string;
   keywords: MetadataKeyword[] | null;
@@ -86,6 +88,7 @@ function MetadataSection({
   loadingMore?: boolean;
   translations?: Record<string, string>;
   translating?: boolean;
+  analyzeAllLocked?: boolean;
 }) {
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
@@ -97,16 +100,18 @@ function MetadataSection({
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
           {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
         </div>
-        <button
-          onClick={() => {
-            const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
-            if (!untracked.length) return;
-            if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
-          }}
-          className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
-          + Analyze all
-        </button>
+        {!analyzeAllLocked && (
+          <button
+            onClick={() => {
+              const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
+              if (!untracked.length) return;
+              if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
+            }}
+            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            + Analyze all
+          </button>
+        )}
       </div>
       {placeholder ?? (
         keywords === null ? (
@@ -148,7 +153,7 @@ function MetadataSection({
   );
 }
 
-export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
+export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, analyzeAllLocked }: Props) {
   const [data, setData]                 = useState<AppMetadataResult | null>(null);
   const [loading, setLoading]           = useState(false);
   const [descKeywords, setDescKeywords] = useState<MetadataKeyword[]>([]);
@@ -232,6 +237,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -242,6 +248,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
+        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -251,6 +258,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onAddAll={onAddKeywords}
+        analyzeAllLocked={analyzeAllLocked}
         onLoadMore={hasMoreDesc ? handleLoadMore : undefined}
         loadingMore={loadingMore}
         translating={translateToggle && translating}
