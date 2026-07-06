@@ -6,6 +6,7 @@ import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
 
 const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
 const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
+const OLLAMA_API_KEY   = process.env.OLLAMA_API_KEY    ?? "";
 
 // Matches the revalidate window the store-data fetchers already use
 // (libs/store/appstore.ts, libs/store/googleplay.ts) — the metadata driving
@@ -62,7 +63,7 @@ Reply with ONLY a JSON array of objects, nothing else. Example:
 
   const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
     body: JSON.stringify({
       model: OLLAMA_LLM_MODEL,
       prompt,

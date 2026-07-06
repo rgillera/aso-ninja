@@ -97,28 +97,6 @@ create policy "service role can insert keyword ranks"
     app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
   );
 
-drop policy if exists "workspace members can read metadata drafts" on metadata_drafts;
-drop policy if exists "workspace members can create drafts" on metadata_drafts;
-drop policy if exists "workspace members can update drafts" on metadata_drafts;
-
-create policy "workspace members can read metadata drafts"
-  on metadata_drafts for select
-  using (
-    app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
-  );
-
-create policy "workspace members can create drafts"
-  on metadata_drafts for insert
-  with check (
-    app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
-  );
-
-create policy "workspace members can update drafts"
-  on metadata_drafts for update
-  using (
-    app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
-  );
-
 drop policy if exists "workspace members can read reviews" on reviews;
 drop policy if exists "service role can upsert reviews" on reviews;
 
@@ -131,20 +109,5 @@ create policy "workspace members can read reviews"
 create policy "service role can upsert reviews"
   on reviews for insert
   with check (
-    app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
-  );
-
-drop policy if exists "workspace members can read rank alerts" on rank_alerts;
-drop policy if exists "workspace members can manage rank alerts" on rank_alerts;
-
-create policy "workspace members can read rank alerts"
-  on rank_alerts for select
-  using (
-    app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
-  );
-
-create policy "workspace members can manage rank alerts"
-  on rank_alerts for all
-  using (
     app_id in (select id from apps where workspace_id = any(get_my_workspace_ids()))
   );

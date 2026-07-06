@@ -27,6 +27,7 @@ type AppMeta = {
 const OLLAMA_HOST        = process.env.OLLAMA_HOST        ?? "http://localhost:11434";
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "bge-m3";
 const OLLAMA_LLM_MODEL   = process.env.OLLAMA_LLM_MODEL   ?? "llama3.2";
+const OLLAMA_API_KEY     = process.env.OLLAMA_API_KEY     ?? "";
 
 // Process-level caches.
 const embeddingCache = new Map<string, number[]>();
@@ -39,7 +40,7 @@ async function getEmbedding(text: string): Promise<number[] | null> {
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/embeddings`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
       body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, prompt: text }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
@@ -85,7 +86,7 @@ Critical: score USER INTENT, not category overlap. Two apps in the same category
 Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
       body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);

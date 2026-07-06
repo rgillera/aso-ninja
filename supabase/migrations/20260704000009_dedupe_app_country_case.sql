@@ -59,10 +59,6 @@ begin
           where c.app_id = keeper_id and c.store_id = app_competitors.store_id
         );
 
-      -- No secondary unique key beyond id — always safe to reparent.
-      update public.metadata_drafts set app_id = keeper_id where app_id = dup_id;
-      update public.rank_alerts set app_id = keeper_id where app_id = dup_id;
-
       -- Any rows that lost the "not exists" race above are functionally
       -- redundant with the keeper's and go away with the duplicate app row.
       delete from public.apps where id = dup_id;
