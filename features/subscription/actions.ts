@@ -58,6 +58,7 @@ export async function createCheckoutSessionAction(
     customer_email: subscription?.stripe_customer_id ? undefined : user.email,
     client_reference_id: user.id,
     line_items: [{ price: priceId, quantity: 1 }],
+    allow_promotion_codes: true,
     metadata: { user_id: user.id, plan_id: plan.id, workspace_id: workspaceId, billing },
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?canceled=1`,
