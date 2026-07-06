@@ -31,7 +31,7 @@ export function ReportDetailNav({ isIos }: ReportDetailNavProps) {
   return (
     <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
       <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.07]">
-        <h3 className="text-base font-semibold text-white">Detailed View</h3>
+        <h3 className="text-base font-semibold text-white">Links</h3>
         <InformationCircleIcon className="size-4 text-gray-600" />
       </div>
       <div className="flex flex-wrap items-center gap-1 px-3 py-3">

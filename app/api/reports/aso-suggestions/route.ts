@@ -31,6 +31,12 @@ type RequestBody = {
   alreadyFlagged: string[];
 };
 
+// Throws instead of returning [] on any failure — unstable_cache only caches
+// a *resolved* value, so a rejected call is never persisted. Letting an
+// empty/unparseable Ollama response reject here (instead of silently
+// caching "no suggestions") means a transient hiccup or an off run of the
+// model gets retried fresh next time, not frozen for the whole revalidate
+// window.
 async function generateSuggestions(body: RequestBody): Promise<Suggestion[]> {
   const store = body.isIos ? "iOS App Store" : "Google Play";
   const prompt = `You are a senior App Store Optimization (ASO) specialist reviewing a real app's store listing. Give specific, actionable ASO recommendations for THIS app based on the actual metadata below — not generic advice that could apply to any app.
@@ -54,34 +60,32 @@ Give as many NEW ASO recommendations as you can genuinely justify from the metad
 Reply with ONLY a JSON array of objects, nothing else. Example:
 [{"title":"Short, specific title","description":"1-2 sentence explanation of the issue and fix."}]`;
 
-  try {
-    const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: OLLAMA_LLM_MODEL,
-        prompt,
-        stream: false,
-        options: { temperature: 0.4 },
-      }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const raw = (data.response ?? "") as string;
-    const match = raw.match(/\[[\s\S]*\]/);
-    if (!match) return [];
-    const parsed = JSON.parse(match[0]) as unknown[];
-    return parsed
-      .filter((s): s is Suggestion =>
-        !!s && typeof s === "object" &&
-        typeof (s as Suggestion).title === "string" &&
-        typeof (s as Suggestion).description === "string"
-      )
-      .slice(0, 12);
-  } catch {
-    return [];
-  }
+  const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: OLLAMA_LLM_MODEL,
+      prompt,
+      stream: false,
+      options: { temperature: 0.4 },
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+  if (!res.ok) throw new Error(`ollama generate failed: ${res.status}`);
+  const data = await res.json();
+  const raw = (data.response ?? "") as string;
+  const match = raw.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error("ollama response had no JSON array");
+  const parsed = JSON.parse(match[0]) as unknown[];
+  const suggestions = parsed
+    .filter((s): s is Suggestion =>
+      !!s && typeof s === "object" &&
+      typeof (s as Suggestion).title === "string" &&
+      typeof (s as Suggestion).description === "string"
+    )
+    .slice(0, 12);
+  if (suggestions.length === 0) throw new Error("ollama returned no usable suggestions");
+  return suggestions;
 }
 
 const cachedGenerateSuggestions = unstable_cache(generateSuggestions, ["report-aso-suggestions"], { revalidate: CACHE_REVALIDATE_SECONDS });
@@ -98,8 +102,8 @@ export async function POST(request: NextRequest) {
 
   const planState = body.workspaceId ? await getWorkspacePlanState(body.workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ suggestions: [] });
+  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ suggestions: [] });
 
-  const suggestions = await cachedGenerateSuggestions(body);
+  const suggestions = await cachedGenerateSuggestions(body).catch(() => [] as Suggestion[]);
   return NextResponse.json({ suggestions });
 }

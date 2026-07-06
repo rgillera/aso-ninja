@@ -13,6 +13,8 @@ import { computeDeterministicSuggestions, type Suggestion } from "./asoSuggestio
 import { ReportMetadataComparison } from "./ReportMetadataComparison";
 import { ManageCompetitorsModal, type CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 type KeywordMetric = { term: string; volume: number; diff: number; chance: number };
 
@@ -46,6 +48,8 @@ type Props = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ReportPage({ app, storeData, benchmark = null, keywordMetrics = [], initialDismissedSuggestions = [] }: Props) {
+  const planSlug = usePlanSlug();
+  const suggestionsLocked = !isPlanAtLeast(planSlug, "pro_plus");
   const [competitors, setCompetitors] = useState<CompetitorWithScore[]>([]);
   const [showCompetitorModal, setShowCompetitorModal] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -195,7 +199,10 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
 
   const [aiSuggestions, setAiSuggestions] = useState<Suggestion[]>([]);
   useEffect(() => {
-    if (!storeData) return;
+    // The whole ASO Suggestions card renders a locked/upsell state instead of
+    // this data for non-Pro+ workspaces (see ReportSuggestions) — no point
+    // spending a request on it.
+    if (!storeData || suggestionsLocked) return;
     let cancelled = false;
     fetch("/api/reports/aso-suggestions", {
       method: "POST",
@@ -221,7 +228,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
       .catch(() => { if (!cancelled) setAiSuggestions([]); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on app identity + store data, not the derived deterministicSuggestions array
-  }, [app.id, storeData]);
+  }, [app.id, storeData, suggestionsLocked]);
 
   const suggestions = [...deterministicSuggestions, ...aiSuggestions];
 
