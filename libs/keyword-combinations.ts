@@ -1,8 +1,5 @@
 import { SUFFIX_MODIFIERS, PREFIX_MODIFIERS } from "./keywordModifiers";
-
-const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
-const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
-const OLLAMA_API_KEY   = process.env.OLLAMA_API_KEY    ?? "";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "./ollama";
 
 // SUFFIX_MODIFIERS/PREFIX_MODIFIERS are English words — appending them to a
 // non-English seed would produce mixed-language phrases (e.g. "entrenamiento
@@ -56,7 +53,7 @@ Reply with ONLY a JSON array of strings. The example below is for JSON formattin
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
+      headers: ollamaHeaders(),
       body: JSON.stringify({
         model: OLLAMA_LLM_MODEL,
         prompt,

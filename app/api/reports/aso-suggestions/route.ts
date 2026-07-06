@@ -3,10 +3,7 @@ import { unstable_cache } from "next/cache";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Suggestion } from "@/features/aso/reports/asoSuggestions";
-
-const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
-const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
-const OLLAMA_API_KEY   = process.env.OLLAMA_API_KEY    ?? "";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
 
 // Matches the revalidate window the store-data fetchers already use
 // (libs/store/appstore.ts, libs/store/googleplay.ts) — the metadata driving
@@ -63,7 +60,7 @@ Reply with ONLY a JSON array of objects, nothing else. Example:
 
   const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
+    headers: ollamaHeaders(),
     body: JSON.stringify({
       model: OLLAMA_LLM_MODEL,
       prompt,

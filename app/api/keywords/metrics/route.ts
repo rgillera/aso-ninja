@@ -3,6 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { OLLAMA_HOST, OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -24,11 +25,6 @@ type AppMeta = {
 
 // ── Embedding (Ollama + BGE-M3) ───────────────────────────────────────────────
 
-const OLLAMA_HOST        = process.env.OLLAMA_HOST        ?? "http://localhost:11434";
-const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "bge-m3";
-const OLLAMA_LLM_MODEL   = process.env.OLLAMA_LLM_MODEL   ?? "llama3.2";
-const OLLAMA_API_KEY     = process.env.OLLAMA_API_KEY     ?? "";
-
 // Process-level caches.
 const embeddingCache = new Map<string, number[]>();
 const llmScoreCache  = new Map<string, number>();          // key: `${keyword}|||${description}`
@@ -38,7 +34,7 @@ const APP_META_TTL   = 5 * 60 * 1000;
 async function isOllamaReachable(): Promise<boolean> {
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/tags`, {
-      headers: { "X-API-Key": OLLAMA_API_KEY },
+      headers: ollamaHeaders(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     return res.ok;
@@ -52,7 +48,7 @@ async function getEmbedding(text: string): Promise<number[] | null> {
   try {
     const res = await fetch(`${OLLAMA_HOST}/api/embeddings`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
+      headers: ollamaHeaders(),
       body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, prompt: text }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
@@ -98,7 +94,7 @@ Critical: score USER INTENT, not category overlap. Two apps in the same category
 Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
     const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
+      headers: ollamaHeaders(),
       body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);

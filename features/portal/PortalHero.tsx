@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 export default function PortalHero({ isAuthenticated }: { isAuthenticated: boolean }) {
@@ -51,9 +52,14 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
         </div>
 
         <div className="mt-20 rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-2">
-          <div className="rounded-xl bg-gray-900 h-80 flex items-center justify-center">
-            <p className="text-gray-600 text-sm">Dashboard preview</p>
-          </div>
+          <Image
+            src="/dashboard.png"
+            alt="AppASO dashboard showing keyword research with volume, difficulty, relevancy, and opportunity scores"
+            width={3574}
+            height={2004}
+            className="rounded-xl"
+            priority
+          />
         </div>
       </div>
 

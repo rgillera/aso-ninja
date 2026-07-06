@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const OLLAMA_HOST      = process.env.OLLAMA_HOST      ?? "http://localhost:11434";
-const OLLAMA_LLM_MODEL = process.env.OLLAMA_LLM_MODEL ?? "llama3.2";
-const OLLAMA_API_KEY   = process.env.OLLAMA_API_KEY    ?? "";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
 
 // Terms are keyword fragments, not sentences, and never change meaning between
 // apps — cache process-wide so re-toggling translation (or another user
@@ -24,7 +21,7 @@ ${JSON.stringify(terms)}`;
 
   const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": OLLAMA_API_KEY },
+    headers: ollamaHeaders(),
     body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any);
