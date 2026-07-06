@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const supabase = await createClient();
   const today = new Date().toISOString().split("T")[0];
 
-  const phrases = terms?.length ? terms : await generateCombinations(term, 10, appName, appSubtitle);
+  const phrases = terms?.length ? terms : await generateCombinations(term, 5, appName, appSubtitle);
   if (!phrases.length) return NextResponse.json({ expanded: 0 });
 
   // Find which combinations already have today's data

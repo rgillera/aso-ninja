@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { OLLAMA_HOST, OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, ollamaHeaders } from "@/libs/ollama";
+import { OLLAMA_HOST, OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "@/libs/ollama";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -33,10 +33,10 @@ const APP_META_TTL   = 5 * 60 * 1000;
 
 async function isOllamaReachable(): Promise<boolean> {
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/tags`, {
+    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/tags`, {
       headers: ollamaHeaders(),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any));
     return res.ok;
   } catch {
     return false;
@@ -46,12 +46,12 @@ async function isOllamaReachable(): Promise<boolean> {
 async function getEmbedding(text: string): Promise<number[] | null> {
   if (embeddingCache.has(text)) return embeddingCache.get(text)!;
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/embeddings`, {
+    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/embeddings`, {
       method: "POST",
       headers: ollamaHeaders(),
       body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, prompt: text }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any));
     if (!res.ok) return null;
     const data = await res.json();
     const embedding = (data.embedding as number[]) ?? (data.embeddings?.[0] as number[]) ?? null;
@@ -92,12 +92,12 @@ Rules — apply in order, stop at first match:
 Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).
 
 Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
-    const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: ollamaHeaders(),
       body: JSON.stringify({ model: OLLAMA_LLM_MODEL, prompt, stream: false, options: { temperature: 0 } }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any));
     if (!res.ok) return embeddingDescScore(keyword, description);
     const data = await res.json();
     const num = parseInt(((data.response ?? "") as string).trim().match(/\d+/)?.[0] ?? "", 10);

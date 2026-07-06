@@ -13,3 +13,17 @@ export function ollamaHeaders(): Record<string, string> {
   if (!isLocalOllamaHost && OLLAMA_API_KEY) headers["X-API-Key"] = OLLAMA_API_KEY;
   return headers;
 }
+
+// Serializes all Ollama calls server-wide so only one generation/embedding
+// request runs at a time — the host is CPU-only with no request queueing of
+// its own, so concurrent calls (relevancy scoring, embeddings, seed
+// expansion) would otherwise all compete for the same CPU and spike load.
+// Unlike enqueueAppleRequest, no minimum gap is enforced between calls since
+// there's no external rate limit to respect here, just local CPU contention.
+let ollamaChain: Promise<void> = Promise.resolve();
+
+export function enqueueOllamaRequest<T>(fn: () => Promise<T>): Promise<T> {
+  const result: Promise<T> = ollamaChain.then(() => fn());
+  ollamaChain = result.then(() => undefined, () => undefined);
+  return result;
+}

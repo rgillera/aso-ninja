@@ -1,5 +1,5 @@
 import { SUFFIX_MODIFIERS, PREFIX_MODIFIERS } from "./keywordModifiers";
-import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders } from "./ollama";
+import { OLLAMA_HOST, OLLAMA_LLM_MODEL, ollamaHeaders, enqueueOllamaRequest } from "./ollama";
 
 // SUFFIX_MODIFIERS/PREFIX_MODIFIERS are English words — appending them to a
 // non-English seed would produce mixed-language phrases (e.g. "entrenamiento
@@ -51,7 +51,7 @@ Rules:
 Reply with ONLY a JSON array of strings. The example below is for JSON formatting only — match its structure, not its language: ["${seed} tracker","pet ${seed}"]`;
 
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const res = await enqueueOllamaRequest(() => fetch(`${OLLAMA_HOST}/api/generate`, {
       method: "POST",
       headers: ollamaHeaders(),
       body: JSON.stringify({
@@ -61,7 +61,7 @@ Reply with ONLY a JSON array of strings. The example below is for JSON formattin
         options: { temperature: 0.5 },
       }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any));
     if (!res.ok) return ruleBasedCombinations(seed, count);
     const data = await res.json();
     const raw = (data.response ?? "") as string;
