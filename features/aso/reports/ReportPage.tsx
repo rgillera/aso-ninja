@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, PlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import type { App, Workspace, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import { AppHeader } from "@/features/aso/AppHeader";
@@ -250,11 +250,16 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
       <div className="p-6 space-y-5">
         <div className="space-y-5">
           {competitors.length === 0 ? (
-            <ReportAsoScoreSingle
-              score={appScore}
-              summaryItems={scoreSummaryItems}
-              onAddCompetitor={() => setShowCompetitorModal(true)}
-            />
+            <>
+              <button
+                onClick={() => setShowCompetitorModal(true)}
+                className="flex w-full items-center gap-2 rounded-2xl bg-[#1a1d24] px-4 py-3 text-sm font-medium text-gray-300 ring-1 ring-white/[0.08] transition-colors hover:text-white hover:ring-white/[0.16]"
+              >
+                <PlusIcon className="size-4" />
+                Add competitors to compare
+              </button>
+              <ReportAsoScoreSingle score={appScore} summaryItems={scoreSummaryItems} />
+            </>
           ) : (
             <ReportAsoScore
               score={appScore}
@@ -311,6 +316,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
           isIos={isIos}
           nameLimit={30}
           subtitleLimit={subtitleLimit}
+          benchmark={benchmark}
           onRemoveCompetitor={handleRemoveCompetitor}
         />
       </div>

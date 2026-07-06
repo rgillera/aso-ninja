@@ -1,6 +1,6 @@
 "use client";
 
-import { InformationCircleIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { TAG_ANCHOR } from "./asoScore";
 import type { ScoreSummaryItem } from "./ReportAsoScore";
 
@@ -100,7 +100,6 @@ function CategoryRow({ item }: { item: ScoreSummaryItem }) {
 type ReportAsoScoreSingleProps = {
   score: number;
   summaryItems: ScoreSummaryItem[];
-  onAddCompetitor: () => void;
 };
 
 // Shown instead of ReportAsoScore's comparison table while no competitor has
@@ -108,8 +107,10 @@ type ReportAsoScoreSingleProps = {
 // single app, so this leads with a bigger, more scannable score + per-metric
 // breakdown. Switches to the table automatically once a competitor exists
 // (see ReportPage), since that's the point where a table actually earns its
-// keep.
-export function ReportAsoScoreSingle({ score, summaryItems, onAddCompetitor }: ReportAsoScoreSingleProps) {
+// keep. The "add competitor" affordance lives above this card, not inside it
+// (see AddCompetitorRow in ReportPage) — same full-row pattern as Keywords'
+// CompetitorsBar, not a corner button.
+export function ReportAsoScoreSingle({ score, summaryItems }: ReportAsoScoreSingleProps) {
   return (
     <div className="rounded-3xl bg-[#1a1d24] p-5 shadow-lg shadow-black/20 ring-1 ring-white/[0.08]">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
@@ -121,13 +122,6 @@ export function ReportAsoScoreSingle({ score, summaryItems, onAddCompetitor }: R
             <CategoryRow key={item.label} item={item} />
           ))}
         </div>
-        <button
-          onClick={onAddCompetitor}
-          title="Add competitor"
-          className="flex size-9 shrink-0 items-center justify-center self-start rounded-xl border border-dashed border-white/20 text-gray-500 transition-colors hover:border-white/40 hover:text-white"
-        >
-          <PlusIcon className="size-4" />
-        </button>
       </div>
     </div>
   );

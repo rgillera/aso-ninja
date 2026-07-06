@@ -15,6 +15,7 @@ import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { Toggle } from "@/features/aso/keywords/research/ui";
 import { computeKeywordDensity, computeTermFrequencies, tokenizeWords, DensityTable } from "@/features/aso/metadata/preview/KeywordDensity";
 import { toneFor, scoreVsBenchmark, boolScore, ASO_REFERENCE } from "./asoScore";
+import type { CategoryBenchmark } from "@/libs/contracts";
 
 type Tone = "neutral" | "emerald" | "amber" | "rose";
 type TextField = "App Name" | "Subtitle" | "Short Description" | "Description" | "Release Notes";
@@ -41,6 +42,11 @@ type Props = {
   isIos: boolean;
   nameLimit: number;
   subtitleLimit: number;
+  // Same benchmark asoScore.ts's computeAsoScoreSummary uses — must be
+  // threaded through so a card's tone here matches the ASO Score summary's
+  // tone for the same metric, instead of always falling back to the fixed
+  // ASO_REFERENCE target regardless of the real category average.
+  benchmark?: CategoryBenchmark;
   onRemoveCompetitor: (key: string) => void;
 };
 
@@ -497,10 +503,11 @@ function ScreenshotStrip({ urls, height }: { urls: string[]; height: number }) {
 // one-app-at-a-time view the text fields default to), with per-app tabs
 // still available for a single app's full-size gallery.
 function ScreenshotsCard({
-  primary, rows, onRemoveCompetitor,
+  primary, rows, benchmark, onRemoveCompetitor,
 }: {
   primary: AppMetadata;
   rows: (AppMetadata & { key: string })[];
+  benchmark?: CategoryBenchmark;
   onRemoveCompetitor: (key: string) => void;
 }) {
   const apps = useMemo(
@@ -514,8 +521,8 @@ function ScreenshotsCard({
   const [view, setView] = useState<"apps" | "table">("table");
 
   const active = apps.find((a) => a.key === activeKey) ?? apps[0];
-  const target = ASO_REFERENCE.screenshotCount;
-  const toneForCount = (count: number) => toneFor(scoreVsBenchmark(count, undefined, target));
+  const target = benchmark?.avgScreenshotCount && benchmark.avgScreenshotCount > 0 ? benchmark.avgScreenshotCount : ASO_REFERENCE.screenshotCount;
+  const toneForCount = (count: number) => toneFor(scoreVsBenchmark(count, benchmark?.avgScreenshotCount, ASO_REFERENCE.screenshotCount));
   const hint = (count: number) => (count >= target ? "Good screenshot coverage!" : `Add ${target - count} more to reach the recommended minimum of ${target}.`);
 
   return (
@@ -599,15 +606,16 @@ function PreviewVideoCard({
 }
 
 function ReviewsCard({
-  primary, rows, onRemoveCompetitor,
+  primary, rows, benchmark, onRemoveCompetitor,
 }: {
   primary: AppMetadata;
   rows: (AppMetadata & { key: string })[];
+  benchmark?: CategoryBenchmark;
   onRemoveCompetitor: (key: string) => void;
 }) {
   const toneForReviews = (rating?: number, ratingCount?: number) => {
-    const ratingScore = scoreVsBenchmark(rating ?? 0, undefined, ASO_REFERENCE.rating);
-    const countScore = scoreVsBenchmark(ratingCount ?? 0, undefined, ASO_REFERENCE.reviewCount);
+    const ratingScore = scoreVsBenchmark(rating ?? 0, benchmark?.avgRating, ASO_REFERENCE.rating);
+    const countScore = scoreVsBenchmark(ratingCount ?? 0, benchmark?.medianRatingCount, ASO_REFERENCE.reviewCount);
     return toneFor(Math.round((ratingScore + countScore) / 2));
   };
   const summary = (rating?: number, ratingCount?: number) => (
@@ -644,13 +652,14 @@ function ReviewsCard({
 }
 
 function FreshnessCard({
-  primary, rows, onRemoveCompetitor,
+  primary, rows, benchmark, onRemoveCompetitor,
 }: {
   primary: AppMetadata;
   rows: (AppMetadata & { key: string })[];
+  benchmark?: CategoryBenchmark;
   onRemoveCompetitor: (key: string) => void;
 }) {
-  const toneForDays = (days?: number) => toneFor(scoreVsBenchmark(days ?? 365, undefined, ASO_REFERENCE.daysSinceUpdate, true));
+  const toneForDays = (days?: number) => toneFor(scoreVsBenchmark(days ?? 365, benchmark?.avgDaysSinceUpdate, ASO_REFERENCE.daysSinceUpdate, true));
   const label = (days?: number) => (days === undefined ? "Unknown" : days === 0 ? "Updated today" : `${days} days ago`);
 
   return (
@@ -670,13 +679,14 @@ function FreshnessCard({
 }
 
 function LocalizationCard({
-  primary, rows, onRemoveCompetitor,
+  primary, rows, benchmark, onRemoveCompetitor,
 }: {
   primary: AppMetadata;
   rows: (AppMetadata & { key: string })[];
+  benchmark?: CategoryBenchmark;
   onRemoveCompetitor: (key: string) => void;
 }) {
-  const toneForLangs = (count?: number) => toneFor(scoreVsBenchmark(count ?? 1, undefined, ASO_REFERENCE.languageCount));
+  const toneForLangs = (count?: number) => toneFor(scoreVsBenchmark(count ?? 1, benchmark?.avgLanguageCount, ASO_REFERENCE.languageCount));
   const label = (count?: number) => `${count ?? 1} language${(count ?? 1) === 1 ? "" : "s"}`;
 
   return (
@@ -695,7 +705,7 @@ function LocalizationCard({
   );
 }
 
-export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameLimit, subtitleLimit, onRemoveCompetitor }: Props) {
+export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameLimit, subtitleLimit, benchmark, onRemoveCompetitor }: Props) {
   const releaseNotesLimit = isIos ? 4000 : 500;
   // Android calls this field "Short Description" in Play Console; iOS calls
   // it "Subtitle" — match whichever store the app is actually on.
@@ -737,11 +747,11 @@ export function ReportMetadataComparison({ primaryApp, competitors, isIos, nameL
         rows={competitors.map((c) => ({ key: c.key, name: c.name, iconUrl: c.iconUrl, text: c.releaseNotes }))}
         onRemoveCompetitor={onRemoveCompetitor}
       />
-      <ScreenshotsCard primary={primaryApp} rows={competitors} onRemoveCompetitor={onRemoveCompetitor} />
+      <ScreenshotsCard primary={primaryApp} rows={competitors} benchmark={benchmark} onRemoveCompetitor={onRemoveCompetitor} />
       <PreviewVideoCard primary={primaryApp} rows={competitors} onRemoveCompetitor={onRemoveCompetitor} />
-      <ReviewsCard primary={primaryApp} rows={competitors} onRemoveCompetitor={onRemoveCompetitor} />
-      <FreshnessCard primary={primaryApp} rows={competitors} onRemoveCompetitor={onRemoveCompetitor} />
-      {isIos && <LocalizationCard primary={primaryApp} rows={competitors} onRemoveCompetitor={onRemoveCompetitor} />}
+      <ReviewsCard primary={primaryApp} rows={competitors} benchmark={benchmark} onRemoveCompetitor={onRemoveCompetitor} />
+      <FreshnessCard primary={primaryApp} rows={competitors} benchmark={benchmark} onRemoveCompetitor={onRemoveCompetitor} />
+      {isIos && <LocalizationCard primary={primaryApp} rows={competitors} benchmark={benchmark} onRemoveCompetitor={onRemoveCompetitor} />}
     </div>
   );
 }
