@@ -4,6 +4,7 @@ import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { isGeminiReachable, generateText, embedText, embedTexts } from "@/libs/gemini";
+import { findRankIdx, computeChance, hintsScore } from "@/libs/keyword-rank-match";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -211,40 +212,7 @@ async function computeRelevancy(
   return base;
 }
 
-// ── Rank matching ─────────────────────────────────────────────────────────────
-
-// Strip punctuation/extra spaces
-function normalizeForRankMatch(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-// Three-tier fuzzy match against a list of result names:
-//   1. Exact lowercase trim (fast path)
-//   2. Punctuation-normalized (handles dash/colon variants)
-//   3. Starts-with either direction (handles stored short name vs full title in results)
-function findRankIdx(resultNames: string[], appName: string): number {
-  if (!appName) return -1;
-  const name     = appName.toLowerCase().trim();
-  const nameNorm = normalizeForRankMatch(appName);
-
-  let idx = resultNames.findIndex((n) => n.toLowerCase().trim() === name);
-  if (idx >= 0) return idx;
-
-  idx = resultNames.findIndex((n) => normalizeForRankMatch(n) === nameNorm);
-  if (idx >= 0) return idx;
-
-  return resultNames.findIndex((n) => {
-    const nNorm = normalizeForRankMatch(n);
-    return nNorm.startsWith(nameNorm) || nameNorm.startsWith(nNorm);
-  });
-}
-
 // ── App metadata ──────────────────────────────────────────────────────────────
-
-function hintsScore(idx: number, total: number, resultCountScore: number): number {
-  if (idx === -1) return Math.round(resultCountScore * 0.7);
-  return Math.max(Math.round(((total - idx) / total) * 100), 5);
-}
 
 async function fetchIosAppMeta(appName: string, country: string): Promise<AppMeta> {
   const cacheKey = `ios:${appName.toLowerCase()}:${country}`;
@@ -402,13 +370,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
 
     const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
-
-    const rawChance = Math.min(Math.max(100 - diff, 5), 95);
-    // If already ranked, chance reflects actual position rather than raw difficulty.
-    // rank=1 → 95, rank=10 → 90, rank=50 → 50, rank=100+ → no boost.
-    const chance = rank !== null
-      ? Math.max(rawChance, Math.min(95, 100 - rank))
-      : rawChance;
+    const chance  = computeChance(diff, rank);
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;
@@ -468,11 +430,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
-
-    const rawChance = Math.min(Math.max(100 - diff, 5), 95);
-    const chance = rank !== null
-      ? Math.max(rawChance, Math.min(95, 100 - rank))
-      : rawChance;
+    const chance  = computeChance(diff, rank);
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;

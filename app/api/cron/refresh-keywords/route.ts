@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
+import { findRankIdx, computeChance, hintsScore } from "@/libs/keyword-rank-match";
 
 // Vercel: 300s on Pro, 60s on Hobby (~40 keywords/run on Hobby)
 export const maxDuration = 300;
 
 type RawApp = { trackId: number; trackName: string; userRatingCount: number; artworkUrl: string };
+type AdminClient = ReturnType<typeof createAdminClient>;
 
-function computeVolumeAndDiff(apps: RawApp[], term: string) {
+function computeIosVolumeAndDiff(apps: RawApp[], term: string) {
   const kwTokens = term.split(/\s+/).filter(Boolean);
   const titleApps = apps.filter((a) =>
     kwTokens.every((w) => a.trackName.toLowerCase().includes(w))
@@ -32,15 +34,43 @@ function computeVolumeAndDiff(apps: RawApp[], term: string) {
   return { volume, diff };
 }
 
+// Refreshes rank + chance for every app already tracking `term` in this
+// store/country, using the result names this run just fetched — no extra
+// network calls. Skips volume/diff/relevancy/opportunity entirely (no AI,
+// no rate-limit cost) so this stays a pure DB read + in-memory match + DB
+// write, same matching logic (findRankIdx) the live /api/keywords/metrics
+// route uses, closing the staleness gap between keyword_metrics.rank and
+// keyword_rankings_history.position from up to 7 days down to ~1 day.
+async function refreshKeywordMetrics(
+  supabase: AdminClient, term: string, store: string, country: string, names: string[]
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rows } = await (supabase as any)
+    .from("keyword_metrics")
+    .select("app_id, keyword_id, diff, apps!inner(name, store, country), keywords!inner(term)")
+    .eq("keywords.term", term)
+    .eq("apps.store", store)
+    .eq("apps.country", country);
+
+  if (!rows?.length) return;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates = (rows as any[]).map((row) => {
+    const rankIdx = findRankIdx(names, row.apps.name);
+    const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
+    const chance  = computeChance(row.diff ?? 0, rank);
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, updated_at: new Date().toISOString() };
+  });
+
+  await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
+}
+
 export async function GET(req: Request) {
   if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createAdminClient();
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -62,7 +92,7 @@ export async function GET(req: Request) {
   let rateLimited = false;
 
   for (const { term, store, country } of stale as { term: string; store: string; country: string }[]) {
-    if (rateLimited) break;
+    if (rateLimited && store === "ios") continue;
 
     try {
       if (store === "ios") {
@@ -71,7 +101,7 @@ export async function GET(req: Request) {
         const res = await enqueueAppleRequest(() => fetch(url, { cache: "no-store" } as any));
 
         if (!res.ok) {
-          if (res.status === 403) { rateLimited = true; break; }
+          if (res.status === 403) { rateLimited = true; continue; }
           failed++;
           continue;
         }
@@ -85,7 +115,7 @@ export async function GET(req: Request) {
           artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
         }));
 
-        const { volume, diff } = computeVolumeAndDiff(apps, term);
+        const { volume, diff } = computeIosVolumeAndDiff(apps, term);
 
         await supabase.from("keyword_volume_history").upsert(
           { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
@@ -103,9 +133,44 @@ export async function GET(req: Request) {
           );
         }
 
+        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName));
+        refreshed++;
+      } else if (store === "android") {
+        const gplay = await import("google-play-scraper");
+        const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+        const [apps, suggestions]: [any[], string[]] = await Promise.all([ // eslint-disable-line @typescript-eslint/no-explicit-any
+          api.search({ term, country: country.toLowerCase(), num: 250 }),
+          api.suggest({ term, lang: "en", country: country.toLowerCase() }).catch(() => [] as string[]),
+        ]);
+
+        const count = apps.length;
+        const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
+        const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
+        const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
+        const fallbackScore    = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+
+        const suggestIdx = suggestions.findIndex((s) => s.toLowerCase() === term.toLowerCase());
+        const volume = hintsScore(suggestIdx, suggestions.length || 5, fallbackScore);
+
+        const top5 = apps.slice(0, 5);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const avgRatings = top5.length > 0 ? top5.reduce((s: number, r: any) => s + (r.ratings ?? r.reviews ?? 0), 0) / top5.length : 0;
+        const diff = avgRatings < 10
+          ? 0
+          : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
+
+        await supabase.from("keyword_volume_history").upsert(
+          { term, store: "android", country, score: volume, diff, recorded_on: today },
+          { onConflict: "term,store,country,recorded_on" }
+        );
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""));
         refreshed++;
       }
-      // Android: skipped for now — no rate limit issue there
     } catch {
       failed++;
     }
