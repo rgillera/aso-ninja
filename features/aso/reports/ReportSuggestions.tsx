@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { dismissSuggestion } from "./dismissedSuggestions";
@@ -21,12 +21,15 @@ type ReportSuggestionsProps = {
   suggestions: Suggestion[];
 };
 
+const PAGE_SIZE = 5;
+
 export function ReportSuggestions({ bundleId, store, initialDismissed, suggestions }: ReportSuggestionsProps) {
   const planSlug = usePlanSlug();
   const locked = !isPlanAtLeast(planSlug, "pro_plus");
   const [expanded, setExpanded] = useState(true);
   const [dismissed, setDismissed] = useState<string[]>(initialDismissed);
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
 
   function handleDismiss(title: string) {
     setDismissed((prev) => dismissSuggestion(bundleId, store, title, prev));
@@ -69,6 +72,13 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
   const visible = suggestions.filter((s) => !dismissed.includes(s.title));
   if (visible.length === 0) return null;
 
+  const pageCount = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  // Derived, not stored: keeps `page` valid even after a dismiss (or a fresh
+  // `suggestions` list) shrinks the list out from under whatever page the
+  // user was on, without a separate effect to clamp it back.
+  const safePage = Math.min(page, pageCount - 1);
+  const pageItems = visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+
   return (
     <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
@@ -82,7 +92,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
       </div>
       {expanded && (
         <ul className="divide-y divide-white/[0.06]">
-          {visible.map((suggestion) => {
+          {pageItems.map((suggestion) => {
             const itemCollapsed = collapsedItems.has(suggestion.title);
             return (
               <li key={suggestion.title} className="group flex gap-3 px-5 py-4">
@@ -111,6 +121,29 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
             );
           })}
         </ul>
+      )}
+      {expanded && pageCount > 1 && (
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.07]">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+          >
+            <ChevronLeftIcon className="size-3.5" />
+            Prev
+          </button>
+          <span className="text-xs text-gray-500">
+            Page {safePage + 1} of {pageCount}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={safePage === pageCount - 1}
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+          >
+            Next
+            <ChevronRightIcon className="size-3.5" />
+          </button>
+        </div>
       )}
     </div>
   );

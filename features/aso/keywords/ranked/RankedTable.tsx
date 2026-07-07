@@ -110,7 +110,7 @@ export function RankedTable({
 }: Props) {
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [sortKey, setSortKey] = useState<"rank" | "volume">("rank");
+  const [sortKey, setSortKey] = useState<"rank" | "volume" | "keyword">("rank");
   const [sortAsc, setSortAsc] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating]   = useState(false);
@@ -143,8 +143,9 @@ export function RankedTable({
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let diff = 0;
-      if (sortKey === "rank")   diff = a.rank - b.rank;
-      if (sortKey === "volume") diff = (b.volume ?? -1) - (a.volume ?? -1);
+      if (sortKey === "rank")    diff = a.rank - b.rank;
+      if (sortKey === "volume")  diff = (b.volume ?? -1) - (a.volume ?? -1);
+      if (sortKey === "keyword") diff = a.term.localeCompare(b.term);
       return sortAsc ? diff : -diff;
     });
   }, [filtered, sortKey, sortAsc]);
@@ -276,9 +277,9 @@ export function RankedTable({
                   className="rounded border-gray-600 bg-transparent accent-indigo-500 cursor-pointer"
                 />
               </th>
-              <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 w-52">Volume</th>
+              <SortTh col="volume" label="Volume" className="w-52" />
               <SortTh col="rank" label="Rank" />
-              <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
+              <SortTh col="keyword" label="Keyword" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Date</th>
             </tr>
           </thead>

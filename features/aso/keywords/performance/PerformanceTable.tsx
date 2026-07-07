@@ -13,10 +13,13 @@ import {
   ChevronRightIcon,
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
+  ChevronUpIcon,
+  ChevronDownIcon,
+  ArrowsUpDownIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
-import type { Filters, PerformanceKeyword, TermSnapshot } from "./types";
+import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { CompetitorsBar } from "./CompetitorsBar";
@@ -62,6 +65,21 @@ const VOLUME_COL_W = 208;     // w-52
 const RANK_GROUP_W = 288;     // w-40 + w-32
 const ACTIONS_COL_W = 80;     // w-20
 const KEYWORD_MIN_W = 320;    // w-80
+
+type SortKey = "keyword" | "volume" | "rank" | "change";
+
+function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
+  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+  return dir === "asc"
+    ? <ChevronUpIcon className="size-3 text-indigo-400" />
+    : <ChevronDownIcon className="size-3 text-indigo-400" />;
+}
+
+// Unranked/unknown sort to the bottom regardless of direction — there's no
+// meaningful position to compare them against a real rank.
+function rankSortValue(v: RankValue | null | undefined): number {
+  return typeof v === "number" ? v : Infinity;
+}
 
 function GrowthCell({ value }: { value: number | null }) {
   if (value === null) return <span className="text-xs text-gray-600">-</span>;
@@ -111,6 +129,8 @@ export function PerformanceTable({
 }: Props) {
   const [input, setInput] = useState("");
   const [page,  setPage]  = useState(1);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating]   = useState(false);
@@ -140,9 +160,24 @@ export function PerformanceTable({
     return t && t.toLowerCase() !== term.toLowerCase() ? t : undefined;
   }
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  function handleSort(key: SortKey) {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("desc"); }
+  }
+
+  const sortedFiltered = sortKey ? [...filtered].sort((a, b) => {
+    const sa = snapshots[a.term], sb = snapshots[b.term];
+    let cmp = 0;
+    if (sortKey === "keyword") cmp = a.term.localeCompare(b.term);
+    else if (sortKey === "volume") cmp = (sa?.volumeLatest ?? a.volume) - (sb?.volumeLatest ?? b.volume);
+    else if (sortKey === "rank") cmp = rankSortValue(sa?.rankLatest ?? a.rank) - rankSortValue(sb?.rankLatest ?? b.rank);
+    else if (sortKey === "change") cmp = (rankGrowth(sa?.rankPrev, sa?.rankLatest) ?? -Infinity) - (rankGrowth(sb?.rankPrev, sb?.rankLatest) ?? -Infinity);
+    return sortDir === "asc" ? cmp : -cmp;
+  }) : filtered;
+
+  const pageCount = Math.max(1, Math.ceil(sortedFiltered.length / PAGE_SIZE));
   const clampedPage = Math.min(page, pageCount);
-  const pageRows = filtered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE);
+  const pageRows = sortedFiltered.slice((clampedPage - 1) * PAGE_SIZE, clampedPage * PAGE_SIZE);
 
   function toggleSelect(term: string) {
     setSelected((prev) => {
@@ -314,8 +349,16 @@ export function PerformanceTable({
                     className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
                   />
                 </th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Keyword</th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">Volume</th>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">
+                  <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "keyword" ? "text-gray-300" : ""}`}>
+                    Keyword <SortIcon active={sortKey === "keyword"} dir={sortDir} />
+                  </button>
+                </th>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">
+                  <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "volume" ? "text-gray-300" : ""}`}>
+                    Volume <SortIcon active={sortKey === "volume"} dir={sortDir} />
+                  </button>
+                </th>
                 <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -335,8 +378,16 @@ export function PerformanceTable({
                 <th rowSpan={2} className="sticky right-0 z-20 bg-[#1a1d24] border-l border-white/[0.07] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Actions</th>
               </tr>
               <tr className="border-b border-white/[0.07]">
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Change</th>
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">
+                  <button onClick={() => handleSort("rank")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "rank" ? "text-gray-300" : ""}`}>
+                    Rank <SortIcon active={sortKey === "rank"} dir={sortDir} />
+                  </button>
+                </th>
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">
+                  <button onClick={() => handleSort("change")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "change" ? "text-gray-300" : ""}`}>
+                    Change <SortIcon active={sortKey === "change"} dir={sortDir} />
+                  </button>
+                </th>
                 {competitors.map((c) => (
                   <Fragment key={c.storeId}>
                     <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>

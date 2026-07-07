@@ -228,6 +228,7 @@ export function CombinationTable({
               const terms = group.children.map((c) => c.term);
               const groupChecked = terms.length > 0 && terms.every((t) => selected.has(t));
               const pendingCount = group.children.filter((c) => pendingSet.has(c.term.toLowerCase())).length;
+              const allTracked = terms.length > 0 && terms.every((t) => trackedSet.has(t.toLowerCase()));
               return (
                 <Fragment key={group.seed}>
                   <tr
@@ -256,6 +257,12 @@ export function CombinationTable({
                           <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
                             <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
                             Adding {pendingCount}…
+                          </span>
+                        )}
+                        {pendingCount === 0 && allTracked && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-300 ring-1 ring-indigo-500/20">
+                            <CheckIcon className="size-3" />
+                            All added
                           </span>
                         )}
                       </div>
