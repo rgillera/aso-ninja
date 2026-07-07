@@ -308,16 +308,6 @@ export default function KeywordPerformancePage() {
       if (store === "android") {
         runLiveSearchInBackground(newTerms, store, country);
       }
-
-      if (store === "ios") {
-        for (const term of newTerms) {
-          fetch("/api/keywords/expand-seed", {
-            method:  "POST",
-            headers: { "Content-Type": "application/json" },
-            body:    JSON.stringify({ term, store, country, appName: activeApp?.name ?? "" }),
-          }).catch(() => {});
-        }
-      }
     } catch {
       setKeywords((prev) =>
         prev.map((k) => (k.loading && newTerms.includes(k.term) ? { ...k, loading: false } : k))

@@ -361,18 +361,6 @@ export default function KeywordResearchPage() {
     if (store === "android") {
       runLiveSearchInBackground(newKeywords, store, country);
     }
-
-    // Fire-and-forget: pre-warm combination data for each new iOS keyword so
-    // the Keyword Combination page loads instantly without hitting Apple live.
-    if (store === "ios") {
-      for (const term of newKeywords) {
-        fetch("/api/keywords/expand-seed", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ term, store, country, appName: activeApp?.name ?? "" }),
-        }).catch(() => {});
-      }
-    }
   }
 
   // Fills in relevancy/opportunity for keywords that already have every other

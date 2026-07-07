@@ -11,6 +11,18 @@ const links = [
 
 export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [open, setOpen] = useState(false);
+  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL;
+
+  const bookDemoLink = calendlyUrl ? (
+    <a
+      href={calendlyUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+    >
+      Book a demo
+    </a>
+  ) : null;
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-white/10">
@@ -32,6 +44,7 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
               {l.label}
             </a>
           ))}
+          {bookDemoLink}
         </div>
 
         <div className="hidden lg:flex items-center gap-4">
@@ -72,6 +85,17 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
               {l.label}
             </a>
           ))}
+          {calendlyUrl && (
+            <a
+              href={calendlyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-gray-300 hover:text-white"
+              onClick={() => setOpen(false)}
+            >
+              Book a demo
+            </a>
+          )}
           <hr className="border-white/10" />
           {isAuthenticated ? (
             <a href="/dashboard" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
