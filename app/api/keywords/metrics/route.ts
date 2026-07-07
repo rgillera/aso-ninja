@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { isGeminiReachable, generateText, embedText } from "@/libs/gemini";
+import { isGeminiReachable, generateText, embedText, embedTexts } from "@/libs/gemini";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -38,11 +38,32 @@ async function getEmbedding(text: string): Promise<number[] | null> {
   return embedding;
 }
 
+// Same cache as getEmbedding, but fetches every not-yet-cached text in one
+// batchEmbedContents call instead of one embedContent call each.
+async function getEmbeddings(texts: string[]): Promise<(number[] | null)[]> {
+  const results: (number[] | null)[] = new Array(texts.length).fill(null);
+  const missingIdx: number[] = [];
+  const missingTexts: string[] = [];
+
+  texts.forEach((text, i) => {
+    const cached = embeddingCache.get(text);
+    if (cached) results[i] = cached;
+    else { missingIdx.push(i); missingTexts.push(text); }
+  });
+
+  if (missingTexts.length) {
+    const fetched = await embedTexts(missingTexts);
+    fetched.forEach((embedding, j) => {
+      if (embedding) embeddingCache.set(missingTexts[j], embedding);
+      results[missingIdx[j]] = embedding;
+    });
+  }
+
+  return results;
+}
+
 async function embeddingDescScore(keyword: string, description: string): Promise<number> {
-  const [kwEmbed, descEmbed] = await Promise.all([
-    getEmbedding(keyword),
-    getEmbedding(description),
-  ]);
+  const [kwEmbed, descEmbed] = await getEmbeddings([keyword, description]);
   if (!kwEmbed || !descEmbed) return 50;
   const sim = cosineSimilarity(kwEmbed, descEmbed);
   return Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
@@ -162,7 +183,10 @@ async function computeRelevancy(
   //    sharing "tracker" with NutriSnap inflates both direct and context scores).
   let semanticScore = 0;
   if (appEmbedding) {
-    const kwEmbedding = await getEmbedding(keyword);
+    const topText = topTitles.length > 0 ? `${keyword}: ${topTitles.slice(0, 5).join(". ")}` : null;
+    const texts = topText ? [keyword, topText] : [keyword];
+    const [kwEmbedding, topEmbedding] = await getEmbeddings(texts);
+
     let kwScore = 0;
     if (kwEmbedding) {
       const sim = cosineSimilarity(appEmbedding, kwEmbedding);
@@ -170,13 +194,9 @@ async function computeRelevancy(
     }
 
     let marketScore = 0;
-    if (topTitles.length > 0) {
-      const topText = `${keyword}: ${topTitles.slice(0, 5).join(". ")}`;
-      const topEmbedding = await getEmbedding(topText);
-      if (topEmbedding) {
-        const sim = cosineSimilarity(appEmbedding, topEmbedding);
-        marketScore = Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
-      }
+    if (topEmbedding) {
+      const sim = cosineSimilarity(appEmbedding, topEmbedding);
+      marketScore = Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
     }
 
     semanticScore = Math.round(kwScore * 0.6 + marketScore * 0.4);

@@ -78,3 +78,33 @@ export async function embedText(text: string): Promise<number[] | null> {
     return null;
   }
 }
+
+// Embeds multiple texts in one HTTP round trip via batchEmbedContents, instead
+// of one embedContent call per text. Same tokens billed either way — this
+// only cuts request count (and the enqueueGeminiRequest queue wait that comes
+// with each one), not cost.
+export async function embedTexts(texts: string[]): Promise<(number[] | null)[]> {
+  if (!texts.length) return [];
+  try {
+    const res = await enqueueGeminiRequest(() => fetch(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:batchEmbedContents`, {
+      method: "POST",
+      headers: geminiHeaders(),
+      body: JSON.stringify({
+        requests: texts.map((text) => ({
+          model: `models/${GEMINI_EMBED_MODEL}`,
+          content: { parts: [{ text }] },
+        })),
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any));
+    if (!res.ok) return texts.map(() => null);
+    const data = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const embeddings = (data as any)?.embeddings;
+    if (!Array.isArray(embeddings)) return texts.map(() => null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return embeddings.map((e: any) => Array.isArray(e?.values) ? e.values as number[] : null);
+  } catch {
+    return texts.map(() => null);
+  }
+}
