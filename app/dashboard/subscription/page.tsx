@@ -41,6 +41,7 @@ export default async function Page({ searchParams }: PageProps) {
       currentPlanId={"error" in state ? "free" : state.plan.slug}
       workspaceId={activeWorkspaceId}
       usage={"error" in state ? undefined : state.usage}
+      pendingCancellation={"error" in state ? null : state.pendingCancellation}
     />
   );
 }

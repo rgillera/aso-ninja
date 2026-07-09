@@ -36,6 +36,7 @@ type Props = {
   currentPlanId: PlanId;
   workspaceId: string;
   usage?: WorkspaceUsage;
+  pendingCancellation?: { currentPeriodEnd: string | null } | null;
 };
 
 type Billing = "monthly" | "yearly";
@@ -77,7 +78,16 @@ function UsageBar({ label, used, limit }: { label: string; used: number; limit: 
   );
 }
 
-export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: Props) {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
+
+export default function SubscriptionPage({
+  currentPlanId,
+  workspaceId,
+  usage,
+  pendingCancellation,
+}: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
   const [billing, setBilling] = useState<Billing>("yearly");
@@ -185,12 +195,23 @@ export default function SubscriptionPage({ currentPlanId, workspaceId, usage }: 
                   </div>
                 )}
 
+                {isCurrent && pendingCancellation && (
+                  <p className="mt-4 text-xs text-amber-400">
+                    {pendingCancellation.currentPeriodEnd
+                      ? `Switches to Free on ${formatDate(pendingCancellation.currentPeriodEnd)}`
+                      : "Switches to Free at the end of your billing period"}
+                  </p>
+                )}
+
                 <UpgradeButton
                   planSlug={plan.id}
                   workspaceId={workspaceId}
                   isCurrent={isCurrent}
                   isDowngrade={isDowngrade}
                   billing={billing}
+                  initialScheduledFor={
+                    plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
+                  }
                 />
               </div>
             );
