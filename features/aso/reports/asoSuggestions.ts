@@ -30,8 +30,11 @@ type SuggestionInput = {
   benchmark?: BenchmarkInput;
 };
 
+// \p{L}\p{N} (Unicode letter/number) rather than a-z0-9 — an ASCII-only class
+// treats accented letters as delimiters, splitting words like "appétit" or
+// "appâts" into a false "app" token and misfiring the keyword checks below.
 function tokenize(text: string): string[] {
-  return text.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return text.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
 }
 
 // Store name for the field iOS calls "Subtitle" and Android calls "Short
@@ -78,7 +81,11 @@ function checkDuplicateKeywords(title: string, subtitle: string): Suggestion | n
   };
 }
 
-function checkKeywordStuffing(title: string, subtitle: string, isIos: boolean): Suggestion | null {
+// iOS-only — same reasoning as checkDuplicateKeywords above: Android's much
+// larger short description (80 chars) and description (4000 chars) fields
+// mean a repeated word in just the title+subtitle isn't the wasted-space
+// problem it is on iOS's tightly capped 30+30 fields.
+function checkKeywordStuffing(title: string, subtitle: string): Suggestion | null {
   const words = tokenize(`${title} ${subtitle}`).filter((w) => w.length >= 3);
   const counts = new Map<string, number>();
   for (const w of words) counts.set(w, (counts.get(w) ?? 0) + 1);
@@ -86,7 +93,7 @@ function checkKeywordStuffing(title: string, subtitle: string, isIos: boolean): 
   if (!stuffed) return null;
   return {
     title: "Keyword stuffing",
-    description: `"${stuffed[0]}" appears ${stuffed[1]} times across your title and subtitle — doesn't improve rankings and can get your app penalized by the ${isIos ? "App Store" : "Play Store"}.`,
+    description: `"${stuffed[0]}" appears ${stuffed[1]} times across your title and subtitle — doesn't improve rankings and can get your app penalized by the App Store.`,
   };
 }
 
@@ -277,7 +284,7 @@ export function computeDeterministicSuggestions(input: SuggestionInput): Suggest
     // room, and Play's algorithm doesn't penalize the same repetition — it can
     // even reinforce relevance — so this rule doesn't apply there.
     isIos ? checkDuplicateKeywords(title, subtitle) : null,
-    checkKeywordStuffing(title, subtitle, isIos),
+    isIos ? checkKeywordStuffing(title, subtitle) : null,
     checkSingularPlural(title, subtitle),
     checkTitleUnderused(title, nameLimit),
     checkMissingSubtitle(subtitle, isIos),

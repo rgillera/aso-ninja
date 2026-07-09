@@ -53,7 +53,9 @@ Has preview video: ${body.hasPreviewVideo ? "Yes" : "No"}
 These issues were already flagged by a separate rules-based checker — do NOT repeat them or suggest close variations of them:
 ${body.alreadyFlagged.length ? body.alreadyFlagged.map((t) => `- ${t}`).join("\n") : "(none)"}
 
-Give as many NEW ASO recommendations as you can genuinely justify from the metadata above — don't pad the list with generic filler, but don't stop at just one or two either. Cover different angles: missing keyword opportunities given the category, weak or missing calls to action, underused features not mentioned in the description, localization gaps, stale update cadence, thin visual assets, positioning against likely competitors, and anything else a specialist reviewing this exact listing would flag. Skip anything you're not confident applies to this specific app.
+Give as many NEW ASO recommendations as you can genuinely justify from the metadata above — don't pad the list with generic filler, but don't stop at just one or two either. Cover different angles: weak or missing calls to action, underused features not mentioned in the description, localization gaps, stale update cadence, thin visual assets, positioning against likely competitors, and anything else a specialist reviewing this exact listing would flag. Skip anything you're not confident applies to this specific app.
+
+Do NOT recommend or name specific keywords or keyword phrases (e.g. "add 'low carb tracker' to your subtitle") — you have no search-volume or competition data, so any keyword you name is a guess. If a topic or feature is underrepresented in the metadata, point that out in general terms and let the user's own keyword research tool pick the actual terms.
 
 Reply with ONLY a JSON array of objects, nothing else. Example:
 [{"title":"Short, specific title","description":"1-2 sentence explanation of the issue and fix."}]`;

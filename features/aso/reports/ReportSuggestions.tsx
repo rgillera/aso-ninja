@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { dismissSuggestion } from "./dismissedSuggestions";
@@ -102,10 +102,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
                   className="flex-1 min-w-0 text-left"
                   aria-label={itemCollapsed ? "Expand" : "Collapse"}
                 >
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium text-white">{suggestion.title}</span>
-                    <ChevronDownIcon className={`size-3.5 shrink-0 text-gray-600 transition-transform ${itemCollapsed ? "-rotate-90" : ""}`} />
-                  </span>
+                  <span className="text-sm font-medium text-white">{suggestion.title}</span>
                   {!itemCollapsed && (
                     <p className="mt-1 text-sm leading-6 text-gray-500">{suggestion.description}</p>
                   )}
