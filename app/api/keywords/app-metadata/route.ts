@@ -12,6 +12,7 @@ export type AppMetadataResult = {
 };
 
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
+import { fetchAndroidStoreData } from "@/libs/store/googleplay";
 
 const DESC_PAGE = 20;
 
@@ -93,20 +94,34 @@ export async function GET(request: NextRequest) {
 
   if (!storeId) return NextResponse.json(EMPTY);
 
-  // Android: lightweight path — just return the short description as subtitle, skip keyword extraction
+  const toKeywords = (terms: string[]): MetadataKeyword[] =>
+    terms.map((term) => ({ term, volume: 0 }));
+
+  const buildResult = (title: string, subtitle: string, description: string): AppMetadataResult => {
+    // Singles first, then bigrams — so initial page always has the core single-word keywords
+    const titleTerms    = [...extractSingles(title),    ...extractBigrams(title)];
+    const subtitleTerms = [...extractSingles(subtitle), ...extractBigrams(subtitle)];
+    const allDescTerms  = [...extractSingles(description), ...extractBigrams(description)];
+
+    const descPage    = allDescTerms.slice(descOffset, descOffset + DESC_PAGE);
+    const hasMoreDesc = allDescTerms.length > descOffset + DESC_PAGE;
+
+    return {
+      title,
+      subtitle,
+      description,
+      titleKeywords:       toKeywords(titleTerms),
+      subtitleKeywords:    toKeywords(subtitleTerms),
+      descriptionKeywords: toKeywords(descPage),
+      hasMoreDesc,
+    };
+  };
+
   if (store === "android") {
     try {
-      const res = await fetch(
-        `https://play.google.com/store/apps/details?id=${storeId}&hl=en&gl=${country}`,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { headers: { "User-Agent": "Mozilla/5.0 (compatible; Googlebot/2.1)" }, cache: "no-store" } as any,
-      );
-      if (!res.ok) return NextResponse.json(EMPTY);
-      const html = await res.text();
-      const m = html.match(/<meta[^>]+itemprop="description"[^>]+content="([^"]+)"/)
-             ?? html.match(/content="([^"]+)"[^>]+itemprop="description"/);
-      const subtitle = m ? m[1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : "";
-      return NextResponse.json({ ...EMPTY, subtitle });
+      const data = await fetchAndroidStoreData(storeId, country);
+      if (!data) return NextResponse.json(EMPTY);
+      return NextResponse.json(buildResult(data.name ?? "", data.subtitle, data.description));
     } catch {
       return NextResponse.json(EMPTY);
     }
@@ -127,26 +142,7 @@ export async function GET(request: NextRequest) {
     const subtitle    = itunesSubtitle || await scrapeAppStoreSubtitle(storeId, country);
     const description = (r.description ?? "") as string;
 
-    // Singles first, then bigrams — so initial page always has the core single-word keywords
-    const titleTerms    = [...extractSingles(title),    ...extractBigrams(title)];
-    const subtitleTerms = [...extractSingles(subtitle), ...extractBigrams(subtitle)];
-    const allDescTerms  = [...extractSingles(description), ...extractBigrams(description)];
-
-    const descPage    = allDescTerms.slice(descOffset, descOffset + DESC_PAGE);
-    const hasMoreDesc = allDescTerms.length > descOffset + DESC_PAGE;
-
-    const toKeywords = (terms: string[]): MetadataKeyword[] =>
-      terms.map((term) => ({ term, volume: 0 }));
-
-    return NextResponse.json({
-      title,
-      subtitle,
-      description,
-      titleKeywords:       toKeywords(titleTerms),
-      subtitleKeywords:    toKeywords(subtitleTerms),
-      descriptionKeywords: toKeywords(descPage),
-      hasMoreDesc,
-    } satisfies AppMetadataResult);
+    return NextResponse.json(buildResult(title, subtitle, description) satisfies AppMetadataResult);
   } catch {
     return NextResponse.json(EMPTY);
   }

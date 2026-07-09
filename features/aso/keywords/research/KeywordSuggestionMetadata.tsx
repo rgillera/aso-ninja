@@ -228,6 +228,8 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
     return <p className="px-4 py-4 text-xs text-gray-600 text-center">Select an app to see its metadata keywords.</p>;
   }
 
+  const subtitleLabel = activeApp.store === "android" ? "Short Description Keywords" : "Subtitle Keywords";
+
   return (
     <div className="px-4">
       <MetadataSection
@@ -242,7 +244,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         translating={translateToggle && translating}
       />
       <MetadataSection
-        label="Subtitle Keywords"
+        label={subtitleLabel}
         keywords={loading ? null : (data?.subtitleKeywords ?? [])}
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
