@@ -47,6 +47,17 @@ export async function GET(request: NextRequest) {
   const terms = [...new Set(termsParam.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean))];
   if (!terms.length) return NextResponse.json({});
 
+  // rankAt() below only ever looks up ourAppId and competitorIds — every other
+  // app's position for these keywords is fetched and thrown away. Since
+  // keyword_rankings_history isn't scoped per workspace (a Live Search records
+  // every app in the results, from any workspace that ever searched a shared
+  // term), a large tracked-keyword list with a few generic terms in it (e.g.
+  // "pet care") can pull in tens of thousands of irrelevant rows and blow past
+  // PostgREST's default 1000-row cap — silently truncating the response and
+  // making unrelated keywords show as "Unknown" with no error anywhere.
+  // Filtering to just the app_ids we actually use keeps this bounded.
+  const relevantAppIds = [...new Set([ourAppId, ...competitorIds].filter(Boolean))];
+
   const supabase = await createClient();
 
   const [popRes, rankRes] = await Promise.all([
@@ -63,6 +74,7 @@ export async function GET(request: NextRequest) {
       .in("keyword", terms)
       .eq("store", store)
       .eq("country", country)
+      .in("app_id", relevantAppIds)
       .order("recorded_on", { ascending: true }),
   ]);
 

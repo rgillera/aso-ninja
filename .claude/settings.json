@@ -115,7 +115,13 @@
       "Bash(curl -s https://www.appaso.io/ -o /private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/0acbf34f-8c38-466c-9869-7e51c0bed43b/scratchpad/home.html)",
       "Bash(npx --yes vercel logs https://www.appaso.io -f error)",
       "Bash(npx --yes vercel logs --help)",
-      "Bash(grep -rn \"fetch\\(\\\\`\\\\${OLLAMA_HOST}\\\\|fetch\\(\\\\`\\\\\\\\\\\\${OLLAMA_HOST}\" /Users/bmo/Documents/dev/aso-ninja --include=\"*.ts\")"
+      "Bash(grep -rn \"fetch\\(\\\\`\\\\${OLLAMA_HOST}\\\\|fetch\\(\\\\`\\\\\\\\\\\\${OLLAMA_HOST}\" /Users/bmo/Documents/dev/aso-ninja --include=\"*.ts\")",
+      "Bash(curl -s -m 15 -o /dev/null -w \"itunes: %{http_code} time=%{time_total}s\\\\n\" \"https://itunes.apple.com/search?term=spotify&entity=software&limit=5&country=us\")",
+      "Bash(curl -s -m 15 -o /dev/null -w \"play: %{http_code} time=%{time_total}s\\\\n\" \"https://play.google.com/store/apps/details?id=com.spotify.music&hl=en&gl=us\")",
+      "Bash(node /private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/dbfc724d-7784-4ef3-9f94-6eaf91f55d21/scratchpad/verify-cron.mjs)",
+      "Bash(git check-ignore *)",
+      "Bash(node ./scratch-verify-cron.mjs)",
+      "Bash(supabase projects *)"
     ],
     "additionalDirectories": [
       "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/390bc2a4-ad8e-4734-8c51-a672fca56ba8/scratchpad"

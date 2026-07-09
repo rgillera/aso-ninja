@@ -25,8 +25,7 @@ export function todayIso(): string {
 export const DEFAULT_RANGE: DateRange = { from: todayIso(), to: todayIso() };
 
 export function formatRank(v: RankValue | undefined): string {
-  if (v === undefined || v === "unknown") return "Unknown";
-  if (v === "unranked") return "Unranked";
+  if (v === undefined || v === "unknown" || v === "unranked") return "Unranked";
   return `#${v}`;
 }
 

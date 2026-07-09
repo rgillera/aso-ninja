@@ -94,7 +94,7 @@ function GrowthCell({ value }: { value: number | null }) {
 
 function RankCell({ value, date, onClick }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null; onClick: () => void }) {
   const label = formatRank(value);
-  const muted = label === "Unknown" || label === "Unranked";
+  const muted = label === "Unranked";
   return (
     <button onClick={onClick} title="View rank history" className="flex flex-col items-start rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors text-left">
       <span className={`inline-flex items-center gap-1 text-sm tabular-nums ${muted ? "text-gray-600" : "text-gray-300"}`}>
