@@ -83,7 +83,10 @@ export async function lookupAppStore(storeId: string): Promise<AppSearchResult |
 function extractIosSubtitle(html: string, trackName: string): string {
   try {
     const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}","isIOSBinaryMacOSCompatible":(?:true|false),"useAdsLocale":(?:true|false),"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
+    // Apple doesn't guarantee key order in the embedded JSON around "title", so
+    // allow any number of sibling keys between "title" and "subtitle" rather than
+    // hard-coding the exact key sequence (which has changed before).
+    const re = new RegExp(`"title":"${escaped}",(?:"[^"]+":(?:"(?:[^"\\\\]|\\\\.)*"|true|false|null|-?\\d+(?:\\.\\d+)?),){0,15}?"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
     const m = html.match(re);
     return m ? JSON.parse(`"${m[1]}"`) : "";
   } catch {
