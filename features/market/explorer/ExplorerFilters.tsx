@@ -26,6 +26,17 @@ const CHART_LABEL: Record<Filters["chart"], string> = {
   new: "New Apps",
 };
 
+// "major"/"other" are the country filter's curated-set sentinels (see
+// MAJOR_MARKET_COUNTRIES / OTHER_MARKET_COUNTRIES in types.ts).
+const COUNTRY_FILTER_LABEL: Record<"major" | "other", string> = {
+  major: "Major Markets",
+  other: "Other Markets",
+};
+
+function countryFilterLabel(sentinel: "major" | "other"): string {
+  return COUNTRY_FILTER_LABEL[sentinel];
+}
+
 // Google Play has no device-specific charts, which is why Device gets
 // disabled for it below. It also has no "new apps" feed at all — unlike iOS's
 // New Apps (Apple's live feed), Android's New Apps is sourced from our own
@@ -116,10 +127,24 @@ export function ExplorerFilters({ filters, onChange }: Props) {
       </div>
 
       <Dropdown
-        label={`${countryFlag(filters.country)} ${COUNTRIES.find((c) => c.code === filters.country)?.label ?? filters.country}`}
+        label={
+          filters.country === "major" || filters.country === "other"
+            ? <span className="inline-flex items-center gap-1.5"><GlobeAltIcon className="size-3.5" />{countryFilterLabel(filters.country)}</span>
+            : `${countryFlag(filters.country)} ${COUNTRIES.find((c) => c.code === filters.country)?.label ?? filters.country}`
+        }
         active={filters.country !== DEFAULT_FILTERS.country}
       >
         <div className="flex flex-col gap-0.5">
+          <DropdownOption
+            label={<span className="inline-flex items-center gap-1.5"><GlobeAltIcon className="size-3.5" />{countryFilterLabel("major")}</span>}
+            active={filters.country === "major"}
+            onClick={() => onChange({ country: "major" })}
+          />
+          <DropdownOption
+            label={<span className="inline-flex items-center gap-1.5"><GlobeAltIcon className="size-3.5" />{countryFilterLabel("other")}</span>}
+            active={filters.country === "other"}
+            onClick={() => onChange({ country: "other" })}
+          />
           {COUNTRIES.map((c) => (
             <DropdownOption
               key={c.code}

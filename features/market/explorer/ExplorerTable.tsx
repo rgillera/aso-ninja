@@ -22,7 +22,7 @@ type Props = {
   onToggleConnected: (storeId: string, store: "ios" | "android") => void;
 };
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 100;
 
 const STATUS_LABEL: Record<StatusFilter, string> = {
   all: "All statuses",
@@ -35,7 +35,12 @@ const STATUS_LABEL: Record<StatusFilter, string> = {
 // Android) and forwards there — useful for the growth team vetting an app
 // before outreach. Falls back to the store listing if no privacy link is found.
 function privacyRedirectHref(app: ChartApp, country: string): string {
-  const params = new URLSearchParams({ store: app.store, storeId: app.storeId, country, fallback: app.url });
+  // "major"/"other" are the filter's sentinels for merging a curated set of
+  // markets' charts together — apps carry no per-country origin, so the
+  // redirect (which needs one real ccTLD to build the storefront URL) falls
+  // back to US.
+  const isCuratedSet = country === "major" || country === "other";
+  const params = new URLSearchParams({ store: app.store, storeId: app.storeId, country: isCuratedSet ? "US" : country, fallback: app.url });
   return `/api/market/redirect?${params}`;
 }
 

@@ -8,7 +8,7 @@ import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { createClient } from "@/libs/supabase/client";
 import { ExplorerFilters } from "./ExplorerFilters";
 import { ExplorerTable } from "./ExplorerTable";
-import { DEFAULT_FILTERS, type Filters, type ChartApp } from "./types";
+import { DEFAULT_FILTERS, MAJOR_MARKET_COUNTRIES, OTHER_MARKET_COUNTRIES, type Filters, type ChartApp } from "./types";
 import type { MarketExplorerResult } from "@/app/api/market/explorer/route";
 import type { MarketStatusMap } from "@/app/api/market/status/route";
 
@@ -32,10 +32,10 @@ export default function AppExplorerPage() {
     // Apple's chart feed caps at 100 real results, Play's at 200 — both
     // fetched in full up front, so paging through the table is instant and
     // needs no further requests (see ExplorerTable's client-side pagination).
-    function fetchStore(store: "ios" | "android"): Promise<MarketExplorerResult & { error?: string }> {
+    function fetchOne(store: "ios" | "android", country: string): Promise<MarketExplorerResult & { error?: string }> {
       const params = new URLSearchParams({
         store,
-        country: filters.country,
+        country,
         device: filters.device === "all" ? "iphone" : filters.device,
         chart: filters.chart,
         limit: store === "android" ? "200" : "100",
@@ -46,24 +46,27 @@ export default function AppExplorerPage() {
       return fetch(`/api/market/explorer?${params}`, { signal: controller.signal }).then((r) => r.json());
     }
 
-    // "All Stores" has no single-request equivalent server-side — fan out to
-    // both feeds in parallel and merge. Only errors out if both fail; a
-    // partial result (one store down) still renders what came back.
-    const request: Promise<MarketExplorerResult & { error?: string }> =
-      filters.store === "all"
-        ? Promise.all([fetchStore("ios"), fetchStore("android")]).then(([ios, android]) => {
-            const merged = [...(ios.apps ?? []), ...(android.apps ?? [])];
-            if (merged.length === 0 && (ios.error || android.error)) {
-              return { apps: [], error: ios.error ?? android.error };
-            }
-            return { apps: merged };
-          })
-        : fetchStore(filters.store);
+    const stores: ("ios" | "android")[] = filters.store === "all" ? ["ios", "android"] : [filters.store];
+    // "major"/"other" are curated, bounded sets (see MAJOR_MARKET_COUNTRIES /
+    // OTHER_MARKET_COUNTRIES) rather than a literal "every country" option.
+    const countries =
+      filters.country === "major" ? MAJOR_MARKET_COUNTRIES
+      : filters.country === "other" ? OTHER_MARKET_COUNTRIES
+      : [filters.country];
 
-    request
-      .then((data) => {
-        if (data.error) { setError(data.error); setApps([]); return; }
-        setApps(data.apps ?? []);
+    // "All Stores"/"All Countries" have no single-request equivalent
+    // server-side — fan out across every store × country combination in
+    // parallel and merge. Only errors out if every request fails; a partial
+    // result (some markets down) still renders what came back.
+    Promise.all(stores.flatMap((store) => countries.map((country) => fetchOne(store, country))))
+      .then((results) => {
+        const merged = results.flatMap((r) => r.apps ?? []);
+        if (merged.length === 0 && results.every((r) => r.error)) {
+          setError(results[0].error ?? "Couldn't load the chart data.");
+          setApps([]);
+          return;
+        }
+        setApps(merged);
       })
       .catch((e) => { if (e.name !== "AbortError") setError("Couldn't load the chart data."); })
       .finally(() => setLoading(false));

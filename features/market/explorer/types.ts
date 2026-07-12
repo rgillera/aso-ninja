@@ -18,10 +18,18 @@ export const DEFAULT_FILTERS: Filters = {
   store: "all",
   device: "all",
   category: "all",
-  country: "US",
+  country: "major",
   chart: "free",
   query: "",
 };
+
+// Merging all ~169 countries from libs/countries.ts would mean that many
+// requests per store and a list dominated by the same handful of global apps
+// repeated for every market (rank is only meaningful within a single
+// country's chart) — the country filter offers two curated, bounded sets
+// instead of a literal "every country" option.
+export const MAJOR_MARKET_COUNTRIES = ["US", "GB", "DE", "FR", "JP", "KR", "BR", "AU", "CA", "IN"];
+export const OTHER_MARKET_COUNTRIES = ["MX", "ES", "IT", "NL", "SE", "ID", "SG", "PH", "TR", "SA"];
 
 export function isFiltersDefault(f: Filters): boolean {
   return (
