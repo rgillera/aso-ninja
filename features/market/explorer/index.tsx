@@ -60,7 +60,31 @@ export default function AppExplorerPage() {
     // result (some markets down) still renders what came back.
     Promise.all(stores.flatMap((store) => countries.map((country) => fetchOne(store, country))))
       .then((results) => {
-        const merged = results.flatMap((r) => r.apps ?? []);
+        const lists = results.map((r) => r.apps ?? []);
+        // Round-robin by rank position across every combo instead of
+        // concatenating list-by-list — a plain concat would put every iOS
+        // result (up to ~1000 rows across 10 countries) ahead of the first
+        // Android row, burying Android several pages deep with no sort
+        // applied. This keeps each list's internal rank order but interleaves
+        // stores/countries so page one is a mix from the start.
+        const maxLen = Math.max(0, ...lists.map((l) => l.length));
+        // The same app routinely tops the charts in several countries at
+        // once (e.g. ChatGPT #1 in both US and GB), so merging multiple
+        // countries produces the same storeId more than once — dedupe here,
+        // keeping the first (best-ranked, thanks to the round-robin above)
+        // occurrence rather than showing it as a duplicate row.
+        const seen = new Set<string>();
+        const merged: ChartApp[] = [];
+        for (let i = 0; i < maxLen; i++) {
+          for (const list of lists) {
+            const app = list[i];
+            if (!app) continue;
+            const key = `${app.store}:${app.storeId}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(app);
+          }
+        }
         if (merged.length === 0 && results.every((r) => r.error)) {
           setError(results[0].error ?? "Couldn't load the chart data.");
           setApps([]);

@@ -5,6 +5,7 @@ import {
   ChevronLeftIcon, ChevronRightIcon,
   ChevronDoubleLeftIcon, ChevronDoubleRightIcon,
   MagnifyingGlassIcon, StarIcon, CheckCircleIcon, XMarkIcon,
+  ClipboardIcon, ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import type { ChartApp } from "./types";
 import type { MarketStatusMap } from "@/app/api/market/status/route";
@@ -63,6 +64,7 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -127,6 +129,12 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
 
   function clearSelection() {
     setSelected(new Set());
+  }
+
+  function copyAppName(storeId: string, name: string) {
+    navigator.clipboard.writeText(name);
+    setCopiedId(storeId);
+    setTimeout(() => setCopiedId((prev) => (prev === storeId ? null : prev)), 1500);
   }
 
   // Reuses the single-app toggle callback for every selected app whose
@@ -247,19 +255,33 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                       />
                     </td>
                     <td className="px-3 py-2.5">
-                      <a href={privacyRedirectHref(app, country)} target="_blank" rel="noreferrer" className="flex items-center gap-3 min-w-0 group" title="Open developer's privacy policy">
-                        <div className="relative shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05]" />
-                          <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] ring-1 ring-white/10">
-                            <StoreIcon store={app.store} className="size-2.5 text-gray-300" />
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm text-gray-200 group-hover:text-white truncate">{app.name}</p>
-                          <p className="text-xs text-gray-600 truncate">{app.developer}</p>
-                        </div>
-                      </a>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <button
+                          onClick={() => copyAppName(app.storeId, app.name)}
+                          className="inline-flex items-center justify-center rounded-full p-1.5 shrink-0 text-gray-500 hover:bg-white/[0.08] hover:text-gray-300 transition-colors"
+                          title="Copy app name"
+                          aria-label={`Copy ${app.name}`}
+                        >
+                          {copiedId === app.storeId ? (
+                            <ClipboardDocumentCheckIcon className="size-3.5 text-emerald-400" />
+                          ) : (
+                            <ClipboardIcon className="size-3.5" />
+                          )}
+                        </button>
+                        <a href={privacyRedirectHref(app, country)} target="_blank" rel="noreferrer" className="flex items-center gap-3 min-w-0 group" title="Open developer's privacy policy">
+                          <div className="relative shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05]" />
+                            <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] ring-1 ring-white/10">
+                              <StoreIcon store={app.store} className="size-2.5 text-gray-300" />
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm text-gray-200 group-hover:text-white truncate">{app.name}</p>
+                            <p className="text-xs text-gray-600 truncate">{app.developer}</p>
+                          </div>
+                        </a>
+                      </div>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap">{app.genre}</td>
                     <td className="px-3 py-2.5 text-sm text-gray-300 whitespace-nowrap">{app.priceLabel}</td>
