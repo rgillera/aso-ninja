@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeftIcon, ChevronRightIcon,
   ChevronDoubleLeftIcon, ChevronDoubleRightIcon,
-  MagnifyingGlassIcon, StarIcon, CheckCircleIcon,
+  MagnifyingGlassIcon, StarIcon, CheckCircleIcon, XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { ChartApp } from "./types";
 import type { MarketStatusMap } from "@/app/api/market/status/route";
@@ -57,6 +57,7 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [sortAsc, setSortAsc] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -83,10 +84,50 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
+  // Selection is keyed by storeId and spans the whole filtered set (not just
+  // the current page), so "select all" + bulk connect/unconnect apply to
+  // every app matching the current search/status filter, not just what's
+  // visible on screen.
+  const allFilteredIds = useMemo(() => sorted.map((a) => a.storeId), [sorted]);
+  const selectedCount = selected.size;
+  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selected.has(id));
+  const someSelected = selectedCount > 0 && !allSelected;
+
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (headerCheckboxRef.current) headerCheckboxRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc((v) => !v);
     else { setSortKey(key); setSortAsc(true); }
     setPage(0);
+  }
+
+  function toggleSelectAll() {
+    setSelected(allSelected ? new Set() : new Set(allFilteredIds));
+  }
+
+  function toggleSelectRow(storeId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(storeId)) next.delete(storeId); else next.add(storeId);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  // Reuses the single-app toggle callback for every selected app whose
+  // current state differs from the target, rather than requiring a bulk API.
+  function bulkSetConnected(target: boolean) {
+    for (const app of sorted) {
+      if (selected.has(app.storeId) && !!connected[app.storeId] !== target) {
+        onToggleConnected(app.storeId, app.store);
+      }
+    }
   }
 
   const SortTh = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
@@ -125,11 +166,49 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
         </span>
       </div>
 
+      {/* Bulk selection actions */}
+      {selectedCount > 0 && (
+        <div className="px-4 py-2 border-b border-white/[0.07] flex items-center gap-3 bg-emerald-500/[0.04]">
+          <span className="text-xs text-gray-300">{selectedCount.toLocaleString()} selected</span>
+          <button
+            onClick={() => bulkSetConnected(true)}
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors"
+          >
+            <CheckCircleIcon className="size-3.5" />
+            Connect selected
+          </button>
+          <button
+            onClick={() => bulkSetConnected(false)}
+            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium bg-white/[0.05] text-gray-400 hover:bg-white/[0.08] hover:text-gray-200 transition-colors"
+          >
+            Unconnect selected
+          </button>
+          <button
+            onClick={clearSelection}
+            className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            <XMarkIcon className="size-3.5" />
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[820px] border-collapse">
           <thead>
             <tr className="border-b border-white/[0.07]">
+              <th className="px-3 py-2.5 w-8">
+                <input
+                  ref={headerCheckboxRef}
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  disabled={allFilteredIds.length === 0}
+                  className="size-3.5 rounded border-white/20 bg-transparent accent-emerald-500 cursor-pointer disabled:cursor-default"
+                  aria-label="Select all apps"
+                />
+              </th>
               <SortTh col="rank" label="Rank" className="w-16" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">App</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Category</th>
@@ -143,13 +222,22 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-white/[0.04]">
-                    <td colSpan={7} className="px-3 py-3.5">
+                    <td colSpan={8} className="px-3 py-3.5">
                       <div className="h-4 rounded bg-white/[0.04] animate-pulse" />
                     </td>
                   </tr>
                 ))
               : pageRows.map((app) => (
-                  <tr key={app.storeId} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
+                  <tr key={app.storeId} className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${selected.has(app.storeId) ? "bg-emerald-500/[0.03]" : ""}`}>
+                    <td className="px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selected.has(app.storeId)}
+                        onChange={() => toggleSelectRow(app.storeId)}
+                        className="size-3.5 rounded border-white/20 bg-transparent accent-emerald-500 cursor-pointer"
+                        aria-label={`Select ${app.name}`}
+                      />
+                    </td>
                     <td className="px-3 py-2.5 text-sm tabular-nums font-medium text-white">#{app.rank}</td>
                     <td className="px-3 py-2.5">
                       <a href={privacyRedirectHref(app, country)} target="_blank" rel="noreferrer" className="flex items-center gap-3 min-w-0 group" title="Open developer's privacy policy">
