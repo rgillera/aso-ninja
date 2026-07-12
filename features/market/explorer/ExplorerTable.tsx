@@ -11,7 +11,7 @@ import type { MarketStatusMap } from "@/app/api/market/status/route";
 import { Dropdown, DropdownOption } from "./Dropdown";
 import { StoreIcon } from "./StoreIcon";
 
-type SortKey = "rank" | "price" | "rating" | "updated";
+type SortKey = "price" | "rating" | "updated";
 type StatusFilter = "all" | "connected" | "unconnected";
 
 type Props = {
@@ -55,7 +55,7 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("rank");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -71,9 +71,9 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   }, [apps, query, statusFilter, connected]);
 
   const sorted = useMemo(() => {
+    if (sortKey === null) return filtered;
     return [...filtered].sort((a, b) => {
       let diff = 0;
-      if (sortKey === "rank") diff = a.rank - b.rank;
       if (sortKey === "price") diff = a.price - b.price;
       if (sortKey === "rating") diff = (b.rating ?? -1) - (a.rating ?? -1);
       if (sortKey === "updated") diff = (b.lastUpdatedAt ?? -1) - (a.lastUpdatedAt ?? -1);
@@ -213,7 +213,6 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                   aria-label="Select all on this page"
                 />
               </th>
-              <SortTh col="rank" label="Rank" className="w-16" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">App</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Category</th>
               <SortTh col="price" label="Price" />
@@ -226,7 +225,7 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-white/[0.04]">
-                    <td colSpan={8} className="px-3 py-3.5">
+                    <td colSpan={7} className="px-3 py-3.5">
                       <div className="h-4 rounded bg-white/[0.04] animate-pulse" />
                     </td>
                   </tr>
@@ -242,7 +241,6 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                         aria-label={`Select ${app.name}`}
                       />
                     </td>
-                    <td className="px-3 py-2.5 text-sm tabular-nums font-medium text-white">#{app.rank}</td>
                     <td className="px-3 py-2.5">
                       <a href={privacyRedirectHref(app, country)} target="_blank" rel="noreferrer" className="flex items-center gap-3 min-w-0 group" title="Open developer's privacy policy">
                         <div className="relative shrink-0">

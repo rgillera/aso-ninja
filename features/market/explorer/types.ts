@@ -1,11 +1,12 @@
 import type { ChartApp } from "@/libs/contracts";
 
 export type Store = "ios" | "android";
+export type StoreFilter = "all" | Store;
 export type Device = "all" | "iphone" | "ipad";
 export type ChartType = "free" | "paid" | "grossing" | "new";
 
 export type Filters = {
-  store: Store;
+  store: StoreFilter;
   device: Device;
   category: string; // "all", an Apple genre id, or a Play category constant — id space depends on `store`
   country: string;  // ISO country code
@@ -14,7 +15,7 @@ export type Filters = {
 };
 
 export const DEFAULT_FILTERS: Filters = {
-  store: "ios",
+  store: "all",
   device: "all",
   category: "all",
   country: "US",

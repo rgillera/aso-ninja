@@ -26,22 +26,42 @@ export default function AppExplorerPage() {
     if (planSlug !== "enterprise") return;
     setLoading(true);
     setError(null);
+
+    const controller = new AbortController();
+
     // Apple's chart feed caps at 100 real results, Play's at 200 — both
     // fetched in full up front, so paging through the table is instant and
     // needs no further requests (see ExplorerTable's client-side pagination).
-    const params = new URLSearchParams({
-      store: filters.store,
-      country: filters.country,
-      device: filters.device === "all" ? "iphone" : filters.device,
-      chart: filters.chart,
-      limit: filters.store === "android" ? "200" : "100",
-    });
-    if (filters.category !== "all") params.set("category", filters.category);
+    function fetchStore(store: "ios" | "android"): Promise<MarketExplorerResult & { error?: string }> {
+      const params = new URLSearchParams({
+        store,
+        country: filters.country,
+        device: filters.device === "all" ? "iphone" : filters.device,
+        chart: filters.chart,
+        limit: store === "android" ? "200" : "100",
+      });
+      // Category ids are a different id space per store, so it's only sent
+      // when a single store is selected (the UI disables the picker for "all").
+      if (filters.category !== "all" && filters.store !== "all") params.set("category", filters.category);
+      return fetch(`/api/market/explorer?${params}`, { signal: controller.signal }).then((r) => r.json());
+    }
 
-    const controller = new AbortController();
-    fetch(`/api/market/explorer?${params}`, { signal: controller.signal })
-      .then((r) => r.json())
-      .then((data: MarketExplorerResult & { error?: string }) => {
+    // "All Stores" has no single-request equivalent server-side — fan out to
+    // both feeds in parallel and merge. Only errors out if both fail; a
+    // partial result (one store down) still renders what came back.
+    const request: Promise<MarketExplorerResult & { error?: string }> =
+      filters.store === "all"
+        ? Promise.all([fetchStore("ios"), fetchStore("android")]).then(([ios, android]) => {
+            const merged = [...(ios.apps ?? []), ...(android.apps ?? [])];
+            if (merged.length === 0 && (ios.error || android.error)) {
+              return { apps: [], error: ios.error ?? android.error };
+            }
+            return { apps: merged };
+          })
+        : fetchStore(filters.store);
+
+    request
+      .then((data) => {
         if (data.error) { setError(data.error); setApps([]); return; }
         setApps(data.apps ?? []);
       })
