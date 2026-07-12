@@ -84,19 +84,18 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Selection is keyed by storeId and spans the whole filtered set (not just
-  // the current page), so "select all" + bulk connect/unconnect apply to
-  // every app matching the current search/status filter, not just what's
-  // visible on screen.
-  const allFilteredIds = useMemo(() => sorted.map((a) => a.storeId), [sorted]);
+  // Selection is keyed by storeId. "Select all" only covers the current
+  // page — selections on other pages are preserved when paging back and
+  // forth, but the header checkbox reflects and toggles this page alone.
+  const pageIds = useMemo(() => pageRows.map((a) => a.storeId), [pageRows]);
   const selectedCount = selected.size;
-  const allSelected = allFilteredIds.length > 0 && allFilteredIds.every((id) => selected.has(id));
-  const someSelected = selectedCount > 0 && !allSelected;
+  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const pageSomeSelected = pageIds.some((id) => selected.has(id)) && !pageAllSelected;
 
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    if (headerCheckboxRef.current) headerCheckboxRef.current.indeterminate = someSelected;
-  }, [someSelected]);
+    if (headerCheckboxRef.current) headerCheckboxRef.current.indeterminate = pageSomeSelected;
+  }, [pageSomeSelected]);
 
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc((v) => !v);
@@ -105,7 +104,12 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   }
 
   function toggleSelectAll() {
-    setSelected(allSelected ? new Set() : new Set(allFilteredIds));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
   }
 
   function toggleSelectRow(storeId: string) {
@@ -202,11 +206,11 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                 <input
                   ref={headerCheckboxRef}
                   type="checkbox"
-                  checked={allSelected}
+                  checked={pageAllSelected}
                   onChange={toggleSelectAll}
-                  disabled={allFilteredIds.length === 0}
+                  disabled={pageIds.length === 0}
                   className="size-3.5 rounded border-white/20 bg-transparent accent-emerald-500 cursor-pointer disabled:cursor-default"
-                  aria-label="Select all apps"
+                  aria-label="Select all on this page"
                 />
               </th>
               <SortTh col="rank" label="Rank" className="w-16" />
