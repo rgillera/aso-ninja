@@ -4,7 +4,7 @@ import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { isGeminiReachable, generateText, embedText, embedTexts } from "@/libs/gemini";
-import { findRankIdx, computeChance, hintsScore } from "@/libs/keyword-rank-match";
+import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -397,10 +397,8 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-    const [apps, suggestions]: [any[], string[]] = await Promise.all([ // eslint-disable-line @typescript-eslint/no-explicit-any
-      api.search({ term, country: country.toLowerCase(), num: 250 }),
-      api.suggest({ term, lang: "en", country: country.toLowerCase() }).catch(() => [] as string[]),
-    ]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
 
     const count = apps.length;
     const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
@@ -408,12 +406,13 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
     const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
     const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
-    const fallbackScore    = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
-
-    const suggestIdx = (suggestions as string[]).findIndex(
-      (s) => s.toLowerCase() === term.toLowerCase()
-    );
-    const volume = hintsScore(suggestIdx, suggestions.length || 5, fallbackScore);
+    // Play's "suggest" autocomplete used to feed this (does the exact term
+    // appear in autosuggest?), but it almost always echoes back any
+    // well-formed multi-word phrase as its own top suggestion — that made
+    // volume saturate near 100 for precisely the specific, long-tail phrases
+    // ASO research cares about most, while only discriminating on single
+    // generic words. Title-match/result-count is a weaker but honest signal.
+    const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
 
     const top5 = apps.slice(0, 5);
     // Use rating *count* (install signal), not star rating — same approach as iOS.

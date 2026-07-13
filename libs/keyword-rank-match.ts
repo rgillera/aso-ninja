@@ -36,10 +36,3 @@ export function computeChance(diff: number, rank: number | null): number {
     ? Math.max(rawChance, Math.min(95, 100 - rank))
     : rawChance;
 }
-
-// Android volume fallback: blends a Play "suggest" match position with a
-// generic result-count score when the term doesn't show up in suggestions.
-export function hintsScore(idx: number, total: number, resultCountScore: number): number {
-  if (idx === -1) return Math.round(resultCountScore * 0.7);
-  return Math.max(Math.round(((total - idx) / total) * 100), 5);
-}

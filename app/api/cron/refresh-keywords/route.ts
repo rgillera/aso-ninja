@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
-import { findRankIdx, computeChance, hintsScore } from "@/libs/keyword-rank-match";
+import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 // Vercel: 300s on Pro, 60s on Hobby (~40 keywords/run on Hobby)
 export const maxDuration = 300;
@@ -139,10 +139,8 @@ export async function GET(req: Request) {
         const gplay = await import("google-play-scraper");
         const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-        const [apps, suggestions]: [any[], string[]] = await Promise.all([ // eslint-disable-line @typescript-eslint/no-explicit-any
-          api.search({ term, country: country.toLowerCase(), num: 250 }),
-          api.suggest({ term, lang: "en", country: country.toLowerCase() }).catch(() => [] as string[]),
-        ]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
 
         const count = apps.length;
         const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
@@ -150,10 +148,9 @@ export async function GET(req: Request) {
         const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
         const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
         const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
-        const fallbackScore    = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
-
-        const suggestIdx = suggestions.findIndex((s) => s.toLowerCase() === term.toLowerCase());
-        const volume = hintsScore(suggestIdx, suggestions.length || 5, fallbackScore);
+        // See app/api/keywords/metrics/route.ts for why this dropped the
+        // Play-suggest-echo signal in favor of title-match/result-count.
+        const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
 
         const top5 = apps.slice(0, 5);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
