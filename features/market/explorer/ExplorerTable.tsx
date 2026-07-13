@@ -268,7 +268,14 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                             <ClipboardIcon className="size-3.5" />
                           )}
                         </button>
-                        <a href={privacyRedirectHref(app, country)} target="_blank" rel="noreferrer" className="flex items-center gap-3 min-w-0 group" title="Open developer's privacy policy">
+                        <a
+                          href={privacyRedirectHref(app, country)}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={() => copyAppName(app.storeId, app.name)}
+                          className="flex items-center gap-3 min-w-0 group"
+                          title="Open developer's privacy policy and copy app name"
+                        >
                           <div className="relative shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05]" />
