@@ -172,7 +172,7 @@ export function KeywordSuggestionCompetitors({
       setData(null);
       return;
     }
-    const key = `${activeApp.store_id}-${activeApp.country}-${competitors.map((c) => c.storeId).sort().join(",")}`;
+    const key = `${activeApp.store_id}-${activeApp.store}-${activeApp.country}-${competitors.map((c) => c.storeId).sort().join(",")}`;
     if (fetchKey === key) return;
     setFetchKey(key);
     setLoading(true);
@@ -187,6 +187,7 @@ export function KeywordSuggestionCompetitors({
     const params = new URLSearchParams({
       storeId:       activeApp.store_id,
       country:       activeApp.country ?? "us",
+      store:         activeApp.store,
       competitorIds: competitors.map((c) => c.storeId).join(","),
     });
     fetch(`/api/keywords/competitor-keywords?${params}`)

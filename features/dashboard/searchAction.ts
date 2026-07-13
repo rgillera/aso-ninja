@@ -31,15 +31,8 @@ export async function searchStoreApps(query: string, country: string): Promise<S
   const iosResults     = ios.status === "fulfilled" && ios.value !== null ? ios.value : [];
   const iosUnavailable = ios.status === "rejected" || (ios.status === "fulfilled" && ios.value === null);
   const androidResults = android.status === "fulfilled" ? android.value : [];
-  const out = {
+  return {
     results: interleave(iosResults, androidResults).slice(0, 24),
     iosUnavailable,
   };
-  await import("fs/promises").then((fs) =>
-    fs.writeFile(
-      "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/1cfdf1f5-dff3-422c-b41b-d39adb4ebfb4/scratchpad/action-return-debug.txt",
-      JSON.stringify(out, null, 2)
-    )
-  );
-  return out;
 }

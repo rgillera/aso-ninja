@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
+import { fetchStoreData } from "@/libs/store/load-benchmark";
 
 export type CompetitorKeyword = {
   term: string;
@@ -43,52 +44,50 @@ function extractTerms(text: string): string[] {
   return [...singles, ...bigrams];
 }
 
-// GET /api/keywords/competitor-keywords?storeId=X&competitorIds=id1,id2,...&country=us
+// GET /api/keywords/competitor-keywords?storeId=X&competitorIds=id1,id2,...&country=us&store=ios|android
+//
+// Competitors are assumed to be on the same store platform as the primary app
+// (the "add competitor" search UI already only searches that platform — see
+// the same assumption documented in app/api/competitors/route.ts). storeId
+// doubles as bundleId for Android, since googleplay.ts's searchPlayStore sets
+// both to the Play Store package id.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const storeId       = searchParams.get("storeId") ?? "";
   const country       = (searchParams.get("country") ?? "us").toLowerCase();
+  const store         = searchParams.get("store") === "android" ? "android" : "ios";
   const competitorIds = (searchParams.get("competitorIds") ?? "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+    .split(",").map((s) => s.trim()).filter(Boolean).slice(0, 25);
 
   if (!storeId || !competitorIds.length) return NextResponse.json(EMPTY);
 
   // 1. Lookup current app to get its own terms (to exclude from results)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const appRes = await fetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`, { cache: "no-store" } as any);
-  if (!appRes.ok) return NextResponse.json(EMPTY);
-  const appData = await appRes.json();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const app = (appData.results ?? [])[0] as any;
-  if (!app) return NextResponse.json(EMPTY);
+  const ownData = await fetchStoreData(store, storeId, storeId, country);
+  if (!ownData) return NextResponse.json(EMPTY);
 
-  const appName     = (app.trackName ?? "") as string;
-  const subtitle    = (app.subtitle ?? app.trackSubtitle ?? "") as string;
-  const description = (app.description ?? "") as string;
-  const ownTerms    = new Set(extractTerms(`${appName} ${subtitle} ${description}`));
+  const appName  = ownData.name ?? "";
+  const ownTerms = new Set(extractTerms(`${appName} ${ownData.subtitle} ${ownData.description}`));
 
-  // 2. Batch lookup the user-provided competitor IDs
-  const ids = competitorIds.slice(0, 25).join(",");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const batchRes = await fetch(`https://itunes.apple.com/lookup?id=${ids}&country=${country}`, { cache: "no-store" } as any);
-  if (!batchRes.ok) return NextResponse.json({ appName, keywords: [], competitorApps: [] });
-  const batchData = await batchRes.json();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const competitors: any[] = (batchData.results ?? []).filter((r: any) => String(r.trackId) !== storeId);
+  // 2. Lookup each competitor
+  const competitorResults = await Promise.all(
+    competitorIds
+      .filter((id) => id !== storeId)
+      .map(async (id) => ({ id, data: await fetchStoreData(store, id, id, country) }))
+  );
+  const competitors = competitorResults.filter((c): c is { id: string; data: NonNullable<typeof c.data> } => !!c.data);
 
   if (!competitors.length) return NextResponse.json({ appName, keywords: [], competitorApps: [] });
 
   // 3. Extract keywords from each competitor's full metadata (title + subtitle + description)
   const keywordMap = new Map<string, Set<string>>(); // term → competitor app names
-  for (const comp of competitors) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const c    = comp as any;
-    const text = `${c.trackName ?? ""} ${c.subtitle ?? c.trackSubtitle ?? ""} ${c.description ?? ""}`;
+  for (const { data } of competitors) {
+    const name = data.name ?? "";
+    const text = `${name} ${data.subtitle} ${data.description}`;
     const terms = extractTerms(text);
     for (const term of terms) {
       if (!ownTerms.has(term)) {
         if (!keywordMap.has(term)) keywordMap.set(term, new Set());
-        keywordMap.get(term)!.add(comp.trackName as string);
+        keywordMap.get(term)!.add(name);
       }
     }
   }
@@ -98,10 +97,7 @@ export async function GET(request: NextRequest) {
     .map(([term, apps]) => ({ term, competitors: [...apps] }))
     .sort((a, b) => b.competitors.length - a.competitors.length || a.term.localeCompare(b.term));
 
-  const competitorApps = competitors.map((c) => ({
-    name: c.trackName as string,
-    icon: (c.artworkUrl60 ?? c.artworkUrl100 ?? "") as string,
-  }));
+  const competitorApps = competitors.map(({ data }) => ({ name: data.name ?? "", icon: "" }));
 
   return NextResponse.json({ appName, keywords, competitorApps } satisfies CompetitorKeywordsResult);
 }

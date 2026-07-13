@@ -31,12 +31,6 @@ export async function searchPlayStore(
       country: country.toLowerCase(),
       num: 15,
     });
-    await import("fs/promises").then((fs) =>
-      fs.writeFile(
-        "/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/1cfdf1f5-dff3-422c-b41b-d39adb4ebfb4/scratchpad/gplay-raw-debug.txt",
-        JSON.stringify(results.map((r) => ({ title: r.title, developer: r.developer })), null, 2)
-      )
-    );
     return results.map((r) => ({
       name: r.title,
       store: "android" as const,
