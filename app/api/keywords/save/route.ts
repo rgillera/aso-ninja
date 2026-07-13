@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   let appId: string | undefined = clientAppId;
 
   if (!appId && bundleId && storeId && appName && store) {
-    const normalCountry = (country ?? "us").toLowerCase();
+    const normalCountry = (country ?? "us").toUpperCase();
 
     // `ignoreDuplicates` + a fallback SELECT used to resolve this, but that's
     // a TOCTOU race: concurrent saves for a brand-new app (e.g. clicking

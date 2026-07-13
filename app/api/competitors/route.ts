@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
       .eq("workspace_id", workspaceId)
       .eq("bundle_id", bundleId)
       .eq("store", store)
-      .eq("country", (country ?? "us").toLowerCase())
+      .eq("country", (country ?? "us").toUpperCase())
       .maybeSingle();
     appId = data?.id;
   }
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
   let appId = clientAppId;
 
   if (!appId && bundleId && storeId && appName && store) {
-    const normalCountry = (country ?? "us").toLowerCase();
+    const normalCountry = (country ?? "us").toUpperCase();
     const { data: app, error: appErr } = await supabase
       .from("apps")
       .upsert(

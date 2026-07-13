@@ -50,7 +50,7 @@ async function refreshKeywordMetrics(
     .select("app_id, keyword_id, diff, apps!inner(name, store, country), keywords!inner(term)")
     .eq("keywords.term", term)
     .eq("apps.store", store)
-    .eq("apps.country", country);
+    .eq("apps.country", country.toUpperCase());
 
   if (!rows?.length) return;
 

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const workspaceId = searchParams.get("workspaceId") ?? "";
     const bundleId     = searchParams.get("bundleId") ?? "";
     const store        = searchParams.get("store") ?? "";
-    const country       = (searchParams.get("country") ?? "us").toLowerCase();
+    const country       = (searchParams.get("country") ?? "us").toUpperCase();
     if (workspaceId && bundleId && store) {
       const { data } = await supabase
         .from("apps")

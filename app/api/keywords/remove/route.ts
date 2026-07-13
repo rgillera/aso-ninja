@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       .eq("workspace_id", workspaceId)
       .eq("store", store)
       .eq("bundle_id", bundleId)
-      .eq("country", (country ?? "us").toLowerCase())
+      .eq("country", (country ?? "us").toUpperCase())
       .maybeSingle();
     appId = data?.id ?? undefined;
   }
