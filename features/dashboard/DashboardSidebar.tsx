@@ -22,6 +22,7 @@ import {
   ChatBubbleLeftEllipsisIcon,
   UserCircleIcon,
   CreditCardIcon,
+  AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -466,6 +467,17 @@ export default function DashboardSidebar({
 
       {/* Account footer */}
       <div className="border-t border-white/[0.07] p-3 space-y-0.5">
+        <a
+          href="/dashboard/learn"
+          className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+            currentPath.startsWith("/dashboard/learn")
+              ? "bg-white/10 text-white"
+              : "text-gray-500 hover:bg-white/5 hover:text-white"
+          }`}
+        >
+          <AcademicCapIcon className="size-4 shrink-0" />
+          Learn
+        </a>
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"
