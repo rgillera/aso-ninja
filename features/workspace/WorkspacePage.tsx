@@ -160,6 +160,13 @@ export default function WorkspacePage({
                             </span>
                           )}
                         </p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          {m.access.length > 0
+                            ? m.access
+                                .map((a) => (a === "aso_intelligence" ? "ASO Intelligence" : "Market Intelligence"))
+                                .join(" · ")
+                            : "No features enabled"}
+                        </p>
                       </div>
                     </div>
 
