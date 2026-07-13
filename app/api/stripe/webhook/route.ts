@@ -45,6 +45,7 @@ async function upsertFromStripeSubscription(
   if (planId) row.plan_id = planId;
   if (userId) row.user_id = userId;
 
+  let effectiveUserId = userId;
   if (userId) {
     await admin.from("subscriptions").upsert(row, { onConflict: "user_id" });
   } else {
@@ -52,6 +53,17 @@ async function upsertFromStripeSubscription(
       .from("subscriptions")
       .update(row)
       .eq("stripe_subscription_id", subscription.id);
+
+    const { data: existing } = await admin
+      .from("subscriptions")
+      .select("user_id")
+      .eq("stripe_subscription_id", subscription.id)
+      .maybeSingle();
+    effectiveUserId = existing?.user_id;
+  }
+
+  if (effectiveUserId) {
+    await admin.rpc("reconcile_plan_limits", { p_user_id: effectiveUserId });
   }
 }
 
@@ -106,13 +118,23 @@ export async function POST(request: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice;
       const subscriptionId = invoice.parent?.subscription_details?.subscription;
       if (subscriptionId) {
+        const stripeSubscriptionId =
+          typeof subscriptionId === "string" ? subscriptionId : subscriptionId.id;
+
         await admin
           .from("subscriptions")
           .update({ status: "past_due", updated_at: new Date().toISOString() })
-          .eq(
-            "stripe_subscription_id",
-            typeof subscriptionId === "string" ? subscriptionId : subscriptionId.id
-          );
+          .eq("stripe_subscription_id", stripeSubscriptionId);
+
+        const { data: existing } = await admin
+          .from("subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", stripeSubscriptionId)
+          .maybeSingle();
+
+        if (existing?.user_id) {
+          await admin.rpc("reconcile_plan_limits", { p_user_id: existing.user_id });
+        }
       }
       break;
     }

@@ -47,8 +47,9 @@ async function refreshKeywordMetrics(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows } = await (supabase as any)
     .from("keyword_metrics")
-    .select("app_id, keyword_id, diff, apps!inner(name, store, country), keywords!inner(term)")
+    .select("app_id, keyword_id, diff, apps!inner(name, store, country), keywords!inner(term, status)")
     .eq("keywords.term", term)
+    .eq("keywords.status", "active")
     .eq("apps.store", store)
     .eq("apps.country", country.toUpperCase());
 

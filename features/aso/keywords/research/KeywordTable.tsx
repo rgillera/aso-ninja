@@ -38,6 +38,18 @@ function LockedCell() {
   );
 }
 
+function PausedBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
+      title="This keyword is over your plan's limit — rank and volume stopped updating. Upgrade to resume tracking."
+    >
+      <LockClosedIcon className="size-2.5" />
+      Paused
+    </span>
+  );
+}
+
 type Props = {
   keywords: Keyword[];
   store: "ios" | "android";
@@ -721,7 +733,7 @@ export function KeywordTable({
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
             {displayed.map((row, i) => (
-              <tr key={i} className="hover:bg-white/[0.02] transition-colors group">
+              <tr key={i} className={`hover:bg-white/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
                 <td className="px-4 py-3.5">
                   <input
                     type="checkbox"
@@ -739,7 +751,10 @@ export function KeywordTable({
                       <StarIcon className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`} />
                     </button>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm text-gray-200">{row.keyword}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm text-gray-200">{row.keyword}</span>
+                        {row.frozen && <PausedBadge />}
+                      </div>
                       {translateToggle && (
                         translations[row.keyword]
                           ? translations[row.keyword].toLowerCase() !== row.keyword.toLowerCase() && (

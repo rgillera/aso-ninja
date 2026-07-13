@@ -140,16 +140,24 @@ export default function WorkspacePage({
 
               <ul className="divide-y divide-white/[0.07]">
                 {localMembers.map((m) => (
-                  <li key={m.user_id} className="flex items-center justify-between py-3">
+                  <li key={m.user_id} className={`flex items-center justify-between py-3 ${m.status === "frozen" ? "opacity-60" : ""}`}>
                     <div className="flex items-center gap-3">
                       <div className="flex size-8 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-semibold text-indigo-300">
                         {(m.profiles?.full_name ?? m.email ?? "?").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white">
+                        <p className="text-sm font-medium text-white flex items-center gap-1.5">
                           {m.profiles?.full_name ?? m.email ?? "Unknown"}
                           {m.user_id === currentUserId && (
                             <span className="ml-2 text-xs text-gray-500">(you)</span>
+                          )}
+                          {m.status === "frozen" && (
+                            <span
+                              className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 shrink-0"
+                              title="This member is over your plan's limit. Upgrade to restore their access."
+                            >
+                              Paused
+                            </span>
                           )}
                         </p>
                       </div>

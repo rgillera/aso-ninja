@@ -10,6 +10,11 @@ export type SavedKeyword = {
   relevancy: number | null;
   rank: number | null;
   hasCachedMetrics: boolean;
+  // Frozen when this keyword is beyond the workspace owner's current plan
+  // limit (e.g. after a downgrade) — see reconcile_plan_limits in
+  // supabase/migrations/20260713000001_plan_limit_reconciliation.sql.
+  // Rank/volume stop refreshing while frozen, but past data is kept.
+  frozen: boolean;
 };
 
 // GET /api/keywords/list?appId=...
@@ -49,7 +54,7 @@ export async function GET(request: NextRequest) {
   const [akResult, metricsResult] = await Promise.all([
     supabase
       .from("app_keywords")
-      .select("keyword_id, keywords!inner(id, term)")
+      .select("keyword_id, keywords!inner(id, term, status)")
       .eq("app_id", appId)
       .order("added_at", { ascending: true }),
     supabase
@@ -92,6 +97,7 @@ export async function GET(request: NextRequest) {
         relevancy:        m?.relevancy   ?? null,
         rank:             m?.rank        ?? null,
         hasCachedMetrics: !!m,
+        frozen:           kw?.status === "frozen",
       } satisfies SavedKeyword;
     })
     .filter(Boolean) as SavedKeyword[];

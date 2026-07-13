@@ -125,8 +125,18 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
       </Link>
 
       {/* Name + bundle — links to first entry */}
-      <Link href={`/dashboard/apps/${primary.id}/report`} className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-white truncate">{primary.name}</p>
+      <Link href={`/dashboard/apps/${primary.id}/report`} className={`flex-1 min-w-0 ${primary.status === "frozen" ? "opacity-60" : ""}`}>
+        <p className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
+          {primary.name}
+          {primary.status === "frozen" && (
+            <span
+              className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 shrink-0"
+              title="This app is over your plan's limit. Upgrade to resume tracking."
+            >
+              Paused
+            </span>
+          )}
+        </p>
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
       </Link>
 

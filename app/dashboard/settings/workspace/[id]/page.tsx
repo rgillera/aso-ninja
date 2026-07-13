@@ -24,7 +24,7 @@ export default async function Page({ params }: PageProps) {
     supabase.from("workspaces").select("*").eq("id", id).single(),
     supabase
       .from("workspace_members")
-      .select("id, workspace_id, user_id, role, access, joined_at")
+      .select("id, workspace_id, user_id, role, access, joined_at, status")
       .eq("workspace_id", id)
       .order("joined_at", { ascending: true }),
     supabase

@@ -10,6 +10,7 @@ export type Keyword = {
   results?: number;
   relevancy?: number;
   aiDown?: boolean;
+  frozen?: boolean;
 };
 
 export type RankPill = typeof import("./constants").RANK_PILLS[number];

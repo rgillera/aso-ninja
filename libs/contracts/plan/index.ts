@@ -38,10 +38,16 @@ export type Subscription = {
 
 export type WorkspaceUsage = {
   keyword_count: number;
+  keyword_active_count: number;
+  keyword_frozen_count: number;
   keyword_limit: number | null;
   app_count: number;
+  app_active_count: number;
+  app_frozen_count: number;
   app_limit: number | null;
   member_count: number;
+  member_active_count: number;
+  member_frozen_count: number;
   member_limit: number | null;
   workspace_count: number;
   workspace_limit: number | null;

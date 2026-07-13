@@ -179,6 +179,7 @@ export default function KeywordResearchPage() {
             rank:        s.rank,
             starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
+            frozen:      s.frozen,
           }))
         );
 

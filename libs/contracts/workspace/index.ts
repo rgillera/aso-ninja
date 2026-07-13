@@ -17,4 +17,9 @@ export type WorkspaceMember = {
   role: WorkspaceRole;
   access: WorkspaceAccess[];
   joined_at: string;
+  // Frozen when this member is beyond the workspace plan's member_limit
+  // after a downgrade — see reconcile_member_limits in
+  // supabase/migrations/20260713000001_plan_limit_reconciliation.sql.
+  // Owners are never frozen.
+  status?: "active" | "frozen";
 };
