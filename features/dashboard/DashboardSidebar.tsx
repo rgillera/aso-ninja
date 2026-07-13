@@ -453,9 +453,6 @@ export default function DashboardSidebar({
                 >
                   <link.icon className="size-4 shrink-0" />
                   <span className="flex-1">{link.label}</span>
-                  {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
-                    <PlanLockBadge minPlan={link.minPlan} />
-                  )}
                 </a>
               );
             })}
