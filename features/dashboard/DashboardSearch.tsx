@@ -59,10 +59,16 @@ function AppIconWithBadge({
   name: string;
   store: "ios" | "android";
 }) {
+  const [failed, setFailed] = useState(false);
   return (
     <div className="relative shrink-0">
-      {iconUrl ? (
-        <img src={iconUrl} alt={name} className="size-11 rounded-xl object-cover" />
+      {iconUrl && !failed ? (
+        <img
+          src={iconUrl}
+          alt={name}
+          className="size-11 rounded-xl object-cover"
+          onError={() => setFailed(true)}
+        />
       ) : (
         <div className="size-11 rounded-xl bg-[#0d0f14] flex items-center justify-center">
           <DevicePhoneMobileIcon className="size-5 text-gray-600" />

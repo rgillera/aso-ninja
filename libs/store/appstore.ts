@@ -41,6 +41,10 @@ export async function searchAppStore(
   );
   if (!res) return null;
   try {
+    const __rawDebug = await res.clone().text();
+    await import("fs/promises").then((fs) =>
+      fs.writeFile("/private/tmp/claude-501/-Users-bmo-Documents-dev-aso-ninja/1cfdf1f5-dff3-422c-b41b-d39adb4ebfb4/scratchpad/itunes-raw-debug.txt", __rawDebug)
+    );
     const data = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (data.results ?? []).map((r: any) => ({

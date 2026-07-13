@@ -49,8 +49,8 @@ function Stars({ rating }: { rating: number }) {
 }
 
 
-function AppRow({ app }: { app: AppSearchResult }) {
-  const storeUrl = app.trackId
+function AppRow({ app, store }: { app: AppSearchResult; store: "ios" | "android" }) {
+  const storeUrl = store === "ios" && app.trackId
     ? `https://apps.apple.com/app/id${app.trackId}`
     : null;
 
@@ -58,8 +58,16 @@ function AppRow({ app }: { app: AppSearchResult }) {
     <div className="border-b border-gray-100 last:border-0 px-3 py-2">
       <div className="flex items-center gap-2.5">
         <span className="text-[9px] font-bold text-gray-300 w-3 shrink-0 text-center">{app.position}</span>
-        <div className="w-11 h-11 rounded-2xl overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06]">
-          {app.icon && <img src={app.icon} alt="" className="w-full h-full object-cover" />} {/* eslint-disable-line @next/next/no-img-element */}
+        <div className={`w-11 h-11 overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06] ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
+          {app.icon && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={app.icon}
+              alt=""
+              className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = "none"; }}
+            />
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-semibold text-gray-900 truncate leading-tight">{app.name}</p>
@@ -71,9 +79,15 @@ function AppRow({ app }: { app: AppSearchResult }) {
             </div>
           )}
         </div>
-        <span className="text-[10px] font-semibold text-[#007AFF] bg-[#007AFF]/10 rounded-full px-2.5 py-1 whitespace-nowrap shrink-0">
-          {app.price === "Free" ? "GET" : app.price}
-        </span>
+        {store === "android" ? (
+          <span className="text-[10px] font-semibold text-[#01875f] whitespace-nowrap shrink-0">
+            {app.price === "Free" ? "Install" : app.price}
+          </span>
+        ) : (
+          <span className="text-[10px] font-semibold text-[#007AFF] bg-[#007AFF]/10 rounded-full px-2.5 py-1 whitespace-nowrap shrink-0">
+            {app.price === "Free" ? "GET" : app.price}
+          </span>
+        )}
       </div>
       {storeUrl && (
         <a
@@ -92,10 +106,11 @@ function AppRow({ app }: { app: AppSearchResult }) {
   );
 }
 
-function PhoneFrame({ keyword, apps, loading, error }: { keyword: string; apps: AppSearchResult[]; loading: boolean; error?: string | null }) {
+function PhoneFrame({ keyword, apps, loading, error, store }: { keyword: string; apps: AppSearchResult[]; loading: boolean; error?: string | null; store: "ios" | "android" }) {
+  const isAndroid = store === "android";
   return (
     <div
-      className="relative shrink-0 bg-black rounded-[3rem] shadow-2xl"
+      className={`relative shrink-0 bg-black shadow-2xl ${isAndroid ? "rounded-[2rem]" : "rounded-[3rem]"}`}
       style={{ width: 390, height: 780, boxShadow: "0 0 0 9px #1e1e1e, 0 0 0 11px #111, 0 30px 80px rgba(0,0,0,0.5)" }}
     >
       {/* Side buttons */}
@@ -105,51 +120,96 @@ function PhoneFrame({ keyword, apps, loading, error }: { keyword: string; apps: 
       <div className="absolute -right-2.5 top-28 w-1.5 h-16 bg-[#2a2a2a] rounded-r-sm" />
 
       {/* Screen */}
-      <div className="absolute inset-[3px] bg-white rounded-[2.6rem] overflow-hidden flex flex-col">
-        {/* Dynamic island */}
-        <div className="flex justify-center pt-2.5 shrink-0">
-          <div className="w-24 h-6 bg-black rounded-full" />
-        </div>
-
-        {/* Status bar */}
-        <div className="flex items-center justify-between px-5 pt-1 pb-0.5 shrink-0">
-          <span className="text-[11px] font-semibold text-black leading-none">9:41</span>
-          <div className="flex items-center gap-1">
-            {/* Signal bars */}
-            <svg className="size-3.5" viewBox="0 0 17 12" fill="black">
-              <rect x="0" y="8" width="3" height="4" rx="0.5" />
-              <rect x="4" y="5" width="3" height="7" rx="0.5" />
-              <rect x="8" y="2" width="3" height="10" rx="0.5" />
-              <rect x="12" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
-            </svg>
-            {/* Wifi */}
-            <svg className="size-3.5" viewBox="0 0 16 12" fill="black">
-              <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
-              <path d="M4.5 6.5A4.97 4.97 0 018 5c1.38 0 2.63.56 3.54 1.46L13 5a7 7 0 00-10 0l1.5 1.5z" opacity="0.7" />
-              <path d="M1.5 3.5A9.95 9.95 0 018 1c2.76 0 5.26 1.12 7.07 2.93L16.5 2.5A12 12 0 000 2.5l1.5 1z" opacity="0.3" />
-            </svg>
-            {/* Battery */}
-            <div className="flex items-center">
-              <div className="w-6 h-3 rounded-[3px] border border-black/40 p-px">
-                <div className="h-full w-full bg-black rounded-[2px]" />
-              </div>
-              <div className="w-0.5 h-1.5 bg-black/40 rounded-r-sm ml-px" />
+      <div className={`absolute inset-[3px] bg-white overflow-hidden flex flex-col ${isAndroid ? "rounded-[1.7rem]" : "rounded-[2.6rem]"}`}>
+        {isAndroid ? (
+          <>
+            {/* Punch-hole camera */}
+            <div className="flex justify-center pt-2 shrink-0">
+              <div className="w-3 h-3 bg-black rounded-full" />
             </div>
-          </div>
-        </div>
+            {/* Status bar */}
+            <div className="flex items-center justify-between px-5 pt-1.5 pb-1 shrink-0">
+              <span className="text-[11px] font-medium text-black leading-none">9:41</span>
+              <div className="flex items-center gap-1.5">
+                <svg className="size-3.5" viewBox="0 0 17 12" fill="black">
+                  <rect x="0" y="8" width="3" height="4" rx="0.5" />
+                  <rect x="4" y="5" width="3" height="7" rx="0.5" />
+                  <rect x="8" y="2" width="3" height="10" rx="0.5" />
+                  <rect x="12" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
+                </svg>
+                <svg className="size-3.5" viewBox="0 0 16 12" fill="black">
+                  <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                  <path d="M4.5 6.5A4.97 4.97 0 018 5c1.38 0 2.63.56 3.54 1.46L13 5a7 7 0 00-10 0l1.5 1.5z" opacity="0.7" />
+                  <path d="M1.5 3.5A9.95 9.95 0 018 1c2.76 0 5.26 1.12 7.07 2.93L16.5 2.5A12 12 0 000 2.5l1.5 1z" opacity="0.3" />
+                </svg>
+                <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth={1.5}>
+                  <rect x="2" y="7" width="18" height="10" rx="2.5" />
+                  <path d="M22 10v4" strokeLinecap="round" fill="black" />
+                </svg>
+              </div>
+            </div>
+            {/* Play Store search bar */}
+            <div className="px-3 py-2 shrink-0">
+              <div className="flex items-center gap-2 bg-[#f1f3f4] rounded-full px-3 py-2">
+                <svg className="size-3.5 text-gray-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m7-7l-7 7 7 7" />
+                </svg>
+                <span className="flex-1 text-[12px] text-gray-900 font-normal truncate">{keyword}</span>
+                <svg className="size-3.5 text-gray-500 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 15a3 3 0 003-3V6a3 3 0 10-6 0v6a3 3 0 003 3z" />
+                  <path d="M17 11a5 5 0 01-10 0H5a7 7 0 006 6.93V21h2v-3.07A7 7 0 0019 11h-2z" />
+                </svg>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Dynamic island */}
+            <div className="flex justify-center pt-2.5 shrink-0">
+              <div className="w-24 h-6 bg-black rounded-full" />
+            </div>
 
-        {/* App Store search bar */}
-        <div className="px-3 py-2 shrink-0">
-          <div className="flex items-center gap-2 bg-[#f2f2f7] rounded-xl px-3 py-2">
-            <svg className="size-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-            </svg>
-            <span className="flex-1 text-[12px] text-gray-900 font-normal truncate">{keyword}</span>
-            <svg className="size-3 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
+            {/* Status bar */}
+            <div className="flex items-center justify-between px-5 pt-1 pb-0.5 shrink-0">
+              <span className="text-[11px] font-semibold text-black leading-none">9:41</span>
+              <div className="flex items-center gap-1">
+                {/* Signal bars */}
+                <svg className="size-3.5" viewBox="0 0 17 12" fill="black">
+                  <rect x="0" y="8" width="3" height="4" rx="0.5" />
+                  <rect x="4" y="5" width="3" height="7" rx="0.5" />
+                  <rect x="8" y="2" width="3" height="10" rx="0.5" />
+                  <rect x="12" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
+                </svg>
+                {/* Wifi */}
+                <svg className="size-3.5" viewBox="0 0 16 12" fill="black">
+                  <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                  <path d="M4.5 6.5A4.97 4.97 0 018 5c1.38 0 2.63.56 3.54 1.46L13 5a7 7 0 00-10 0l1.5 1.5z" opacity="0.7" />
+                  <path d="M1.5 3.5A9.95 9.95 0 018 1c2.76 0 5.26 1.12 7.07 2.93L16.5 2.5A12 12 0 000 2.5l1.5 1z" opacity="0.3" />
+                </svg>
+                {/* Battery */}
+                <div className="flex items-center">
+                  <div className="w-6 h-3 rounded-[3px] border border-black/40 p-px">
+                    <div className="h-full w-full bg-black rounded-[2px]" />
+                  </div>
+                  <div className="w-0.5 h-1.5 bg-black/40 rounded-r-sm ml-px" />
+                </div>
+              </div>
+            </div>
+
+            {/* App Store search bar */}
+            <div className="px-3 py-2 shrink-0">
+              <div className="flex items-center gap-2 bg-[#f2f2f7] rounded-xl px-3 py-2">
+                <svg className="size-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                </svg>
+                <span className="flex-1 text-[12px] text-gray-900 font-normal truncate">{keyword}</span>
+                <svg className="size-3 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Results label */}
         <div className="px-3 pb-1 shrink-0">
@@ -178,18 +238,30 @@ function PhoneFrame({ keyword, apps, loading, error }: { keyword: string; apps: 
                   <svg className="size-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                   </svg>
-                  <p className="text-[11px] text-gray-400 leading-snug">Apple&rsquo;s search API is currently unavailable. Try again later.</p>
+                  <p className="text-[11px] text-gray-400 leading-snug">
+                    {isAndroid ? "Google Play’s search is currently unavailable. Try again later." : "Apple’s search API is currently unavailable. Try again later."}
+                  </p>
                 </div>
               )
             : apps.map((app) => (
-                <AppRow key={app.position} app={app} />
+                <AppRow key={app.position} app={app} store={store} />
               ))}
         </div>
 
-        {/* Home indicator */}
-        <div className="flex justify-center py-2 shrink-0">
-          <div className="w-24 h-1 bg-black/20 rounded-full" />
-        </div>
+        {/* Bottom bar */}
+        {isAndroid ? (
+          <div className="flex items-center justify-center gap-16 py-2.5 shrink-0">
+            <svg className="size-3.5 text-black/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-black/70" />
+            <div className="w-3.5 h-3.5 rounded-sm border-2 border-black/70" />
+          </div>
+        ) : (
+          <div className="flex justify-center py-2 shrink-0">
+            <div className="w-24 h-1 bg-black/20 rounded-full" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -347,7 +419,12 @@ function PastResultsGrid({
                           <div className="relative group/cell">
                             <div className="w-8 h-8 rounded-xl overflow-hidden bg-white/[0.05]">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={entry.app_icon} alt="" className="w-full h-full object-cover" />
+                              <img
+                                src={entry.app_icon}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                              />
                             </div>
                             {/* Tooltip */}
                             <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 opacity-0 group-hover/cell:opacity-100 transition-opacity">
@@ -437,7 +514,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
           </div>
         ) : (
           <div className="flex justify-center p-8 overflow-auto">
-            <PhoneFrame keyword={keyword} apps={apps} loading={loading} error={error} />
+            <PhoneFrame keyword={keyword} apps={apps} loading={loading} error={error} store={store} />
           </div>
         )}
       </div>
