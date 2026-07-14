@@ -101,7 +101,7 @@ export async function createCheckoutSessionAction(
 
   const { data: plan, error: planError } = await supabase
     .from("plans")
-    .select("id, stripe_price_id, stripe_price_id_yearly")
+    .select("id, stripe_price_id, stripe_price_id_yearly, trial_period_days")
     .eq("slug", planSlug)
     .single();
 
@@ -126,6 +126,9 @@ export async function createCheckoutSessionAction(
     line_items: [{ price: priceId, quantity: 1 }],
     allow_promotion_codes: true,
     metadata: { user_id: user.id, plan_id: plan.id, workspace_id: workspaceId, billing },
+    subscription_data: plan.trial_period_days
+      ? { trial_period_days: plan.trial_period_days }
+      : undefined,
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?canceled=1`,
   });

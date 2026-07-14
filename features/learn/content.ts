@@ -65,7 +65,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Pick a topic from the list on the left at any time to see exactly what it's for, why it matters, and how to use it",
         ],
         goodToKnow: [
-          "A Pro or Pro+ label next to a topic shows the minimum plan required to use that feature",
+          "A Basic, Pro, or Pro+ label next to a topic shows the minimum plan required to use that feature",
           "This guide covers ASO Intelligence only — Market Intelligence (App Explorer) isn't included here",
           "To get the full benefit of this, we recommend you getting Pro+ to unlock full research and tracking functionality",
         ],
@@ -140,7 +140,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "metadata-timeline",
         label: "Timeline",
         icon: ClockIcon,
-        minPlan: "pro",
+        minPlan: "basic",
         description:
           "Timeline is your listing's history book. It's for understanding what changed in the past and connecting the dots between a specific update and what happened afterward.",
         benefits: [
@@ -153,13 +153,13 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Click any update on the timeline to open its before/after comparison",
           "Turn on diff highlighting to catch subtle wording changes quickly",
         ],
-        goodToKnow: ["Requires the Pro plan or above"],
+        goodToKnow: ["Requires the Basic plan or above"],
       },
       {
         id: "metadata-benchmark",
         label: "Benchmark",
         icon: ChartBarIcon,
-        minPlan: "pro",
+        minPlan: "basic",
         description:
           "Benchmark tells you whether your metadata is actually competitive. It's for anyone who wants to know if their listing measures up to category peers, not just to a generic checklist.",
         benefits: [
@@ -174,7 +174,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         ],
         goodToKnow: [
           "Falls back to showing just your own stats when no category benchmark data exists yet",
-          "Requires the Pro plan or above",
+          "Requires the Basic plan or above",
         ],
       },
     ],
@@ -233,7 +233,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-performance",
         label: "Performance",
         icon: ArrowTrendingUpIcon,
-        minPlan: "pro",
+        minPlan: "basic",
         description:
           "Performance tells you whether your keyword strategy is actually working. It's for tracking outcomes over time, not just the keyword list itself.",
         benefits: [
@@ -246,7 +246,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Drill into a keyword's Volume or Rank history the moment something looks off",
           "Add competitors to the chart to put your trend in context",
         ],
-        goodToKnow: ["Requires the Pro plan or above; keyword translation also requires Pro"],
+        goodToKnow: ["Requires the Basic plan or above; keyword translation also requires Basic"],
       },
       {
         id: "keywords-ranked",
@@ -278,7 +278,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "reviews-ratings",
         label: "Ratings",
         icon: StarIcon,
-        minPlan: "pro",
+        minPlan: "basic",
         description:
           "Ratings is for anyone who wants to move their star rating deliberately, rather than just hoping it improves. It turns a vague goal into a concrete, trackable plan.",
         benefits: [
@@ -293,14 +293,14 @@ export const LEARN_GROUPS: LearnGroup[] = [
         ],
         goodToKnow: [
           "iOS doesn't expose a per-star breakdown from Apple — only the average and total are shown",
-          "Requires the Pro plan or above",
+          "Requires the Basic plan or above",
         ],
       },
       {
         id: "reviews-reviews",
         label: "Reviews",
         icon: ChatBubbleLeftEllipsisIcon,
-        minPlan: "pro",
+        minPlan: "basic",
         description:
           "Reviews is for listening to your users at scale. It's for catching recurring complaints and sentiment shifts before they show up as a rating problem.",
         benefits: [
@@ -313,7 +313,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Use the Growth table to see whether review volume and sentiment are trending up or down",
           "Cross-check any spike or dip against Timeline's update history to find the likely cause",
         ],
-        goodToKnow: ["Requires the Pro plan or above"],
+        goodToKnow: ["Requires the Basic plan or above"],
       },
     ],
   },

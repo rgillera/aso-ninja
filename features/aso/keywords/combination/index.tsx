@@ -34,7 +34,7 @@ export default function KeywordCombinationPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const isLocked    = !isPlanAtLeast(planSlug, "pro_plus");
-  const translateLocked = !isPlanAtLeast(planSlug, "pro");
+  const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());

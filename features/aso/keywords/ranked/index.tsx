@@ -104,7 +104,7 @@ export default function RankedKeywordsPage() {
   const activeApp = useActiveApp();
   const planSlug  = usePlanSlug();
   const isLocked  = !isPlanAtLeast(planSlug, "pro_plus");
-  const translateLocked = !isPlanAtLeast(planSlug, "pro");
+  const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
   const [history,  setHistory]  = useState<RankedHistoryPoint[]>([]);
   const [loading,  setLoading]  = useState(false);

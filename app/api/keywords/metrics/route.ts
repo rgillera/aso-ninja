@@ -471,12 +471,12 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Relevancy/opportunity are Pro+ features — anything below that plan never
-  // triggers the Gemini embedding/LLM pass, and never sees a value even if one
-  // was cached from before a downgrade.
+  // Relevancy/opportunity are Pro-and-up features — anything below that plan
+  // never triggers the Gemini embedding/LLM pass, and never sees a value even
+  // if one was cached from before a downgrade.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const canUseRelevancy = isPlanAtLeast(planSlug, "pro_plus");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};

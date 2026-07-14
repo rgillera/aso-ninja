@@ -34,7 +34,7 @@ function isoDate(d: Date): string {
 export default function ReviewsDashboardPage() {
   const activeApp = useActiveApp();
   const planSlug  = usePlanSlug();
-  const isLocked  = !isPlanAtLeast(planSlug, "pro");
+  const isLocked  = !isPlanAtLeast(planSlug, "basic");
   const [result, setResult] = useState<ReviewsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -80,10 +80,10 @@ export default function ReviewsDashboardPage() {
       <main className="h-full overflow-y-auto bg-[#111318]">
         <AppHeader app={activeApp} title="Reviews" />
         <FeatureLocked
-          minPlan="pro"
+          minPlan="basic"
           icon={ChatBubbleLeftEllipsisIcon}
-          title="Reviews is a Pro feature"
-          description="Upgrade to Pro or above to browse and track your app's reviews."
+          title="Reviews is a Basic feature"
+          description="Upgrade to Basic or above to browse and track your app's reviews."
           benefits={[
             "Read and filter every review left on your app",
             "Track new review volume and rating shifts over time",

@@ -1,4 +1,4 @@
-export type PlanSlug = "free" | "pro" | "pro_plus" | "enterprise";
+export type PlanSlug = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
 
 export type Plan = {
   id: string;
@@ -14,6 +14,7 @@ export type Plan = {
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   stripe_price_id_yearly: string | null;
+  trial_period_days: number | null;
   is_active: boolean;
   sort_order: number;
 };

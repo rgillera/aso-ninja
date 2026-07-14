@@ -8,8 +8,9 @@ type Variant = "default" | "featured" | "premium";
 
 const variantByPlan: Record<PlanId, Variant> = {
   free: "default",
-  pro: "default",
-  pro_plus: "featured",
+  basic: "default",
+  pro: "featured",
+  pro_plus: "default",
   enterprise: "premium",
 };
 
@@ -22,9 +23,21 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Row 2 (Pro+, Enterprise) is centered under row 1 (Free, Basic, Pro) using a
+// 6-column grid: each row-1 card spans 2 of 6 columns; row-2 cards keep the
+// same 2-column width but are offset by one column on either side.
+const gridPlacement: Record<PlanId, string> = {
+  free: "",
+  basic: "",
+  pro: "",
+  pro_plus: "lg:col-start-2",
+  enterprise: "lg:col-start-4",
+};
+
 const plans = PLANS.map((plan) => {
   const isFree = plan.priceMonthlyCents === 0;
   return {
+    id: plan.id,
     name: plan.name.replace(/ Plan$/, ""),
     monthly: {
       price: isFree ? "Free" : formatPrice(plan.priceMonthlyCents),
@@ -128,7 +141,7 @@ export default function PortalPricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-7xl lg:grid-cols-4 lg:items-stretch" style={{ paddingTop: "1rem" }}>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-7xl lg:grid-cols-6 lg:items-stretch" style={{ paddingTop: "1rem" }}>
           {plans.map((plan) => {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
@@ -136,7 +149,7 @@ export default function PortalPricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative flex flex-col rounded-2xl p-8 ${s.card}`}
+                className={`relative flex flex-col rounded-2xl p-8 lg:col-span-2 ${gridPlacement[plan.id]} ${s.card}`}
               >
                 {plan.variant === "featured" && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">

@@ -4,12 +4,19 @@ import type { PlanSlug } from "@/libs/contracts";
 import type { ComponentType } from "react";
 
 const TIER_LABEL: Partial<Record<PlanSlug, string>> = {
+  basic: "Basic",
   pro: "Pro",
   pro_plus: "Pro+",
   enterprise: "Enterprise",
 };
 
 const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button: string; check: string }>> = {
+  basic: {
+    icon: "text-emerald-500",
+    ring: "bg-emerald-500/10",
+    button: "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20",
+    check: "text-emerald-500/80",
+  },
   pro: {
     icon: "text-red-500",
     ring: "bg-red-500/10",

@@ -30,7 +30,7 @@ const DAYS_OF_HISTORY = 90;
 export default function RatingsDashboardPage() {
   const activeApp = useActiveApp();
   const planSlug  = usePlanSlug();
-  const isLocked  = !isPlanAtLeast(planSlug, "pro");
+  const isLocked  = !isPlanAtLeast(planSlug, "basic");
   const [result, setResult] = useState<RatingsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -73,10 +73,10 @@ export default function RatingsDashboardPage() {
       <main className="h-full overflow-y-auto bg-[#111318]">
         <AppHeader app={activeApp} title="Ratings" />
         <FeatureLocked
-          minPlan="pro"
+          minPlan="basic"
           icon={StarIcon}
-          title="Ratings is a Pro feature"
-          description="Upgrade to Pro or above to track your app's rating trends over time."
+          title="Ratings is a Basic feature"
+          description="Upgrade to Basic or above to track your app's rating trends over time."
           benefits={[
             "See your rating trend and star breakdown over the last 90 days",
             "Compare your rating against your category's average",

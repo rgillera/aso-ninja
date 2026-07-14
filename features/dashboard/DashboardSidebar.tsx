@@ -30,12 +30,14 @@ import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs
 
 const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   free: { label: "Free", className: "bg-white/5 text-gray-400" },
+  basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
   pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-500" },
   enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
 };
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
+  basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
   pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-500" },
   enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
@@ -55,14 +57,14 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
 
 const metadataLinks: { label: string; appPath: string; fallback: string; previewPage: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
-  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "pro" },
-  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "pro" },
+  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "basic" },
+  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "basic" },
 ];
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
   { label: "Combinations", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon, minPlan: "pro_plus" },
-  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon,        minPlan: "pro" },
+  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon,        minPlan: "basic" },
   { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
 ];
 
@@ -71,8 +73,8 @@ const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIc
 ];
 
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "pro" },
-  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "pro" },
+  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "basic" },
+  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "basic" },
 ];
 
 type Props = {

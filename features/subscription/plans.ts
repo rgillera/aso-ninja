@@ -1,4 +1,4 @@
-export type PlanId = "free" | "pro" | "pro_plus" | "enterprise";
+export type PlanId = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
 
 export type Plan = {
   id: PlanId;
@@ -29,8 +29,8 @@ export const PLANS: Plan[] = [
     ],
   },
   {
-    id: "pro",
-    name: "Pro Plan",
+    id: "basic",
+    name: "Basic",
     priceMonthlyCents: 1499,
     priceYearlyCents: 14990,
     description: "Advanced tracking and collaboration for teams growing multiple apps.",
@@ -46,12 +46,29 @@ export const PLANS: Plan[] = [
     ],
   },
   {
+    id: "pro",
+    name: "Pro",
+    priceMonthlyCents: 8939,
+    priceYearlyCents: 89390,
+    description: "Advanced tracking and collaboration for teams growing multiple apps.",
+    badge: "Free trial",
+    features: [
+      "1 workspace",
+      "700 keywords",
+      "10 apps & 5 competitors per app",
+      "Metadata optimization",
+      "Advanced Keyword research",
+      "Keyword & ranking monitoring",
+      "Live chat & email support",
+    ],
+  },
+  {
     id: "pro_plus",
     name: "Pro+ Plan",
     priceMonthlyCents: 14900,
     priceYearlyCents: 149000,
     description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
-    badge: "Most popular",
+    badge: null,
     features: [
       "2 workspaces",
       "3,000 keywords",

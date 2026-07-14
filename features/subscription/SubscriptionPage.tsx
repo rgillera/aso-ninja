@@ -41,7 +41,19 @@ type Props = {
 
 type Billing = "monthly" | "yearly";
 
+// Row 2 (Pro+, Enterprise) is centered under row 1 (Free, Basic, Pro) using a
+// 6-column grid: each row-1 card spans 2 of 6 columns; row-2 cards keep the
+// same 2-column width but are offset by one column on either side.
+const gridPlacement: Record<PlanId, string> = {
+  free: "",
+  basic: "",
+  pro: "",
+  pro_plus: "lg:col-start-2",
+  enterprise: "lg:col-start-4",
+};
+
 function nameColor(planId: PlanId) {
+  if (planId === "basic") return "text-emerald-500";
   if (planId === "pro" || planId === "pro_plus") return "text-red-500";
   if (planId === "enterprise") return "text-amber-400";
   return "text-white";
@@ -145,7 +157,7 @@ export default function SubscriptionPage({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
           {PLANS.map((plan, index) => {
             const isCurrent = plan.id === currentPlanId;
             const isDowngrade = index < currentPlanIndex;
@@ -159,7 +171,7 @@ export default function SubscriptionPage({
             return (
               <div
                 key={plan.id}
-                className={`flex flex-col rounded-2xl p-6 ring-1 ${
+                className={`flex flex-col rounded-2xl p-6 ring-1 lg:col-span-2 ${gridPlacement[plan.id]} ${
                   isCurrent
                     ? "bg-[#1a1d24] ring-indigo-500/40"
                     : "bg-[#1a1d24] ring-white/[0.08]"

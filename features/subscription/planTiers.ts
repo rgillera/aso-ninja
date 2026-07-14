@@ -2,9 +2,10 @@ import type { PlanSlug } from "@/libs/contracts";
 
 const PLAN_ORDER: Record<PlanSlug, number> = {
   free: 0,
-  pro: 1,
-  pro_plus: 2,
-  enterprise: 3,
+  basic: 1,
+  pro: 2,
+  pro_plus: 3,
+  enterprise: 4,
 };
 
 export function isPlanAtLeast(planSlug: PlanSlug, minimum: PlanSlug): boolean {
