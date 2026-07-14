@@ -443,7 +443,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                         )}
                         <div className="divide-y divide-white/[0.04]">
                           {visibleResults.map((r, i) => {
-                            const trackedApp = apps.find(a => a.bundle_id === r.bundleId && (a.country ?? "US").toUpperCase() === country.toUpperCase());
+                            const trackedApp = apps.find(a => a.bundle_id === r.bundleId && a.store === r.store && (a.country ?? "US").toUpperCase() === country.toUpperCase());
                             const href = trackedApp
                               ? `/dashboard/apps/${trackedApp.id}/report`
                               : `/dashboard/preview?bundleId=${encodeURIComponent(r.bundleId)}&storeId=${encodeURIComponent(r.storeId)}&store=${r.store}&name=${encodeURIComponent(r.name)}&icon=${encodeURIComponent(r.iconUrl)}&country=${country}&page=report`;
