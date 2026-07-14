@@ -13,7 +13,14 @@ import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { WorkspaceFrozen } from "@/features/workspace/WorkspaceFrozen";
 import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
+
+// Paths that manage the account/plan itself, not a specific workspace's
+// content — stay reachable even when the active workspace is frozen, since
+// they're how a user actually fixes the situation (or checks another
+// workspace's settings).
+const WORKSPACE_FREEZE_EXEMPT_PREFIXES = ["/dashboard/settings", "/dashboard/subscription"];
 
 // Route prefixes gated behind each access area — mirrors the "ASO Intelligence"
 // / "Market Intelligence" groupings in DashboardSidebar. "My Apps" and Settings
@@ -239,6 +246,10 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
   const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
 
+  const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId);
+  const isFreezeExemptPath = WORKSPACE_FREEZE_EXEMPT_PREFIXES.some(p => pathname.startsWith(p));
+  const isWorkspaceFrozen = activeWorkspace?.status === "frozen" && !isFreezeExemptPath;
+
   // allApps spans every workspace the user belongs to (needed to resolve an
   // app id from the URL regardless of which workspace it lives in) — but the
   // search dropdown's "Followed Apps"/"Recently Viewed" lists must only ever
@@ -409,7 +420,9 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
             hrefForApp={hrefForApp}
           />
           <div className="flex-1 min-h-0 overflow-hidden">
-            {children}
+            {isWorkspaceFrozen && activeWorkspace
+              ? <WorkspaceFrozen workspaceName={activeWorkspace.name} />
+              : children}
           </div>
         </div>
       </div>

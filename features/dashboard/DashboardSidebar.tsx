@@ -23,6 +23,7 @@ import {
   UserCircleIcon,
   CreditCardIcon,
   AcademicCapIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -219,6 +220,15 @@ export default function DashboardSidebar({
                       {workspaceInitial(ws.name)}
                     </div>
                     <span className="flex-1 truncate">{ws.name}</span>
+                    {ws.status === "frozen" && (
+                      <span
+                        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
+                        title="This workspace is over your plan's workspace limit and is paused."
+                      >
+                        <LockClosedIcon className="size-2.5" />
+                        Paused
+                      </span>
+                    )}
                     {ws.id === active?.id && (
                       <CheckIcon className="size-3.5 text-indigo-400 shrink-0" />
                     )}

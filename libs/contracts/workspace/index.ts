@@ -8,6 +8,10 @@ export type Workspace = {
   slug: string;
   created_at: string;
   updated_at: string;
+  // Frozen when this workspace is beyond the owner's plan's workspace_limit
+  // after a downgrade — see reconcile_workspace_limits in
+  // supabase/migrations/20260714000004_workspace_freeze.sql.
+  status?: "active" | "frozen";
 };
 
 export type WorkspaceMember = {
