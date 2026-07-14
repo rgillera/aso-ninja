@@ -9,6 +9,7 @@ export type Plan = {
   description: string;
   badge: string | null;
   features: string[];
+  trialDays?: number;
 };
 
 export const PLANS: Plan[] = [
@@ -51,7 +52,8 @@ export const PLANS: Plan[] = [
     priceMonthlyCents: 8939,
     priceYearlyCents: 89390,
     description: "Advanced tracking and collaboration for teams growing multiple apps.",
-    badge: "Free trial",
+    badge: "Free for 7 days",
+    trialDays: 7,
     features: [
       "1 workspace",
       "700 keywords",
@@ -68,7 +70,8 @@ export const PLANS: Plan[] = [
     priceMonthlyCents: 14900,
     priceYearlyCents: 149000,
     description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
-    badge: null,
+    badge: "Free for 7 days",
+    trialDays: 7,
     features: [
       "2 workspaces",
       "3,000 keywords",

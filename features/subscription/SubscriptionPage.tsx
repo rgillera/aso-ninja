@@ -232,6 +232,7 @@ export default function SubscriptionPage({
                   isCurrent={isCurrent}
                   isDowngrade={isDowngrade}
                   billing={billing}
+                  trialDays={plan.trialDays}
                   initialScheduledFor={
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }

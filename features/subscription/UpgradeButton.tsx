@@ -12,6 +12,7 @@ type Props = {
   isDowngrade: boolean;
   billing: "monthly" | "yearly";
   initialScheduledFor?: string | null;
+  trialDays?: number;
 };
 
 function formatDate(iso: string) {
@@ -25,6 +26,7 @@ export function UpgradeButton({
   isDowngrade,
   billing,
   initialScheduledFor,
+  trialDays,
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +86,15 @@ export function UpgradeButton({
         onClick={() => (isCancelToFree ? setShowConfirm(true) : submit())}
         className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400 disabled:opacity-60"
       >
-        {isPending ? (isCancelToFree ? "Canceling…" : "Redirecting…") : isDowngrade ? "Downgrade" : "Upgrade"}
+        {isPending
+          ? isCancelToFree
+            ? "Canceling…"
+            : "Redirecting…"
+          : isDowngrade
+            ? "Downgrade"
+            : trialDays
+              ? `Try FREE for ${trialDays} days`
+              : "Upgrade"}
       </button>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
 
