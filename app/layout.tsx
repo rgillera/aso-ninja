@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Script from "next/script";
 import MaintenancePage from "@/components/MaintenancePage";
+import { TawkTo } from "@/components/TawkTo";
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import "./globals.css";
 
@@ -108,21 +108,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}
-        {isLiveProduction ? (
-          <Script id="tawk-to" strategy="lazyOnload">
-            {`
-              var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-              (function(){
-                var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
-                s1.async=true;
-                s1.src='https://embed.tawk.to/6a4bc937e9d50b1d4f4058d3/1jss0k0et';
-                s1.charset='UTF-8';
-                s1.setAttribute('crossorigin','*');
-                s0.parentNode.insertBefore(s1,s0);
-              })();
-            `}
-          </Script>
-        ) : null}
+        {isLiveProduction ? <TawkTo /> : null}
       </body>
     </html>
   );
