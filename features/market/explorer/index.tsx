@@ -150,7 +150,14 @@ export default function AppExplorerPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId, storeId, store, connected: next }),
-    }).catch(() => setConnected((prev) => ({ ...prev, [storeId]: !next })));
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to save connection status");
+      })
+      .catch(() => {
+        setConnected((prev) => ({ ...prev, [storeId]: !next }));
+        setError("Couldn't save connection status. Please try again.");
+      });
   }
 
   if (planSlug !== "enterprise") {
