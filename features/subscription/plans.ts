@@ -35,7 +35,8 @@ export const PLANS: Plan[] = [
     priceMonthlyCents: 1499,
     priceYearlyCents: 14990,
     description: "Advanced tracking and collaboration for teams growing multiple apps.",
-    badge: null,
+    badge: "Free for 7 days",
+    trialDays: 7,
     features: [
       "1 workspace",
       "400 keywords",
@@ -70,8 +71,7 @@ export const PLANS: Plan[] = [
     priceMonthlyCents: 14900,
     priceYearlyCents: 149000,
     description: "Extra scale for product and marketing teams managing fast-growing portfolios.",
-    badge: "Free for 7 days",
-    trialDays: 7,
+    badge: null,
     features: [
       "2 workspaces",
       "3,000 keywords",
