@@ -5,6 +5,7 @@ import { PlusIcon, CheckIcon, MinusIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { AppMetadataResult, MetadataKeyword } from "@/app/api/keywords/app-metadata/route";
+import { AnalyzeAllButton } from "./ui";
 
 type Props = {
   activeApp?: ActiveApp;
@@ -100,18 +101,14 @@ function MetadataSection({
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
           {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
         </div>
-        {!analyzeAllLocked && (
-          <button
-            onClick={() => {
-              const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
-              if (!untracked.length) return;
-              if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
-            }}
-            className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-          >
-            + Analyze all
-          </button>
-        )}
+        <AnalyzeAllButton
+          locked={analyzeAllLocked}
+          onClick={() => {
+            const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
+            if (!untracked.length) return;
+            if (onAddAll) onAddAll(untracked); else untracked.forEach(onAdd);
+          }}
+        />
       </div>
       {placeholder ?? (
         keywords === null ? (
