@@ -8,7 +8,10 @@ export type PendingCancellation = { currentPeriodEnd: string | null } | null;
 
 export async function getWorkspacePlanState(
   workspaceId: string
-): Promise<{ plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation } | { error: string }> {
+): Promise<
+  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation; hasUsedTrial: boolean }
+  | { error: string }
+> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +24,7 @@ export async function getWorkspacePlanState(
       user
         ? supabase
             .from("subscriptions")
-            .select("cancel_at_period_end, current_period_end")
+            .select("cancel_at_period_end, current_period_end, has_used_trial")
             .eq("user_id", user.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -36,6 +39,7 @@ export async function getWorkspacePlanState(
     pendingCancellation: subscription?.cancel_at_period_end
       ? { currentPeriodEnd: subscription.current_period_end }
       : null,
+    hasUsedTrial: subscription?.has_used_trial ?? false,
   };
 }
 
@@ -112,11 +116,15 @@ export async function createCheckoutSessionAction(
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, has_used_trial")
     .eq("user_id", user.id)
     .maybeSingle();
 
   const stripe = createStripeClient();
+
+  const trialDays = plan.trial_period_days && !subscription?.has_used_trial
+    ? plan.trial_period_days
+    : undefined;
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -126,9 +134,7 @@ export async function createCheckoutSessionAction(
     line_items: [{ price: priceId, quantity: 1 }],
     allow_promotion_codes: true,
     metadata: { user_id: user.id, plan_id: plan.id, workspace_id: workspaceId, billing },
-    subscription_data: plan.trial_period_days
-      ? { trial_period_days: plan.trial_period_days }
-      : undefined,
+    subscription_data: trialDays ? { trial_period_days: trialDays } : undefined,
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?success=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/subscription?canceled=1`,
   });

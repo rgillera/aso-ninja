@@ -44,6 +44,9 @@ async function upsertFromStripeSubscription(
   };
   if (planId) row.plan_id = planId;
   if (userId) row.user_id = userId;
+  // Only ever set this to true, never back to false — it marks that a trial
+  // was used at all, ever, not the state of the current subscription.
+  if (subscription.trial_start) row.has_used_trial = true;
 
   let effectiveUserId = userId;
   if (userId) {

@@ -42,6 +42,7 @@ export default async function Page({ searchParams }: PageProps) {
       workspaceId={activeWorkspaceId}
       usage={"error" in state ? undefined : state.usage}
       pendingCancellation={"error" in state ? null : state.pendingCancellation}
+      hasUsedTrial={"error" in state ? false : state.hasUsedTrial}
     />
   );
 }

@@ -37,6 +37,7 @@ type Props = {
   workspaceId: string;
   usage?: WorkspaceUsage;
   pendingCancellation?: { currentPeriodEnd: string | null } | null;
+  hasUsedTrial?: boolean;
 };
 
 type Billing = "monthly" | "yearly";
@@ -100,6 +101,7 @@ export default function SubscriptionPage({
   workspaceId,
   usage,
   pendingCancellation,
+  hasUsedTrial,
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
@@ -232,7 +234,7 @@ export default function SubscriptionPage({
                   isCurrent={isCurrent}
                   isDowngrade={isDowngrade}
                   billing={billing}
-                  trialDays={plan.trialDays}
+                  trialDays={hasUsedTrial ? undefined : plan.trialDays}
                   initialScheduledFor={
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }
