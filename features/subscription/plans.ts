@@ -57,7 +57,7 @@ export const PLANS: Plan[] = [
     trialDays: 7,
     features: [
       "1 workspace",
-      "700 keywords",
+      "1,000 keywords",
       "10 apps & 5 competitors per app",
       "Metadata optimization",
       "Advanced Keyword research",
