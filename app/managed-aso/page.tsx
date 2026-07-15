@@ -74,7 +74,7 @@ export default async function ManagedAsoPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
-  const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL;
+  const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
   return (
     <div className="bg-gray-900 min-h-screen">
