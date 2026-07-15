@@ -3,6 +3,8 @@ import { createClient } from "@/libs/supabase/server";
 import { fetchIosStoreData } from "@/libs/store/appstore";
 import { fetchAndroidStoreData } from "@/libs/store/googleplay";
 import { recordMetadataSnapshot, fetchMetadataSnapshots, type MetadataSnapshotRow } from "@/libs/store/metadata-snapshots";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { UpdateEvent, FieldUpdate, ScreenshotItem } from "@/features/aso/metadata/timeline/types";
 
 function textField(field: string, before: string | null, after: string | null): FieldUpdate | null {
@@ -74,18 +76,26 @@ function diffSnapshots(prev: MetadataSnapshotRow, curr: MetadataSnapshotRow): Up
   };
 }
 
-// GET /api/metadata/timeline?appId=...&store=ios&country=us&storeId=...&bundleId=...&from=YYYY-MM-DD&to=YYYY-MM-DD
+// GET /api/metadata/timeline?appId=...&workspaceId=...&store=ios&country=us&storeId=...&bundleId=...&from=YYYY-MM-DD&to=YYYY-MM-DD
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const appId    = searchParams.get("appId") ?? "";
-  const store    = (searchParams.get("store") ?? "ios") as "ios" | "android";
-  const country  = searchParams.get("country") ?? "US";
-  const storeId  = searchParams.get("storeId") ?? "";
-  const bundleId = searchParams.get("bundleId") ?? "";
-  const from     = searchParams.get("from") ?? "";
-  const to       = searchParams.get("to") ?? "";
+  const appId       = searchParams.get("appId") ?? "";
+  const workspaceId = searchParams.get("workspaceId") ?? "";
+  const store       = (searchParams.get("store") ?? "ios") as "ios" | "android";
+  const country     = searchParams.get("country") ?? "US";
+  const storeId     = searchParams.get("storeId") ?? "";
+  const bundleId    = searchParams.get("bundleId") ?? "";
+  const from        = searchParams.get("from") ?? "";
+  const to          = searchParams.get("to") ?? "";
 
   if (!appId) return NextResponse.json({ error: "appId is required" }, { status: 400 });
+
+  // Timeline is a Pro+ feature — anything below that plan never triggers a
+  // store fetch/snapshot write, matching the ai-suggestions/aso-suggestions
+  // gating pattern.
+  const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ events: [] });
 
   const storeData = store === "ios" && storeId
     ? await fetchIosStoreData(storeId, country)

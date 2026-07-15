@@ -15,7 +15,7 @@ import { BeforeAfterPanel } from "./BeforeAfterPanel";
 
 export default function Timeline({ app }: TimelineProps) {
   const planSlug = usePlanSlug();
-  const isLocked = !isPlanAtLeast(planSlug, "basic");
+  const isLocked = !isPlanAtLeast(planSlug, "pro_plus");
   const { start: defStart, end: defEnd } = defaultRange();
 
   const [rangeStart, setRangeStart]       = useState(defStart);
@@ -49,6 +49,7 @@ export default function Timeline({ app }: TimelineProps) {
       setLoading(true);
       const params = new URLSearchParams({
         appId: app.id,
+        workspaceId: app.workspace_id,
         store: app.store,
         country: app.country ?? "US",
         storeId: app.store_id ?? "",
@@ -63,7 +64,7 @@ export default function Timeline({ app }: TimelineProps) {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [app.id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked]);
+  }, [app.id, app.workspace_id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked]);
 
   const eventByDate = useMemo(() => {
     const m = new Map<string, UpdateEvent>();
@@ -88,10 +89,10 @@ export default function Timeline({ app }: TimelineProps) {
           <p className="text-sm font-semibold text-white">{app.name}</p>
         </div>
         <FeatureLocked
-          minPlan="basic"
+          minPlan="pro_plus"
           icon={ClockIcon}
-          title="Timeline is a Basic feature"
-          description="Upgrade to Basic or above to see your metadata's update history."
+          title="Timeline is a Pro+ feature"
+          description="Upgrade to Pro+ or above to see your metadata's update history."
           benefits={[
             "See every past title, subtitle, and screenshot change side by side",
             "Compare before & after copy with word-level diffs",
