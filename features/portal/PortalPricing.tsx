@@ -23,17 +23,6 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// Row 2 (Pro+, Enterprise) is centered under row 1 (Free, Basic, Pro) using a
-// 6-column grid: each row-1 card spans 2 of 6 columns; row-2 cards keep the
-// same 2-column width but are offset by one column on either side.
-const gridPlacement: Record<PlanId, string> = {
-  free: "",
-  basic: "",
-  pro: "",
-  pro_plus: "lg:col-start-2",
-  enterprise: "lg:col-start-4",
-};
-
 const plans = PLANS.map((plan) => {
   const isFree = plan.priceMonthlyCents === 0;
   return {
@@ -107,7 +96,7 @@ export default function PortalPricing() {
 
   return (
     <section id="pricing" className="bg-gray-950 py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Pricing</p>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
@@ -141,7 +130,7 @@ export default function PortalPricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-7xl lg:grid-cols-6 lg:items-stretch" style={{ paddingTop: "1rem" }}>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-6 lg:max-w-[90rem] lg:grid-cols-5 lg:items-stretch" style={{ paddingTop: "1rem" }}>
           {plans.map((plan) => {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
@@ -149,7 +138,7 @@ export default function PortalPricing() {
             return (
               <div
                 key={plan.name}
-                className={`relative flex flex-col rounded-2xl p-8 lg:col-span-2 ${gridPlacement[plan.id]} ${s.card}`}
+                className={`relative flex flex-col rounded-2xl p-6 ${s.card}`}
               >
                 {plan.variant === "featured" && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -159,10 +148,10 @@ export default function PortalPricing() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-2">
                   <h3 className={`text-lg font-semibold ${s.title}`}>{plan.name}</h3>
                   {plan.badge && (
-                    <span className={`rounded-full px-3 py-1 text-xs font-medium ${s.badge}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${s.badge}`}>
                       {plan.badge}
                     </span>
                   )}
@@ -170,10 +159,10 @@ export default function PortalPricing() {
 
                 <div className="mt-4 flex items-baseline gap-x-2">
                   {plan.contactSales ? (
-                    <span className={`text-3xl font-bold tracking-tight ${s.price}`}>Contact sales</span>
+                    <span className={`text-2xl font-bold tracking-tight ${s.price}`}>Contact sales</span>
                   ) : (
                     <>
-                      <span className={`text-5xl font-bold tracking-tight ${s.price}`}>
+                      <span className={`text-4xl font-bold tracking-tight ${s.price}`}>
                         {billing.price}
                       </span>
                       {!isFree && (

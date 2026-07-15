@@ -42,17 +42,6 @@ type Props = {
 
 type Billing = "monthly" | "yearly";
 
-// Row 2 (Pro+, Enterprise) is centered under row 1 (Free, Basic, Pro) using a
-// 6-column grid: each row-1 card spans 2 of 6 columns; row-2 cards keep the
-// same 2-column width but are offset by one column on either side.
-const gridPlacement: Record<PlanId, string> = {
-  free: "",
-  basic: "",
-  pro: "",
-  pro_plus: "lg:col-start-2",
-  enterprise: "lg:col-start-4",
-};
-
 function nameColor(planId: PlanId) {
   if (planId === "basic") return "text-emerald-500";
   if (planId === "pro" || planId === "pro_plus") return "text-red-500";
@@ -114,7 +103,7 @@ export default function SubscriptionPage({
 
   return (
     <main className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-6xl px-8 py-10">
+      <div className="mx-auto max-w-[85rem] px-6 py-10">
         <div className="mb-8">
           <Link
             href="/dashboard"
@@ -159,9 +148,10 @@ export default function SubscriptionPage({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5" style={{ paddingTop: "1rem" }}>
           {PLANS.map((plan, index) => {
             const isCurrent = plan.id === currentPlanId;
+            const isPopular = plan.id === "pro";
             const isDowngrade = index < currentPlanIndex;
             const isFree = plan.priceMonthlyCents === 0;
             const displayCents = isFree
@@ -173,12 +163,22 @@ export default function SubscriptionPage({
             return (
               <div
                 key={plan.id}
-                className={`flex flex-col rounded-2xl p-6 ring-1 lg:col-span-2 ${gridPlacement[plan.id]} ${
+                className={`relative flex flex-col rounded-2xl p-6 ring-1 ${
                   isCurrent
                     ? "bg-[#1a1d24] ring-indigo-500/40"
-                    : "bg-[#1a1d24] ring-white/[0.08]"
+                    : isPopular
+                      ? "bg-[#1a1d24] ring-indigo-500/40"
+                      : "bg-[#1a1d24] ring-white/[0.08]"
                 }`}
               >
+                {isPopular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-yellow-900 shadow-lg shadow-yellow-900/30">
+                      ★ Most Popular
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between gap-2">
                   <h2 className={`text-base font-semibold ${nameColor(plan.id)}`}>{plan.name}</h2>
                   {plan.badge && (
