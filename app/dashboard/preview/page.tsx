@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: PageProps) {
     return <AppPagePreview app={syntheticApp} allApps={allApps} storeData={storeData} />;
   }
   if (page === "timeline") {
-    return <Timeline app={syntheticApp} allApps={allApps} screenshots={storeData?.screenshotUrls ?? []} />;
+    return <Timeline app={syntheticApp} allApps={allApps} />;
   }
   const benchmark = await loadCategoryBenchmark(store, resolvedStoreId, bundleId, resolvedCountry, storeData);
   if (page === "benchmark") {

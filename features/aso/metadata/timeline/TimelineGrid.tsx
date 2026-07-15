@@ -116,12 +116,16 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
                   <button
                     onClick={() => onSelectEvent(isSel ? null : event)}
                     title={`${event.fields.length} field${event.fields.length !== 1 ? "s" : ""} updated`}
-                    className={`size-2.5 rounded-full transition-all duration-150 ${
-                      isSel
-                        ? "bg-teal-300 scale-125 ring-2 ring-teal-400/40"
-                        : "bg-teal-500 hover:bg-teal-400 hover:scale-110"
-                    }`}
-                  />
+                    className="group flex items-center justify-center size-6 rounded-full"
+                  >
+                    <span
+                      className={`size-2.5 rounded-full transition-all duration-150 ${
+                        isSel
+                          ? "bg-teal-300 scale-125 ring-2 ring-teal-400/40"
+                          : "bg-teal-500 group-hover:bg-teal-400 group-hover:scale-110"
+                      }`}
+                    />
+                  </button>
                 )}
               </div>
             );

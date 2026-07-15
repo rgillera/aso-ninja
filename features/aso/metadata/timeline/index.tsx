@@ -5,15 +5,15 @@ import { ClockIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import type { TimelineProps, UpdateEvent, ScreenshotItem } from "./types";
-import { ALL_FIELDS, EVENT_TEMPLATES, DAYS_SHOWN } from "./constants";
+import type { TimelineProps, UpdateEvent } from "./types";
+import { ALL_FIELDS, DAYS_SHOWN } from "./constants";
 import { buildDates, defaultRange, toDateStr } from "./utils";
 import { TimelineHeader } from "./TimelineHeader";
 import { TimelineToolbar } from "./TimelineToolbar";
 import { TimelineGrid } from "./TimelineGrid";
 import { BeforeAfterPanel } from "./BeforeAfterPanel";
 
-export default function Timeline({ app, screenshots = [] }: TimelineProps) {
+export default function Timeline({ app }: TimelineProps) {
   const planSlug = usePlanSlug();
   const isLocked = !isPlanAtLeast(planSlug, "basic");
   const { start: defStart, end: defEnd } = defaultRange();
@@ -24,6 +24,8 @@ export default function Timeline({ app, screenshots = [] }: TimelineProps) {
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(ALL_FIELDS));
   const [selectedEvent, setSelectedEvent] = useState<UpdateEvent | null>(null);
   const [showDiff, setShowDiff]           = useState(true);
+  const [events, setEvents]               = useState<UpdateEvent[]>([]);
+  const [loading, setLoading]             = useState(false);
 
   // Reset selection when app changes
   useEffect(() => { setSelectedEvent(null); }, [app.id]);
@@ -39,47 +41,35 @@ export default function Timeline({ app, screenshots = [] }: TimelineProps) {
     });
   }, [allDates.length, rangeStart, rangeEnd]);
 
-  // Build app-specific events, injecting real screenshot URLs
-  const appEvents = useMemo<UpdateEvent[]>(() => {
-    const slug = (app.name ?? "app").toLowerCase().replace(/[^a-z0-9]/g, "-");
-
-    const afterCount  = screenshots.length;
-    const beforeCount = Math.max(1, afterCount - 2);
-
-    const screenshotsBefore: ScreenshotItem[] = screenshots
-      .slice(0, beforeCount)
-      .map(url => ({ status: "repositioned" as const, url }));
-
-    const screenshotsAfter: ScreenshotItem[] = [
-      ...screenshots.slice(0, beforeCount).map(url => ({ status: "repositioned" as const, url })),
-      ...screenshots.slice(beforeCount).map(url => ({ status: "added" as const, url })),
-    ];
-
-    return EVENT_TEMPLATES.map(e => ({
-      ...e,
-      fields: e.fields.map(f => {
-        const base = {
-          ...f,
-          before: f.before.replace(/\{\{app\}\}/g, app.name).replace(/\{\{slug\}\}/g, slug),
-          after:  f.after.replace(/\{\{app\}\}/g, app.name).replace(/\{\{slug\}\}/g, slug),
-        };
-        if (f.field !== "Screenshots") return base;
-        return {
-          ...base,
-          before: `${beforeCount} screenshot${beforeCount !== 1 ? "s" : ""}`,
-          after:  `${afterCount} screenshot${afterCount !== 1 ? "s" : ""}`,
-          screenshotsBefore: screenshots.length > 0 ? screenshotsBefore : f.screenshotsBefore,
-          screenshotsAfter:  screenshots.length > 0 ? screenshotsAfter  : f.screenshotsAfter,
-        };
-      }),
-    }));
-  }, [app.id, app.name, screenshots]);
+  // Fetch real before/after history — recording today's snapshot and diffing
+  // it against prior snapshots happens server-side in the API route.
+  useEffect(() => {
+    if (isLocked) return;
+    const t = setTimeout(() => {
+      setLoading(true);
+      const params = new URLSearchParams({
+        appId: app.id,
+        store: app.store,
+        country: app.country ?? "US",
+        storeId: app.store_id ?? "",
+        bundleId: app.bundle_id ?? "",
+        from: toDateStr(rangeStart),
+        to: toDateStr(rangeEnd),
+      });
+      fetch(`/api/metadata/timeline?${params}`)
+        .then(r => r.json())
+        .then((data: { events?: UpdateEvent[] }) => setEvents(data.events ?? []))
+        .catch(() => setEvents([]))
+        .finally(() => setLoading(false));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [app.id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked]);
 
   const eventByDate = useMemo(() => {
     const m = new Map<string, UpdateEvent>();
-    for (const e of appEvents) m.set(e.date, e);
+    for (const e of events) m.set(e.date, e);
     return m;
-  }, [appEvents]);
+  }, [events]);
 
   function toggleField(f: string) {
     setSelectedFields(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n; });
@@ -144,6 +134,16 @@ export default function Timeline({ app, screenshots = [] }: TimelineProps) {
             showDiff={showDiff}
             onShowDiffChange={setShowDiff}
           />
+        ) : loading && events.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-xs text-gray-600">Loading update history…</p>
+          </div>
+        ) : events.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-xs text-gray-600 text-center max-w-sm leading-relaxed">
+              No changes recorded yet — history builds up automatically once the app is followed.
+            </p>
+          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-gray-600">Click an update dot on the timeline to compare before &amp; after</p>

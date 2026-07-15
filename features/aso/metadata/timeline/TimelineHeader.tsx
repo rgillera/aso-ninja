@@ -42,7 +42,7 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
   }
 
   function setPreset(days: number) {
-    const end   = new Date("2026-06-27");
+    const end   = new Date();
     const start = new Date(end);
     start.setDate(start.getDate() - days);
     setDraftStart(toDateStr(start));

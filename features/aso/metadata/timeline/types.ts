@@ -25,5 +25,4 @@ export type UpdateEvent = {
 export type TimelineProps = {
   app: App;
   allApps: App[];
-  screenshots?: string[];
 };

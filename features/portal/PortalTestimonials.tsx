@@ -16,7 +16,7 @@ const testimonials = [
   {
     quote:
       "The workspace model is perfect for our agency. Each client gets their own space and we manage everything from one dashboard.",
-    name: "Rodel Gillera",
+    name: "Erik Baring",
     title: "ASO Manager, ASO Ninja",
     avatar: "SK",
   },

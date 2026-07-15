@@ -18,7 +18,7 @@ export function buildDates(start: Date, end: Date): Date[] {
 }
 
 export function defaultRange(): { start: Date; end: Date } {
-  const end   = new Date("2026-06-27");
+  const end   = new Date();
   const start = new Date(end);
   start.setDate(start.getDate() - 90);
   return { start, end };
