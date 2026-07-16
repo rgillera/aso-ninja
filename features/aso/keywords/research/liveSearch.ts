@@ -86,7 +86,10 @@ async function fetchLiveSearchResultsInner(
     return apps;
   }
 
-  const res = await fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}`);
+  const trackedQuery = trackedApp
+    ? `&trackedId=${encodeURIComponent(trackedApp.id)}&trackedName=${encodeURIComponent(trackedApp.name)}&trackedIcon=${encodeURIComponent(trackedApp.icon)}`
+    : "";
+  const res = await fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}${trackedQuery}`);
   if (!res.ok) throw new Error(`search route failed: ${res.status}`);
   const data = await res.json();
   return data.apps ?? [];

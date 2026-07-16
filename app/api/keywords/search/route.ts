@@ -4,6 +4,7 @@ import { createClient } from "@/libs/supabase/server";
 export type AppSearchResult = {
   position: number;
   trackId: number;
+  appId?: string;
   name: string;
   subtitle: string;
   developer: string;
@@ -66,6 +67,9 @@ export async function GET(request: NextRequest) {
   const term    = searchParams.get("term") ?? "";
   const country = (searchParams.get("country") ?? "us").toLowerCase();
   const store   = searchParams.get("store") ?? "ios";
+  const trackedId   = searchParams.get("trackedId") ?? undefined;
+  const trackedName = searchParams.get("trackedName") ?? "";
+  const trackedIcon = searchParams.get("trackedIcon") ?? "";
 
   if (!term) return NextResponse.json({ apps: [] });
 
@@ -128,6 +132,7 @@ export async function GET(request: NextRequest) {
     const apps: AppSearchResult[] = results.map((a, i) => ({
       position:       i + 1,
       trackId:        0,
+      appId:          (a.appId ?? "") as string,
       name:           (a.title ?? "") as string,
       subtitle:       (a.genre ?? "") as string,
       developer:      (a.developer ?? "") as string,
@@ -138,6 +143,36 @@ export async function GET(request: NextRequest) {
       inAppPurchases: !!(a.IAPRange),
       screenshotUrls: [],
     }));
+
+    const today = new Date().toISOString().split("T")[0];
+    const rows = apps.map((app) => ({
+      keyword:     term.toLowerCase().trim(),
+      store,
+      country,
+      recorded_on: today,
+      position:    app.position as number | null,
+      app_id:      app.appId || app.name,
+      app_name:    app.name,
+      app_icon:    app.icon,
+    }));
+    // Same "checked, not found" fallback as the iOS POST path: without this,
+    // a tracked app genuinely outside the search window leaves no row at
+    // all, indistinguishable from "never checked", and retries forever.
+    if (trackedId && !rows.some((r) => r.app_id === trackedId)) {
+      rows.push({
+        keyword:     term.toLowerCase().trim(),
+        store,
+        country,
+        recorded_on: today,
+        position:    null,
+        app_id:      trackedId,
+        app_name:    trackedName,
+        app_icon:    trackedIcon,
+      });
+    }
+    const supabase = await createClient();
+    await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
+
     return NextResponse.json({ apps });
   } catch {
     return NextResponse.json({ apps: [] });
