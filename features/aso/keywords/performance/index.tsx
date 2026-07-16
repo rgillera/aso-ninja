@@ -55,6 +55,19 @@ export default function KeywordPerformancePage() {
   const [translateToggle, setTranslateToggle] = useState(false);
   const [snapshots,        setSnapshots]        = useState<Record<string, TermSnapshot>>({});
   const [snapshotsLoading, setSnapshotsLoading]  = useState(false);
+  // Distinct from snapshotsLoading: stays false until the very first fetch
+  // resolves, so the "stuck"/unranked count below doesn't treat the empty
+  // initial snapshots state as every keyword having failed to rank.
+  const [snapshotsLoadedOnce, setSnapshotsLoadedOnce] = useState(false);
+  // Only surfaces the spinner if a snapshots fetch is still running after a
+  // beat — this data's usually cached and resolves near-instantly, so
+  // showing it unconditionally just flashes a dot on and off every load.
+  const [showSnapshotsLoading, setShowSnapshotsLoading] = useState(false);
+  useEffect(() => {
+    if (!snapshotsLoading) { setShowSnapshotsLoading(false); return; }
+    const t = setTimeout(() => setShowSnapshotsLoading(true), 300);
+    return () => clearTimeout(t);
+  }, [snapshotsLoading]);
   const [tab, setTab] = useState<"chart" | "table">("table");
   const [visibility,        setVisibility]        = useState<VisibilityHistoryResult>({});
   const [visibilityLoading, setVisibilityLoading]  = useState(false);
@@ -197,13 +210,17 @@ export default function KeywordPerformancePage() {
             loading: false,
           }))
         );
-        if (needsMetrics.length) handleAddKeywords(needsMetrics);
+        if (needsMetrics.length) handleAddKeywords(needsMetrics, { silent: true });
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.bundle_id, isLocked]);
 
-  async function handleAddKeywords(newTerms: string[]) {
+  // silent: true for the mount-time backfill of metrics on already-tracked
+  // keywords (index.tsx:204) — that's not a user-initiated add, so it
+  // shouldn't flip the "+Add" button into its spinner state or warn on
+  // navigation away, both of which are about *this* add completing.
+  async function handleAddKeywords(newTerms: string[], { silent = false }: { silent?: boolean } = {}) {
     const existing = new Set(keywords.filter((k) => !k.loading).map((k) => k.term.toLowerCase()));
     const fresh = newTerms.filter((t) => !existing.has(t.toLowerCase()));
     if (!fresh.length) return;
@@ -212,7 +229,7 @@ export default function KeywordPerformancePage() {
     const store   = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
-    setPendingAdds((n) => n + 1);
+    if (!silent) setPendingAdds((n) => n + 1);
 
     // Reserve the keyword(s) server-side before showing anything — this is
     // what actually creates/links the app row, so a plan-limit rejection
@@ -239,7 +256,7 @@ export default function KeywordPerformancePage() {
       if (reserveRes && !reserveRes.ok) {
         const body: { error?: string } = await reserveRes.json().catch(() => ({}));
         setSaveError(body.error ?? "Couldn't save this keyword.");
-        setPendingAdds((n) => n - 1);
+        if (!silent) setPendingAdds((n) => n - 1);
         return;
       }
     }
@@ -319,7 +336,7 @@ export default function KeywordPerformancePage() {
         prev.map((k) => (k.loading && newTerms.includes(k.term) ? { ...k, loading: false } : k))
       );
     } finally {
-      setPendingAdds((n) => n - 1);
+      if (!silent) setPendingAdds((n) => n - 1);
     }
   }
 
@@ -355,8 +372,10 @@ export default function KeywordPerformancePage() {
   const refetchingRanksRef = useRef(refetchingRanks);
   useEffect(() => { refetchingRanksRef.current = refetchingRanks; }, [refetchingRanks]);
   const stuckTerms = useMemo(
-    () => keywords.filter((k) => !k.loading && !snapshots[k.term]?.rankLatestDate).map((k) => k.term),
-    [keywords, snapshots]
+    () => snapshotsLoadedOnce
+      ? keywords.filter((k) => !k.loading && !snapshots[k.term]?.rankLatestDate).map((k) => k.term)
+      : [],
+    [keywords, snapshots, snapshotsLoadedOnce]
   );
   const stuckTermsRef = useRef(stuckTerms);
   useEffect(() => { stuckTermsRef.current = stuckTerms; }, [stuckTerms]);
@@ -439,7 +458,10 @@ export default function KeywordPerformancePage() {
         .then((r) => r.json())
         .then((data: PerformanceSnapshotResult) => setSnapshots(data))
         .catch(() => setSnapshots({}))
-        .finally(() => setSnapshotsLoading(false));
+        .finally(() => {
+          setSnapshotsLoading(false);
+          setSnapshotsLoadedOnce(true);
+        });
     }, 300);
     return () => clearTimeout(t);
   }, [activeApp, trackedTerms, snapshotsRefreshKey, competitors, isLocked]);
@@ -624,7 +646,7 @@ export default function KeywordPerformancePage() {
               filters={filters}
               onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
               snapshots={snapshots}
-              snapshotsLoading={snapshotsLoading}
+              snapshotsLoading={showSnapshotsLoading}
               adding={pendingAdds > 0}
               onAddKeywords={handleAddKeywords}
               onToggleStar={handleToggleStar}

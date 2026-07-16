@@ -296,11 +296,11 @@ export function PerformanceTable({
           <button
             onClick={onRefetchRanks}
             disabled={refetchingRanks}
-            title="Retry live search for keywords still showing an Unknown rank"
+            title="These keywords are automatically retried in the background — click to force an immediate retry"
             className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors shrink-0"
           >
-            <ArrowPathIcon className={`size-3.5 ${refetchingRanks ? "animate-spin" : ""}`} />
-            {refetchingRanks ? "Refetching…" : `Refetch ${stuckRankCount} unranked`}
+            <ArrowPathIcon className="size-3.5 animate-spin" />
+            {refetchingRanks ? "Refetching…" : `${stuckRankCount} unranked · refreshing`}
           </button>
         )}
         {translateToggle && translating && (
