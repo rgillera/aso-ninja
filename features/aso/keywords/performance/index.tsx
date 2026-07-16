@@ -25,6 +25,12 @@ import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 
+// Caps how many automatic background retries a stuck ("Unknown" rank)
+// keyword gets before we stop nagging Apple/Google for it — a genuinely
+// gone/renamed keyword would otherwise get retried forever.
+const MAX_AUTO_RETRIES = 5;
+const AUTO_RETRY_INTERVAL_MS = 2 * 60 * 1000;
+
 function NoAppSelected() {
   return (
     <div className="h-full flex items-center justify-center bg-[#111318]">
@@ -317,28 +323,43 @@ export default function KeywordPerformancePage() {
     }
   }
 
+  // trackedApp identifies which app's rank to record a "checked, not found"
+  // marker for when it's absent from a search's results — omitted when the
+  // app has no store_id yet (previewed but not fully tracked), matching what
+  // "unranked" already means elsewhere in this file (falls back to "").
+  const trackedApp = activeApp?.store_id
+    ? { id: activeApp.store_id, name: activeApp.name ?? "", icon: activeApp.icon_url ?? "" }
+    : undefined;
+
   async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {
     // Spacing between calls is enforced centrally in liveSearch.ts (shared
     // across every caller app-wide), so this just fires them in order.
     for (const term of terms) {
       try {
-        await fetchLiveSearchResults(term, store, country);
+        await fetchLiveSearchResults(term, store, country, trackedApp);
+        // Refresh after each term (not just once at the end) so a keyword
+        // that resolves early in a long batch drops off "N unranked"
+        // immediately instead of the count sitting frozen until every term
+        // in the batch has been attempted.
+        setSnapshotsRefreshKey((k) => k + 1);
       } catch (err) {
         console.warn(`Live search failed for "${term}" — rank will stay "Unknown" until retried`, err);
       }
     }
-    setSnapshotsRefreshKey((k) => k + 1);
   }
 
-  // Manual escape hatch for the auto-retry-once-per-visit logic below: lets a
-  // user re-trigger a live search for everything still stuck on "Unknown"
-  // (e.g. after Apple's rate limit, which the queue/backoff can't route
-  // around on its own, has had time to clear) without reloading the page.
+  // Manual escape hatch: forces an immediate retry for everything stuck on
+  // "Unknown", bypassing the periodic auto-retry cadence/cap below, for a
+  // user who doesn't want to wait for the next automatic pass.
   const [refetchingRanks, setRefetchingRanks] = useState(false);
+  const refetchingRanksRef = useRef(refetchingRanks);
+  useEffect(() => { refetchingRanksRef.current = refetchingRanks; }, [refetchingRanks]);
   const stuckTerms = useMemo(
     () => keywords.filter((k) => !k.loading && !snapshots[k.term]?.rankLatestDate).map((k) => k.term),
     [keywords, snapshots]
   );
+  const stuckTermsRef = useRef(stuckTerms);
+  useEffect(() => { stuckTermsRef.current = stuckTerms; }, [stuckTerms]);
 
   async function handleRefetchRanks() {
     if (!stuckTerms.length || refetchingRanks) return;
@@ -403,14 +424,6 @@ export default function KeywordPerformancePage() {
   // without the user having to leave and re-enter the page.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
 
-  // Tracks which "<appId>:<term>" pairs have already had one automatic
-  // catch-up search this page visit, so a keyword that's still stuck after
-  // retrying doesn't get re-queued on every snapshot refetch (the search
-  // itself bumps snapshotsRefreshKey on completion, which would otherwise
-  // loop). Resets naturally on reload, so a still-stuck term gets another
-  // shot next visit.
-  const autoRetriedRef = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     if (!activeApp || !trackedTerms || isLocked) return;
     const t = setTimeout(() => {
@@ -424,28 +437,63 @@ export default function KeywordPerformancePage() {
       });
       fetch(`/api/keywords/performance-snapshots?${params}`)
         .then((r) => r.json())
-        .then((data: PerformanceSnapshotResult) => {
-          setSnapshots(data);
-          // Any tracked keyword with no rank history at all (rankLatestDate
-          // null) never got a successful Live Search, whichever path added
-          // it. Automatically retry those once per visit instead of leaving
-          // them stuck on "Unknown" until someone notices and clicks the
-          // per-row button.
-          const appId = activeApp.id ?? "";
-          const missing = Object.entries(data)
-            .filter(([, snap]) => !snap.rankLatestDate)
-            .map(([term]) => term)
-            .filter((term) => !autoRetriedRef.current.has(`${appId}:${term}`));
-          if (missing.length) {
-            missing.forEach((term) => autoRetriedRef.current.add(`${appId}:${term}`));
-            runLiveSearchInBackground(missing, activeApp.store ?? "ios", activeApp.country ?? "us");
-          }
-        })
+        .then((data: PerformanceSnapshotResult) => setSnapshots(data))
         .catch(() => setSnapshots({}))
         .finally(() => setSnapshotsLoading(false));
     }, 300);
     return () => clearTimeout(t);
   }, [activeApp, trackedTerms, snapshotsRefreshKey, competitors, isLocked]);
+
+  // Keywords with no rank history at all (rankLatestDate null) never got a
+  // successful Live Search. Rather than requiring the user to notice "N
+  // unranked" and click Refetch, retry those automatically — capped per
+  // "<appId>:<term>" pair (autoRetryCountRef) so a genuinely gone/renamed
+  // keyword doesn't get hammered forever. Every retry still goes through the
+  // same shared rate-limited queue (liveSearch.ts) as the manual button and
+  // every other caller, so this adds retries over time rather than extra
+  // concurrent load.
+  const autoRetryCountRef = useRef<Map<string, number>>(new Map());
+
+  function attemptAutoRetry(appId: string, store: string | null | undefined, country: string | null | undefined) {
+    if (refetchingRanksRef.current) return;
+    const eligible = stuckTermsRef.current.filter(
+      (term) => (autoRetryCountRef.current.get(`${appId}:${term}`) ?? 0) < MAX_AUTO_RETRIES
+    );
+    if (!eligible.length) return;
+    eligible.forEach((term) => {
+      const k = `${appId}:${term}`;
+      autoRetryCountRef.current.set(k, (autoRetryCountRef.current.get(k) ?? 0) + 1);
+    });
+    runLiveSearchInBackground(eligible, (store as "ios" | "android" | undefined) ?? "ios", country ?? "us");
+  }
+
+  // Fires a retry pass as soon as the real stuck-term set is known (e.g. once
+  // performance-snapshots finishes loading) or changes (e.g. shrinks after a
+  // successful retry). Reacting to the actual data — instead of a blind
+  // fixed-delay timer — avoids racing ahead of the snapshots fetch above and
+  // finding nothing to do.
+  const stuckKey = stuckTerms.join(",");
+  useEffect(() => {
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key || isLocked || !stuckKey) return;
+    attemptAutoRetry(activeApp?.id ?? "", activeApp?.store, activeApp?.country);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stuckKey, activeApp?.id, activeApp?.bundle_id, isLocked]);
+
+  // Backstop: if a retry fails, the stuck-term set's *content* doesn't
+  // change, so the reactive effect above won't fire again on its own. This
+  // periodically re-attempts it for as long as the page stays open, still
+  // subject to the same cap.
+  useEffect(() => {
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key || isLocked) return;
+    const appId   = activeApp?.id ?? "";
+    const store   = activeApp?.store;
+    const country = activeApp?.country;
+    const interval = setInterval(() => attemptAutoRetry(appId, store, country), AUTO_RETRY_INTERVAL_MS);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, isLocked]);
 
   // Visibility Score: our own derived metric (real Volume x real Rank-position
   // weight, summed across tracked keywords), not an Apple/Google-reported number.

@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
       const dayRows = rankRows.filter((r) => r.recorded_on === date);
       if (!dayRows.length) return "unknown";
       const mine = ourAppId ? dayRows.find((r) => r.app_id === ourAppId) : undefined;
-      return mine ? mine.position : "unranked";
+      // A found row with a null position is the explicit "checked, not
+      // found" marker — same "unranked" display as no row at all.
+      return mine ? mine.position ?? "unranked" : "unranked";
     };
 
     result[term] = {

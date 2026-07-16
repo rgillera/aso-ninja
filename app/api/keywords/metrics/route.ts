@@ -321,7 +321,7 @@ async function persistIosSearch(
         position: i + 1, app_id: String(a.trackId || a.trackName),
         app_name: a.trackName, app_icon: a.artworkUrl,
       })),
-      { onConflict: "keyword,store,country,recorded_on,position" }
+      { onConflict: "keyword,store,country,recorded_on,app_id" }
     );
   }
 }

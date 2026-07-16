@@ -21,22 +21,32 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
+export type TrackedApp = { id: string; name: string; icon: string };
+
 // Fetches live App/Play Store rankings for a keyword and persists them to
 // keyword_rankings_history. iOS goes straight to Apple's CDN from the browser
 // (server-side requests get 403'd); Android goes through our server route
 // since google-play-scraper is Node-only.
+//
+// trackedApp (optional): when the caller is checking rank for a specific
+// tracked app, pass its identity so the server can record a "checked, not
+// found" marker when it's absent from the results — without this, a keyword
+// genuinely outside the search window leaves no row at all, indistinguishable
+// from "never checked", and would retry forever.
 export async function fetchLiveSearchResults(
   keyword: string,
   store: "ios" | "android",
-  country: string
+  country: string,
+  trackedApp?: TrackedApp
 ): Promise<AppSearchResult[]> {
-  return enqueue(() => fetchLiveSearchResultsInner(keyword, store, country));
+  return enqueue(() => fetchLiveSearchResultsInner(keyword, store, country, trackedApp));
 }
 
 async function fetchLiveSearchResultsInner(
   keyword: string,
   store: "ios" | "android",
   country: string,
+  trackedApp?: TrackedApp,
   attempt = 0
 ): Promise<AppSearchResult[]> {
   if (store === "ios") {
@@ -47,7 +57,7 @@ async function fetchLiveSearchResultsInner(
       // tripped — back off several seconds and double it on a second try.
       if ((res.status === 403 || res.status === 429) && attempt < 2) {
         await new Promise((r) => setTimeout(r, 12000 * (attempt + 1)));
-        return fetchLiveSearchResultsInner(keyword, store, country, attempt + 1);
+        return fetchLiveSearchResultsInner(keyword, store, country, trackedApp, attempt + 1);
       }
       throw new Error(`itunes search failed: ${res.status}`);
     }
@@ -71,7 +81,7 @@ async function fetchLiveSearchResultsInner(
     await fetch("/api/keywords/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ keyword, store, country, apps }),
+      body: JSON.stringify({ keyword, store, country, apps, trackedApp }),
     });
     return apps;
   }

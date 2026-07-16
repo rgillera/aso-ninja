@@ -29,6 +29,10 @@ export async function GET(request: NextRequest) {
     .eq("country", country)
     .gte("recorded_on", from)
     .lte("recorded_on", to)
+    // Null position is a "checked, not found" marker, not a rank — this
+    // panel renders a ranked leaderboard, so a not-found day has no entry
+    // here, same as before this marker existed.
+    .not("position", "is", null)
     .order("recorded_on", { ascending: true })
     .order("position", { ascending: true });
 

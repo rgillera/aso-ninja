@@ -98,7 +98,9 @@ export async function GET(request: NextRequest) {
     const rankAt = (date: string | null, appId: string): RankValue => {
       if (!date || !appId) return "unknown";
       const found = rankRows.find((r) => r.recorded_on === date && r.app_id === appId);
-      return found ? found.position : "unranked";
+      // A found row with a null position is the explicit "checked, not
+      // found in results" marker — same "unranked" display as no row at all.
+      return found ? found.position ?? "unranked" : "unranked";
     };
 
     const rankLatestDate = rankDates.at(-1) ?? null;

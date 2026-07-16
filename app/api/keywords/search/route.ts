@@ -17,28 +17,44 @@ export type AppSearchResult = {
 
 // POST /api/keywords/search  — persist pre-fetched iOS results from the browser
 export async function POST(request: NextRequest) {
-  const { keyword, store, country, apps } = await request.json() as {
+  const { keyword, store, country, apps, trackedApp } = await request.json() as {
     keyword: string;
     store: string;
     country: string;
     apps: AppSearchResult[];
+    trackedApp?: { id: string; name: string; icon: string };
   };
   if (!keyword || !apps?.length) return NextResponse.json({ ok: true });
   const today = new Date().toISOString().split("T")[0];
   const supabase = await createClient();
-  await supabase.from("keyword_rankings_history").upsert(
-    apps.map((app) => ({
+  const rows = apps.map((app) => ({
+    keyword:     keyword.toLowerCase().trim(),
+    store,
+    country:     country.toLowerCase(),
+    recorded_on: today,
+    position:    app.position as number | null,
+    app_id:      String(app.trackId || app.name),
+    app_name:    app.name,
+    app_icon:    app.icon,
+  }));
+  // The tracked app not appearing anywhere in `apps` is a real, checked
+  // result (genuinely outside this search's window) — record it with a null
+  // position so it reads as "checked, unranked" rather than leaving no row
+  // at all, which is indistinguishable from "never checked" and would retry
+  // forever.
+  if (trackedApp && !rows.some((r) => r.app_id === trackedApp.id)) {
+    rows.push({
       keyword:     keyword.toLowerCase().trim(),
       store,
       country:     country.toLowerCase(),
       recorded_on: today,
-      position:    app.position,
-      app_id:      String(app.trackId || app.name),
-      app_name:    app.name,
-      app_icon:    app.icon,
-    })),
-    { onConflict: "keyword,store,country,recorded_on,position" }
-  );
+      position:    null,
+      app_id:      trackedApp.id,
+      app_name:    trackedApp.name,
+      app_icon:    trackedApp.icon,
+    });
+  }
+  await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
   return NextResponse.json({ ok: true });
 }
 
@@ -92,7 +108,7 @@ export async function GET(request: NextRequest) {
             app_name:    app.name,
             app_icon:    app.icon,
           })),
-          { onConflict: "keyword,store,country,recorded_on,position" }
+          { onConflict: "keyword,store,country,recorded_on,app_id" }
         );
       });
 

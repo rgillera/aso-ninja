@@ -37,6 +37,9 @@ export async function GET(request: NextRequest) {
     .eq("app_id", storeId)
     .eq("store", store)
     .eq("country", country)
+    // Null position is a "checked, not found" marker, not a rank — this
+    // route exists specifically to list keywords the app IS ranked for.
+    .not("position", "is", null)
     .order("keyword", { ascending: true })
     .order("recorded_on", { ascending: false })
     .limit(10000);

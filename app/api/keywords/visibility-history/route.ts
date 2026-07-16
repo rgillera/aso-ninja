@@ -74,6 +74,9 @@ export async function GET(request: NextRequest) {
 
   const rankByKey = new Map<string, number>();
   for (const row of rankRows) {
+    // A null position is a "checked, not found" marker, not a rank — it
+    // contributes no visibility weight, same as no row at all.
+    if (row.position === null) continue;
     rankByKey.set(`${row.keyword}|${row.recorded_on}|${row.app_id}`, row.position);
   }
 
