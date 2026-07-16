@@ -76,7 +76,12 @@ export async function POST(request: NextRequest) {
     )
     .select("id, term");
 
-  if (kwErr || !keywordRows?.length) return NextResponse.json({ appId });
+  // A rejected upsert here (e.g. the workspace's plan keyword limit trigger)
+  // must be surfaced as an error — otherwise the client's optimistically
+  // added row (already in UI state before this response comes back) never
+  // gets rolled back, since a 200 with no `error` field looks like success.
+  if (kwErr) return NextResponse.json({ error: kwErr.message }, { status: 403 });
+  if (!keywordRows?.length) return NextResponse.json({ appId });
 
   // 3. Link all keywords to the app
   if (appId) {
