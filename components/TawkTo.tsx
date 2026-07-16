@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 declare global {
   interface Window {
-    Tawk_API?: { hideWidget?: () => void; showWidget?: () => void; onLoad?: () => void };
+    Tawk_API?: { hideWidget?: () => void; showWidget?: () => void; maximize?: () => void; onLoad?: () => void };
   }
 }
 
