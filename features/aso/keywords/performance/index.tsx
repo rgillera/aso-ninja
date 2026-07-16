@@ -41,7 +41,7 @@ export default function KeywordPerformancePage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "basic");
+  const isLocked    = !isPlanAtLeast(planSlug, "free");
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
@@ -507,9 +507,9 @@ export default function KeywordPerformancePage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="Monitor Performance" />
         <FeatureLocked
-          minPlan="basic"
+          minPlan="free"
           icon={ArrowTrendingUpIcon}
-          title="Keyword Performance is a Basic feature"
+          title="Keyword Performance is a Free feature"
           description="Upgrade to Basic or above to monitor keyword rankings and visibility over time."
           benefits={[
             "Track search volume and rank for every tracked keyword",
