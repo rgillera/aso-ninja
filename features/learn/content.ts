@@ -6,7 +6,7 @@ import {
   ClockIcon,
   ChartBarIcon,
   MagnifyingGlassIcon,
-  AdjustmentsHorizontalIcon,
+  PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
   StarIcon,
@@ -60,7 +60,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         howToUse: [
           "Start with Reports for a quick health check of your current store listing",
           "Use Metadata — Preview, Timeline, and Benchmark — to draft, review, and benchmark your listing's text and creative",
-          "Use Keywords — Research, Combinations, Performance, and Ranked — to find, track, and monitor the terms your app should rank for",
+          "Use Keywords — Keyword Research, Long Tail Keywords, Keyword Performance, and Ranked Keywords — to find, track, and monitor the terms your app should rank for",
           "Use Reviews & Ratings to track your star rating, read user feedback, and turn it into a concrete improvement plan",
           "Pick a topic from the list on the left at any time to see exactly what it's for, why it matters, and how to use it",
         ],
@@ -186,7 +186,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
     topics: [
       {
         id: "keywords-research",
-        label: "Research",
+        label: "Keyword Research",
         icon: MagnifyingGlassIcon,
         description:
           "Research is where you build and maintain the list of keywords your app should be found for. It's for figuring out what to target and keeping an eye on how you rank for it.",
@@ -209,11 +209,11 @@ export const LEARN_GROUPS: LearnGroup[] = [
       },
       {
         id: "keywords-combinations",
-        label: "Combinations",
-        icon: AdjustmentsHorizontalIcon,
+        label: "Long Tail Keywords",
+        icon: PuzzlePieceIcon,
         minPlan: "pro_plus",
         description:
-          "Combinations helps you find long-tail keyword phrases you'd never think to type yourself. It's for expanding a small list of seed ideas into many realistic, rankable variants fast.",
+          "Long Tail Keywords helps you find keyword phrases you'd never think to type yourself. It's for expanding a small list of seed ideas into many realistic, rankable variants fast.",
         benefits: [
           "Discover phrasing variations of your core keywords you wouldn't have brainstormed manually",
           "Find easier-to-rank long-tail alternatives to highly competitive head terms",
@@ -225,13 +225,13 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Bulk-add the strongest ones straight into Research so they get ongoing tracking",
         ],
         goodToKnow: [
-          "Combination groups are saved locally in your browser per app, not synced across devices",
+          "Keyword groups are saved locally in your browser per app, not synced across devices",
           "Requires Pro+",
         ],
       },
       {
         id: "keywords-performance",
-        label: "Performance",
+        label: "Keyword Performance",
         icon: ArrowTrendingUpIcon,
         minPlan: "basic",
         description:
@@ -250,7 +250,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
       },
       {
         id: "keywords-ranked",
-        label: "Ranked",
+        label: "Ranked Keywords",
         icon: ListBulletIcon,
         minPlan: "pro_plus",
         description:

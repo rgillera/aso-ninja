@@ -369,7 +369,7 @@ export function CombinationTable({
           <div className="py-16 text-center">
             <MagnifyingGlassIcon className="size-8 text-gray-700 mx-auto mb-3" />
             <p className="text-sm font-medium text-gray-400">No keywords added yet</p>
-            <p className="mt-1 text-xs text-gray-600">Add a seed keyword above to generate combinations.</p>
+            <p className="mt-1 text-xs text-gray-600">Add a seed keyword above to generate long tail combinations.</p>
           </div>
         )}
       </div>

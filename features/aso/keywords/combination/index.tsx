@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AdjustmentsHorizontalIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PuzzlePieceIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -21,7 +21,7 @@ function NoAppSelected() {
   return (
     <div className="h-full flex items-center justify-center bg-[#111318]">
       <div className="text-center">
-        <AdjustmentsHorizontalIcon className="size-10 text-gray-700 mx-auto mb-4" />
+        <PuzzlePieceIcon className="size-10 text-gray-700 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400">No apps yet</p>
         <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
       </div>
@@ -284,11 +284,11 @@ export default function KeywordCombinationPage() {
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
-        <AppHeader app={activeApp} title="Keyword Combination" />
+        <AppHeader app={activeApp} title="Long Tail Keywords" />
         <FeatureLocked
           minPlan="pro_plus"
-          icon={AdjustmentsHorizontalIcon}
-          title="Keyword Combination is a Pro+ feature"
+          icon={PuzzlePieceIcon}
+          title="Long Tail Keywords is a Pro+ feature"
           description="Upgrade to Pro+ or above to expand seed keywords into combinations."
           benefits={[
             "Turn one seed keyword into dozens of long-tail combinations",
@@ -302,7 +302,7 @@ export default function KeywordCombinationPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
-      <AppHeader app={activeApp ?? null} title="Keyword Combination" />
+      <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />
 
       {saveError && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">

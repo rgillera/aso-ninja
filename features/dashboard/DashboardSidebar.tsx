@@ -15,7 +15,7 @@ import {
   DocumentChartBarIcon,
   EyeIcon,
   ClockIcon,
-  AdjustmentsHorizontalIcon,
+  PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
   MagnifyingGlassCircleIcon,
@@ -63,10 +63,10 @@ const metadataLinks: { label: string; appPath: string; fallback: string; preview
 ];
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Combinations", href: "/dashboard/keywords/combination",  icon: AdjustmentsHorizontalIcon, minPlan: "pro_plus" },
-  { label: "Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
-  { label: "Ranked",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
+  { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
+  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro_plus" },
+  { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
+  { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
@@ -172,7 +172,7 @@ export default function DashboardSidebar({
   return (
     <>
     {showCreate && <CreateWorkspace onClose={() => setShowCreate(false)} />}
-    <aside className="flex h-full w-64 shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07]">
+    <aside className="flex h-full w-72 shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07]">
       {/* Workspace switcher */}
       <div className="relative p-4 border-b border-white/[0.07]" ref={ref}>
         <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">
@@ -387,7 +387,7 @@ export default function DashboardSidebar({
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
-                    <span className="flex-1">{link.label}</span>
+                    <span className="flex-1 whitespace-nowrap">{link.label}</span>
                     {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
                       <PlanLockBadge minPlan={link.minPlan} />
                     )}
