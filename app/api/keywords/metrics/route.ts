@@ -329,7 +329,6 @@ async function persistIosSearch(
 async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient): Promise<Metrics | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
-    let fresh = false;
 
     if (!apps) {
       const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
@@ -344,7 +343,6 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
         userRatingCount: a.userRatingCount ?? 0,
         artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
       }));
-      fresh = true;
     }
 
     const count = apps.length;
@@ -366,7 +364,11 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
       ? 0
       : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
 
-    if (fresh) await persistIosSearch(supabase, term, country, apps, volume, diff);
+    // Persist on every check, not just a fresh iTunes call — a cache hit still
+    // has a full apps[] result set to record into keyword_rankings_history, and
+    // the upsert is keyed on (term/keyword,store,country,recorded_on[,app_id]),
+    // so re-writing the same day's data here is a no-op, not a duplicate.
+    await persistIosSearch(supabase, term, country, apps, volume, diff);
 
     const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;

@@ -29,6 +29,16 @@ export function formatRank(v: RankValue | undefined): string {
   return `#${v}`;
 }
 
+// "unknown" means keyword_rankings_history has no row at all for this term
+// yet (never synced from this page) — fall back to the cached rank from
+// keyword_metrics so we don't show "Unranked" for a keyword we do have a
+// rank for. "unranked" is a real, distinct result (a sync ran and found
+// nothing) and must win over the cached fallback, not be overridden by it.
+export function effectiveRank(snapshotValue: RankValue | undefined, fallback: number | null | undefined): RankValue {
+  if (snapshotValue === undefined || snapshotValue === "unknown") return fallback ?? "unknown";
+  return snapshotValue;
+}
+
 export function rankGrowth(prev: RankValue | undefined, latest: RankValue | undefined): number | null {
   if (typeof prev !== "number" || typeof latest !== "number") return null;
   return prev - latest; // positive = moved up (improved)

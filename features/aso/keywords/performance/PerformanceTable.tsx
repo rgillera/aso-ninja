@@ -18,7 +18,7 @@ import {
   ArrowsUpDownIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
-import { formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
+import { effectiveRank, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -170,7 +170,7 @@ export function PerformanceTable({
     let cmp = 0;
     if (sortKey === "keyword") cmp = a.term.localeCompare(b.term);
     else if (sortKey === "volume") cmp = (sa?.volumeLatest ?? a.volume) - (sb?.volumeLatest ?? b.volume);
-    else if (sortKey === "rank") cmp = rankSortValue(sa?.rankLatest ?? a.rank) - rankSortValue(sb?.rankLatest ?? b.rank);
+    else if (sortKey === "rank") cmp = rankSortValue(effectiveRank(sa?.rankLatest, a.rank)) - rankSortValue(effectiveRank(sb?.rankLatest, b.rank));
     else if (sortKey === "change") cmp = (rankGrowth(sa?.rankPrev, sa?.rankLatest) ?? -Infinity) - (rankGrowth(sb?.rankPrev, sb?.rankLatest) ?? -Infinity);
     return sortDir === "asc" ? cmp : -cmp;
   }) : filtered;
@@ -439,7 +439,7 @@ export function PerformanceTable({
                       <>
                         <td className="px-3 py-3 border-l border-white/[0.04]">
                           <RankCell
-                            value={s?.rankLatest ?? (k.rank ?? "unknown")}
+                            value={effectiveRank(s?.rankLatest, k.rank)}
                             date={s?.rankLatestDate}
                             onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
                           />
