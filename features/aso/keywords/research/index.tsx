@@ -35,7 +35,7 @@ export default function KeywordResearchPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
-  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "basic");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
@@ -159,7 +159,7 @@ export default function KeywordResearchPage() {
 
         const withMetrics    = saved.filter((s) =>  s.hasCachedMetrics);
         const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
-        // Rows saved while the workspace was below Pro+ (or added in fast
+        // Rows saved while the workspace was below Basic+ (or added in fast
         // mode) have relevancy permanently null. If the plan now allows it,
         // backfill just those two columns instead of leaving them stuck.
         const needsRelevancy = canUseRelevancy
@@ -365,7 +365,7 @@ export default function KeywordResearchPage() {
   }
 
   // Fills in relevancy/opportunity for keywords that already have every other
-  // metric cached but were saved while the workspace was below Pro+ (so those
+  // metric cached but were saved while the workspace was below Basic+ (so those
   // two columns came back null). Runs quietly in the background — the row is
   // already fully rendered, so there's no loading state or pendingAdds churn,
   // just the relevancy/opportunity cells swapping from a pending clock icon

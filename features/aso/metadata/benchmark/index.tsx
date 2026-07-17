@@ -114,7 +114,7 @@ function EmptyState({ title, message }: { title: string; message: string }) {
 export default function MetadataBenchmark({ app, storeData, benchmark, daysSinceUpdate }: Props) {
   const planSlug = usePlanSlug();
 
-  if (!isPlanAtLeast(planSlug, "pro_plus")) {
+  if (!isPlanAtLeast(planSlug, "pro")) {
     return (
       <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07]">
@@ -122,10 +122,10 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
           <p className="text-sm font-semibold text-white">{app.name}</p>
         </div>
         <FeatureLocked
-          minPlan="pro_plus"
+          minPlan="pro"
           icon={ChartBarIcon}
-          title="Benchmark is a Pro+ feature"
-          description="Upgrade to Pro+ or above to see how your metadata compares to your category."
+          title="Benchmark is a Pro feature"
+          description="Upgrade to Pro or above to see how your metadata compares to your category."
           benefits={[
             "Compare your title, subtitle, and description length to category norms",
             "See how your rating and review count stack up against peers",

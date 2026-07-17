@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
   // gating pattern.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ events: [] });
+  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ events: [] });
 
   const storeData = store === "ios" && storeId
     ? await fetchIosStoreData(storeId, country)

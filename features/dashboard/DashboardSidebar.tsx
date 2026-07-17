@@ -58,8 +58,8 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
 
 const metadataLinks: { label: string; appPath: string; fallback: string; previewPage: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
-  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "pro_plus" },
-  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "pro_plus" },
+  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "pro" },
+  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "pro" },
 ];
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
@@ -74,8 +74,8 @@ const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIc
 ];
 
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "basic" },
-  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "basic" },
+  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "pro" },
+  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "pro" },
 ];
 
 type Props = {

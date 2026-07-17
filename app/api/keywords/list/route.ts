@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
         diff:             m?.diff        ?? 0,
         chance:           m?.chance      ?? 0,
         // null (as opposed to 0) means relevancy/opportunity were never
-        // computed for this row — e.g. added while below Pro+ — so callers
+        // computed for this row — e.g. added while below Basic+ — so callers
         // can tell "not yet scored" apart from a genuine score of 0.
         opportunity:      m?.opportunity ?? null,
         relevancy:        m?.relevancy   ?? null,

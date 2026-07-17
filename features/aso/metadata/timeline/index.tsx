@@ -15,7 +15,7 @@ import { BeforeAfterPanel } from "./BeforeAfterPanel";
 
 export default function Timeline({ app }: TimelineProps) {
   const planSlug = usePlanSlug();
-  const isLocked = !isPlanAtLeast(planSlug, "pro_plus");
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
   const { start: defStart, end: defEnd } = defaultRange();
 
   const [rangeStart, setRangeStart]       = useState(defStart);
@@ -89,10 +89,10 @@ export default function Timeline({ app }: TimelineProps) {
           <p className="text-sm font-semibold text-white">{app.name}</p>
         </div>
         <FeatureLocked
-          minPlan="pro_plus"
+          minPlan="pro"
           icon={ClockIcon}
-          title="Timeline is a Pro+ feature"
-          description="Upgrade to Pro+ or above to see your metadata's update history."
+          title="Timeline is a Pro feature"
+          description="Upgrade to Pro or above to see your metadata's update history."
           benefits={[
             "See every past title, subtitle, and screenshot change side by side",
             "Compare before & after copy with word-level diffs",

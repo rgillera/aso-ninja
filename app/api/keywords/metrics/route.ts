@@ -473,12 +473,12 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Relevancy/opportunity are Pro-and-up features — anything below that plan
+  // Relevancy/opportunity are Basic-and-up features — anything below that plan
   // never triggers the Gemini embedding/LLM pass, and never sees a value even
   // if one was cached from before a downgrade.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "basic");
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
@@ -494,7 +494,7 @@ export async function GET(request: NextRequest) {
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
-      // A row saved while the workspace was below Pro+ (or from a fast-mode
+      // A row saved while the workspace was below Basic+ (or from a fast-mode
       // add) has relevancy/opportunity permanently null. If this request can
       // now compute them, don't trust this cache row for this term — let it
       // fall through to `uncached` below so it actually gets recomputed
@@ -525,7 +525,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch app description + embed it once; shared across all keyword lookups.
     // Skipped entirely when relevancy won't be computed (fast mode, the
-    // workspace isn't Pro+, or Gemini is unreachable) since it's only ever
+    // workspace isn't Basic+, or Gemini is unreachable) since it's only ever
     // used for that pass.
     const appMeta: AppMeta = withRelevancy && aiReachable && appName
       ? await (store === "android"
@@ -574,7 +574,7 @@ export async function GET(request: NextRequest) {
   }
 
   const merged = { ...dbCache, ...freshMetrics };
-  // Strip relevancy/opportunity for anything below Pro+ — including values
+  // Strip relevancy/opportunity for anything below Basic+ — including values
   // read back from the 7-day DB cache, in case the workspace downgraded since
   // they were computed.
   if (!canUseRelevancy) {
