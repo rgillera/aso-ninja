@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 export default function PortalHero({ isAuthenticated }: { isAuthenticated: boolean }) {
+  const [isImageOpen, setIsImageOpen] = useState(false);
+
   return (
     <section className="relative isolate overflow-hidden bg-gray-900 pt-32 pb-24 sm:pb-32">
       <div
@@ -51,7 +56,11 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
           )}
         </div>
 
-        <div className="mt-20 rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-2">
+        <button
+          type="button"
+          onClick={() => setIsImageOpen(true)}
+          className="mt-20 block w-full rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-2 pointer-events-auto sm:pointer-events-none sm:cursor-default"
+        >
           <Image
             src="/dashboard.png"
             alt="AppASO dashboard showing keyword research with volume, difficulty, relevancy, and opportunity scores"
@@ -60,7 +69,22 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
             className="rounded-xl"
             priority
           />
-        </div>
+        </button>
+
+        {isImageOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 sm:hidden"
+            onClick={() => setIsImageOpen(false)}
+          >
+            <Image
+              src="/dashboard.png"
+              alt="AppASO dashboard showing keyword research with volume, difficulty, relevancy, and opportunity scores"
+              width={3574}
+              height={2004}
+              className="max-h-full w-auto rounded-lg"
+            />
+          </div>
+        )}
       </div>
 
       <div
