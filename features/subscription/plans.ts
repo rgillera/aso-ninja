@@ -34,7 +34,7 @@ export const PLANS: Plan[] = [
     name: "Basic",
     priceMonthlyCents: 1499,
     priceYearlyCents: 14990,
-    description: "Advanced tracking and collaboration for teams growing multiple apps.",
+    description: "Solid keyword tracking and research for a handful of growing apps.",
     badge: "Free for 7 days",
     trialDays: 7,
     features: [
@@ -52,7 +52,7 @@ export const PLANS: Plan[] = [
     name: "Pro",
     priceMonthlyCents: 8939,
     priceYearlyCents: 89390,
-    description: "Advanced tracking and collaboration for teams growing multiple apps.",
+    description: "Advanced tracking and relevancy scoring for teams growing multiple apps.",
     badge: "Free for 7 days",
     trialDays: 7,
     features: [
