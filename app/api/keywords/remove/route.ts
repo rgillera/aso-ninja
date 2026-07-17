@@ -8,7 +8,10 @@ import { createClient } from "@/libs/supabase/server";
 //
 // Untracks keywords from an app (deletes the app_keywords link), mirroring
 // the upsert done by /api/keywords/save. The keyword row itself and its
-// history are left intact — other apps/workspaces may still reference it.
+// history are left intact as long as another app still references it; once
+// this was the last reference, a DB trigger (trg_delete_orphaned_keywords)
+// deletes the now-unreferenced keyword row so it stops counting against the
+// plan's keyword limit.
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
     appId?: string; terms?: string[];
