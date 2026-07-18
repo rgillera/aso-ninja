@@ -4,6 +4,7 @@ import { createClient } from "@/libs/supabase/server";
 type MetricsMap = Record<string, {
   volume: number; diff: number; chance: number;
   opportunity: number | null; relevancy: number | null; rank: number | null;
+  intentThemeId?: string | null;
 }>;
 
 // POST /api/keywords/save
@@ -107,6 +108,10 @@ export async function POST(request: NextRequest) {
             opportunity: m.opportunity,
             relevancy:   m.relevancy,
             rank:        m.rank ?? null,
+            // Undefined (metrics computed before intent classification existed,
+            // e.g. fast-mode or old cache rows) must not stomp a previously
+            // persisted/manually-assigned theme with null on upsert.
+            ...(m.intentThemeId !== undefined ? { intent_theme_id: m.intentThemeId } : {}),
             updated_at:  new Date().toISOString(),
           };
         });

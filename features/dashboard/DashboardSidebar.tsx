@@ -18,6 +18,7 @@ import {
   PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
+  TagIcon,
   MagnifyingGlassCircleIcon,
   ChatBubbleLeftEllipsisIcon,
   UserCircleIcon,
@@ -67,6 +68,7 @@ const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassI
   { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro_plus" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
   { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
+  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro_plus" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [

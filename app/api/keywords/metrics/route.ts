@@ -16,7 +16,10 @@ type Metrics = {
   results: number;
   relevancy: number | null;
   rank: number | null;
+  intentThemeId: string | null;
 };
+
+type IntentTheme = { id: string; label: string };
 
 type AppMeta = {
   description: string;
@@ -28,7 +31,7 @@ type AppMeta = {
 
 // Process-level caches.
 const embeddingCache = new Map<string, number[]>();
-const llmScoreCache  = new Map<string, number>();          // key: `${keyword}|||${description}`
+const llmScoreCache  = new Map<string, DescScoreResult>(); // key: descScoreCacheKey(...)
 const appMetaCache   = new Map<string, { meta: AppMeta; ts: number }>();
 const APP_META_TTL   = 5 * 60 * 1000;
 
@@ -70,10 +73,26 @@ async function embeddingDescScore(keyword: string, description: string): Promise
   return Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
 }
 
-async function getDescRelevanceScore(keyword: string, description: string): Promise<number> {
-  const cacheKey = `${keyword}|||${description}`;
+type DescScoreResult = { score: number; intentThemeId: string | null };
+
+// Cache key includes the theme label set so a mid-flight regeneration of the
+// app's intent themes doesn't serve a stale classification from before it.
+function descScoreCacheKey(keyword: string, description: string, themes: IntentTheme[]): string {
+  return `${keyword}|||${description}|||${themes.map((t) => t.label).join(",")}`;
+}
+
+async function getDescRelevanceScore(keyword: string, description: string, themes: IntentTheme[]): Promise<DescScoreResult> {
+  const cacheKey = descScoreCacheKey(keyword, description, themes);
   if (llmScoreCache.has(cacheKey)) return llmScoreCache.get(cacheKey)!;
   try {
+    const intentSection = themes.length
+      ? `\n\nAlso classify the keyword's search intent against this app's theme list: ${JSON.stringify(themes.map((t) => t.label))}. Pick the single best-matching theme label verbatim, or reply "Other" if none reasonably fits.
+
+Reply with exactly two lines:
+Line 1: the integer score.
+Line 2: the matching theme label (verbatim from the list) or "Other".`
+      : `\n\nReply with ONLY a single integer. No explanation, no punctuation, just the number.`;
+
     const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the App Store search bar. Score the probability (0-100) that they are specifically looking for THIS app.
 
 App description: "${description}"
@@ -87,19 +106,27 @@ Rules — apply in order, stop at first match:
 5. If the keyword directly describes a core feature of this app → score 61-80.
 6. If the keyword is exactly what this app is built for → score 81-100.
 
-Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).
-
-Reply with ONLY a single integer. No explanation, no punctuation, just the number.`;
+Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).${intentSection}`;
     const raw = await generateText(prompt, 0);
-    if (!raw) return embeddingDescScore(keyword, description);
-    const num = parseInt(raw.trim().match(/\d+/)?.[0] ?? "", 10);
-    if (isNaN(num)) return embeddingDescScore(keyword, description);
+    if (!raw) return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
+    const lines = raw.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+    const num = parseInt(lines[0]?.match(/\d+/)?.[0] ?? "", 10);
+    if (isNaN(num)) return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
     const score = Math.max(0, Math.min(100, num));
-    console.log(`[llm-desc] "${keyword}" → raw="${raw.trim()}" score=${score}`);
-    llmScoreCache.set(cacheKey, score);
-    return score;
+
+    let intentThemeId: string | null = null;
+    if (themes.length && lines[1]) {
+      const label = lines[1].replace(/^["'-]+|["'-]+$/g, "").trim().toLowerCase();
+      const matched = themes.find((t) => t.label.toLowerCase() === label);
+      intentThemeId = matched?.id ?? null;
+    }
+
+    console.log(`[llm-desc] "${keyword}" → raw="${raw.trim()}" score=${score} intent=${intentThemeId ?? "none"}`);
+    const result: DescScoreResult = { score, intentThemeId };
+    llmScoreCache.set(cacheKey, result);
+    return result;
   } catch {
-    return embeddingDescScore(keyword, description);
+    return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
   }
 }
 
@@ -158,25 +185,35 @@ function isBrandKeyword(keyword: string, appName: string): boolean {
 }
 
 
+type RelevancyResult = { score: number; intentThemeId: string | null };
+
 async function computeRelevancy(
   keyword: string,
   appName: string,
   topTitles: string[],
   appEmbedding: number[] | null,
-  appDescription?: string,
-): Promise<number> {
+  appDescription: string | undefined,
+  themes: IntentTheme[],
+): Promise<RelevancyResult> {
   const appWords = wordTokens(appName);
-  if (!wordTokens(keyword).length || !appWords.length) return 0;
+  if (!wordTokens(keyword).length || !appWords.length) return { score: 0, intentThemeId: null };
 
-  if (isBrandKeyword(keyword, appName)) return 100;
+  // Brand keywords aren't classified against the app's feature-intent themes
+  // — there's no meaningful match, so they surface in the "Other" bucket.
+  if (isBrandKeyword(keyword, appName)) return { score: 100, intentThemeId: null };
 
   const hasDesc = !!appDescription && appDescription.length > 10;
 
   // 1. Description relevance (70%) — LLM or embedding keyword-vs-description.
   //    Most reliable signal: directly asks "is this keyword relevant to this app?"
-  const descScore = hasDesc
-    ? await getDescRelevanceScore(keyword, appDescription!)
-    : 0;
+  //    Intent theme classification piggybacks on this same LLM call.
+  let descScore = 0;
+  let intentThemeId: string | null = null;
+  if (hasDesc) {
+    const result = await getDescRelevanceScore(keyword, appDescription!, themes);
+    descScore = result.score;
+    intentThemeId = result.intentThemeId;
+  }
 
   // 2. Semantic embedding (30%) — keyword vs app embedding + market context.
   //    Secondary signal. Direct/context scores are dropped because generic words
@@ -209,7 +246,7 @@ async function computeRelevancy(
     ? Math.round(descScore * 0.7 + semanticScore * 0.3)
     : Math.round(semanticScore);
   console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasDesc=${hasDesc} → ${base}`);
-  return base;
+  return { score: base, intentThemeId };
 }
 
 // ── App metadata ──────────────────────────────────────────────────────────────
@@ -326,7 +363,7 @@ async function persistIosSearch(
   }
 }
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient): Promise<Metrics | null | "rate_limited"> {
+async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
 
@@ -376,6 +413,7 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;
+    let intentThemeId: string | null = null;
     // AI provider down → leave both null rather than guessing. A null relevancy is
     // what already signals "needs (re)computing" everywhere downstream (DB
     // cache eligibility, mount-time backfill), so this keyword is retried —
@@ -383,18 +421,20 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     // getting stuck behind a fake persisted score.
     if (withRelevancy && aiReachable) {
       const topTitles = apps.slice(0, 10).map((r) => r.trackName);
-      relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
+      const result = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description, themes);
+      relevancy = result.score;
+      intentThemeId = result.intentThemeId;
       const base = Math.sqrt(volume * chance);
       opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
     }
 
-    return { volume, diff, chance, opportunity, results: count, relevancy, rank };
+    return { volume, diff, chance, opportunity, results: count, relevancy, rank, intentThemeId };
   } catch {
     return null;
   }
 }
 
-async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean): Promise<Metrics | null> {
+async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, themes: IntentTheme[]): Promise<Metrics | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -435,16 +475,19 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
 
     let relevancy: number | null = null;
     let opportunity: number | null = null;
+    let intentThemeId: string | null = null;
     // AI provider down → leave both null (see comment in fetchIosMetrics).
     if (withRelevancy && aiReachable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
-      relevancy = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description);
+      const result = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description, themes);
+      relevancy = result.score;
+      intentThemeId = result.intentThemeId;
       const base = Math.sqrt(volume * chance);
       opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
     }
 
-    return { volume, diff, chance, opportunity, results: count, relevancy, rank };
+    return { volume, diff, chance, opportunity, results: count, relevancy, rank, intentThemeId };
   } catch {
     return null;
   }
@@ -467,6 +510,11 @@ export async function GET(request: NextRequest) {
   // keyword) — relevancy/opportunity come back null and get back-filled by a
   // follow-up non-fast request.
   const fast       = searchParams.get("fast") === "1";
+  // forceIntent=1 bypasses the 7-day DB cache even for terms that already
+  // have a fresh relevancy score, so a newly (re)generated intent theme list
+  // gets applied to already-tracked keywords instead of waiting up to 7 days
+  // for their cache to expire naturally.
+  const forceIntent = searchParams.get("forceIntent") === "1";
 
   const terms = termsParam.split(",").map((t) => t.trim()).filter(Boolean);
   if (!terms.length) return NextResponse.json({});
@@ -482,11 +530,11 @@ export async function GET(request: NextRequest) {
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
-  if (appId) {
+  if (appId && !forceIntent) {
     const { data: rows } = await supabase
       .from("keyword_metrics")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select("volume, diff, chance, opportunity, relevancy, rank, updated_at, keywords(term)" as any)
+      .select("volume, diff, chance, opportunity, relevancy, rank, intent_theme_id, updated_at, keywords(term)" as any)
       .eq("app_id", appId);
 
     for (const row of (rows ?? []) as any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -507,6 +555,7 @@ export async function GET(request: NextRequest) {
         volume: row.volume, diff: row.diff, chance: row.chance,
         opportunity, results: 0,
         relevancy, rank: row.rank ?? null,
+        intentThemeId: row.intent_theme_id ?? null,
       };
     }
   }
@@ -533,20 +582,31 @@ export async function GET(request: NextRequest) {
           : fetchIosAppMeta(appName, country))
       : { description: "", category: "", embedding: null };
 
+    // This app's intent theme list — classification piggybacks on the same
+    // LLM call as relevancy, so an app with no themes generated yet just
+    // gets intentThemeId: null back (see getDescRelevanceScore).
+    const themes: IntentTheme[] = withRelevancy && aiReachable && appId
+      ? ((await supabase
+          .from("app_intent_themes")
+          .select("id, label")
+          .eq("app_id", appId)
+          .order("sort_order", { ascending: true })).data ?? []) as IntentTheme[]
+      : [];
+
     // iOS: sequential to stay under Apple's per-IP rate limit.
     // Android: parallel is fine (google-play-scraper has no such restriction).
     let entries: (readonly [string, Metrics | null])[];
     if (store === "ios") {
       entries = [];
       for (const term of uncached) {
-        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase);
+        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase, themes);
         if (result === "rate_limited") { rateLimited = true; entries.push([term, null] as const); }
         else entries.push([term, result] as const);
       }
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable);
+          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, themes);
           return [term, metrics] as const;
         })
       );

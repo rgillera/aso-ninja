@@ -11,6 +11,7 @@ import {
   ListBulletIcon,
   StarIcon,
   ChatBubbleLeftEllipsisIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
 import type { PlanSlug } from "@/libs/contracts";
 
@@ -266,6 +267,31 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Watch the \"Ranked Over Time\" trend as an overall gauge of organic keyword health",
         ],
         goodToKnow: ["Requires Pro+"],
+      },
+      {
+        id: "keywords-intent",
+        label: "Group by Intent",
+        icon: TagIcon,
+        minPlan: "pro_plus",
+        description:
+          "Group by Intent clusters your tracked keywords into the actual use cases people search for, so you can build ASA campaigns around intent instead of a flat keyword list.",
+        benefits: [
+          "Get an intent taxonomy tailored to your app's own feature set, not a generic branded/generic/competitor split",
+          "See every tracked keyword auto-sorted into its matching intent group, with no manual tagging",
+          "Copy a whole intent group's keyword list in one click, ready to paste straight into an Apple Search Ads campaign",
+          "Build your own intent groups by hand for anything the AI misses or you want structured differently",
+        ],
+        howToUse: [
+          "Click \"Generate intents\" to build a theme list from your app's description, then every tracked keyword gets classified automatically",
+          "Use \"Copy list\" on any group to grab its keywords for a new ASA campaign",
+          "Drag a keyword to a different group with \"Move to\", or check several and bulk-move them from the selection bar",
+          "Click \"Add your own intent\" to create a custom group that survives future regenerations",
+        ],
+        goodToKnow: [
+          "Regenerating reclassifies every tracked keyword and confirms first — any keyword sitting in a generated theme that doesn't recur moves back to \"Other\"",
+          "Custom (manually added) intents and their keywords are never touched by a regenerate",
+          "Requires Pro+",
+        ],
       },
     ],
   },

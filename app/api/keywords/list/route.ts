@@ -9,6 +9,7 @@ export type SavedKeyword = {
   opportunity: number | null;
   relevancy: number | null;
   rank: number | null;
+  intentThemeId: string | null;
   hasCachedMetrics: boolean;
   // Frozen when this keyword is beyond the workspace owner's current plan
   // limit (e.g. after a downgrade) — see reconcile_plan_limits in
@@ -59,14 +60,14 @@ export async function GET(request: NextRequest) {
       .order("added_at", { ascending: true }),
     supabase
       .from("keyword_metrics")
-      .select("keyword_id, volume, diff, chance, opportunity, relevancy, rank")
+      .select("keyword_id, volume, diff, chance, opportunity, relevancy, rank, intent_theme_id")
       .eq("app_id", appId),
   ]);
 
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
 
   // Build metrics lookup by keyword_id
-  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number | null; relevancy: number | null; rank: number | null }>();
+  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number | null; relevancy: number | null; rank: number | null; intentThemeId: string | null }>();
   for (const m of metricsResult.data ?? []) {
     metricsMap.set(m.keyword_id, {
       volume:      m.volume,
@@ -75,6 +76,7 @@ export async function GET(request: NextRequest) {
       opportunity: m.opportunity,
       relevancy:   m.relevancy,
       rank:        m.rank ?? null,
+      intentThemeId: m.intent_theme_id ?? null,
     });
   }
 
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
         opportunity:      m?.opportunity ?? null,
         relevancy:        m?.relevancy   ?? null,
         rank:             m?.rank        ?? null,
+        intentThemeId:    m?.intentThemeId ?? null,
         hasCachedMetrics: !!m,
         frozen:           kw?.status === "frozen",
       } satisfies SavedKeyword;
