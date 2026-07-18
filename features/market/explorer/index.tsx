@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { InformationCircleIcon, ExclamationTriangleIcon, MagnifyingGlassCircleIcon } from "@heroicons/react/24/outline";
-import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { useWorkspaceId, useWorkspaceName } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { createClient } from "@/libs/supabase/client";
@@ -14,6 +14,7 @@ import type { MarketStatusMap } from "@/app/api/market/status/route";
 
 export default function AppExplorerPage() {
   const workspaceId = useWorkspaceId();
+  const workspaceName = useWorkspaceName();
   const planSlug = usePlanSlug();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [apps, setApps] = useState<ChartApp[]>([]);
@@ -186,6 +187,11 @@ export default function AppExplorerPage() {
       <div className="flex items-center gap-2 px-6 pt-6">
         <h1 className="text-xl font-semibold text-white">App Explorer</h1>
         <InformationCircleIcon className="size-4 text-gray-600" title="Ranked from Apple's and Google's public top-charts feeds (capped at 100 and 200 apps respectively — neither store exposes more). No download or revenue figures: neither store discloses those for apps you don't own." />
+        {workspaceName && (
+          <span className="ml-1 text-xs text-gray-500">
+            Connected status for <span className="text-gray-400">{workspaceName}</span>
+          </span>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">

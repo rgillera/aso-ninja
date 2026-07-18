@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useParams, useSearchParams, useRouter } from "next/navigation";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
-import { WorkspaceProvider } from "./WorkspaceContext";
+import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider } from "./PlanContext";
 import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
@@ -395,6 +395,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   return (
     <WorkspaceProvider value={activeWorkspaceId ?? ""}>
+    <WorkspaceNameProvider value={activeWorkspace?.name ?? ""}>
     <PlanProvider value={planSlug}>
     <ActiveAppProvider value={displayApp}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
@@ -436,6 +437,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     </NavigationGuardProvider>
     </ActiveAppProvider>
     </PlanProvider>
+    </WorkspaceNameProvider>
     </WorkspaceProvider>
   );
 }
