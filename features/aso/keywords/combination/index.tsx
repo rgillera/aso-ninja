@@ -16,6 +16,7 @@ import { CombinationTable } from "./CombinationTable";
 import type { CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
+import type { SavedCombinationGroup } from "@/app/api/keywords/combination-groups/route";
 
 function NoAppSelected() {
   return (
@@ -49,26 +50,108 @@ export default function KeywordCombinationPage() {
   const [appSubtitle,     setAppSubtitle]     = useState<string>("");
   const [saveError,       setSaveError]       = useState<string | null>(null);
 
-  const appId = activeApp?.id ?? activeApp?.store_id;
-
-  // Load/save combination groups per app in localStorage (no DB table for this feature yet)
-  useEffect(() => {
-    if (!appId) return;
-    try {
-      const raw = localStorage.getItem(`combinations-${appId}`);
-      setGroups(raw ? (JSON.parse(raw) as CombinationGroup[]) : []);
-    } catch {
-      setGroups([]);
-    }
-  }, [appId]);
-
-
-  function persist(updated: CombinationGroup[]) {
-    setGroups(updated);
-    if (appId) {
-      try { localStorage.setItem(`combinations-${appId}`, JSON.stringify(updated)); } catch {}
-    }
+  // Shared identity for resolving/creating the apps row server-side — mirrors
+  // the fallback used by /api/keywords/save so this works for a previewed
+  // app that isn't formally tracked yet (no activeApp.id).
+  function combinationIdentity() {
+    return {
+      workspaceId,
+      appId:    activeApp?.id,
+      bundleId: activeApp?.bundle_id,
+      storeId:  activeApp?.store_id,
+      appName:  activeApp?.name,
+      store:    activeApp?.store,
+      country:  activeApp?.country ?? "us",
+    };
   }
+
+  function toCombinationGroup(g: SavedCombinationGroup): CombinationGroup {
+    return {
+      seed: g.seed, expanded: g.expanded, loading: false,
+      children: g.children.map((c) => ({ ...c, starred: false, tracked: false })),
+    };
+  }
+
+  async function saveGroupToDb(seed: string, children: CombinationGroup["children"], expandedState: boolean) {
+    if (!workspaceId) return;
+    try {
+      await fetch("/api/keywords/combination-groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          seed, expanded: expandedState,
+          children: children.map(({ term, volume, results, difficulty, chance }) => ({ term, volume, results, difficulty, chance })),
+          ...combinationIdentity(),
+        }),
+      });
+    } catch {}
+  }
+
+  function patchExpandInDb(seed: string, expandedState: boolean) {
+    fetch("/api/keywords/combination-groups", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seed, expanded: expandedState, ...combinationIdentity() }),
+    }).catch(() => {});
+  }
+
+  function deleteGroupFromDb(seed: string) {
+    const { appId, workspaceId: ws, bundleId, store, country } = combinationIdentity();
+    const params: Record<string, string> = { seed };
+    if (appId) params.appId = appId;
+    else if (ws && bundleId && store) { params.workspaceId = ws; params.bundleId = bundleId; params.store = store; params.country = country; }
+    else return;
+    fetch(`/api/keywords/combination-groups?${new URLSearchParams(params)}`, { method: "DELETE" }).catch(() => {});
+  }
+
+  // Load combination groups from the DB. Falls back to workspaceId+bundleId
+  // lookup for a previewed app not yet formally tracked, same as the tracked
+  // keywords list below.
+  useEffect(() => {
+    if (!activeApp) return;
+
+    const params: Record<string, string> | null = activeApp.id
+      ? { appId: activeApp.id }
+      : workspaceId && activeApp.bundle_id && activeApp.store
+        ? { workspaceId, bundleId: activeApp.bundle_id, store: activeApp.store, country: activeApp.country ?? "us" }
+        : null;
+    if (!params) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`/api/keywords/combination-groups?${new URLSearchParams(params)}`);
+        const data: { groups: SavedCombinationGroup[] } = await res.json();
+        if (data.groups?.length) {
+          setGroups(data.groups.map(toCombinationGroup));
+          return;
+        }
+      } catch {
+        setGroups([]);
+        return;
+      }
+
+      // DB has nothing yet — this app may have groups sitting in this
+      // browser's localStorage from before groups were persisted server-side.
+      // Recover them once, push them up to the DB, then stop relying on
+      // localStorage entirely (a different appId, e.g. after this preview
+      // gets formally tracked, would otherwise "lose" them again).
+      const legacyIds = [activeApp.id, activeApp.store_id].filter(Boolean) as string[];
+      for (const id of legacyIds) {
+        try {
+          const raw = localStorage.getItem(`combinations-${id}`);
+          if (!raw) continue;
+          const legacy = JSON.parse(raw) as CombinationGroup[];
+          if (!legacy.length) continue;
+          setGroups(legacy);
+          legacy.forEach((g) => { void saveGroupToDb(g.seed, g.children, g.expanded); });
+          localStorage.removeItem(`combinations-${id}`);
+          return;
+        } catch { /* ignore malformed legacy entry */ }
+      }
+      setGroups([]);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeApp?.id, activeApp?.store_id, activeApp?.bundle_id, activeApp?.store, workspaceId]);
 
   // Fetch app subtitle/short-description for AI context
   const loadedSubtitleFor = useRef<string | undefined>(undefined);
@@ -126,8 +209,7 @@ export default function KeywordCombinationPage() {
     const placeholders: CombinationGroup[] = fresh.map((seed) => ({
       seed, expanded: true, loading: true, children: [],
     }));
-    const next = [...placeholders, ...groups];
-    persist(next);
+    setGroups([...placeholders, ...groups]);
 
     const country = activeApp?.country ?? "us";
     try {
@@ -140,39 +222,32 @@ export default function KeywordCombinationPage() {
       const res  = await fetch(`/api/keywords/combinations?${params}`);
       const data: CombinationsResult = await res.json();
 
-      setGroups((prev) => {
-        const updated = prev.map((g) => {
-          const match = data.groups.find((d) => d.seed === g.seed);
-          if (!match || !fresh.includes(g.seed)) return g;
-          return {
-            ...g,
-            loading: false,
-            children: match.children.map((c) => ({
-              term: c.term, volume: c.volume, results: c.results,
-              difficulty: c.difficulty, chance: c.chance,
-              starred: false, tracked: false,
-            })),
-          };
-        });
-        if (appId) { try { localStorage.setItem(`combinations-${appId}`, JSON.stringify(updated)); } catch {} }
-        return updated;
-      });
+      setGroups((prev) => prev.map((g) => {
+        const match = data.groups.find((d) => d.seed === g.seed);
+        if (!match || !fresh.includes(g.seed)) return g;
+        const children = match.children.map((c) => ({
+          term: c.term, volume: c.volume, results: c.results,
+          difficulty: c.difficulty, chance: c.chance,
+          starred: false, tracked: false,
+        }));
+        void saveGroupToDb(g.seed, children, g.expanded);
+        return { ...g, loading: false, children };
+      }));
     } catch {
-      setGroups((prev) => {
-        const updated = prev.map((g) => fresh.includes(g.seed) ? { ...g, loading: false } : g);
-        if (appId) { try { localStorage.setItem(`combinations-${appId}`, JSON.stringify(updated)); } catch {} }
-        return updated;
-      });
+      setGroups((prev) => prev.map((g) => fresh.includes(g.seed) ? { ...g, loading: false } : g));
     }
   }
 
   function handleToggleExpand(seed: string) {
-    persist(groups.map((g) => g.seed === seed ? { ...g, expanded: !g.expanded } : g));
+    const nextExpanded = !groups.find((g) => g.seed === seed)?.expanded;
+    setGroups(groups.map((g) => g.seed === seed ? { ...g, expanded: nextExpanded } : g));
+    patchExpandInDb(seed, nextExpanded);
   }
 
 
   function handleRemoveGroup(seed: string) {
-    persist(groups.filter((g) => g.seed !== seed));
+    setGroups(groups.filter((g) => g.seed !== seed));
+    deleteGroupFromDb(seed);
   }
 
 
