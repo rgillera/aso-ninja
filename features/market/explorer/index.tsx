@@ -155,6 +155,13 @@ export default function AppExplorerPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ workspaceId, storeId, store, connected: next }),
+      // The UI flips optimistically the instant this fires — without
+      // keepalive, refreshing (or navigating away) right after a click
+      // aborts this request mid-flight along with the page unload, so the
+      // write never reaches the database even though the button already
+      // showed "Connected". keepalive lets the browser finish it independently
+      // of the page's lifecycle (well under its ~64KB body limit here).
+      keepalive: true,
     })
       .then((r) => {
         if (!r.ok) throw new Error("Failed to save connection status");
