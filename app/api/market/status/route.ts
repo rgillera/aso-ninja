@@ -3,13 +3,21 @@ import { createClient } from "@/libs/supabase/server";
 
 export type MarketStatusMap = Record<string, boolean>;
 
-// GET /api/market/status?workspaceId=...&storeIds=1,2,3
+// GET /api/market/status?workspaceId=...
+//
+// Deliberately not filtered by storeIds: App Explorer's "major" country
+// filter merges up to 10 countries' charts (up to ~1000 unique apps), and
+// passing that many storeIds as a query string routinely exceeded the
+// server/proxy's URL length limit (414), which fetch() doesn't reject on —
+// the failed .json() parse was silently swallowed by the caller's catch(),
+// so the page just looked like every status had been forgotten. This table
+// only ever holds rows a workspace has explicitly toggled, so scoping by
+// workspace_id alone is both correct and small.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const workspaceId = searchParams.get("workspaceId");
-  const storeIds = (searchParams.get("storeIds") ?? "").split(",").filter(Boolean);
 
-  if (!workspaceId || storeIds.length === 0) {
+  if (!workspaceId) {
     return NextResponse.json({ statuses: {} }, { headers: { "Cache-Control": "no-store" } });
   }
 
@@ -17,8 +25,7 @@ export async function GET(request: NextRequest) {
   const { data } = await supabase
     .from("market_app_status")
     .select("store_id, connected")
-    .eq("workspace_id", workspaceId)
-    .in("store_id", storeIds);
+    .eq("workspace_id", workspaceId);
 
   const statuses: MarketStatusMap = {};
   for (const row of data ?? []) statuses[row.store_id] = row.connected;

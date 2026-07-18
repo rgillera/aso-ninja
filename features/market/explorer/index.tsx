@@ -102,22 +102,26 @@ export default function AppExplorerPage() {
   // Growth team's connected/unconnected status is stored per workspace, keyed
   // by store ID — shared across everyone in the workspace via Postgres (not
   // per-browser). Refetched on focus too, so switching back to this tab picks
-  // up a teammate's changes without a full reload.
+  // up a teammate's changes without a full reload. Fetches the whole
+  // workspace's statuses rather than filtering by the current chart's
+  // storeIds — the "major" country filter alone can merge ~1000 apps, and
+  // passing that many ids as a query string hit the server's URL-length
+  // limit (414), which silently emptied this every time.
   useEffect(() => {
-    if (!workspaceId || apps.length === 0) return;
-    const params = new URLSearchParams({ workspaceId, storeIds: apps.map((a) => a.storeId).join(",") });
+    if (!workspaceId) return;
+    const params = new URLSearchParams({ workspaceId });
 
     function refresh() {
       fetch(`/api/market/status?${params}`)
         .then((r) => r.json())
-        .then((data: { statuses?: MarketStatusMap }) => setConnected((prev) => ({ ...prev, ...data.statuses })))
+        .then((data: { statuses?: MarketStatusMap }) => setConnected(data.statuses ?? {}))
         .catch(() => {});
     }
 
     refresh();
     window.addEventListener("focus", refresh);
     return () => window.removeEventListener("focus", refresh);
-  }, [workspaceId, apps]);
+  }, [workspaceId]);
 
   // Live updates on top of the focus-refetch above (kept as a fallback in case
   // the websocket drops while backgrounded) — a teammate's toggle shows up
