@@ -16,6 +16,7 @@ import {
   ArrowTrendingUpIcon,
   ClockIcon,
   LockClosedIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar } from "./ui";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -35,6 +36,56 @@ function LockedCell() {
       <LockClosedIcon className="size-2.5" />
       Basic
     </span>
+  );
+}
+
+const BULK_ADD_WARN_THRESHOLD = 30;
+const BULK_ADD_MAX = 50;
+
+function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; onCancel: () => void; onConfirm: () => void }) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+        <div className="flex items-start gap-3 mb-5">
+          <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-amber-500/20">
+            <ExclamationTriangleIcon className="size-5 text-amber-400" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Add {count} keywords?</h2>
+            <p className="mt-1 text-sm text-gray-400">
+              Adding this many keywords at once may take a while to load.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            autoFocus
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+          >
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -134,6 +185,8 @@ export function KeywordTable({
   const planSlug = usePlanSlug();
   const relevancyLocked = !isPlanAtLeast(planSlug, "basic");
   const [keywordInput, setKeywordInput] = useState("");
+  const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [tableFilter, setTableFilter] = useState<"all" | "checked" | "starred">("all");
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -254,8 +307,28 @@ export function KeywordTable({
   function handleAdd() {
     const parts = keywordInput.split(",").map((s) => s.trim()).filter(Boolean);
     if (!parts.length) return;
+
+    if (parts.length >= BULK_ADD_MAX) {
+      setAddError(`You're trying to add ${parts.length} keywords at once — please add fewer than ${BULK_ADD_MAX} at a time.`);
+      return;
+    }
+
+    setAddError(null);
+
+    if (parts.length >= BULK_ADD_WARN_THRESHOLD) {
+      setPendingBulkAdd(parts);
+      return;
+    }
+
     onAddKeywords(parts);
     setKeywordInput("");
+  }
+
+  function confirmBulkAdd() {
+    if (!pendingBulkAdd) return;
+    onAddKeywords(pendingBulkAdd);
+    setKeywordInput("");
+    setPendingBulkAdd(null);
   }
 
   function toggleSelect(i: number) {
@@ -580,6 +653,17 @@ export function KeywordTable({
         document.body
       )}
 
+      {/* Add keyword error */}
+      {addError && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">{addError}</span>
+          <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
+
       {/* Add keyword input + Edit columns */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
         <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
@@ -842,6 +926,14 @@ export function KeywordTable({
           store={store}
           country={country}
           onClose={() => setLiveSearchKeyword(null)}
+        />
+      )}
+
+      {pendingBulkAdd && (
+        <BulkAddConfirmDialog
+          count={pendingBulkAdd.length}
+          onCancel={() => setPendingBulkAdd(null)}
+          onConfirm={confirmBulkAdd}
         />
       )}
     </div>
