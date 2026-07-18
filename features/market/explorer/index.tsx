@@ -145,7 +145,7 @@ export default function AppExplorerPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [workspaceId]);
+  }, [workspaceId, planSlug]);
 
   function toggleConnected(storeId: string, store: "ios" | "android") {
     if (!workspaceId) return;
