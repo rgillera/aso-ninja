@@ -215,13 +215,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const resolvedAppId = params.id ?? savedAppId;
   const activeApp     = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
 
-  // For the ActiveAppContext: always use the last *tracked* app regardless of preview state,
-  // so non-metadata pages (keywords, etc.) always show whichever app was last selected.
-  // Falls back to localStorage recently-viewed when no cookie is present.
-  const lastTrackedApp = (params.id ?? savedAppId ?? recentAppId)
-    ? allApps.find(a => a.id === (params.id ?? savedAppId ?? recentAppId))
-    : undefined;
-
   // Persist an explicit workspace switch (the sidebar switcher navigates to
   // /dashboard?ws=<id>) so it sticks on the next navigation — otherwise it's
   // only reflected on that one URL and any link without ?ws= (e.g. App
@@ -242,6 +235,24 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     : wsParam
     ? (workspaces.find(w => w.id === wsParam)?.id ?? workspaces[0]?.id)
     : (workspaces.find(w => w.id === savedWorkspaceId)?.id ?? activeApp?.workspace_id ?? workspaces[0]?.id);
+
+  // For the ActiveAppContext: always use the last *tracked* app regardless of preview state,
+  // so non-metadata pages (keywords, etc.) always show whichever app was last selected.
+  // Falls back to localStorage recently-viewed when no cookie is present.
+  //
+  // savedAppId/recentAppId are global (a single cookie / a localStorage entry
+  // per workspace, respectively) and only trusted here when they resolve to
+  // an app in the CURRENTLY active workspace — otherwise, switching workspace
+  // via ?ws= without visiting an app there yet would still resolve Reports/
+  // Metadata nav links from whatever app was last tracked in the PREVIOUS
+  // workspace, silently bouncing the user back into it.
+  const savedAppInActiveWorkspace =
+    savedAppId && allApps.find(a => a.id === savedAppId)?.workspace_id === activeWorkspaceId ? savedAppId : undefined;
+  const recentAppInActiveWorkspace =
+    recentAppId && allApps.find(a => a.id === recentAppId)?.workspace_id === activeWorkspaceId ? recentAppId : undefined;
+  const lastTrackedApp = (params.id ?? savedAppInActiveWorkspace ?? recentAppInActiveWorkspace)
+    ? allApps.find(a => a.id === (params.id ?? savedAppInActiveWorkspace ?? recentAppInActiveWorkspace))
+    : undefined;
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
   const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];

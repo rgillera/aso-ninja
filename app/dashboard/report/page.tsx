@@ -4,15 +4,22 @@ import { createClient } from "@/libs/supabase/server";
 import type { App, Workspace } from "@/libs/contracts";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
-export default async function Page() {
+type PageProps = { searchParams: Promise<{ ws?: string }> };
+
+export default async function Page({ searchParams }: PageProps) {
+  const { ws } = await searchParams;
   const cookieStore = await cookies();
   const lastAppId = cookieStore.get("lastAppId")?.value;
 
   const supabase = await createClient();
   const { data: workspaces } = await supabase.from("workspaces").select("*").order("created_at", { ascending: true });
-  const firstWorkspace = ((workspaces ?? []) as Workspace[])[0];
-  const { data: apps } = firstWorkspace
-    ? await supabase.from("apps").select("*").eq("workspace_id", firstWorkspace.id).order("created_at", { ascending: false })
+  const allWorkspaces = (workspaces ?? []) as Workspace[];
+  // Prefers the workspace the sidebar was actually showing (?ws=, passed by
+  // reportHref()) over the first-created one — otherwise a non-default
+  // workspace with no tracked app yet always bounces to workspace #1's apps.
+  const activeWorkspace = allWorkspaces.find(w => w.id === ws) ?? allWorkspaces[0];
+  const { data: apps } = activeWorkspace
+    ? await supabase.from("apps").select("*").eq("workspace_id", activeWorkspace.id).order("created_at", { ascending: false })
     : { data: [] };
   const allApps = (apps ?? []) as App[];
 

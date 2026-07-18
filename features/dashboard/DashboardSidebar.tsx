@@ -145,15 +145,17 @@ export default function DashboardSidebar({
   function reportHref() {
     if (metaOverrideHref) return `${metaOverrideHref}&page=report`;
     if (activeAppId) return `/dashboard/apps/${activeAppId}/report`;
-    return "/dashboard/report";
+    return activeWorkspaceId ? `/dashboard/report?ws=${activeWorkspaceId}` : "/dashboard/report";
   }
 
   function metaHref(link: typeof metadataLinks[number]) {
     if (metaOverrideHref) {
       return link.previewPage ? `${metaOverrideHref}&page=${link.previewPage}` : metaOverrideHref;
     }
-    if (!activeAppId) return link.fallback;
-    return link.appPath ? `/dashboard/apps/${activeAppId}/${link.appPath}` : `/dashboard/apps/${activeAppId}`;
+    if (activeAppId) {
+      return link.appPath ? `/dashboard/apps/${activeAppId}/${link.appPath}` : `/dashboard/apps/${activeAppId}`;
+    }
+    return activeWorkspaceId ? `${link.fallback}?ws=${activeWorkspaceId}` : link.fallback;
   }
   const ref = useRef<HTMLDivElement>(null);
 
