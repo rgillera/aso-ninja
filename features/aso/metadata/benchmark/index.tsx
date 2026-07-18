@@ -4,7 +4,7 @@ import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid"
 import { ExclamationTriangleIcon, InformationCircleIcon, DevicePhoneMobileIcon, ChartBarIcon } from "@heroicons/react/24/outline";
 import type { App, StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
-import { FollowButton } from "@/features/aso/AppHeader";
+import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -171,6 +171,7 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
             </p>
           </div>
           <FollowButton app={app} />
+          <StoreLinkButton app={app} />
         </div>
         <div className="flex items-center gap-1.5">
           <h1 className="text-sm font-semibold text-white">Benchmark</h1>

@@ -149,7 +149,7 @@ export function FollowButton({ app }: { app: ActiveApp }) {
   );
 }
 
-function StoreLinkButton({ app }: { app: ActiveApp }) {
+export function StoreLinkButton({ app }: { app: ActiveApp }) {
   if (!app.store_id) return null;
 
   const country = (app.country ?? "us").toLowerCase();

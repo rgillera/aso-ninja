@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { CalendarIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import type { App } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
-import { FollowButton } from "@/features/aso/AppHeader";
+import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
 import { fmtDate, toDateStr } from "./utils";
 
 type Props = {
@@ -67,6 +67,7 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
           </p>
         </div>
         <FollowButton app={app} />
+        <StoreLinkButton app={app} />
       </div>
 
       <div className="flex items-center gap-3">

@@ -14,7 +14,7 @@ import SearchPreviewModal from "@/features/aso/metadata/preview/SearchPreviewMod
 import CompareVersionsModal from "@/features/aso/metadata/preview/CompareVersionsModal";
 import type { App, Workspace, StoreData } from "@/libs/contracts";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
-import { FollowButton } from "@/features/aso/AppHeader";
+import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
 
 type Tab = "text" | "visual";
 
@@ -127,6 +127,7 @@ export default function AppPagePreview({ app, storeData }: Props) {
                 </p>
               </div>
               <FollowButton app={app} />
+              <StoreLinkButton app={app} />
             </div>
 
             <div className="flex items-center gap-2">
