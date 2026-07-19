@@ -5,6 +5,7 @@ import {
   SparklesIcon,
   ClipboardDocumentIcon,
   CheckIcon,
+  ChevronDownIcon,
   TagIcon,
   PlusIcon,
   XMarkIcon,
@@ -306,6 +307,7 @@ function GroupSection({
   const [page, setPage] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   // Search only ever renders for the "Other" bucket (see below) — the
   // largest, unsorted catch-all where finding one term among 200+ is
   // otherwise a scroll-and-squint exercise. Themed groups are curated by the
@@ -339,7 +341,14 @@ function GroupSection({
 
   return (
     <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07]">
+      <div className={`flex items-center gap-2 px-4 py-3 ${collapsed ? "" : "border-b border-white/[0.07]"}`}>
+        <button
+          onClick={() => setCollapsed((v) => !v)}
+          className="flex items-center justify-center rounded p-0.5 text-gray-500 hover:text-white transition-colors shrink-0"
+          title={collapsed ? "Expand group" : "Collapse group"}
+        >
+          <ChevronDownIcon className={`size-3.5 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+        </button>
         {filteredKeywords.length > 0 && (
           <input
             type="checkbox"
@@ -419,52 +428,56 @@ function GroupSection({
           )}
         </div>
       </div>
-      {filteredKeywords.length ? (
-        <div className="divide-y divide-white/[0.04]">
-          {pageKeywords.map((k) => (
-            <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] transition-colors">
-              <input
-                type="checkbox"
-                checked={selected.has(k.term)}
-                onChange={() => onToggleSelect(k.term)}
-                className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
-              />
-              <span className="text-sm text-gray-200 flex-1 truncate">{k.term}</span>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                <ThemeMenuButton
-                  label="Move to"
-                  themes={themes}
-                  currentThemeId={id === OTHER_ID ? null : id}
-                  onPick={(themeId) => onMove([k.term], themeId)}
-                  buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
-                />
-              </div>
+      {!collapsed && (
+        <>
+          {filteredKeywords.length ? (
+            <div className="divide-y divide-white/[0.04]">
+              {pageKeywords.map((k) => (
+                <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(k.term)}
+                    onChange={() => onToggleSelect(k.term)}
+                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
+                  />
+                  <span className="text-sm text-gray-200 flex-1 truncate">{k.term}</span>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <ThemeMenuButton
+                      label="Move to"
+                      themes={themes}
+                      currentThemeId={id === OTHER_ID ? null : id}
+                      onPick={(themeId) => onMove([k.term], themeId)}
+                      buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="px-4 py-3 text-xs text-gray-600">
-          {search ? `No keywords match “${search}.”` : <>No keywords yet — move some in with &ldquo;Move to&rdquo;.</>}
-        </div>
-      )}
-      {pageCount > 1 && (
-        <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07]">
-          <button
-            onClick={() => setPage(safePage - 1)}
-            disabled={safePage === 0}
-            className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
-          >
-            ‹ Prev
-          </button>
-          <span className="text-[11px] text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
-          <button
-            onClick={() => setPage(safePage + 1)}
-            disabled={safePage >= pageCount - 1}
-            className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
-          >
-            Next ›
-          </button>
-        </div>
+          ) : (
+            <div className="px-4 py-3 text-xs text-gray-600">
+              {search ? `No keywords match “${search}.”` : <>No keywords yet — move some in with &ldquo;Move to&rdquo;.</>}
+            </div>
+          )}
+          {pageCount > 1 && (
+            <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07]">
+              <button
+                onClick={() => setPage(safePage - 1)}
+                disabled={safePage === 0}
+                className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+              >
+                ‹ Prev
+              </button>
+              <span className="text-[11px] text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+              <button
+                onClick={() => setPage(safePage + 1)}
+                disabled={safePage >= pageCount - 1}
+                className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+              >
+                Next ›
+              </button>
+            </div>
+          )}
+        </>
       )}
       {confirmingDelete && (
         <DeleteIntentConfirmDialog

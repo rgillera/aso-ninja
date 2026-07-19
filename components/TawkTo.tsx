@@ -6,7 +6,13 @@ import { useEffect } from "react";
 
 declare global {
   interface Window {
-    Tawk_API?: { hideWidget?: () => void; showWidget?: () => void; maximize?: () => void; onLoad?: () => void };
+    Tawk_API?: {
+      hideWidget?: () => void;
+      showWidget?: () => void;
+      maximize?: () => void;
+      onBeforeLoad?: () => void;
+      onLoad?: () => void;
+    };
   }
 }
 
@@ -29,6 +35,10 @@ export function TawkTo() {
       else window.Tawk_API?.showWidget?.();
     }
     window.Tawk_API = window.Tawk_API || {};
+    // onBeforeLoad fires before the widget is rendered at all (earlier than
+    // onLoad), so hiding here — unconditionally — is what actually stops the
+    // bubble from flashing in on excluded pages before onLoad can react.
+    window.Tawk_API.onBeforeLoad = () => window.Tawk_API?.hideWidget?.();
     window.Tawk_API.onLoad = applyVisibility;
     applyVisibility();
   }, [hidden]);
@@ -37,10 +47,6 @@ export function TawkTo() {
     <Script id="tawk-to" strategy="lazyOnload">
       {`
         var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
-        // Set before the embed script loads so the bubble never renders
-        // visible in the first place on excluded pages, instead of flashing
-        // in and then being hidden by hideWidget() once onLoad fires.
-        Tawk_API.visibility = { desktop: '${hidden ? "hidden" : "visible"}', mobile: '${hidden ? "hidden" : "visible"}' };
         (function(){
           var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
           s1.async=true;
