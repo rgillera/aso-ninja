@@ -165,6 +165,17 @@ export async function GET(req: Request) {
           { onConflict: "term,store,country,recorded_on" }
         );
 
+        if (apps.length) {
+          await supabase.from("keyword_rankings_history").upsert(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            apps.map((a: any, i: number) => ({
+              keyword: term, store: "android", country, recorded_on: today,
+              position: i + 1, app_id: a.appId ?? a.title, app_name: a.title, app_icon: a.icon,
+            })),
+            { onConflict: "keyword,store,country,recorded_on,app_id" }
+          );
+        }
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""));
         refreshed++;

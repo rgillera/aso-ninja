@@ -434,13 +434,37 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
   }
 }
 
-async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, themes: IntentTheme[]): Promise<Metrics | null> {
+// Same write persistIosSearch performs for iOS — apps[] here already has
+// appId/title/icon for every result, so there's no reason Android's
+// keyword_rankings_history should depend on a separate manual live search.
+async function persistAndroidSearch(
+  supabase: SupabaseClient, term: string, country: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  apps: any[]
+) {
+  if (!apps.length) return;
+  const today = new Date().toISOString().split("T")[0];
+  const normTerm = term.toLowerCase().trim();
+  await supabase.from("keyword_rankings_history").upsert(
+    apps.map((a, i) => ({
+      keyword: normTerm, store: "android", country, recorded_on: today,
+      position: i + 1, app_id: a.appId ?? a.title, app_name: a.title, app_icon: a.icon,
+    })),
+    { onConflict: "keyword,store,country,recorded_on,app_id" }
+  );
+}
+
+async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
+
+    // Mirrors persistIosSearch's placement in fetchIosMetrics — re-writing the
+    // same day's data is a no-op via the upsert's onConflict key, not a duplicate.
+    await persistAndroidSearch(supabase, term, country, apps);
 
     const count = apps.length;
     const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
@@ -606,7 +630,7 @@ export async function GET(request: NextRequest) {
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, themes);
+          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase, themes);
           return [term, metrics] as const;
         })
       );

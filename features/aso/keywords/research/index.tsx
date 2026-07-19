@@ -8,7 +8,6 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
@@ -351,17 +350,11 @@ export default function KeywordResearchPage() {
       return;
     }
 
-    // Quietly back-fill a rank for each newly tracked keyword — same one
-    // request a user would've made by hand via the Performance tab's Live
-    // Search button, just automatic. Not awaited so it doesn't hold up Add.
-    // iOS is skipped here: the metrics fetch above already ran its own iTunes
-    // search and wrote today's rankings on success, so firing a second,
-    // separate iTunes call right after would just double the request volume
-    // against Apple's rate limit for no new information. Android still needs
-    // it since fetchAndroidMetrics never writes keyword_rankings_history.
-    if (store === "android") {
-      runLiveSearchInBackground(newKeywords, store, country);
-    }
+    // Both platforms' metrics fetch above already ran its own search and
+    // wrote today's keyword_rankings_history on success (fetchIosMetrics /
+    // fetchAndroidMetrics), so there's no separate live-search backfill left
+    // to do here — firing one would just double the request volume for no
+    // new information.
   }
 
   // Fills in relevancy/opportunity for keywords that already have every other
@@ -431,18 +424,6 @@ export default function KeywordResearchPage() {
         // Keep going with the remaining batches even if one fails — a
         // transient Gemini hiccup on one batch shouldn't strand the rest of
         // the workspace's keywords at null forever.
-      }
-    }
-  }
-
-  async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {
-    // Spacing between calls is enforced centrally in liveSearch.ts (shared
-    // across every caller app-wide), so this just fires them in order.
-    for (const term of terms) {
-      try {
-        await fetchLiveSearchResults(term, store, country);
-      } catch (err) {
-        console.warn(`Live search failed for "${term}" — rank will stay "Unknown" until retried`, err);
       }
     }
   }

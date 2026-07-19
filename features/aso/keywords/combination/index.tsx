@@ -8,7 +8,6 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
-import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -339,13 +338,9 @@ export default function KeywordCombinationPage() {
         await saveKeywords(data2);
       } catch {}
 
-      // Android needs a separate live search to write keyword_rankings_history —
-      // iOS already does this inside the metrics fetch
-      if (store === "android") {
-        for (const term of fresh) {
-          try { await fetchLiveSearchResults(term, store, country); } catch {}
-        }
-      }
+      // Both platforms' metrics fetch above already wrote today's
+      // keyword_rankings_history on success (fetchIosMetrics / fetchAndroidMetrics),
+      // so there's no separate live-search backfill left to do here.
     } catch {
       // Phase 1 failed — keyword is already saved with empty metrics, just clear pending
       setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });

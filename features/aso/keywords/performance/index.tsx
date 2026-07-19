@@ -326,8 +326,11 @@ export default function KeywordPerformancePage() {
       // iOS is skipped here: the metrics fetch above already ran its own iTunes
       // search and wrote today's rankings on success, so firing a second,
       // separate iTunes call right after would just double the request volume
-      // against Apple's rate limit for no new information. Android still needs
-      // it since fetchAndroidMetrics never writes keyword_rankings_history.
+      // against Apple's rate limit for no new information. Android's metrics
+      // fetch also persists rankings now (fetchAndroidMetrics), but only for
+      // apps that actually appear in the top-250 results — this call passes
+      // trackedApp so a rank outside that window still gets a "checked, not
+      // found" row instead of staying indistinguishable from "never checked".
       if (store === "android") {
         runLiveSearchInBackground(newTerms, store, country);
       }
