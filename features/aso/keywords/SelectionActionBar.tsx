@@ -9,7 +9,10 @@ import {
   TableCellsIcon,
   TrashIcon,
   PlusCircleIcon,
+  TagIcon,
 } from "@heroicons/react/24/outline";
+import { ThemeMenuButton } from "@/features/aso/keywords/intent/ThemeMenuButton";
+import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 
 type Props = {
   count: number;
@@ -20,9 +23,13 @@ type Props = {
   onExport?: () => void;
   onDelete?: () => void;
   onAdd?: () => void;
+  // Adds the selection to tracked keywords and assigns it to the picked
+  // intent theme in one step. Omitted (or an empty theme list) hides the
+  // control — there's nothing to group into yet.
+  groupByIntent?: { themes: IntentTheme[]; onPick: (themeId: string) => void };
 };
 
-export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onExport, onDelete, onAdd }: Props) {
+export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onExport, onDelete, onAdd, groupByIntent }: Props) {
   const [copied, setCopied] = useState(false);
 
   if (count === 0) return null;
@@ -60,6 +67,15 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
           <PlusCircleIcon className="size-4" />
           Add
         </button>
+      )}
+      {groupByIntent && groupByIntent.themes.length > 0 && (
+        <ThemeMenuButton
+          label={<><TagIcon className="size-4" />Group by intent</>}
+          themes={groupByIntent.themes}
+          includeOther={false}
+          onPick={(themeId) => themeId && groupByIntent.onPick(themeId)}
+          buttonClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
+        />
       )}
       {onStar && (
         <button

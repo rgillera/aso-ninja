@@ -16,6 +16,7 @@ import type { CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { SavedCombinationGroup } from "@/app/api/keywords/combination-groups/route";
+import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 
 function NoAppSelected() {
   return (
@@ -39,6 +40,7 @@ export default function KeywordCombinationPage() {
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
   const [translateToggle, setTranslateToggle] = useState(false);
+  const [intentThemes,    setIntentThemes]    = useState<IntentTheme[]>([]);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingTerms.size > 0 ? "A keyword is still being saved. Leaving now may lose it." : null);
@@ -199,6 +201,24 @@ export default function KeywordCombinationPage() {
     return () => window.removeEventListener("focus", refreshTracked);
   }, [activeApp?.id, activeApp?.bundle_id, workspaceId, isLocked]);
 
+  // Load this app's intent themes so selected combinations can be added
+  // straight into one — same identity fallback as the tracked-keywords load
+  // above, for a previewed app with no formal apps-table id yet.
+  useEffect(() => {
+    if (!activeApp || isLocked) return;
+    const params: Record<string, string> | null = activeApp.id
+      ? { appId: activeApp.id }
+      : workspaceId && activeApp.bundle_id && activeApp.store
+        ? { workspaceId, bundleId: activeApp.bundle_id, store: activeApp.store, country: activeApp.country ?? "us" }
+        : null;
+    if (!params) return;
+
+    fetch(`/api/keywords/intents?${new URLSearchParams(params)}`)
+      .then((r) => r.json())
+      .then((data: { themes?: IntentTheme[] }) => setIntentThemes(data.themes ?? []))
+      .catch(() => {});
+  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, workspaceId, isLocked]);
+
   async function handleAddSeeds(seeds: string[]) {
     const existing = new Set(groups.map((g) => g.seed.toLowerCase()));
     const fresh = [...new Set(seeds.map((s) => s.toLowerCase().trim()).filter(Boolean))]
@@ -347,6 +367,23 @@ export default function KeywordCombinationPage() {
     }
   }
 
+  // Adds the selection to tracked keywords, then assigns the resulting
+  // keyword rows to an intent theme in one action — the "Group by intent"
+  // bulk-selection button. Awaits the full add (including metrics) so the
+  // keyword rows this assigns against are guaranteed to exist first.
+  async function addTermsToIntent(terms: string[], themeId: string) {
+    if (!terms.length) return;
+    await addTermsToTracked(terms);
+    if (!workspaceId) return;
+    try {
+      await fetch("/api/keywords/intents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...combinationIdentity(), terms, themeId }),
+      });
+    } catch {}
+  }
+
   if (!activeApp) {
     return <NoAppSelected />;
   }
@@ -403,6 +440,8 @@ export default function KeywordCombinationPage() {
           translateToggle={translateToggle && !translateLocked}
           translateLocked={translateLocked}
           onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+          intentThemes={intentThemes}
+          onAddTermsToIntent={addTermsToIntent}
         />
       </div>
 

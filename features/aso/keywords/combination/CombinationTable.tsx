@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
+import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 import type { CombinationGroup } from "./types";
 
 type SortKey = "keyword" | "combinations" | "volume" | "difficulty" | "chance";
@@ -31,6 +32,8 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
+  intentThemes: IntentTheme[];
+  onAddTermsToIntent: (terms: string[], themeId: string) => void;
 };
 
 function formatNum(n: number): string {
@@ -54,7 +57,7 @@ function groupAggregates(group: CombinationGroup) {
 
 export function CombinationTable({
   groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch,
-  translateToggle, translateLocked = false, onTranslateToggle,
+  translateToggle, translateLocked = false, onTranslateToggle, intentThemes, onAddTermsToIntent,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
   const [selected,  setSelected]  = useState<Set<string>>(new Set());
@@ -380,6 +383,10 @@ export function CombinationTable({
         onClear={() => setSelected(new Set())}
         onCopy={() => navigator.clipboard.writeText([...selected].join(", ")).catch(() => {})}
         onAdd={() => { onAddTerms([...selected]); setSelected(new Set()); }}
+        groupByIntent={{
+          themes: intentThemes,
+          onPick: (themeId) => { onAddTermsToIntent([...selected], themeId); setSelected(new Set()); },
+        }}
       />
     </div>
   );
