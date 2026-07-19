@@ -11,6 +11,7 @@ import {
   PlusIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import type { IntentKeyword, IntentTheme } from "./types";
 
@@ -26,6 +27,7 @@ const THEME_COLORS = [
 ];
 
 const OTHER_ID = "__other__";
+const GROUP_PAGE_SIZE = 25;
 
 // Shared "Move to ▾" trigger + dropdown — used both per-row (currentThemeId
 // set, so the row's current group is checkmarked) and from the bulk
@@ -167,6 +169,65 @@ function RegenerateConfirmDialog({ keywordCount, onCancel, onConfirm }: { keywor
   );
 }
 
+function DeleteIntentConfirmDialog({
+  label,
+  keywordCount,
+  onCancel,
+  onConfirm,
+}: {
+  label: string;
+  keywordCount: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+        <div className="flex items-start gap-3 mb-5">
+          <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/20">
+            <ExclamationTriangleIcon className="size-5 text-red-400" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Delete &ldquo;{label}&rdquo;?</h2>
+            <p className="mt-1 text-sm text-gray-400">
+              {keywordCount
+                ? `Its ${keywordCount} keyword${keywordCount === 1 ? "" : "s"} move back to "Other." This can't be undone.`
+                : `This can't be undone.`}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            autoFocus
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise<string | null> }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -243,6 +304,7 @@ function GroupSection({
   onToggleSelect,
   onToggleSelectAll,
   onMove,
+  onDelete,
 }: {
   id: string;
   label: string;
@@ -254,8 +316,11 @@ function GroupSection({
   onToggleSelect: (term: string) => void;
   onToggleSelectAll: (terms: string[]) => void;
   onMove: (terms: string[], themeId: string | null) => void;
+  onDelete?: (id: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const [page, setPage] = useState(0);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   function copyGroup() {
     navigator.clipboard.writeText(keywords.map((k) => k.term).join(", ")).then(() => {
@@ -265,6 +330,13 @@ function GroupSection({
   }
 
   const allSelected = keywords.length > 0 && keywords.every((k) => selected.has(k.term));
+
+  // Clamp rather than sync via effect — if keywords move out of this group
+  // and shrink the page count, this settles on the last valid page on the
+  // very next render with no extra state round-trip.
+  const pageCount = Math.max(1, Math.ceil(keywords.length / GROUP_PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageKeywords = keywords.slice(safePage * GROUP_PAGE_SIZE, (safePage + 1) * GROUP_PAGE_SIZE);
 
   return (
     <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
@@ -295,10 +367,19 @@ function GroupSection({
           <ClipboardDocumentIcon className="size-3.5" />
           {copied ? "Copied" : "Copy list"}
         </button>
+        {onDelete && (
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            title="Delete this intent theme"
+          >
+            <TrashIcon className="size-3.5" />
+          </button>
+        )}
       </div>
       {keywords.length ? (
         <div className="divide-y divide-white/[0.04]">
-          {keywords.map((k) => (
+          {pageKeywords.map((k) => (
             <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] transition-colors">
               <input
                 type="checkbox"
@@ -307,9 +388,6 @@ function GroupSection({
                 className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
               />
               <span className="text-sm text-gray-200 flex-1 truncate">{k.term}</span>
-              {k.relevancy !== null && (
-                <span className="text-[11px] text-gray-600 tabular-nums shrink-0">rel {k.relevancy}</span>
-              )}
               <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <ThemeMenuButton
                   label="Move to"
@@ -324,6 +402,33 @@ function GroupSection({
         </div>
       ) : (
         <div className="px-4 py-3 text-xs text-gray-600">No keywords yet — move some in with &ldquo;Move to&rdquo;.</div>
+      )}
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07]">
+          <button
+            onClick={() => setPage(safePage - 1)}
+            disabled={safePage === 0}
+            className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+          >
+            ‹ Prev
+          </button>
+          <span className="text-[11px] text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+          <button
+            onClick={() => setPage(safePage + 1)}
+            disabled={safePage >= pageCount - 1}
+            className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+          >
+            Next ›
+          </button>
+        </div>
+      )}
+      {confirmingDelete && (
+        <DeleteIntentConfirmDialog
+          label={label}
+          keywordCount={keywords.length}
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => { setConfirmingDelete(false); onDelete?.(id); }}
+        />
       )}
     </div>
   );
@@ -371,6 +476,7 @@ export function IntentBoard({
   onGenerate,
   onMove,
   onAddIntent,
+  onDeleteIntent,
 }: {
   themes: IntentTheme[];
   keywords: IntentKeyword[];
@@ -380,6 +486,7 @@ export function IntentBoard({
   onGenerate: () => void;
   onMove: (terms: string[], themeId: string | null) => void;
   onAddIntent: (label: string) => Promise<string | null>;
+  onDeleteIntent: (themeId: string) => void;
 }) {
   const themeIds = new Set(themes.map((t) => t.id));
   const grouped = themes.map((t) => ({
@@ -486,6 +593,7 @@ export function IntentBoard({
                   onToggleSelect={toggleSelect}
                   onToggleSelectAll={toggleSelectAll}
                   onMove={onMove}
+                  onDelete={onDeleteIntent}
                 />
               ))}
               <GroupSection

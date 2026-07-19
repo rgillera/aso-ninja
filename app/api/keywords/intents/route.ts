@@ -258,3 +258,39 @@ export async function PATCH(request: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+// DELETE /api/keywords/intents
+// Body: { appId, workspaceId, themeId, bundleId?, store?, country? }
+// Deletes a single theme — manual or LLM-generated alike. Any keyword
+// assigned to it falls back to "Other" via the intent_theme_id FK's
+// ON DELETE SET NULL, so no separate keyword update is needed here.
+export async function DELETE(request: NextRequest) {
+  const body = await request.json();
+  const { appId: rawAppId, workspaceId, themeId, bundleId, store, country } = body as {
+    appId?: string; workspaceId?: string; themeId?: string;
+    bundleId?: string; store?: string; country?: string;
+  };
+
+  if (!workspaceId || !themeId) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const appId = await resolveAppId(supabase, rawAppId ?? "", { workspaceId, bundleId, store, country });
+  if (!appId) return NextResponse.json({ error: "App not found" }, { status: 400 });
+
+  const { error: deleteErr } = await supabase
+    .from("app_intent_themes")
+    .delete()
+    .eq("id", themeId)
+    .eq("app_id", appId);
+  if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+
+  const { data: finalRows } = await supabase
+    .from("app_intent_themes")
+    .select("id, label, is_manual")
+    .eq("app_id", appId)
+    .order("sort_order", { ascending: true });
+
+  return NextResponse.json({ themes: toThemes(finalRows), appId });
+}

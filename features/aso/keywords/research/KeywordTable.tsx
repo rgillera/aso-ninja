@@ -41,6 +41,7 @@ function LockedCell() {
 
 const BULK_ADD_WARN_THRESHOLD = 30;
 const BULK_ADD_MAX = 50;
+const PAGE_SIZE = 25;
 
 function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; onCancel: () => void; onConfirm: () => void }) {
   useEffect(() => {
@@ -191,6 +192,7 @@ export function KeywordTable({
   const [tableFilter, setTableFilter] = useState<"all" | "checked" | "starred">("all");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
   const [visibleCols, setVisibleCols] = useState<Set<string>>(DEFAULT_VISIBLE);
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
@@ -400,6 +402,20 @@ export function KeywordTable({
       return sortDir === "asc" ? cmp : -cmp;
     });
   }, [keywords, tableFilter, selected, sortKey, sortDir, kwSearch, volumeFilter, rankFilter, relevancyFilter]);
+
+  // A filter/sort change invalidates whatever page the user was on — jump
+  // back to the first page rather than clamping to a now-confusing "last
+  // page" of a differently-filtered result.
+  useEffect(() => {
+    setPage(0);
+  }, [tableFilter, kwSearch, volumeFilter, rankFilter, relevancyFilter, sortKey, sortDir]);
+
+  // Clamp rather than reset here — if `keywords` itself shrinks (e.g. a
+  // removal) this just settles on the last valid page next render.
+  const pageCount = Math.max(1, Math.ceil(displayed.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageStart = safePage * PAGE_SIZE;
+  const pageRows = displayed.slice(pageStart, pageStart + PAGE_SIZE);
 
   const allSelected =
     displayed.length > 0 && displayed.every((_, i) => selected.has(i));
@@ -816,7 +832,9 @@ export function KeywordTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
-            {displayed.map((row, i) => (
+            {pageRows.map((row, j) => {
+              const i = pageStart + j;
+              return (
               <tr key={i} className={`hover:bg-white/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
                 <td className="px-4 py-3.5">
                   <input
@@ -880,7 +898,8 @@ export function KeywordTable({
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
 
@@ -894,10 +913,29 @@ export function KeywordTable({
 
       {/* Footer */}
       {displayed.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-white/[0.07]">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.07]">
           <span className="text-xs text-gray-600">
             {displayed.length} keyword{displayed.length !== 1 ? "s" : ""}
           </span>
+          {pageCount > 1 && (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPage(safePage - 1)}
+                disabled={safePage === 0}
+                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+              >
+                ‹ Prev
+              </button>
+              <span className="text-xs text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+              <button
+                onClick={() => setPage(safePage + 1)}
+                disabled={safePage >= pageCount - 1}
+                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+              >
+                Next ›
+              </button>
+            </div>
+          )}
         </div>
       )}
 

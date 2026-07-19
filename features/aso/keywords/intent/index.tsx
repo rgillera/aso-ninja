@@ -231,6 +231,29 @@ export default function KeywordIntentPage() {
     }).catch(() => {});
   }
 
+  async function handleDeleteIntent(themeId: string) {
+    const params = identityParams();
+    if (!params) return;
+
+    try {
+      const res = await fetch("/api/keywords/intents", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...params, workspaceId, themeId }),
+      });
+      const data: { themes?: IntentTheme[]; appId?: string; error?: string } = await res.json();
+      if (!res.ok || !data.themes) {
+        setError(data.error ?? "Couldn't delete this intent.");
+        return;
+      }
+
+      setThemes(data.themes);
+      setKeywords((prev) => prev.map((k) => (k.intentThemeId === themeId ? { ...k, intentThemeId: null } : k)));
+    } catch {
+      setError("Couldn't delete this intent.");
+    }
+  }
+
   if (!activeApp) {
     return <NoAppSelected />;
   }
@@ -278,6 +301,7 @@ export default function KeywordIntentPage() {
           onGenerate={handleGenerate}
           onMove={handleMove}
           onAddIntent={handleAddIntent}
+          onDeleteIntent={handleDeleteIntent}
         />
       </div>
     </div>
