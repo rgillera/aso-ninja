@@ -4,12 +4,15 @@ import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { generateText } from "@/libs/gemini";
 
-export type IntentTheme = { id: string; label: string; isManual: boolean };
+export type IntentTheme = { id: string; label: string; isManual: boolean; colorIndex: number | null };
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 const MIN_THEMES = 4;
 const MAX_THEMES = 8;
+// Must match THEME_COLORS.length in IntentBoard.tsx — the palette a theme's
+// color_index picks into.
+const COLOR_COUNT = 8;
 
 // Same natural-key fallback /api/keywords/list uses: a previewed-but-not-yet-
 // formally-tracked app has no apps-table id on the client yet, so resolve it
@@ -35,7 +38,12 @@ async function resolveAppId(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toThemes(rows: any[] | null): IntentTheme[] {
-  return (rows ?? []).map((r) => ({ id: r.id, label: r.label, isManual: !!r.is_manual }));
+  return (rows ?? []).map((r) => ({
+    id: r.id,
+    label: r.label,
+    isManual: !!r.is_manual,
+    colorIndex: typeof r.color_index === "number" ? r.color_index : null,
+  }));
 }
 
 async function generateThemeLabels(appName: string, description: string): Promise<string[]> {
@@ -87,7 +95,7 @@ export async function GET(request: NextRequest) {
 
   const { data } = await supabase
     .from("app_intent_themes")
-    .select("id, label, is_manual")
+    .select("id, label, is_manual, color_index")
     .eq("app_id", appId)
     .order("sort_order", { ascending: true });
 
@@ -156,7 +164,7 @@ export async function POST(request: NextRequest) {
 
   const { data: finalRows } = await supabase
     .from("app_intent_themes")
-    .select("id, label, is_manual")
+    .select("id, label, is_manual, color_index")
     .eq("app_id", appId)
     .order("sort_order", { ascending: true });
 
@@ -211,7 +219,7 @@ export async function PUT(request: NextRequest) {
 
   const { data: finalRows } = await supabase
     .from("app_intent_themes")
-    .select("id, label, is_manual")
+    .select("id, label, is_manual, color_index")
     .eq("app_id", appId)
     .order("sort_order", { ascending: true });
 
@@ -219,18 +227,27 @@ export async function PUT(request: NextRequest) {
 }
 
 // PATCH /api/keywords/intents
-// Body: { appId, workspaceId, terms, themeId, bundleId?, store?, country? }
-// Manually (re)assigns one or more keywords to an intent theme; themeId null
-// moves them back to "Other".
+// Either:
+//   Move keywords: { appId, workspaceId, terms, themeId, bundleId?, store?, country? }
+//     Manually (re)assigns one or more keywords to an intent theme; themeId
+//     null moves them back to "Other".
+//   Edit a theme: { appId, workspaceId, themeId, label?, colorIndex?, bundleId?, store?, country? }
+//     Renames and/or recolors an existing theme. Distinguished from a keyword
+//     move by the absence of `terms`.
 export async function PATCH(request: NextRequest) {
   const body = await request.json();
-  const { appId: rawAppId, workspaceId, terms, themeId, bundleId, store, country } = body as {
+  const { appId: rawAppId, workspaceId, terms, themeId, label: rawLabel, colorIndex, bundleId, store, country } = body as {
     appId?: string; workspaceId?: string; terms?: string[]; themeId?: string | null;
+    label?: string; colorIndex?: number | null;
     bundleId?: string; store?: string; country?: string;
   };
 
-  if (!workspaceId || !terms?.length) {
+  if (!workspaceId) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (!terms?.length) {
+    return editTheme(rawAppId, workspaceId, themeId, rawLabel, colorIndex, { bundleId, store, country });
   }
 
   const supabase = await createClient();
@@ -257,6 +274,69 @@ export async function PATCH(request: NextRequest) {
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
 
   return NextResponse.json({ ok: true });
+}
+
+async function editTheme(
+  rawAppId: string | undefined,
+  workspaceId: string,
+  themeId: string | null | undefined,
+  rawLabel: string | undefined,
+  colorIndex: number | null | undefined,
+  fallback: { bundleId?: string; store?: string; country?: string }
+) {
+  if (!themeId || (rawLabel === undefined && colorIndex === undefined)) {
+    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  let label: string | undefined;
+  if (rawLabel !== undefined) {
+    label = rawLabel.trim();
+    if (!label) return NextResponse.json({ error: "Intent name can't be empty." }, { status: 400 });
+    if (label.length > 60) return NextResponse.json({ error: "Keep intent names under 60 characters." }, { status: 400 });
+  }
+  if (colorIndex !== undefined && colorIndex !== null && (colorIndex < 0 || colorIndex >= COLOR_COUNT)) {
+    return NextResponse.json({ error: "Invalid color." }, { status: 400 });
+  }
+
+  const planState = await getWorkspacePlanState(workspaceId);
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  if (!isPlanAtLeast(planSlug, "pro_plus")) {
+    return NextResponse.json({ error: "Intent grouping requires the Pro+ plan" }, { status: 403 });
+  }
+
+  const supabase = await createClient();
+  const appId = await resolveAppId(supabase, rawAppId ?? "", { workspaceId, ...fallback });
+  if (!appId) return NextResponse.json({ error: "App not found" }, { status: 400 });
+
+  if (label !== undefined) {
+    const { data: existingRows } = await supabase
+      .from("app_intent_themes")
+      .select("id, label")
+      .eq("app_id", appId)
+      .neq("id", themeId);
+    if ((existingRows ?? []).some((r) => r.label.toLowerCase() === label!.toLowerCase())) {
+      return NextResponse.json({ error: `"${label}" already exists.` }, { status: 409 });
+    }
+  }
+
+  const updates: { label?: string; color_index?: number | null } = {};
+  if (label !== undefined) updates.label = label;
+  if (colorIndex !== undefined) updates.color_index = colorIndex;
+
+  const { error: updateErr } = await supabase
+    .from("app_intent_themes")
+    .update(updates)
+    .eq("id", themeId)
+    .eq("app_id", appId);
+  if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
+
+  const { data: finalRows } = await supabase
+    .from("app_intent_themes")
+    .select("id, label, is_manual, color_index")
+    .eq("app_id", appId)
+    .order("sort_order", { ascending: true });
+
+  return NextResponse.json({ themes: toThemes(finalRows), appId });
 }
 
 // DELETE /api/keywords/intents
@@ -288,7 +368,7 @@ export async function DELETE(request: NextRequest) {
 
   const { data: finalRows } = await supabase
     .from("app_intent_themes")
-    .select("id, label, is_manual")
+    .select("id, label, is_manual, color_index")
     .eq("app_id", appId)
     .order("sort_order", { ascending: true });
 

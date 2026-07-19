@@ -231,6 +231,28 @@ export default function KeywordIntentPage() {
     }).catch(() => {});
   }
 
+  async function handleEditIntent(
+    themeId: string,
+    updates: { label?: string; colorIndex?: number | null }
+  ): Promise<string | null> {
+    if (!resolvedAppId || !workspaceId) return "App not found.";
+
+    try {
+      const res = await fetch("/api/keywords/intents", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId: resolvedAppId, workspaceId, themeId, ...updates }),
+      });
+      const data: { themes?: IntentTheme[]; appId?: string; error?: string } = await res.json();
+      if (!res.ok || !data.themes) return data.error ?? "Couldn't update this intent.";
+
+      setThemes(data.themes);
+      return null;
+    } catch {
+      return "Couldn't update this intent.";
+    }
+  }
+
   async function handleDeleteIntent(themeId: string) {
     const params = identityParams();
     if (!params) return;
@@ -301,6 +323,7 @@ export default function KeywordIntentPage() {
           onGenerate={handleGenerate}
           onMove={handleMove}
           onAddIntent={handleAddIntent}
+          onEditIntent={handleEditIntent}
           onDeleteIntent={handleDeleteIntent}
         />
       </div>

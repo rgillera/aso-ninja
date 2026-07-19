@@ -12,6 +12,7 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   TrashIcon,
+  PencilIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import type { IntentKeyword, IntentTheme } from "./types";
@@ -294,10 +295,83 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
   );
 }
 
+// Inline rename + recolor form — replaces the group's label/dot in the
+// header while active. Only rendered for real themes (onEdit is undefined
+// for the synthetic "Other" bucket).
+function EditIntentForm({
+  label,
+  colorIndex,
+  onSave,
+  onCancel,
+}: {
+  label: string;
+  colorIndex: number;
+  onSave: (label: string, colorIndex: number) => Promise<string | null>;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(label);
+  const [color, setColor] = useState(colorIndex);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    const trimmed = value.trim();
+    if (!trimmed || saving) return;
+    setSaving(true);
+    setError(null);
+    const err = await onSave(trimmed, color);
+    setSaving(false);
+    if (err) { setError(err); return; }
+  }
+
+  return (
+    <div className="flex flex-1 items-center gap-2 min-w-0">
+      <div className="flex items-center gap-1 shrink-0">
+        {THEME_COLORS.map((c, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setColor(i)}
+            title="Pick a color"
+            className={`size-4 rounded-full ${c.dot} ${color === i ? "ring-2 ring-offset-1 ring-offset-[#1a1d24] ring-white/70" : "opacity-50 hover:opacity-90"} transition-opacity`}
+          />
+        ))}
+      </div>
+      <input
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") submit();
+          if (e.key === "Escape") onCancel();
+        }}
+        className="min-w-0 flex-1 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1 text-sm text-gray-200 outline-none"
+      />
+      {error && <p className="text-[11px] text-red-400 shrink-0">{error}</p>}
+      <button
+        onClick={submit}
+        disabled={saving || !value.trim()}
+        className="flex items-center justify-center rounded-lg p-1.5 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40 transition-colors shrink-0"
+        title="Save"
+      >
+        <CheckIcon className="size-3.5" />
+      </button>
+      <button
+        onClick={onCancel}
+        className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-colors shrink-0"
+        title="Cancel"
+      >
+        <XMarkIcon className="size-3.5" />
+      </button>
+    </div>
+  );
+}
+
 function GroupSection({
   id,
   label,
   color,
+  colorIndex,
   isManual,
   keywords,
   themes,
@@ -305,11 +379,13 @@ function GroupSection({
   onToggleSelect,
   onToggleSelectAll,
   onMove,
+  onEdit,
   onDelete,
 }: {
   id: string;
   label: string;
   color: typeof THEME_COLORS[number];
+  colorIndex: number;
   isManual?: boolean;
   keywords: IntentKeyword[];
   themes: IntentTheme[];
@@ -317,11 +393,13 @@ function GroupSection({
   onToggleSelect: (term: string) => void;
   onToggleSelectAll: (terms: string[]) => void;
   onMove: (terms: string[], themeId: string | null) => void;
+  onEdit?: (id: string, updates: { label?: string; colorIndex?: number | null }) => Promise<string | null>;
   onDelete?: (id: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
   const [page, setPage] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
   // Search only ever renders for the "Other" bucket (see below) — the
   // largest, unsorted catch-all where finding one term among 200+ is
   // otherwise a scroll-and-squint exercise. Themed groups are curated by the
@@ -365,14 +443,39 @@ function GroupSection({
             title="Select all in this group"
           />
         )}
-        <span className={`size-2 rounded-full shrink-0 ${color.dot}`} />
-        <span className="text-sm font-semibold text-white truncate">{label}</span>
-        {isManual && (
-          <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-white/[0.06] text-gray-400 leading-none">
-            CUSTOM
-          </span>
+        {editing && onEdit ? (
+          <EditIntentForm
+            label={label}
+            colorIndex={colorIndex}
+            onSave={(newLabel, newColorIndex) =>
+              onEdit(id, { label: newLabel, colorIndex: newColorIndex }).then((err) => {
+                if (!err) setEditing(false);
+                return err;
+              })
+            }
+            onCancel={() => setEditing(false)}
+          />
+        ) : (
+          <>
+            <span className={`size-2 rounded-full shrink-0 ${color.dot}`} />
+            <span className="text-sm font-semibold text-white truncate">{label}</span>
+            {isManual && (
+              <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-white/[0.06] text-gray-400 leading-none">
+                CUSTOM
+              </span>
+            )}
+            <span className="text-[10px] font-medium text-gray-500 tabular-nums">{keywords.length}</span>
+            {onEdit && (
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center justify-center rounded-lg p-1 text-gray-500 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
+                title="Rename or recolor this intent"
+              >
+                <PencilIcon className="size-3.5" />
+              </button>
+            )}
+          </>
         )}
-        <span className="text-[10px] font-medium text-gray-500 tabular-nums">{keywords.length}</span>
         <div className="ml-auto flex items-center gap-2">
           {id === OTHER_ID && (
             <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
@@ -511,6 +614,7 @@ export function IntentBoard({
   onGenerate,
   onMove,
   onAddIntent,
+  onEditIntent,
   onDeleteIntent,
 }: {
   themes: IntentTheme[];
@@ -521,16 +625,21 @@ export function IntentBoard({
   onGenerate: () => void;
   onMove: (terms: string[], themeId: string | null) => void;
   onAddIntent: (label: string) => Promise<string | null>;
+  onEditIntent: (themeId: string, updates: { label?: string; colorIndex?: number | null }) => Promise<string | null>;
   onDeleteIntent: (themeId: string) => void;
 }) {
   const themeIds = new Set(themes.map((t) => t.id));
-  const grouped = themes.map((t) => ({
-    id: t.id,
-    label: t.label,
-    isManual: t.isManual,
-    color: THEME_COLORS[themes.indexOf(t) % THEME_COLORS.length],
-    keywords: keywords.filter((k) => k.intentThemeId === t.id),
-  }));
+  const grouped = themes.map((t, i) => {
+    const colorIndex = t.colorIndex ?? (i % THEME_COLORS.length);
+    return {
+      id: t.id,
+      label: t.label,
+      isManual: t.isManual,
+      colorIndex,
+      color: THEME_COLORS[colorIndex],
+      keywords: keywords.filter((k) => k.intentThemeId === t.id),
+    };
+  });
   const other = keywords.filter((k) => k.intentThemeId === null || !themeIds.has(k.intentThemeId));
 
   const busy = generating || !!classifyProgress;
@@ -622,12 +731,14 @@ export function IntentBoard({
                   label={g.label}
                   isManual={g.isManual}
                   color={g.color}
+                  colorIndex={g.colorIndex}
                   keywords={g.keywords}
                   themes={themes}
                   selected={selected}
                   onToggleSelect={toggleSelect}
                   onToggleSelectAll={toggleSelectAll}
                   onMove={onMove}
+                  onEdit={onEditIntent}
                   onDelete={onDeleteIntent}
                 />
               ))}
@@ -635,6 +746,7 @@ export function IntentBoard({
                 id={OTHER_ID}
                 label="Other"
                 color={{ ring: "ring-gray-500/30", text: "text-gray-400", dot: "bg-gray-500" }}
+                colorIndex={-1}
                 keywords={other}
                 themes={themes}
                 selected={selected}

@@ -1,4 +1,4 @@
-export type IntentTheme = { id: string; label: string; isManual: boolean };
+export type IntentTheme = { id: string; label: string; isManual: boolean; colorIndex: number | null };
 
 export type IntentKeyword = {
   term: string;
