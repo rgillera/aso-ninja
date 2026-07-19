@@ -18,7 +18,7 @@ import {
   ArrowsUpDownIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
-import { effectiveRank, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
+import { effectiveRank, effectiveRankDate, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -440,7 +440,7 @@ export function PerformanceTable({
                         <td className="px-3 py-3 border-l border-white/[0.04]">
                           <RankCell
                             value={effectiveRank(s?.rankLatest, k.rank)}
-                            date={s?.rankLatestDate}
+                            date={effectiveRankDate(s?.rankLatest, s?.rankLatestDate)}
                             onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
                           />
                         </td>

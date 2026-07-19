@@ -39,6 +39,14 @@ export function effectiveRank(snapshotValue: RankValue | undefined, fallback: nu
   return snapshotValue;
 }
 
+// The snapshot date only describes snapshotValue, not the keyword_metrics
+// fallback effectiveRank() may return instead — pairing it with a fallback
+// rank would label an unrelated cached value with a misleading date.
+export function effectiveRankDate(snapshotValue: RankValue | undefined, date: string | null | undefined): string | null {
+  if (snapshotValue === undefined || snapshotValue === "unknown") return null;
+  return date ?? null;
+}
+
 export function rankGrowth(prev: RankValue | undefined, latest: RankValue | undefined): number | null {
   if (typeof prev !== "number" || typeof latest !== "number") return null;
   return prev - latest; // positive = moved up (improved)
