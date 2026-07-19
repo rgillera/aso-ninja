@@ -37,6 +37,10 @@ export function TawkTo() {
     <Script id="tawk-to" strategy="lazyOnload">
       {`
         var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+        // Set before the embed script loads so the bubble never renders
+        // visible in the first place on excluded pages, instead of flashing
+        // in and then being hidden by hideWidget() once onLoad fires.
+        Tawk_API.visibility = { desktop: '${hidden ? "hidden" : "visible"}', mobile: '${hidden ? "hidden" : "visible"}' };
         (function(){
           var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
           s1.async=true;
