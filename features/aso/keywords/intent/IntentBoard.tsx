@@ -12,6 +12,7 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   TrashIcon,
+  MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import type { IntentKeyword, IntentTheme } from "./types";
 
@@ -321,31 +322,45 @@ function GroupSection({
   const [copied, setCopied] = useState(false);
   const [page, setPage] = useState(0);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Search only ever renders for the "Other" bucket (see below) — the
+  // largest, unsorted catch-all where finding one term among 200+ is
+  // otherwise a scroll-and-squint exercise. Themed groups are curated by the
+  // user/LLM and stay small enough not to need it.
+  const [search, setSearch] = useState("");
 
   function copyGroup() {
-    navigator.clipboard.writeText(keywords.map((k) => k.term).join(", ")).then(() => {
+    navigator.clipboard.writeText(filteredKeywords.map((k) => k.term).join(", ")).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     }).catch(() => {});
   }
 
-  const allSelected = keywords.length > 0 && keywords.every((k) => selected.has(k.term));
+  const filteredKeywords = search.trim()
+    ? keywords.filter((k) => k.term.toLowerCase().includes(search.trim().toLowerCase()))
+    : keywords;
+
+  const allSelected = filteredKeywords.length > 0 && filteredKeywords.every((k) => selected.has(k.term));
+
+  // A search change invalidates whatever page the user was on.
+  useEffect(() => {
+    setPage(0);
+  }, [search]);
 
   // Clamp rather than sync via effect — if keywords move out of this group
   // and shrink the page count, this settles on the last valid page on the
   // very next render with no extra state round-trip.
-  const pageCount = Math.max(1, Math.ceil(keywords.length / GROUP_PAGE_SIZE));
+  const pageCount = Math.max(1, Math.ceil(filteredKeywords.length / GROUP_PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
-  const pageKeywords = keywords.slice(safePage * GROUP_PAGE_SIZE, (safePage + 1) * GROUP_PAGE_SIZE);
+  const pageKeywords = filteredKeywords.slice(safePage * GROUP_PAGE_SIZE, (safePage + 1) * GROUP_PAGE_SIZE);
 
   return (
     <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07]">
-        {keywords.length > 0 && (
+        {filteredKeywords.length > 0 && (
           <input
             type="checkbox"
             checked={allSelected}
-            onChange={() => onToggleSelectAll(keywords.map((k) => k.term))}
+            onChange={() => onToggleSelectAll(filteredKeywords.map((k) => k.term))}
             className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
             title="Select all in this group"
           />
@@ -358,26 +373,44 @@ function GroupSection({
           </span>
         )}
         <span className="text-[10px] font-medium text-gray-500 tabular-nums">{keywords.length}</span>
-        <button
-          onClick={copyGroup}
-          disabled={!keywords.length}
-          className={`ml-auto flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
-          title="Copy every keyword in this group, comma-separated — ready to paste into ASA"
-        >
-          <ClipboardDocumentIcon className="size-3.5" />
-          {copied ? "Copied" : "Copy list"}
-        </button>
-        {onDelete && (
+        <div className="ml-auto flex items-center gap-2">
+          {id === OTHER_ID && (
+            <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+              <MagnifyingGlassIcon className="size-3.5 text-gray-600 shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search keywords…"
+                className="w-36 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+              />
+              {search && (
+                <button onClick={() => setSearch("")}>
+                  <XMarkIcon className="size-3 text-gray-600 hover:text-gray-300" />
+                </button>
+              )}
+            </div>
+          )}
           <button
-            onClick={() => setConfirmingDelete(true)}
-            className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Delete this intent theme"
+            onClick={copyGroup}
+            disabled={!filteredKeywords.length}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+            title="Copy every keyword in this group, comma-separated — ready to paste into ASA"
           >
-            <TrashIcon className="size-3.5" />
+            <ClipboardDocumentIcon className="size-3.5" />
+            {copied ? "Copied" : "Copy list"}
           </button>
-        )}
+          {onDelete && (
+            <button
+              onClick={() => setConfirmingDelete(true)}
+              className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              title="Delete this intent theme"
+            >
+              <TrashIcon className="size-3.5" />
+            </button>
+          )}
+        </div>
       </div>
-      {keywords.length ? (
+      {filteredKeywords.length ? (
         <div className="divide-y divide-white/[0.04]">
           {pageKeywords.map((k) => (
             <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] transition-colors">
@@ -401,7 +434,9 @@ function GroupSection({
           ))}
         </div>
       ) : (
-        <div className="px-4 py-3 text-xs text-gray-600">No keywords yet — move some in with &ldquo;Move to&rdquo;.</div>
+        <div className="px-4 py-3 text-xs text-gray-600">
+          {search ? `No keywords match “${search}.”` : <>No keywords yet — move some in with &ldquo;Move to&rdquo;.</>}
+        </div>
       )}
       {pageCount > 1 && (
         <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07]">

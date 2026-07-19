@@ -21,6 +21,7 @@ import {
   TagIcon,
   MagnifyingGlassCircleIcon,
   ChatBubbleLeftEllipsisIcon,
+  ChatBubbleLeftRightIcon,
   UserCircleIcon,
   CreditCardIcon,
   AcademicCapIcon,
@@ -491,6 +492,14 @@ export default function DashboardSidebar({
           <AcademicCapIcon className="size-4 shrink-0" />
           Learn
         </a>
+        <button
+          type="button"
+          onClick={() => window.Tawk_API?.maximize?.()}
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+        >
+          <ChatBubbleLeftRightIcon className="size-4 shrink-0" />
+          Chat with us 👋
+        </button>
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"

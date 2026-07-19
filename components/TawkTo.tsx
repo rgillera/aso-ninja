@@ -10,13 +10,14 @@ declare global {
   }
 }
 
-// App Explorer users are frequently mid-comparison across many app rows;
-// the chat bubble sits over the connect/unconnect button in the rightmost
-// column, so the widget is hidden on that page specifically. The dashboard
-// layout persists across client-side navigation, so the widget (once
-// loaded) is toggled via Tawk's own show/hideWidget API rather than
-// mounted/unmounted, which wouldn't undo its already-injected DOM.
-const EXCLUDED_PATH_PREFIXES = ["/dashboard/market/explorer"];
+// The dashboard is only reachable when logged in (its layout redirects
+// signed-out users to /login), so the floating bubble is hidden there —
+// logged-in users open chat via the "Chat with us" link in the sidebar
+// instead, which calls Tawk_API.maximize() directly. The dashboard layout
+// persists across client-side navigation, so the widget (once loaded) is
+// toggled via Tawk's own show/hideWidget API rather than mounted/unmounted,
+// which wouldn't undo its already-injected DOM.
+const EXCLUDED_PATH_PREFIXES = ["/dashboard"];
 
 export function TawkTo() {
   const pathname = usePathname();
