@@ -45,7 +45,7 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
             >
               {isAuthenticated ? "Go to dashboard" : "Create free account"}
             </a>
-            <a href="#features" className="text-sm font-semibold text-gray-300 hover:text-white transition-colors">
+            <a href="#how-it-works" className="text-sm font-semibold text-gray-300 hover:text-white transition-colors">
               See how it works <span aria-hidden="true">→</span>
             </a>
           </div>

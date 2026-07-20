@@ -4,6 +4,7 @@ const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL;
 
 const links = {
   Product: [
+    { label: "How it works", href: "/#how-it-works" },
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
     { label: "Testimonials", href: "/#testimonials" },

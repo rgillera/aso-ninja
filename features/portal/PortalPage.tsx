@@ -1,6 +1,7 @@
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "./PortalNav";
 import PortalHero from "./PortalHero";
+import PortalHowItWorks from "./PortalHowItWorks";
 import PortalFeature from "./PortalFeature";
 import PortalPricing from "./PortalPricing";
 import PortalTestimonials from "./PortalTestimonials";
@@ -15,6 +16,7 @@ export default async function PortalPage() {
     <div className="bg-gray-900">
       <PortalNav isAuthenticated={isAuthenticated} />
       <PortalHero isAuthenticated={isAuthenticated} />
+      <PortalHowItWorks />
       <PortalFeature />
       <PortalPricing />
       <PortalTestimonials />
