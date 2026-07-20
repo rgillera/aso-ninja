@@ -93,6 +93,7 @@ export const PLANS: Plan[] = [
       "AI keyword suggestions",
       "Long tail keyword tool",
       "Ranked keywords view",
+      "Group by intent",
       "Live chat & email support",
     ],
   },
