@@ -10,6 +10,7 @@ import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
+import { OnboardingWelcomeModal } from "@/features/onboarding/OnboardingWelcomeModal";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
@@ -445,6 +446,10 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           onConfirm={() => { window.location.href = pendingHref; }}
         />
       )}
+      <OnboardingWelcomeModal
+        hasApp={activeWorkspaceApps.length > 0}
+        workspaceId={activeWorkspaceId ?? ""}
+      />
     </NavigationGuardProvider>
     </ActiveAppProvider>
     </PlanProvider>
