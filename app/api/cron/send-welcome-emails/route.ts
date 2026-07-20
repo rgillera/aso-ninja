@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { getResendClient } from "@/libs/resend";
-import { WELCOME_EMAIL_SUBJECT, renderWelcomeEmailHtml } from "@/libs/email/welcome";
+import {
+  WELCOME_EMAIL_SUBJECT,
+  renderWelcomeEmailHtml,
+  renderWelcomeEmailText,
+} from "@/libs/email/welcome";
 
 // Wait this long after email confirmation before sending, so it doesn't
 // land in the same breath as Supabase's own confirmation email.
@@ -44,6 +48,7 @@ export async function GET(req: Request) {
       to: email,
       subject: WELCOME_EMAIL_SUBJECT,
       html: renderWelcomeEmailHtml(),
+      text: renderWelcomeEmailText(),
     });
 
     if (sendError) {

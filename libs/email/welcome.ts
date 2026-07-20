@@ -30,3 +30,26 @@ export function renderWelcomeEmailHtml() {
   <p>Best,<br/>The AppASO Team</p>
 </div>`.trim();
 }
+
+export function renderWelcomeEmailText() {
+  return `Hi there,
+
+Welcome to AppASO! We're excited to have you on board.
+
+You're all set to start tracking and monitoring your app keywords. Here's a quick look at how it works: ${siteUrl}/how-it-works.png
+
+With AppASO, you can:
+- Research long tail keywords
+- Track your keyword rankings
+- Monitor keyword performance over time
+- Discover opportunities to improve your app's visibility
+
+If you'd like a personalized walkthrough, we're here to help. Book a free 15-minute demo: ${demoUrl}
+
+We're excited to help you make the most of your app's keyword strategy and grow your visibility.
+
+Happy optimizing!
+
+Best,
+The AppASO Team`;
+}
