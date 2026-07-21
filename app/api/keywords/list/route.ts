@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       .order("added_at", { ascending: true }),
     supabase
       .from("keyword_metrics")
-      .select("keyword_id, volume, diff, chance, opportunity, relevancy, rank, intent_theme_id")
+      .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id")
       .eq("app_id", appId),
   ]);
 
@@ -73,8 +73,13 @@ export async function GET(request: NextRequest) {
       volume:      m.volume,
       diff:        m.diff,
       chance:      m.chance,
-      opportunity: m.opportunity,
-      relevancy:   m.relevancy,
+      // relevancy/opportunity are `not null default 0`, so a row that was
+      // never actually scored (below-tier, fast-mode, or the plan's
+      // relevancy pool was exhausted) still holds 0/0, indistinguishable
+      // from a genuine score of 0. `relevancy_scored` is the authoritative
+      // marker — same rule app/api/keywords/metrics/route.ts already uses.
+      opportunity: m.relevancy_scored ? m.opportunity : null,
+      relevancy:   m.relevancy_scored ? m.relevancy   : null,
       rank:        m.rank ?? null,
       intentThemeId: m.intent_theme_id ?? null,
     });

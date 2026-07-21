@@ -39,6 +39,23 @@ function LockedCell() {
   );
 }
 
+// Distinct from LockedCell (below-Pro tier gate, red): this keyword is on a
+// plan with relevancy/opportunity access, but scored after the plan's pool
+// (relevancy_limit) was already used up for this billing period — it will
+// never resolve, so it must not look like the ClockIcon "still computing"
+// state below.
+function PoolLimitCell() {
+  return (
+    <span
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
+      title="Your plan's relevancy & opportunity scoring pool is used up. Upgrade for a bigger pool."
+    >
+      <LockClosedIcon className="size-2.5" />
+      Limit
+    </span>
+  );
+}
+
 const BULK_ADD_WARN_THRESHOLD = 30;
 const BULK_ADD_MAX = 50;
 const PAGE_SIZE = 25;
@@ -481,7 +498,9 @@ export function KeywordTable({
           ? <LockedCell />
           : row.aiDown && row.opportunity == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
-          : row.opportunity !== undefined && row.opportunity !== null
+          : row.opportunity === null
+          ? <PoolLimitCell />
+          : row.opportunity !== undefined
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
               row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400" :
@@ -506,7 +525,9 @@ export function KeywordTable({
           ? <LockedCell />
           : row.aiDown && row.relevancy == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
-          : row.relevancy !== undefined && row.relevancy !== null
+          : row.relevancy === null
+          ? <PoolLimitCell />
+          : row.relevancy !== undefined
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
               row.relevancy >= 70 ? "bg-emerald-500/15 text-emerald-400" :

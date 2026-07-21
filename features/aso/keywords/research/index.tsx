@@ -175,8 +175,8 @@ export default function KeywordResearchPage() {
             volume:      s.volume,
             diff:        s.diff,
             chance:      s.chance,
-            opportunity: s.opportunity ?? undefined,
-            relevancy:   s.relevancy ?? undefined,
+            opportunity: s.opportunity,
+            relevancy:   s.relevancy,
             rank:        s.rank,
             starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
@@ -313,7 +313,7 @@ export default function KeywordResearchPage() {
         prev.map((k) => {
           const m = data[k.keyword];
           return m && newKeywords.includes(k.keyword)
-            ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, aiDown: data._aiDown }
+            ? { ...k, ...m, relevancy: m.relevancy, opportunity: m.opportunity, aiDown: data._aiDown }
             : k;
         })
       );
@@ -399,7 +399,7 @@ export default function KeywordResearchPage() {
           prev.map((k) => {
             const m = data[k.keyword];
             return m && batch.includes(k.keyword)
-              ? { ...k, ...m, relevancy: m.relevancy ?? undefined, opportunity: m.opportunity ?? undefined, aiDown: data._aiDown }
+              ? { ...k, ...m, relevancy: m.relevancy, opportunity: m.opportunity, aiDown: data._aiDown }
               : k;
           })
         );
@@ -521,7 +521,7 @@ export default function KeywordResearchPage() {
                 href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
                 className="underline underline-offset-2 hover:no-underline"
               >
-                Talk to us about Managed ASO for unlimited scoring
+                Contact us for a custom plan
               </a>
             )}
           </span>
