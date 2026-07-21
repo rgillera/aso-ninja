@@ -66,7 +66,7 @@ const RANK_GROUP_W = 288;     // w-40 + w-32
 const ACTIONS_COL_W = 80;     // w-20
 const KEYWORD_MIN_W = 320;    // w-80
 
-type SortKey = "keyword" | "volume" | "rank" | "change";
+type SortKey = "keyword" | "volume" | "rank" | "change" | `rank:${string}` | `change:${string}`;
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
@@ -172,6 +172,15 @@ export function PerformanceTable({
     else if (sortKey === "volume") cmp = (sa?.volumeLatest ?? a.volume) - (sb?.volumeLatest ?? b.volume);
     else if (sortKey === "rank") cmp = rankSortValue(effectiveRank(sa?.rankLatest, a.rank)) - rankSortValue(effectiveRank(sb?.rankLatest, b.rank));
     else if (sortKey === "change") cmp = (rankGrowth(sa?.rankPrev, sa?.rankLatest) ?? -Infinity) - (rankGrowth(sb?.rankPrev, sb?.rankLatest) ?? -Infinity);
+    else if (sortKey.startsWith("rank:")) {
+      const storeId = sortKey.slice("rank:".length);
+      const ca = sa?.competitors?.[storeId], cb = sb?.competitors?.[storeId];
+      cmp = rankSortValue(ca?.rankLatest) - rankSortValue(cb?.rankLatest);
+    } else if (sortKey.startsWith("change:")) {
+      const storeId = sortKey.slice("change:".length);
+      const ca = sa?.competitors?.[storeId], cb = sb?.competitors?.[storeId];
+      cmp = (rankGrowth(ca?.rankPrev, ca?.rankLatest) ?? -Infinity) - (rankGrowth(cb?.rankPrev, cb?.rankLatest) ?? -Infinity);
+    }
     return sortDir === "asc" ? cmp : -cmp;
   }) : filtered;
 
@@ -388,12 +397,24 @@ export function PerformanceTable({
                     Change <SortIcon active={sortKey === "change"} dir={sortDir} />
                   </button>
                 </th>
-                {competitors.map((c) => (
-                  <Fragment key={c.storeId}>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">Rank</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">Change</th>
-                  </Fragment>
-                ))}
+                {competitors.map((c) => {
+                  const rankKey: SortKey = `rank:${c.storeId}`;
+                  const changeKey: SortKey = `change:${c.storeId}`;
+                  return (
+                    <Fragment key={c.storeId}>
+                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">
+                        <button onClick={() => handleSort(rankKey)} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === rankKey ? "text-gray-300" : ""}`}>
+                          Rank <SortIcon active={sortKey === rankKey} dir={sortDir} />
+                        </button>
+                      </th>
+                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">
+                        <button onClick={() => handleSort(changeKey)} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === changeKey ? "text-gray-300" : ""}`}>
+                          Change <SortIcon active={sortKey === changeKey} dir={sortDir} />
+                        </button>
+                      </th>
+                    </Fragment>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
