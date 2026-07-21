@@ -10,6 +10,7 @@ const variantByPlan: Record<PlanId, Variant> = {
   free: "default",
   basic: "default",
   pro: "featured",
+  pro_plus: "default",
   enterprise: "premium",
 };
 
@@ -22,7 +23,12 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-const plans = PLANS.map((plan) => {
+// Managed ASO isn't one of the 4 fast-choice cards below — it's a
+// done-for-you service staffed by an actual specialist, not a self-serve
+// tier, so it gets a single "talk to us" banner beneath the grid instead
+// (see UpgradeButton.tsx, which does the same thing for the logged-in
+// /dashboard/subscription page).
+const plans = PLANS.filter((plan) => plan.id !== "enterprise").map((plan) => {
   const isFree = plan.priceMonthlyCents === 0;
   return {
     id: plan.id,
@@ -41,11 +47,6 @@ const plans = PLANS.map((plan) => {
     signupCta: isFree ? "Create free account" : "Upgrade now",
     variant: variantByPlan[plan.id],
     contactSales: false,
-    // Managed ASO is a done-for-you service staffed by an actual specialist —
-    // it can't be auto-provisioned by instant checkout the way a software
-    // tier can, so this books a call instead (see UpgradeButton.tsx, which
-    // does the same thing for the logged-in /dashboard/subscription page).
-    bookACall: plan.id === "enterprise",
   };
 });
 
@@ -199,26 +200,29 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                   ))}
                 </ul>
 
-                {plan.bookACall ? (
-                  <a
-                    href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
-                    target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
-                    rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-                    className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
-                  >
-                    Book a call
-                  </a>
-                ) : (
-                  <a
-                    href={href}
-                    className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
-                  >
-                    {cta}
-                  </a>
-                )}
+                <a
+                  href={href}
+                  className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
+                >
+                  {cta}
+                </a>
               </div>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-8 flex max-w-5xl flex-col items-center justify-between gap-5 rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-10 py-8 sm:flex-row">
+          <p className="text-lg text-gray-300">
+            Need more apps, seats, or a hands-on team? <span className="text-gray-500">Managed ASO adds a dedicated growth manager and ASO specialist.</span>
+          </p>
+          <a
+            href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
+            target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
+            rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
+            className="shrink-0 rounded-lg bg-white/[0.08] px-6 py-3 text-base font-semibold text-white ring-1 ring-white/[0.12] transition-colors hover:bg-white/[0.13]"
+          >
+            Talk to us
+          </a>
         </div>
       </div>
     </section>

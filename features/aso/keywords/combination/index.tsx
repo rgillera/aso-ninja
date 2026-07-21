@@ -34,7 +34,7 @@ export default function KeywordCombinationPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "pro");
+  const isLocked    = !isPlanAtLeast(planSlug, "pro_plus");
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
@@ -393,10 +393,10 @@ export default function KeywordCombinationPage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="Long Tail Keywords" />
         <FeatureLocked
-          minPlan="pro"
+          minPlan="pro_plus"
           icon={PuzzlePieceIcon}
-          title="Long Tail Keywords is a Pro feature"
-          description="Upgrade to Pro or above to expand seed keywords into combinations."
+          title="Long Tail Keywords is a Pro+ feature"
+          description="Upgrade to Pro+ or above to expand seed keywords into combinations."
           benefits={[
             "Turn one seed keyword into dozens of long-tail combinations",
             "See search volume and difficulty for every combination instantly",

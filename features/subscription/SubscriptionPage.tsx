@@ -45,6 +45,7 @@ type Billing = "monthly" | "yearly";
 function nameColor(planId: PlanId) {
   if (planId === "basic") return "text-emerald-500";
   if (planId === "pro") return "text-red-500";
+  if (planId === "pro_plus") return "text-violet-400";
   if (planId === "enterprise") return "text-amber-400";
   return "text-white";
 }
@@ -94,6 +95,10 @@ export default function SubscriptionPage({
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
+  // Managed ASO is a done-for-you service, not a self-serve tier — it gets a
+  // "talk to us" banner below the grid instead of a card (see PortalPricing.tsx,
+  // which does the same thing on the marketing pricing page).
+  const sellablePlans = PLANS.filter((plan) => plan.id !== "enterprise");
   const frozenTotal = usage
     ? usage.keyword_frozen_count + usage.app_frozen_count + usage.member_frozen_count
     : 0;
@@ -149,7 +154,7 @@ export default function SubscriptionPage({
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: "1rem" }}>
-          {PLANS.map((plan, index) => {
+          {sellablePlans.map((plan, index) => {
             const isCurrent = plan.id === currentPlanId;
             const isPopular = plan.id === "pro";
             const isDowngrade = index < currentPlanIndex;
@@ -242,6 +247,24 @@ export default function SubscriptionPage({
               </div>
             );
           })}
+        </div>
+
+        <div className="mx-auto mt-8 flex max-w-5xl flex-col items-center justify-between gap-5 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-10 py-8 sm:flex-row">
+          <p className="text-lg text-gray-300">
+            {currentPlanId === "enterprise" ? (
+              <>You&apos;re on <span className="text-amber-400 font-medium">Managed ASO</span>.</>
+            ) : (
+              <>Need more apps, seats, or a hands-on team? <span className="text-gray-500">Managed ASO adds a dedicated growth manager and ASO specialist.</span></>
+            )}
+          </p>
+          <a
+            href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
+            target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
+            rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
+            className="shrink-0 rounded-lg bg-indigo-500 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-indigo-400"
+          >
+            {currentPlanId === "enterprise" ? "Book a call" : "Talk to us"}
+          </a>
         </div>
       </div>
     </main>

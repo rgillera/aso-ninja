@@ -4,7 +4,8 @@ const PLAN_ORDER: Record<PlanSlug, number> = {
   free: 0,
   basic: 1,
   pro: 2,
-  enterprise: 3,
+  pro_plus: 3,
+  enterprise: 4,
 };
 
 export function isPlanAtLeast(planSlug: PlanSlug, minimum: PlanSlug): boolean {

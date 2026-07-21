@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
 
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) {
+  if (!isPlanAtLeast(planSlug, "pro_plus")) {
     return NextResponse.json({ error: "Intent grouping requires the Pro plan" }, { status: 403 });
   }
 
@@ -192,7 +192,7 @@ export async function PUT(request: NextRequest) {
 
   const planState = await getWorkspacePlanState(workspaceId);
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) {
+  if (!isPlanAtLeast(planSlug, "pro_plus")) {
     return NextResponse.json({ error: "Intent grouping requires the Pro plan" }, { status: 403 });
   }
 
@@ -300,7 +300,7 @@ async function editTheme(
 
   const planState = await getWorkspacePlanState(workspaceId);
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) {
+  if (!isPlanAtLeast(planSlug, "pro_plus")) {
     return NextResponse.json({ error: "Intent grouping requires the Pro plan" }, { status: 403 });
   }
 

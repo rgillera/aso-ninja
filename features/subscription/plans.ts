@@ -1,4 +1,4 @@
-export type PlanId = "free" | "basic" | "pro" | "enterprise";
+export type PlanId = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
 
 export type Plan = {
   id: PlanId;
@@ -50,14 +50,36 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
+    priceMonthlyCents: 8040,
+    priceYearlyCents: 80400,
+    description: "Metadata timeline & benchmarking, AI keyword suggestions, review tracking, and relevancy & opportunity scoring (up to 1,000 keywords) across up to 10 apps.",
+    badge: null,
+    features: [
+      "1 workspace",
+      "Unlimited keywords",
+      "10 apps & 3 competitors per app",
+      "Metadata optimization",
+      "Keyword research",
+      "Keyword & ranking monitoring",
+      "Keyword translations",
+      "Metadata timeline & version history",
+      "Metadata benchmark vs. category",
+      "Reviews & ratings tracking",
+      "AI keyword suggestions",
+      "Relevancy & opportunity scoring (up to 1,000 keywords)",
+      "Live chat & email support",
+    ],
+  },
+  {
+    id: "pro_plus",
+    name: "Pro+",
     priceMonthlyCents: 23640,
     priceYearlyCents: 236400,
-    description: "Advanced keyword research with relevancy & opportunity scoring, AI keyword suggestions, metadata history & benchmarking, and review tracking across up to 20 apps.",
+    description: "Everything in Pro, plus long tail keyword tools, ranked keywords, group by intent, and a bigger relevancy & opportunity scoring pool across up to 20 apps.",
     badge: null,
     features: [
       "4 workspaces",
       "Unlimited keywords",
-      "Relevancy & opportunity scoring",
       "20 apps & 5 competitors per app",
       "Metadata optimization",
       "Advanced keyword research",
@@ -67,6 +89,7 @@ export const PLANS: Plan[] = [
       "Metadata benchmark vs. category",
       "Reviews & ratings tracking",
       "AI keyword suggestions",
+      "Relevancy & opportunity scoring (up to 3,000 keywords)",
       "Long tail keyword tool",
       "Ranked keywords view",
       "Group by intent",
@@ -78,10 +101,10 @@ export const PLANS: Plan[] = [
     name: "Managed ASO",
     priceMonthlyCents: 179640,
     priceYearlyCents: 1796400,
-    description: "Everything in Pro, plus a dedicated growth manager and ASO specialist to manage it all for you.",
+    description: "Everything in Pro+, plus a dedicated growth manager and ASO specialist to manage it all for you.",
     badge: null,
     features: [
-      "All in Pro Plan",
+      "All in Pro+ Plan",
       "1 dedicated growth manager",
       "1 dedicated ASO specialist",
       "Access to all features",

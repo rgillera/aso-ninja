@@ -6,6 +6,7 @@ import type { ComponentType } from "react";
 const TIER_LABEL: Partial<Record<PlanSlug, string>> = {
   basic: "Basic",
   pro: "Pro",
+  pro_plus: "Pro+",
   enterprise: "Managed ASO",
 };
 
@@ -21,6 +22,12 @@ const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button:
     ring: "bg-red-500/10",
     button: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
     check: "text-red-500/80",
+  },
+  pro_plus: {
+    icon: "text-violet-400",
+    ring: "bg-violet-500/10",
+    button: "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
+    check: "text-violet-400/80",
   },
   enterprise: {
     icon: "text-amber-400",

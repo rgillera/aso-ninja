@@ -1,4 +1,4 @@
-export type PlanSlug = "free" | "basic" | "pro" | "enterprise";
+export type PlanSlug = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
 
 export type Plan = {
   id: string;

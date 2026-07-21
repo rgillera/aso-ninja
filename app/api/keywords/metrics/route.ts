@@ -547,11 +547,18 @@ export async function GET(request: NextRequest) {
 
   // Relevancy/opportunity are Pro-and-up features — anything below that plan
   // never triggers the Gemini embedding/LLM pass, and never sees a value even
-  // if one was cached from before a downgrade. Pro and Enterprise both have
-  // relevancy_limit = null (unlimited) — only the plan tier gates access.
+  // if one was cached from before a downgrade. Pro and Pro+ both have a
+  // lifetime relevancy pool (relevancy_limit) instead of being unlimited —
+  // once a workspace's pooled relevancy_scored_count reaches it, no further
+  // keywords get scored (already-scored ones keep showing). Only Enterprise
+  // has relevancy_limit = null (unlimited).
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
+  const hasRelevancyAccess = isPlanAtLeast(planSlug, "pro");
+  const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : null;
+  const relevancyScoredCount = planState && !("error" in planState) ? planState.usage.relevancy_scored_count : 0;
+  const relevancyPoolExhausted = hasRelevancyAccess && relevancyLimit !== null && relevancyScoredCount >= relevancyLimit;
+  const canUseRelevancy = hasRelevancyAccess && !relevancyPoolExhausted;
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
@@ -571,11 +578,11 @@ export async function GET(request: NextRequest) {
       // add) never actually got scored — `relevancy_scored` is the
       // authoritative marker for that (the `relevancy` column itself can't
       // be trusted: it's `not null default 0`, so a never-scored row is
-      // indistinguishable from a genuine 0 score). If this request can now
-      // compute a real score, don't trust this cache row for this term — let
-      // it fall through to `uncached` below instead of staying stuck
-      // unscored forever.
-      if (!fast && canUseRelevancy && !row.relevancy_scored && !isBrand) continue;
+      // indistinguishable from a genuine 0 score). If this workspace has
+      // relevancy access at all, don't trust this cache row for this term —
+      // let it fall through to `uncached` below, where the pool-budget check
+      // decides whether it actually gets (re)scored right now.
+      if (!fast && hasRelevancyAccess && !row.relevancy_scored && !isBrand) continue;
       const relevancy = isBrand ? 100 : (row.relevancy ?? null);
       const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
       const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
@@ -664,8 +671,11 @@ export async function GET(request: NextRequest) {
   const merged = { ...dbCache, ...freshMetrics };
   // Strip relevancy/opportunity for anything below Pro — including values
   // read back from the 7-day DB cache, in case the workspace downgraded since
-  // they were computed.
-  if (!canUseRelevancy) {
+  // they were computed. This is a tier check only — a Pro/Pro+ workspace that
+  // has simply exhausted its relevancy pool still gets to see keywords it
+  // already paid to have scored; the pool only blocks scoring *new* ones
+  // (see `withRelevancy` above).
+  if (!hasRelevancyAccess) {
     for (const m of Object.values(merged)) { m.relevancy = null; m.opportunity = null; }
   }
 
@@ -673,5 +683,6 @@ export async function GET(request: NextRequest) {
     ...merged,
     ...(rateLimited ? { _rateLimited: true } : {}),
     ...(!aiReachable ? { _aiDown: true } : {}),
+    ...(relevancyPoolExhausted ? { _relevancyLimitReached: true } : {}),
   });
 }

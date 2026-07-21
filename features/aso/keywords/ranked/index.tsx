@@ -103,7 +103,7 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
 export default function RankedKeywordsPage() {
   const activeApp = useActiveApp();
   const planSlug  = usePlanSlug();
-  const isLocked  = !isPlanAtLeast(planSlug, "pro");
+  const isLocked  = !isPlanAtLeast(planSlug, "pro_plus");
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
   const [history,  setHistory]  = useState<RankedHistoryPoint[]>([]);
@@ -153,10 +153,10 @@ export default function RankedKeywordsPage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="All Ranked Keywords" />
         <FeatureLocked
-          minPlan="pro"
+          minPlan="pro_plus"
           icon={ListBulletIcon}
-          title="All Ranked Keywords is a Pro feature"
-          description="Upgrade to Pro or above to see every keyword your app ranks for over time."
+          title="All Ranked Keywords is a Pro+ feature"
+          description="Upgrade to Pro+ or above to see every keyword your app ranks for over time."
           benefits={[
             "See every keyword your app currently ranks for, not just the ones you track",
             "Watch your ranked-keyword count grow over time on one chart",

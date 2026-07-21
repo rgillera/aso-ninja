@@ -41,7 +41,7 @@ export default function KeywordIntentPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "pro");
+  const isLocked    = !isPlanAtLeast(planSlug, "pro_plus");
 
   const [themes, setThemes]   = useState<IntentTheme[]>([]);
   const [keywords, setKeywords] = useState<IntentKeyword[]>([]);
@@ -285,10 +285,10 @@ export default function KeywordIntentPage() {
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <AppHeader app={activeApp} title="Group by Intent" />
         <FeatureLocked
-          minPlan="pro"
+          minPlan="pro_plus"
           icon={TagIcon}
-          title="Group by Intent is a Pro feature"
-          description="Upgrade to Pro or above to cluster your tracked keywords by search intent."
+          title="Group by Intent is a Pro+ feature"
+          description="Upgrade to Pro+ or above to cluster your tracked keywords by search intent."
           benefits={[
             "Auto-generate a feature-specific intent taxonomy for your app",
             "Every tracked keyword classified automatically — no manual tagging",

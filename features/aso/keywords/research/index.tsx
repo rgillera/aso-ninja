@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -43,6 +44,7 @@ export default function KeywordResearchPage() {
   // persisted, so users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
   const [rateLimited, setRateLimited] = useState(false);
+  const [relevancyLimitReached, setRelevancyLimitReached] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
@@ -303,8 +305,9 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean } = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean; _relevancyLimitReached?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
+      if (data._relevancyLimitReached) setRelevancyLimitReached(true);
 
       setKeywords((prev) =>
         prev.map((k) => {
@@ -498,6 +501,31 @@ export default function KeywordResearchPage() {
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {relevancyLimitReached && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 text-xs">
+          <ExclamationTriangleIcon className="size-4 shrink-0" />
+          <span className="flex-1">
+            You&apos;ve used up your plan&apos;s relevancy &amp; opportunity scoring pool. New keywords will still be
+            tracked, just without those scores.{" "}
+            {planSlug === "pro" ? (
+              <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
+                Upgrade to Pro+ for a bigger pool
+              </Link>
+            ) : (
+              <a
+                href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
+                className="underline underline-offset-2 hover:no-underline"
+              >
+                Talk to us about Managed ASO for unlimited scoring
+              </a>
+            )}
+          </span>
+          <button onClick={() => setRelevancyLimitReached(false)} className="shrink-0 hover:text-indigo-200">
             <XMarkIcon className="size-4" />
           </button>
         </div>
