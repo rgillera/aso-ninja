@@ -46,12 +46,20 @@ export default async function Page({ searchParams }: PageProps) {
 
   const allApps = (appsData ?? []) as App[];
 
-  // Check if user already tracks this app
-  const tracked = allApps.find(a => a.bundle_id === bundleId && a.store === store);
-  if (tracked) redirect(`/dashboard/apps/${tracked.id}`);
-
   const resolvedCountry = country ?? "US";
   const resolvedStoreId = storeId ?? bundleId;
+
+  // Check if user already tracks this app — same bundle_id + store CAN be a
+  // different listing per country (App Store/Play Store storefronts are
+  // per-country), so a match must also agree on country. Otherwise e.g.
+  // previewing a JP result for an app only tracked in US would silently
+  // redirect to the US-tracked app instead of showing the JP listing.
+  const tracked = allApps.find(a =>
+    a.bundle_id === bundleId &&
+    a.store === store &&
+    (a.country ?? "US").toUpperCase() === resolvedCountry.toUpperCase()
+  );
+  if (tracked) redirect(`/dashboard/apps/${tracked.id}`);
 
   // Synthetic App — not in DB, no workspace
   const syntheticApp: App = {
