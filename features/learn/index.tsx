@@ -18,7 +18,7 @@ export default function LearnPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-white text-black">
       <div className="px-8 pt-6 pb-4 border-b border-black/10">
-        <h1 className="text-xl font-semibold">Learn</h1>
+        <h1 className="text-xl font-semibold">Learning Center</h1>
         <p className="mt-1 text-sm text-black/60">
           What every ASO Intelligence tool is for, why it matters, and how to get value out of it.
         </p>

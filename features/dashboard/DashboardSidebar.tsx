@@ -499,7 +499,7 @@ export default function DashboardSidebar({
           }`}
         >
           <AcademicCapIcon className="size-4 shrink-0" />
-          Learn
+          Learning Center
         </a>
         <button
           type="button"
