@@ -249,8 +249,8 @@ export default function SubscriptionPage({
           })}
         </div>
 
-        <div className="mx-auto mt-8 flex max-w-5xl flex-col items-center justify-between gap-5 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-10 py-8 sm:flex-row">
-          <p className="text-lg text-gray-300">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
+          <p className="text-sm text-gray-300">
             {currentPlanId === "enterprise" ? (
               <>You&apos;re on <span className="text-amber-400 font-medium">Managed ASO</span>.</>
             ) : (
@@ -261,7 +261,7 @@ export default function SubscriptionPage({
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
             target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
             rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-indigo-500 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-indigo-400"
+            className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
           >
             {currentPlanId === "enterprise" ? "Book a call" : "Talk to us"}
           </a>
