@@ -49,8 +49,8 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    priceMonthlyCents: 17640,
-    priceYearlyCents: 176400,
+    priceMonthlyCents: 23640,
+    priceYearlyCents: 236400,
     description: "Advanced keyword research with relevancy & opportunity scoring, AI keyword suggestions, metadata history & benchmarking, and review tracking across up to 10 apps.",
     badge: null,
     features: [
@@ -74,16 +74,14 @@ export const PLANS: Plan[] = [
   {
     id: "enterprise",
     name: "Managed ASO",
-    priceMonthlyCents: 173640,
-    priceYearlyCents: 1736400,
-    description: "A dedicated growth manager and ASO specialist manage unlimited apps and keywords for you, with access to every feature.",
+    priceMonthlyCents: 179640,
+    priceYearlyCents: 1796400,
+    description: "Everything in Pro, plus a dedicated growth manager and ASO specialist to manage it all for you.",
     badge: null,
     features: [
+      "All in Pro Plan",
       "1 dedicated growth manager",
       "1 dedicated ASO specialist",
-      "Unlimited workspaces & apps",
-      "Unlimited keywords tracked",
-      "Unlimited competitors per app",
       "Access to all features",
       "Live chat & email support",
     ],
