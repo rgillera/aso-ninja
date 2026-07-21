@@ -81,7 +81,7 @@ const cachedGenerateSuggestions = unstable_cache(generateSuggestions, ["report-a
 // POST /api/reports/aso-suggestions
 // LLM-generated ASO recommendations layered on top of the always-on
 // deterministic checks in features/aso/reports/asoSuggestions.ts — gated to
-// Pro+ same as the other Gemini-backed feature (/api/keywords/ai-suggestions).
+// Pro, same as the other Gemini-backed feature (/api/keywords/ai-suggestions).
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as RequestBody;
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
   const planState = body.workspaceId ? await getWorkspacePlanState(body.workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json({ suggestions: [] });
+  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ suggestions: [] });
 
   const suggestions = await cachedGenerateSuggestions(body).catch(() => [] as Suggestion[]);
   return NextResponse.json({ suggestions });

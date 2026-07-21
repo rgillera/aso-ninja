@@ -34,7 +34,7 @@ export default function KeywordResearchPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
-  const canUseRelevancy = isPlanAtLeast(planSlug, "basic");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);

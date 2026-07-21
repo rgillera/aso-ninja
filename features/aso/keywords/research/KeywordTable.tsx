@@ -30,11 +30,11 @@ import type { Keyword } from "./types";
 function LockedCell() {
   return (
     <span
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-semibold text-emerald-500"
-      title="Relevancy and Opportunity require the Basic plan"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500"
+      title="Relevancy and Opportunity require the Pro plan"
     >
       <LockClosedIcon className="size-2.5" />
-      Basic
+      Pro
     </span>
   );
 }
@@ -184,7 +184,7 @@ export function KeywordTable({
   onRemoveKeyword,
 }: Props) {
   const planSlug = usePlanSlug();
-  const relevancyLocked = !isPlanAtLeast(planSlug, "basic");
+  const relevancyLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -554,7 +554,7 @@ export function KeywordTable({
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
 
-        {/* Relevancy filter — Basic and up only, since the underlying values are locked */}
+        {/* Relevancy filter — Pro and up only, since the underlying values are locked */}
         {!relevancyLocked && (
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}

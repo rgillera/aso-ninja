@@ -25,11 +25,11 @@ export function AnalyzeAllButton({ onClick, locked }: { onClick: () => void; loc
     return (
       <span
         className="flex items-center gap-1 text-xs text-gray-600 cursor-not-allowed whitespace-nowrap"
-        title="Upgrade to Pro+ to analyze all keywords at once"
+        title="Upgrade to Pro to analyze all keywords at once"
       >
         <LockClosedIcon className="size-3" />
         + Analyze all
-        <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">Pro+</span>
+        <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">Pro</span>
       </span>
     );
   }

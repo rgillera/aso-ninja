@@ -45,6 +45,23 @@ export function UpgradeButton({
     );
   }
 
+  // Managed ASO ("enterprise" slug) is a done-for-you service staffed by an
+  // actual ASO specialist — it can't be auto-provisioned by an instant Stripe
+  // checkout the way a software tier can, so this books a call instead.
+  if (planSlug === "enterprise") {
+    const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
+    return (
+      <a
+        href={calendlyUrl ?? "mailto:hello@appaso.io"}
+        target={calendlyUrl ? "_blank" : undefined}
+        rel={calendlyUrl ? "noopener noreferrer" : undefined}
+        className="mt-6 block w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
+      >
+        Book a call
+      </a>
+    );
+  }
+
   const isCancelToFree = planSlug === "free";
 
   if (isCancelToFree && scheduledFor !== undefined) {

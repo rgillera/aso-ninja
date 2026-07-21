@@ -266,7 +266,7 @@ function checkLowLocalization(isIos: boolean, languageCount: number | undefined,
 
 // Deterministic, text-only ASO checks — no network call, so these always
 // render immediately regardless of plan tier (unlike the LLM-generated
-// suggestions layered on top in ReportPage, which are Pro+ only).
+// suggestions layered on top in ReportPage, which are Pro only).
 export function computeDeterministicSuggestions(input: SuggestionInput): Suggestion[] {
   const {
     appName, title, subtitle, description, releaseNotes, isIos, nameLimit, subtitleLimit,

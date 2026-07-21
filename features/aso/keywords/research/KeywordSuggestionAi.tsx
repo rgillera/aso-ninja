@@ -151,7 +151,7 @@ function AISuggestionsSection({
 export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
   const workspaceId = useWorkspaceId();
   const planSlug     = usePlanSlug();
-  const locked       = !isPlanAtLeast(planSlug, "pro_plus");
+  const locked       = !isPlanAtLeast(planSlug, "pro");
   const [data, setData]       = useState<AISuggestionsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetched, setFetched] = useState<string | null>(null);
@@ -203,10 +203,10 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
         <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-500 mb-3">
           <LockClosedIcon className="size-2.5" />
-          Pro+
+          Pro
         </span>
-        <p className="text-xs font-medium text-gray-400">AI Suggestions is a Pro+ feature</p>
-        <p className="mt-1 text-xs text-gray-600 max-w-xs">Upgrade to Pro+ or above to generate AI-powered keyword ideas for this app.</p>
+        <p className="text-xs font-medium text-gray-400">AI Suggestions is a Pro feature</p>
+        <p className="mt-1 text-xs text-gray-600 max-w-xs">Upgrade to Pro or above to generate AI-powered keyword ideas for this app.</p>
       </div>
     );
   }

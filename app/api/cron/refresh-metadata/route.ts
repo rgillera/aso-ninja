@@ -24,7 +24,7 @@ type AppRow = {
   country: string | null;
 };
 
-// Timeline (and the history it's built from) is a Pro+ feature — apps
+// Timeline (and the history it's built from) is a Pro feature — apps
 // belonging to workspaces below that plan are never fetched or recorded,
 // same gate as the live /api/metadata/timeline route.
 export async function GET(req: Request) {
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   });
 
   if (staleError) return NextResponse.json({ error: staleError.message }, { status: 500 });
-  if (!eligible?.length) return NextResponse.json({ recorded: 0, message: "No Pro+ apps pending today's snapshot" });
+  if (!eligible?.length) return NextResponse.json({ recorded: 0, message: "No Pro apps pending today's snapshot" });
 
   let recorded = 0;
   let failed = 0;

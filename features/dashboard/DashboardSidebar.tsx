@@ -36,15 +36,13 @@ const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   free: { label: "Free", className: "bg-white/5 text-gray-400" },
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
-  pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-500" },
-  enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
+  enterprise: { label: "Managed ASO", className: "bg-amber-400/10 text-amber-400" },
 };
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
-  pro_plus: { label: "Pro+", className: "bg-red-500/10 text-red-500" },
-  enterprise: { label: "Enterprise", className: "bg-amber-400/10 text-amber-400" },
+  enterprise: { label: "Managed ASO", className: "bg-amber-400/10 text-amber-400" },
 };
 
 function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
@@ -67,10 +65,10 @@ const metadataLinks: { label: string; appPath: string; fallback: string; preview
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro_plus" },
+  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
-  { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
-  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro_plus" },
+  { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro" },
+  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [

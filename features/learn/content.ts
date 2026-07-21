@@ -66,9 +66,9 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Pick a topic from the list on the left at any time to see exactly what it's for, why it matters, and how to use it",
         ],
         goodToKnow: [
-          "A Basic, Pro, or Pro+ label next to a topic shows the minimum plan required to use that feature",
+          "A Basic or Pro label next to a topic shows the minimum plan required to use that feature",
           "This guide covers ASO Intelligence only — Market Intelligence (App Explorer) isn't included here",
-          "To get the full benefit of this, we recommend you getting Pro+ to unlock full research and tracking functionality",
+          "To get the full benefit of this, we recommend getting Pro to unlock full research and tracking functionality",
         ],
         cta: {
           heading: "Need help?",
@@ -100,11 +100,11 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Check your ASO Score whenever you're about to plan a listing update, and again after it goes live to confirm it helped",
           "Add your closest rivals to unlock a side-by-side score and metadata comparison",
           "Work through ASO Suggestions like a checklist, dismissing each one as you act on it",
-          "On Pro+, lean on the AI-generated suggestions for extra rewrite ideas when you're stuck",
+          "On Pro, lean on the AI-generated suggestions for extra rewrite ideas when you're stuck",
         ],
         goodToKnow: [
           "The score, competitor comparison, and metadata comparison are available on every plan, subject to your plan's competitor limit",
-          "AI-generated suggestions in the ASO Suggestions panel require Pro+",
+          "AI-generated suggestions in the ASO Suggestions panel require Pro",
         ],
       },
     ],
@@ -204,7 +204,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Use Live Search when you want to sanity-check how a term actually performs in the store today",
         ],
         goodToKnow: [
-          "Relevancy, Opportunity, and AI Suggestions require Pro+; translating foreign-language keywords also requires Pro+",
+          "Relevancy, Opportunity, and AI Suggestions require Pro; translating foreign-language keywords requires Basic",
           "Adding keywords is subject to your workspace's tracked-app and keyword limits",
         ],
       },
@@ -212,7 +212,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-combinations",
         label: "Long Tail Keywords",
         icon: PuzzlePieceIcon,
-        minPlan: "pro_plus",
+        minPlan: "pro",
         description:
           "Long Tail Keywords helps you find keyword phrases you'd never think to type yourself. It's for expanding a small list of seed ideas into many realistic, rankable variants fast.",
         benefits: [
@@ -227,7 +227,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         ],
         goodToKnow: [
           "Keyword groups are saved locally in your browser per app, not synced across devices",
-          "Requires Pro+",
+          "Requires Pro",
         ],
       },
       {
@@ -253,7 +253,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-ranked",
         label: "Ranked Keywords",
         icon: ListBulletIcon,
-        minPlan: "pro_plus",
+        minPlan: "pro",
         description:
           "Ranked Keywords shows what you're already ranking for organically, without lifting a finger. It's for discovering hidden strengths in your current listing you didn't know you had.",
         benefits: [
@@ -266,13 +266,13 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Move the best discoveries into Research so they get proper ongoing tracking",
           "Watch the \"Ranked Over Time\" trend as an overall gauge of organic keyword health",
         ],
-        goodToKnow: ["Requires Pro+"],
+        goodToKnow: ["Requires Pro"],
       },
       {
         id: "keywords-intent",
         label: "Group by Intent",
         icon: TagIcon,
-        minPlan: "pro_plus",
+        minPlan: "pro",
         description:
           "Group by Intent clusters your tracked keywords into the actual use cases people search for, so you can build ASA campaigns around intent instead of a flat keyword list.",
         benefits: [
@@ -290,7 +290,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         goodToKnow: [
           "Regenerating reclassifies every tracked keyword and confirms first — any keyword sitting in a generated theme that doesn't recur moves back to \"Other\"",
           "Custom (manually added) intents and their keywords are never touched by a regenerate",
-          "Requires Pro+",
+          "Requires Pro",
         ],
       },
     ],

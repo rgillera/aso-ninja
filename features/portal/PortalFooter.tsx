@@ -16,7 +16,6 @@ const links = {
     { label: "Contact", href: "/contact" },
   ],
   Others: [
-    { label: "Managed ASO", href: "/managed-aso" },
     { label: "App Landing\nPage Generator", href: "https://apppanda.io/" },
   ],
   Legal: [

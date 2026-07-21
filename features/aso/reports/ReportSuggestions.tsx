@@ -25,7 +25,7 @@ const PAGE_SIZE = 5;
 
 export function ReportSuggestions({ bundleId, store, initialDismissed, suggestions }: ReportSuggestionsProps) {
   const planSlug = usePlanSlug();
-  const locked = !isPlanAtLeast(planSlug, "pro_plus");
+  const locked = !isPlanAtLeast(planSlug, "pro");
   const [expanded, setExpanded] = useState(true);
   const [dismissed, setDismissed] = useState<string[]>(initialDismissed);
   const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
@@ -59,10 +59,10 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
             <span className="mb-3 flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-500">
               <LockClosedIcon className="size-2.5" />
-              Pro+
+              Pro
             </span>
-            <p className="text-xs font-medium text-gray-400">ASO Suggestions is a Pro+ feature</p>
-            <p className="mt-1 max-w-xs text-xs text-gray-600">Upgrade to Pro+ or above to see ASO recommendations for this app.</p>
+            <p className="text-xs font-medium text-gray-400">ASO Suggestions is a Pro feature</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-600">Upgrade to Pro or above to see ASO recommendations for this app.</p>
           </div>
         )}
       </div>

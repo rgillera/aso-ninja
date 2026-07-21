@@ -545,12 +545,13 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Relevancy/opportunity are Basic-and-up features — anything below that plan
+  // Relevancy/opportunity are Pro-and-up features — anything below that plan
   // never triggers the Gemini embedding/LLM pass, and never sees a value even
-  // if one was cached from before a downgrade.
+  // if one was cached from before a downgrade. Pro and Enterprise both have
+  // relevancy_limit = null (unlimited) — only the plan tier gates access.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const canUseRelevancy = isPlanAtLeast(planSlug, "basic");
+  const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
@@ -558,7 +559,7 @@ export async function GET(request: NextRequest) {
     const { data: rows } = await supabase
       .from("keyword_metrics")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select("volume, diff, chance, opportunity, relevancy, rank, intent_theme_id, updated_at, keywords(term)" as any)
+      .select("volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, updated_at, keywords(term)" as any)
       .eq("app_id", appId);
 
     for (const row of (rows ?? []) as any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -566,12 +567,15 @@ export async function GET(request: NextRequest) {
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
-      // A row saved while the workspace was below Basic+ (or from a fast-mode
-      // add) has relevancy/opportunity permanently null. If this request can
-      // now compute them, don't trust this cache row for this term — let it
-      // fall through to `uncached` below so it actually gets recomputed
-      // instead of staying stuck at null forever.
-      if (!fast && canUseRelevancy && row.relevancy === null && !isBrand) continue;
+      // A row saved while the workspace was below Pro (or from a fast-mode
+      // add) never actually got scored — `relevancy_scored` is the
+      // authoritative marker for that (the `relevancy` column itself can't
+      // be trusted: it's `not null default 0`, so a never-scored row is
+      // indistinguishable from a genuine 0 score). If this request can now
+      // compute a real score, don't trust this cache row for this term — let
+      // it fall through to `uncached` below instead of staying stuck
+      // unscored forever.
+      if (!fast && canUseRelevancy && !row.relevancy_scored && !isBrand) continue;
       const relevancy = isBrand ? 100 : (row.relevancy ?? null);
       const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
       const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
@@ -598,7 +602,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch app description + embed it once; shared across all keyword lookups.
     // Skipped entirely when relevancy won't be computed (fast mode, the
-    // workspace isn't Basic+, or Gemini is unreachable) since it's only ever
+    // workspace isn't Pro, or Gemini is unreachable) since it's only ever
     // used for that pass.
     const appMeta: AppMeta = withRelevancy && aiReachable && appName
       ? await (store === "android"
@@ -658,7 +662,7 @@ export async function GET(request: NextRequest) {
   }
 
   const merged = { ...dbCache, ...freshMetrics };
-  // Strip relevancy/opportunity for anything below Basic+ — including values
+  // Strip relevancy/opportunity for anything below Pro — including values
   // read back from the 7-day DB cache, in case the workspace downgraded since
   // they were computed.
   if (!canUseRelevancy) {

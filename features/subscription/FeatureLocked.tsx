@@ -6,8 +6,7 @@ import type { ComponentType } from "react";
 const TIER_LABEL: Partial<Record<PlanSlug, string>> = {
   basic: "Basic",
   pro: "Pro",
-  pro_plus: "Pro+",
-  enterprise: "Enterprise",
+  enterprise: "Managed ASO",
 };
 
 const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button: string; check: string }>> = {
@@ -18,12 +17,6 @@ const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button:
     check: "text-emerald-500/80",
   },
   pro: {
-    icon: "text-red-500",
-    ring: "bg-red-500/10",
-    button: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-    check: "text-red-500/80",
-  },
-  pro_plus: {
     icon: "text-red-500",
     ring: "bg-red-500/10",
     button: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
@@ -80,7 +73,7 @@ export function FeatureLocked({
         href="/dashboard/subscription"
         className={`mt-6 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${color.button}`}
       >
-        Upgrade to {TIER_LABEL[minPlan] ?? "Enterprise"}
+        Upgrade to {TIER_LABEL[minPlan] ?? "Managed ASO"}
       </Link>
     </div>
   );

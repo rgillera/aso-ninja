@@ -50,7 +50,7 @@ type Props = {
 
 export default function ReportPage({ app, storeData, benchmark = null, keywordMetrics = [], initialDismissedSuggestions = [] }: Props) {
   const planSlug = usePlanSlug();
-  const suggestionsLocked = !isPlanAtLeast(planSlug, "pro_plus");
+  const suggestionsLocked = !isPlanAtLeast(planSlug, "pro");
   const [competitors, setCompetitors] = useState<CompetitorWithScore[]>([]);
   const [showCompetitorModal, setShowCompetitorModal] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -201,7 +201,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
   const [aiSuggestions, setAiSuggestions] = useState<Suggestion[]>([]);
   useEffect(() => {
     // The whole ASO Suggestions card renders a locked/upsell state instead of
-    // this data for non-Pro+ workspaces (see ReportSuggestions) — no point
+    // this data for non-Pro workspaces (see ReportSuggestions) — no point
     // spending a request on it.
     if (!storeData || suggestionsLocked) return;
     let cancelled = false;

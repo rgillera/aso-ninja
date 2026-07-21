@@ -10,7 +10,6 @@ const variantByPlan: Record<PlanId, Variant> = {
   free: "default",
   basic: "default",
   pro: "featured",
-  pro_plus: "default",
   enterprise: "premium",
 };
 
@@ -42,6 +41,11 @@ const plans = PLANS.map((plan) => {
     cta: isFree ? "Create free account" : "Upgrade now",
     variant: variantByPlan[plan.id],
     contactSales: false,
+    // Managed ASO is a done-for-you service staffed by an actual specialist —
+    // it can't be auto-provisioned by instant checkout the way a software
+    // tier can, so this books a call instead (see UpgradeButton.tsx, which
+    // does the same thing for the logged-in /dashboard/subscription page).
+    bookACall: plan.id === "enterprise",
   };
 });
 
@@ -130,7 +134,7 @@ export default function PortalPricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-6 lg:max-w-[90rem] lg:grid-cols-5 lg:items-stretch" style={{ paddingTop: "1rem" }}>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-6 lg:max-w-7xl lg:grid-cols-4 lg:items-stretch" style={{ paddingTop: "1rem" }}>
           {plans.map((plan) => {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
@@ -184,6 +188,24 @@ export default function PortalPricing() {
                     </li>
                   ))}
                 </ul>
+
+                {plan.bookACall ? (
+                  <a
+                    href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
+                    target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
+                    rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
+                    className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
+                  >
+                    Book a call
+                  </a>
+                ) : (
+                  <a
+                    href={billing.href}
+                    className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
+                  >
+                    {plan.cta}
+                  </a>
+                )}
               </div>
             );
           })}

@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 
   if (!appId) return NextResponse.json({ error: "appId is required" }, { status: 400 });
 
-  // Timeline is a Pro+ feature — anything below that plan never triggers a
+  // Timeline is a Pro feature — anything below that plan never triggers a
   // store fetch/snapshot write, matching the ai-suggestions/aso-suggestions
   // gating pattern.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;

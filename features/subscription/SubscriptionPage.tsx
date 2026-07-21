@@ -44,7 +44,7 @@ type Billing = "monthly" | "yearly";
 
 function nameColor(planId: PlanId) {
   if (planId === "basic") return "text-emerald-500";
-  if (planId === "pro" || planId === "pro_plus") return "text-red-500";
+  if (planId === "pro") return "text-red-500";
   if (planId === "enterprise") return "text-amber-400";
   return "text-white";
 }
@@ -148,7 +148,7 @@ export default function SubscriptionPage({
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5" style={{ paddingTop: "1rem" }}>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: "1rem" }}>
           {PLANS.map((plan, index) => {
             const isCurrent = plan.id === currentPlanId;
             const isPopular = plan.id === "pro";

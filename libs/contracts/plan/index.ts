@@ -1,4 +1,4 @@
-export type PlanSlug = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
+export type PlanSlug = "free" | "basic" | "pro" | "enterprise";
 
 export type Plan = {
   id: string;
@@ -11,6 +11,7 @@ export type Plan = {
   member_limit: number | null;
   app_limit: number | null;
   competitor_limit: number | null;
+  relevancy_limit: number | null;
   stripe_product_id: string | null;
   stripe_price_id: string | null;
   stripe_price_id_yearly: string | null;
@@ -52,4 +53,6 @@ export type WorkspaceUsage = {
   member_limit: number | null;
   workspace_count: number;
   workspace_limit: number | null;
+  relevancy_scored_count: number;
+  relevancy_limit: number | null;
 };

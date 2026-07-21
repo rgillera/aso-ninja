@@ -105,8 +105,20 @@ export async function POST(request: NextRequest) {
             volume:      m.volume,
             diff:        m.diff,
             chance:      m.chance,
-            opportunity: m.opportunity,
-            relevancy:   m.relevancy,
+            // Coalesced rather than passed through raw: keyword_metrics.relevancy/
+            // opportunity are `not null default 0`, so a plan that leaves these
+            // null (below Pro, or fast-mode — see app/api/keywords/metrics/route.ts)
+            // would otherwise fail this whole batched upsert with a NOT NULL
+            // violation — silently, since the error isn't checked — and take
+            // every other keyword in the same save call down with it.
+            opportunity: m.opportunity ?? 0,
+            relevancy:   m.relevancy ?? 0,
+            // Marks whether this row was actually scored (vs. left at the
+            // NOT NULL default above). Every row in this array must carry the
+            // same keys — PostgREST rejects a bulk upsert otherwise ("All
+            // object keys must match") — so this stays unconditional rather
+            // than a term-by-term conditional spread.
+            relevancy_scored: m.relevancy !== null && m.relevancy !== undefined,
             rank:        m.rank ?? null,
             // Undefined (metrics computed before intent classification existed,
             // e.g. fast-mode or old cache rows) must not stomp a previously

@@ -111,11 +111,11 @@ export async function GET(request: NextRequest) {
 
   if (!appName) return NextResponse.json(EMPTY);
 
-  // AI Suggestions is a Pro+ feature — anything below that plan never
+  // AI Suggestions is a Pro feature — anything below that plan never
   // triggers the Gemini LLM pass.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro_plus")) return NextResponse.json(EMPTY);
+  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
     generateKeywords(appName, description, "discovery", 10),

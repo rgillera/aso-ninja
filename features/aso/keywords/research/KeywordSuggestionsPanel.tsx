@@ -40,7 +40,7 @@ export function KeywordSuggestionsPanel({
   onTranslateToggle,
 }: Props) {
   const planSlug = usePlanSlug();
-  const aiLocked = !isPlanAtLeast(planSlug, "pro_plus");
+  const aiLocked = !isPlanAtLeast(planSlug, "pro");
   const [open,       setOpen]       = useState(true);
   const [activeTab,  setActiveTab]  = useState<string>(SUGGESTION_TABS[0].label);
 
@@ -87,7 +87,7 @@ export function KeywordSuggestionsPanel({
                     {tab.label}
                     {aiLocked && (
                       <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">
-                        Pro+
+                        Pro
                       </span>
                     )}
                   </span>
