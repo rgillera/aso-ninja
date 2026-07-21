@@ -36,7 +36,7 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
             <span className="block text-indigo-400">Grow faster.</span>
           </h1>
           <p className="mt-8 text-lg font-medium text-gray-400 sm:text-xl">
-            Get the intelligence your app needs, with keyword tracking, metadata optimization, competitor analysis, and review monitoring in one workspace.
+            Get the intelligence your app needs, with unlimited keyword tracking, metadata optimization, competitor analysis, and review monitoring in one workspace.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-y-4 gap-x-6 sm:flex-row">
             <a

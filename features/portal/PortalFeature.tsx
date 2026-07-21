@@ -11,7 +11,7 @@ const features = [
   {
     name: "Keyword Tracking",
     description:
-      "Track keyword rankings across App Store and Google Play. Get daily snapshots and see rank changes over time so you know what's moving.",
+      "Track unlimited keyword rankings across App Store and Google Play. Get daily snapshots and see rank changes over time so you know what's moving.",
     icon: MagnifyingGlassIcon,
   },
   {
