@@ -132,7 +132,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
       });
     }, 350);
     return () => { if (debounce.current) clearTimeout(debounce.current); };
-  }, [query]);
+  }, [query, country]);
 
   // Close on outside click
   useEffect(() => {
