@@ -29,16 +29,16 @@ const plans = PLANS.map((plan) => {
     name: plan.name.replace(/ Plan$/, ""),
     monthly: {
       price: isFree ? "Free" : formatPrice(plan.priceMonthlyCents),
-      href: `/signup?plan=${plan.id}&billing=monthly`,
+      signupHref: `/signup?plan=${plan.id}&billing=monthly&next=/dashboard/subscription`,
     },
     yearly: {
       price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
-      href: `/signup?plan=${plan.id}&billing=yearly`,
+      signupHref: `/signup?plan=${plan.id}&billing=yearly&next=/dashboard/subscription`,
     },
     description: plan.description,
     badge: plan.badge,
     features: plan.features,
-    cta: isFree ? "Create free account" : "Upgrade now",
+    signupCta: isFree ? "Create free account" : "Upgrade now",
     variant: variantByPlan[plan.id],
     contactSales: false,
     // Managed ASO is a done-for-you service staffed by an actual specialist —
@@ -95,7 +95,7 @@ const cardStyles: Record<Variant, {
   },
 };
 
-export default function PortalPricing() {
+export default function PortalPricing({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [yearly, setYearly] = useState(true);
 
   return (
@@ -139,6 +139,16 @@ export default function PortalPricing() {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
             const isFree = plan.name === "Free";
+            const href = isAuthenticated
+              ? isFree
+                ? "/dashboard"
+                : "/dashboard/subscription"
+              : billing.signupHref;
+            const cta = isAuthenticated
+              ? isFree
+                ? "Go to dashboard"
+                : "Upgrade now"
+              : plan.signupCta;
             return (
               <div
                 key={plan.name}
@@ -200,10 +210,10 @@ export default function PortalPricing() {
                   </a>
                 ) : (
                   <a
-                    href={billing.href}
+                    href={href}
                     className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
                   >
-                    {plan.cta}
+                    {cta}
                   </a>
                 )}
               </div>

@@ -18,7 +18,7 @@ export default async function PortalPage() {
       <PortalHero isAuthenticated={isAuthenticated} />
       <PortalHowItWorks />
       <PortalFeature />
-      <PortalPricing />
+      <PortalPricing isAuthenticated={isAuthenticated} />
       <PortalTestimonials />
       <PortalFooter />
     </div>

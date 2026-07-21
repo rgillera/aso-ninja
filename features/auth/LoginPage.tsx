@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 import { loginAction, signInWithGoogleAction } from "./actions";
 
-export default function LoginPage() {
+type LoginPageProps = { next?: string };
+
+export default function LoginPage({ next }: LoginPageProps) {
   const [state, action, pending] = useActionState(loginAction, null);
 
   return (
@@ -13,7 +15,10 @@ export default function LoginPage() {
           <h1 className="mt-6 text-2xl font-semibold text-white">Sign in to your account</h1>
           <p className="mt-2 text-sm text-gray-400">
             Don&apos;t have an account?{" "}
-            <a href="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+            <a
+              href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+              className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+            >
               Sign up free
             </a>
           </p>
@@ -21,6 +26,7 @@ export default function LoginPage() {
 
         <div className="bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-8">
           <form action={action} className="space-y-5">
+            {next && <input type="hidden" name="next" value={next} />}
             {state?.error && typeof state.error === "string" && (
               <div className="rounded-lg bg-red-500/10 ring-1 ring-red-500/20 px-4 py-3 text-sm text-red-400">
                 {state.error}
@@ -78,6 +84,7 @@ export default function LoginPage() {
           </div>
 
           <form action={signInWithGoogleAction}>
+            {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
               className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-900 ring-1 ring-white/10 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"

@@ -43,8 +43,10 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
+    const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    url.pathname = next?.startsWith("/") ? next : "/dashboard";
+    url.search = "";
     return NextResponse.redirect(url);
   }
 

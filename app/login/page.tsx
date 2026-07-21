@@ -1,5 +1,8 @@
 import LoginPage from "@/features/auth/LoginPage";
 
-export default function Page() {
-  return <LoginPage />;
+type PageProps = { searchParams: Promise<{ next?: string }> };
+
+export default async function Page({ searchParams }: PageProps) {
+  const { next } = await searchParams;
+  return <LoginPage next={next?.startsWith("/") ? next : undefined} />;
 }

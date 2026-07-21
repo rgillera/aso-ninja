@@ -10,6 +10,7 @@ export async function loginAction(
 ): Promise<AuthState> {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const next = formData.get("next") as string | null;
 
   if (!email || !password) return { error: "All fields are required." };
 
@@ -18,7 +19,7 @@ export async function loginAction(
 
   if (error) return { error: error.message };
 
-  redirect("/dashboard");
+  redirect(next?.startsWith("/") ? next : "/dashboard");
 }
 
 export async function registerAction(
@@ -29,6 +30,8 @@ export async function registerAction(
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;
+  const next = formData.get("next") as string | null;
+  const safeNext = next?.startsWith("/") ? next : null;
 
   if (!name || !email || !password || !confirm)
     return { error: "All fields are required." };
@@ -44,7 +47,7 @@ export async function registerAction(
     password,
     options: {
       data: { full_name: name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
     },
   });
 
@@ -54,7 +57,8 @@ export async function registerAction(
   // No session means email confirmation is required before the account is
   // active — the workspace gets created in /auth/callback once they confirm.
   if (!data.session) {
-    redirect(`/signup/verify-email?email=${encodeURIComponent(email)}`);
+    const verifyUrl = `/signup/verify-email?email=${encodeURIComponent(email)}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
+    redirect(verifyUrl);
   }
 
   // The signup trigger already joined any workspace(s) this email was
@@ -73,7 +77,7 @@ export async function registerAction(
     if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
   }
 
-  redirect("/dashboard");
+  redirect(safeNext ?? "/dashboard");
 }
 
 export type ResendState = { error?: string; success?: boolean } | null;
@@ -84,13 +88,15 @@ export async function resendVerificationEmailAction(
 ): Promise<ResendState> {
   const email = formData.get("email") as string;
   if (!email) return { error: "Email is required." };
+  const next = formData.get("next") as string | null;
+  const safeNext = next?.startsWith("/") ? next : null;
 
   const supabase = await createClient();
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
     },
   });
 
@@ -139,12 +145,15 @@ export async function resetPasswordAction(
   redirect("/dashboard");
 }
 
-export async function signInWithGoogleAction(): Promise<void> {
+export async function signInWithGoogleAction(formData: FormData): Promise<void> {
+  const next = formData.get("next") as string | null;
+  const safeNext = next?.startsWith("/") ? next : null;
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
     },
   });
 

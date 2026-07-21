@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { resendVerificationEmailAction } from "./actions";
 
-export default function VerifyEmailPage({ email }: { email: string }) {
+export default function VerifyEmailPage({ email, next }: { email: string; next?: string }) {
   const [state, action, pending] = useActionState(resendVerificationEmailAction, null);
 
   return (
@@ -48,6 +48,7 @@ export default function VerifyEmailPage({ email }: { email: string }) {
           <p className="text-sm text-gray-400">Didn&apos;t get the email?</p>
           <form action={action} className="mt-3">
             <input type="hidden" name="email" value={email} />
+            {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
               disabled={pending}
@@ -60,7 +61,10 @@ export default function VerifyEmailPage({ email }: { email: string }) {
 
         <p className="mt-6 text-sm text-gray-500">
           Wrong email?{" "}
-          <a href="/signup" className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
+          <a
+            href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+            className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+          >
             Sign up again
           </a>
         </p>
