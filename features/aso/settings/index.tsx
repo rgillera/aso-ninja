@@ -376,7 +376,9 @@ export default function AppConnectionSettings({ app }: Props) {
               Connect this app to pull its real daily download total, so the keyword research
               table can show an Estimated Downloads figure per keyword instead of no data at all.
               Neither store attributes downloads to specific search terms, so this splits the real
-              total across your tracked keywords by search volume and current rank.
+              total across your tracked keywords by search volume and current rank. One credential
+              covers every country you track this app in — connecting or disconnecting here applies
+              to all of them, not just this storefront.
             </p>
           </div>
 

@@ -11,24 +11,41 @@ import type { AppleStoreCredential, GoogleStoreCredential, ConnectionStatus } fr
 type PageProps = { params: Promise<{ id: string }> };
 
 // GET /api/apps/[id]/connect — current connection status for the settings page.
+// Status/last-synced/error stay per-country (app_store_connections, keyed by
+// this app_id), but the credential itself — and its display label — are
+// shared across every country this app is tracked in (app_store_credentials,
+// keyed by workspace/store/bundle_id), so that's a second lookup.
 export async function GET(_request: NextRequest, { params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("app_store_connections")
-    .select("status, display_label, last_error, last_synced_on")
-    .eq("app_id", id)
-    .maybeSingle();
+  const [{ data: connection }, { data: app }] = await Promise.all([
+    supabase
+      .from("app_store_connections")
+      .select("status, last_error, last_synced_on")
+      .eq("app_id", id)
+      .maybeSingle(),
+    supabase.from("apps").select("workspace_id, store, bundle_id").eq("id", id).maybeSingle(),
+  ]);
 
-  if (!data) return NextResponse.json({ connected: false } satisfies ConnectionStatus);
+  if (!connection) return NextResponse.json({ connected: false } satisfies ConnectionStatus);
+
+  const { data: credential } = app
+    ? await supabase
+        .from("app_store_credentials")
+        .select("display_label")
+        .eq("workspace_id", app.workspace_id)
+        .eq("store", app.store)
+        .eq("bundle_id", app.bundle_id)
+        .maybeSingle()
+    : { data: null };
 
   return NextResponse.json({
     connected: true,
-    status: data.status,
-    displayLabel: data.display_label,
-    lastError: data.last_error,
-    lastSyncedOn: data.last_synced_on,
+    status: connection.status,
+    displayLabel: credential?.display_label ?? null,
+    lastError: connection.last_error,
+    lastSyncedOn: connection.last_synced_on,
   } satisfies ConnectionStatus);
 }
 
