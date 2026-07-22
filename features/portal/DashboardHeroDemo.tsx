@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   MagnifyingGlassIcon,
   MagnifyingGlassCircleIcon,
@@ -43,6 +44,11 @@ const ROWS = [
 ];
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+
+// The mockup below is laid out at a fixed desktop width. Below that width we
+// scale the whole thing down to fit instead of letting it overflow into a
+// tall, sideways-scrolling slice on mobile.
+const DEMO_WIDTH = 1000;
 
 function NavRow({
   icon: Icon,
@@ -153,8 +159,37 @@ function rankColor(v: number) {
 }
 
 export function DashboardHeroDemo() {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [naturalHeight, setNaturalHeight] = useState(0);
+
+  useEffect(() => {
+    const el = outerRef.current;
+    const inner = innerRef.current;
+    if (!el || !inner) return;
+    const update = () => {
+      setScale(Math.min(1, el.clientWidth / DEMO_WIDTH));
+      setNaturalHeight(inner.scrollHeight);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Below DEMO_WIDTH the mockup is pinned to its designed width and scaled
+  // down to fit; above it, it stays fluid (same as before this ever measured
+  // anything) so it keeps filling wider containers instead of leaving a gap.
+  const scaled = scale < 1;
+
   return (
-    <div className="overflow-x-auto rounded-xl">
+    <div
+      ref={outerRef}
+      className={`rounded-xl ${scaled ? "overflow-hidden" : "overflow-x-auto"}`}
+      style={scaled ? { height: naturalHeight * scale } : undefined}
+    >
+      <div ref={innerRef} style={scaled ? { width: DEMO_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" } : undefined}>
       <div className="flex min-w-[1000px] rounded-xl bg-[#0d0f14] ring-1 ring-white/[0.07] overflow-hidden">
         {/* Sidebar — mirrors features/dashboard/DashboardSidebar.tsx's structure,
             labels, and icons, collapsed to the state it'd be in on this page
@@ -356,6 +391,7 @@ export function DashboardHeroDemo() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
