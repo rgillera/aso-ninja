@@ -44,10 +44,15 @@ export type AppleSalesResult =
   | { ok: false; status: number; reportMissing: boolean };
 
 // date: YYYY-MM-DD. appleStoreId: the app's numeric App Store ID (apps.store_id for iOS).
+// countryCode: the app row's storefront (apps.country), e.g. "US" — matched
+// against the report's "Country Code" column so the same app tracked under
+// multiple storefronts each gets only its own territory's downloads instead
+// of every row's copy of the worldwide total.
 export async function fetchDailyDownloads(
   credential: AppleStoreCredential,
   appleStoreId: string,
   date: string,
+  countryCode: string,
 ): Promise<AppleSalesResult> {
   const token = signAppStoreConnectJwt(credential);
   const params = new URLSearchParams({
@@ -76,7 +81,11 @@ export async function fetchDailyDownloads(
   const rows = parseTsv(tsv);
 
   const downloads = rows
-    .filter((r) => r["Apple Identifier"] === appleStoreId && DOWNLOAD_PRODUCT_TYPES.has(r["Product Type Identifier"]))
+    .filter((r) =>
+      r["Apple Identifier"] === appleStoreId &&
+      DOWNLOAD_PRODUCT_TYPES.has(r["Product Type Identifier"]) &&
+      r["Country Code"]?.toUpperCase() === countryCode.toUpperCase()
+    )
     .reduce((sum, r) => sum + (parseInt(r["Units"], 10) || 0), 0);
 
   return { ok: true, downloads };
@@ -87,11 +96,11 @@ export async function fetchDailyDownloads(
 // implausible, so a failure response here unambiguously means bad
 // credentials rather than "report not generated yet".
 export async function testAppleCredential(
-  credential: AppleStoreCredential, appleStoreId: string
+  credential: AppleStoreCredential, appleStoreId: string, countryCode: string
 ): Promise<{ valid: boolean; error?: string }> {
   const testDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   try {
-    const result = await fetchDailyDownloads(credential, appleStoreId, testDate);
+    const result = await fetchDailyDownloads(credential, appleStoreId, testDate, countryCode);
     if (result.ok) return { valid: true };
     if (result.status === 401 || result.status === 403) {
       return { valid: false, error: "App Store Connect rejected these credentials. Double-check the Issuer ID, Key ID, private key, and Vendor Number." };

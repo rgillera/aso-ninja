@@ -43,11 +43,13 @@ export async function POST(request: NextRequest, { params }: PageProps) {
 
   const { data: app } = await supabase
     .from("apps")
-    .select("id, store, store_id, workspace_id")
+    .select("id, store, store_id, workspace_id, country")
     .eq("id", id)
     .maybeSingle();
 
   if (!app) return NextResponse.json({ error: "App not found" }, { status: 404 });
+  // country is nullable (see libs/store-connections/sync.ts) — same US fallback.
+  const countryCode = app.country ?? "US";
 
   // Est. Downloads is a Pro-and-up feature (same tier as Relevancy/
   // Opportunity) — checked here, not just in the display layer, so a
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     }
 
     const credential: AppleStoreCredential = { provider: "apple", issuerId, keyId, privateKey, vendorNumber };
-    const validation = await testAppleCredential(credential, app.store_id);
+    const validation = await testAppleCredential(credential, app.store_id, countryCode);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error ?? "Couldn't validate these credentials." }, { status: 400 });
     }
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     }
 
     const credential: GoogleStoreCredential = { provider: "google", serviceAccountJson, bucketId };
-    const validation = await testGoogleCredential(credential, app.store_id);
+    const validation = await testGoogleCredential(credential, app.store_id, countryCode);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error ?? "Couldn't validate these credentials." }, { status: 400 });
     }

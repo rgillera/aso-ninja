@@ -23,8 +23,12 @@ function isoDateDaysAgo(daysAgo: number): string {
 // app's real download total for the most recent day either provider has a
 // finished report for, and upserts it into app_download_history.
 export async function syncAppDownloads(appId: string, admin: AdminClient): Promise<SyncResult> {
-  const { data: app } = await admin.from("apps").select("id, store, store_id").eq("id", appId).maybeSingle();
+  const { data: app } = await admin.from("apps").select("id, store, store_id, country").eq("id", appId).maybeSingle();
   if (!app) return { ok: false, error: "App not found" };
+  // country is nullable (rows created before 20260627000007_apps_country, or
+  // via the legacy createAppAction path) — default to US, same fallback
+  // app/api/keywords/list/route.ts uses for a missing country param.
+  const countryCode = app.country ?? "US";
 
   const { data: credentialRaw, error: credError } = await admin.rpc("get_app_store_credential", { p_app_id: appId });
   if (credError) return { ok: false, error: credError.message };
@@ -34,7 +38,7 @@ export async function syncAppDownloads(appId: string, admin: AdminClient): Promi
   if (credential.provider === "apple") {
     for (let daysAgo = 1; daysAgo <= LOOKBACK_DAYS; daysAgo++) {
       const date = isoDateDaysAgo(daysAgo);
-      const result = await fetchDailyDownloads(credential, app.store_id, date);
+      const result = await fetchDailyDownloads(credential, app.store_id, date, countryCode);
 
       if (!result.ok) {
         if (result.reportMissing) continue; // try one day further back
@@ -66,7 +70,7 @@ export async function syncAppDownloads(appId: string, admin: AdminClient): Promi
   // a month boundary (e.g. testing near the 1st) is handled automatically.
   for (let daysAgo = 1; daysAgo <= LOOKBACK_DAYS; daysAgo++) {
     const date = isoDateDaysAgo(daysAgo);
-    const result = await fetchDailyInstalls(credential, app.store_id, date);
+    const result = await fetchDailyInstalls(credential, app.store_id, date, countryCode);
 
     if (!result.ok) {
       if (result.reportMissing) continue;

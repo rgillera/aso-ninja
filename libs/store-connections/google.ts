@@ -62,19 +62,24 @@ function parseCsv(text: string): Record<string, string>[] {
 
 // PROVISIONAL — see apple.ts's DOWNLOAD_PRODUCT_TYPES comment for why this
 // can't be nailed down from docs alone. Play Console's classic Cloud Storage
-// installs export uses "Daily Device Installs" in the "overview" dimension
-// file; validate against one real downloaded file before trusting this
-// number (compare against the same day's figure in Play Console's own
-// Statistics UI).
+// installs export uses "Daily Device Installs" in both the "overview" and
+// "country" dimension files; validate against one real downloaded file
+// before trusting this number (compare against the same day/country's figure
+// in Play Console's own Statistics UI).
 const DOWNLOADS_COLUMN = "Daily Device Installs";
+const COUNTRY_COLUMN = "Country";
 
 export type GoogleInstallsResult =
   | { ok: true; downloads: number }
   | { ok: false; error: string; reportMissing: boolean };
 
-// date: YYYY-MM-DD. packageName: the app's Play Store package id (apps.store_id for Android).
+// date: YYYY-MM-DD. packageName: the app's Play Store package id (apps.store_id
+// for Android). countryCode: the app row's storefront (apps.country), e.g. "US" —
+// matched against the country-dimension export's "Country" column so the same
+// app tracked under multiple storefronts each gets only its own territory's
+// installs instead of every row's copy of the worldwide total.
 export async function fetchDailyInstalls(
-  credential: GoogleStoreCredential, packageName: string, date: string
+  credential: GoogleStoreCredential, packageName: string, date: string, countryCode: string
 ): Promise<GoogleInstallsResult> {
   let serviceAccount: ServiceAccountKey;
   try {
@@ -91,7 +96,7 @@ export async function fetchDailyInstalls(
   }
 
   const yyyyMM = date.slice(0, 7).replace("-", "");
-  const objectName = `stats/installs/installs_${packageName}_${yyyyMM}_overview.csv`;
+  const objectName = `stats/installs/installs_${packageName}_${yyyyMM}_country.csv`;
 
   const objectRes = await fetch(
     `${STORAGE_API}/b/${encodeURIComponent(credential.bucketId)}/o/${encodeURIComponent(objectName)}?alt=media`,
@@ -107,8 +112,11 @@ export async function fetchDailyInstalls(
 
   const text = decodeStorageObject(await objectRes.arrayBuffer());
   const rows = parseCsv(text);
-  const row = rows.find((r) => r["Date"] === date);
-  if (!row) return { ok: false, error: `No row found for ${date} in this month's report.`, reportMissing: true };
+  // Case-insensitive: Play Console's country export uses lowercase codes
+  // ("us"), while apps.country is stored uppercase — compare loosely rather
+  // than betting on either side's casing.
+  const row = rows.find((r) => r["Date"] === date && r[COUNTRY_COLUMN]?.toUpperCase() === countryCode.toUpperCase());
+  if (!row) return { ok: false, error: `No row found for ${date} (${countryCode}) in this month's report.`, reportMissing: true };
 
   const downloads = parseInt(row[DOWNLOADS_COLUMN], 10);
   return { ok: true, downloads: isNaN(downloads) ? 0 : downloads };
@@ -125,13 +133,18 @@ export async function fetchDailyInstalls(
 // with silent nightly sync failures — reportMissing is therefore treated as
 // invalid too, not just outright errors. The one real false-positive case
 // this creates is the first few days of a new month, which is rare and
-// recoverable (the user just retries once that month's file exists).
+// recoverable (the user just retries once that month's file exists). Now
+// that fetchDailyInstalls filters to one country, a second false-positive
+// exists too: a country with zero installs on the test date has no row in
+// the export at all, reading identically to reportMissing. Rare in practice
+// (7 days back, any country with real installs) but worth knowing if a valid
+// low-traffic-country credential ever gets rejected here.
 export async function testGoogleCredential(
-  credential: GoogleStoreCredential, packageName: string
+  credential: GoogleStoreCredential, packageName: string, countryCode: string
 ): Promise<{ valid: boolean; error?: string }> {
   const testDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   try {
-    const result = await fetchDailyInstalls(credential, packageName, testDate);
+    const result = await fetchDailyInstalls(credential, packageName, testDate, countryCode);
     if (result.ok) return { valid: true };
     return {
       valid: false,
