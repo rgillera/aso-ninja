@@ -56,6 +56,32 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
       appId = data?.id ?? "";
     }
+
+    // Still nothing — this country has never been followed/saved, so there's
+    // no apps row to join app_store_connections against. But the bundle might
+    // already be connected under a sibling country (one credential covers
+    // every storefront — see the bundleHasCredential comment below), in which
+    // case the UI should say "Follow to enable" even before a row exists,
+    // rather than the more discouraging "Not connected".
+    if (!appId && workspaceId && bundleId && store) {
+      const planState = await getWorkspacePlanState(workspaceId);
+      const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+      if (isPlanAtLeast(planSlug, "pro")) {
+        const { data: credential } = await supabase
+          .from("app_store_credentials")
+          .select("id")
+          .eq("workspace_id", workspaceId)
+          .eq("store", store)
+          .eq("bundle_id", bundleId)
+          .maybeSingle();
+        if (credential) {
+          return NextResponse.json({
+            keywords: [],
+            downloadsConnection: { connected: false, pending: false, bundleHasCredential: true },
+          });
+        }
+      }
+    }
   }
 
   if (!appId) return NextResponse.json({ keywords: [] });
