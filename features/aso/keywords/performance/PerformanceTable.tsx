@@ -134,7 +134,7 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
 // libs/keyword-downloads-apportionment.ts. Not connected / still syncing
 // read as plain muted text rather than a clickable value, since there's
 // nothing to drill into yet.
-function DownloadsCell({ value, connected, pending, locked, onClick }: { value: number | null | undefined; connected: boolean; pending: boolean; locked: boolean; onClick: () => void }) {
+function DownloadsCell({ value, connected, pending, locked, bundleHasCredential, onClick }: { value: number | null | undefined; connected: boolean; pending: boolean; locked: boolean; bundleHasCredential?: boolean; onClick: () => void }) {
   if (locked) {
     return (
       <span
@@ -147,7 +147,15 @@ function DownloadsCell({ value, connected, pending, locked, onClick }: { value: 
     );
   }
   if (!connected) {
-    return (
+    return bundleHasCredential ? (
+      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+        Follow to enable
+        <InformationCircleIcon
+          className="size-3.5 text-gray-600 shrink-0"
+          title="This app is already connected to App Store Connect / Play Console under another country. Just follow this app (button in the header above) to start seeing real download data — no credentials needed."
+        />
+      </span>
+    ) : (
       <span className="inline-flex items-center gap-1 text-xs text-gray-600">
         Not connected
         <InformationCircleIcon
@@ -522,6 +530,7 @@ export function PerformanceTable({
                           connected={!!downloadsConnection?.connected}
                           pending={!!downloadsConnection?.pending}
                           locked={downloadsLocked}
+                          bundleHasCredential={downloadsConnection?.bundleHasCredential}
                           onClick={() => onViewDownloadsHistory(k.term)}
                         />
                       )}

@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
       .order("recorded_on", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("apps").select("workspace_id").eq("id", appId).maybeSingle(),
+    supabase.from("apps").select("workspace_id, store, bundle_id").eq("id", appId).maybeSingle(),
   ]);
 
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
@@ -153,10 +153,30 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const downloadsConnection = {
-    connected: connectionResult.data?.status === "connected",
-    pending: connectionResult.data?.status === "connected" && !connectionResult.data.last_synced_on,
-  };
+  const connected = connectionResult.data?.status === "connected";
+  const pending = connected && !connectionResult.data?.last_synced_on;
+
+  // If this specific country isn't connected, check whether the bundle
+  // already has a credential under another country — one Apple/Google
+  // account covers every storefront (app_store_credentials), so if one
+  // exists, connect_app_store_credential / trg_auto_connect_new_country_app
+  // (supabase/migrations/20260722000005_app_store_credentials.sql and
+  // ...000006_app_store_credential_rpcs_v2.sql) wire this app's connection up
+  // automatically the moment it's followed — no credentials to re-enter, so
+  // the UI can say "Follow to enable" instead of "Not connected".
+  let bundleHasCredential = false;
+  if (!connected && hasDownloadsAccess && appResult.data?.workspace_id) {
+    const { data: credential } = await supabase
+      .from("app_store_credentials")
+      .select("id")
+      .eq("workspace_id", appResult.data.workspace_id)
+      .eq("store", appResult.data.store)
+      .eq("bundle_id", appResult.data.bundle_id)
+      .maybeSingle();
+    bundleHasCredential = !!credential;
+  }
+
+  const downloadsConnection = { connected, pending, bundleHasCredential };
 
   return NextResponse.json({ keywords, downloadsConnection });
 }

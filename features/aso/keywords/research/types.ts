@@ -19,6 +19,11 @@ export type Keyword = {
   estimatedDownloads?: number | null;
 };
 
-export type DownloadsConnection = { connected: boolean; pending: boolean };
+// bundleHasCredential: true when this app's bundle already has App Store
+// Connect / Play Console credentials connected under another country, even
+// though `connected` is false for this one. Distinguishes "just follow this
+// app, it'll auto-connect" from "needs credentials entered from scratch" —
+// see app/api/keywords/list/route.ts.
+export type DownloadsConnection = { connected: boolean; pending: boolean; bundleHasCredential?: boolean };
 
 export type RankPill = typeof import("./constants").RANK_PILLS[number];

@@ -192,7 +192,15 @@ function ColumnTooltip({ text }: { text: string }) {
   );
 }
 
-function ConnectDownloadsCell() {
+function ConnectDownloadsCell({ bundleHasCredential }: { bundleHasCredential?: boolean }) {
+  if (bundleHasCredential) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+        Follow to enable
+        <ColumnTooltip text="This app is already connected to App Store Connect / Play Console under another country. Just follow this app (button in the header above) to start seeing real download data — no credentials needed." />
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
       Not connected
@@ -549,7 +557,7 @@ export function KeywordTable({
         downloadsLocked
           ? <LockedCell title="Est. Downloads requires the Pro plan" />
           : !downloadsConnection?.connected
-          ? <ConnectDownloadsCell />
+          ? <ConnectDownloadsCell bundleHasCredential={downloadsConnection?.bundleHasCredential} />
           : downloadsConnection.pending
           ? <PendingSyncCell />
           : row.estimatedDownloads != null
