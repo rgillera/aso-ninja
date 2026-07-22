@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { createAdminClient } from "@/libs/supabase/admin";
 import { testAppleCredential } from "@/libs/store-connections/apple";
 import { testGoogleCredential } from "@/libs/store-connections/google";
+import { syncAppDownloads } from "@/libs/store-connections/sync";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { AppleStoreCredential, GoogleStoreCredential, ConnectionStatus } from "@/libs/store-connections/types";
@@ -77,6 +79,7 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
+    await syncNow(id);
     return NextResponse.json({ ok: true });
   }
 
@@ -108,10 +111,26 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
+    await syncNow(id);
     return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Unsupported store." }, { status: 400 });
+}
+
+// Kicks off the first sync immediately rather than leaving the connection in
+// "pending" (clock icon in the keyword tables) until the next daily cron
+// tick — same admin-client path app/api/apps/[id]/sync-downloads/route.ts
+// uses for the manual "Sync now" button. Best-effort: if the provider's
+// report for the lookback window just isn't ready yet, syncAppDownloads
+// leaves status/last_synced_on untouched and the daily cron retries, so a
+// failure here must not fail the connect request itself.
+async function syncNow(appId: string) {
+  try {
+    await syncAppDownloads(appId, createAdminClient());
+  } catch {
+    // Swallowed — see comment above.
+  }
 }
 
 // DELETE /api/apps/[id]/connect
