@@ -145,7 +145,10 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
 
 function wordTokens(str: string): string[] {
-  return str.toLowerCase().split(/\W+/).filter((w) => w.length > 2);
+  // \W is ASCII-only, so it treats every CJK/non-Latin character as a
+  // separator — a pure-Japanese keyword would otherwise tokenize to nothing
+  // and get force-scored as irrelevant. Split on non-letter/number instead.
+  return str.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2);
 }
 
 // Returns true when the keyword is a brand/name term for this app.
@@ -164,7 +167,9 @@ function isBrandKeyword(keyword: string, appName: string): boolean {
 
   const normalizedKeyword = keyword.toLowerCase().replace(/[^a-z0-9]/g, "");
   const normalizedAppName = appName.toLowerCase().replace(/[^a-z0-9]/g, "");
-  if (normalizedKeyword === normalizedAppName) return true;
+  // Both strip to "" for any non-Latin (e.g. Japanese-titled) app/keyword —
+  // guard so two unrelated CJK strings can't vacuously "match" as empty.
+  if (normalizedKeyword && normalizedKeyword === normalizedAppName) return true;
 
   const appWordSet = new Set(appWords);
   const brandTokens = getBrandTokens(appName);
