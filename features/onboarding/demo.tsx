@@ -14,13 +14,15 @@ import { VolumeBar } from "@/features/aso/keywords/research/ui";
 // blocks. Everything here is fixed sample data, not a live API call.
 
 const EXAMPLE_KEYWORDS = [
-  { keyword: "instagram",       volume: 98, relevancy: 92, opportunity: 88, rank: 4 },
-  { keyword: "photo editor",    volume: 76, relevancy: 81, opportunity: 74, rank: 12 },
-  { keyword: "reels video",     volume: 64, relevancy: 77, opportunity: 69, rank: 19 },
-  { keyword: "story maker",     volume: 58, relevancy: 68, opportunity: 61, rank: 27 },
-  { keyword: "social media",    volume: 89, relevancy: 42, opportunity: 38, rank: null },
-  { keyword: "filters camera",  volume: 45, relevancy: 55, opportunity: 33, rank: 41 },
+  { keyword: "instagram",       volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },
+  { keyword: "photo editor",    volume: 76, relevancy: 81, opportunity: 74, estimatedDownloads: 96_000,  rank: 12 },
+  { keyword: "reels video",     volume: 64, relevancy: 77, opportunity: 69, estimatedDownloads: 58_000,  rank: 19 },
+  { keyword: "story maker",     volume: 58, relevancy: 68, opportunity: 61, estimatedDownloads: 31_000,  rank: 27 },
+  { keyword: "social media",    volume: 89, relevancy: 42, opportunity: 38, estimatedDownloads: 12_000,  rank: null },
+  { keyword: "filters camera",  volume: 45, relevancy: 55, opportunity: 33, estimatedDownloads: 6_400,   rank: 41 },
 ];
+
+const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 const RANK_HISTORY = [
   { date: "Jan 1",  position: 42 },
@@ -32,7 +34,7 @@ const RANK_HISTORY = [
   { date: "Feb 12", position: 12 },
 ];
 
-function scorePill(value: number) {
+export function scorePill(value: number) {
   const tone =
     value >= 70 ? "bg-emerald-500/15 text-emerald-400" :
     value >= 40 ? "bg-yellow-500/15 text-yellow-400" :
@@ -67,7 +69,7 @@ export function AppSearchDemo() {
 export function KeywordTableDemo() {
   return (
     <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-x-auto">
-      <table className="w-full min-w-[560px]">
+      <table className="w-full min-w-[680px]">
         <thead>
           <tr className="border-b border-white/[0.07]">
             <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
@@ -86,6 +88,9 @@ export function KeywordTableDemo() {
               </span>
             </th>
             <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+              Est. Downloads
+            </th>
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
               Rank
             </th>
           </tr>
@@ -102,6 +107,9 @@ export function KeywordTableDemo() {
               <td className="px-4 py-2.5"><VolumeBar value={row.volume} /></td>
               <td className="px-4 py-2.5">{scorePill(row.relevancy)}</td>
               <td className="px-4 py-2.5">{scorePill(row.opportunity)}</td>
+              <td className="px-4 py-2.5">
+                <span className="text-sm text-gray-300">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
+              </td>
               <td className="px-4 py-2.5">
                 {row.rank !== null
                   ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>#{row.rank}</span>
