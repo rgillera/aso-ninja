@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
+import { createAdminClient } from "@/libs/supabase/admin";
+import { syncAppDownloads } from "@/libs/store-connections/sync";
 import type { AppStore } from "@/libs/contracts";
 
 export type AppState = { error?: string; field?: string } | null;
@@ -81,6 +83,27 @@ export async function followAppAction(
     .single();
 
   if (error || !data) return { error: error?.message ?? "Failed to follow app." };
+
+  // A freshly-added country for an app that's already connected under
+  // another country gets auto-marked 'connected' by the
+  // trg_auto_connect_new_country_app trigger (one credential covers every
+  // storefront — see supabase/migrations/20260722000005_app_store_credentials.sql)
+  // but still needs its own first sync, or it'd sit pending (clock icon) until
+  // the next cron tick. Rare path (only when the bundle's already connected
+  // elsewhere) so the extra round-trip here doesn't cost most follows anything.
+  const admin = createAdminClient();
+  const { data: connection } = await admin
+    .from("app_store_connections")
+    .select("status, last_synced_on")
+    .eq("app_id", data.id)
+    .maybeSingle();
+  if (connection?.status === "connected" && !connection.last_synced_on) {
+    await syncAppDownloads(data.id, admin).catch(() => {
+      // Best-effort — see app/api/apps/[id]/connect/route.ts's
+      // syncAllSiblingCountries for why a sync failure here (report not
+      // ready yet) must not fail the surrounding action.
+    });
+  }
 
   revalidatePath("/dashboard");
   return { id: data.id };

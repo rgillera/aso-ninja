@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: PageProps) {
 
   const { data: app } = await supabase
     .from("apps")
-    .select("id, store, store_id, workspace_id, country")
+    .select("id, store, store_id, workspace_id, bundle_id, country")
     .eq("id", id)
     .maybeSingle();
 
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
-    await syncNow(id);
+    await syncAllSiblingCountries(app.workspace_id, app.store, app.bundle_id);
     return NextResponse.json({ ok: true });
   }
 
@@ -130,26 +130,42 @@ export async function POST(request: NextRequest, { params }: PageProps) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 403 });
 
-    await syncNow(id);
+    await syncAllSiblingCountries(app.workspace_id, app.store, app.bundle_id);
     return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Unsupported store." }, { status: 400 });
 }
 
-// Kicks off the first sync immediately rather than leaving the connection in
+// Kicks off the first sync immediately rather than leaving connections in
 // "pending" (clock icon in the keyword tables) until the next daily cron
 // tick — same admin-client path app/api/apps/[id]/sync-downloads/route.ts
-// uses for the manual "Sync now" button. Best-effort: if the provider's
-// report for the lookback window just isn't ready yet, syncAppDownloads
-// leaves status/last_synced_on untouched and the daily cron retries, so a
-// failure here must not fail the connect request itself.
-async function syncNow(appId: string) {
-  try {
-    await syncAppDownloads(appId, createAdminClient());
-  } catch {
-    // Swallowed — see comment above.
-  }
+// uses for the manual "Sync now" button. connect_app_store_credential just
+// fanned the *connected* status out to every country sharing this app's
+// workspace/store/bundle_id (one credential covers all of them), so every
+// one of those siblings needs its own first sync here too — otherwise only
+// the app_id actually submitted through this form gets fresh data, and every
+// other country sits pending until the next cron tick. Best-effort per
+// country: if a given country's report for the lookback window just isn't
+// ready yet, syncAppDownloads leaves that one's status/last_synced_on
+// untouched and the daily cron retries it, so a failure here must not fail
+// the connect request itself or block its siblings.
+async function syncAllSiblingCountries(workspaceId: string, store: string, bundleId: string) {
+  const admin = createAdminClient();
+  const { data: siblings } = await admin
+    .from("apps")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("store", store)
+    .eq("bundle_id", bundleId);
+
+  await Promise.all(
+    (siblings ?? []).map((sibling) =>
+      syncAppDownloads(sibling.id, admin).catch(() => {
+        // Swallowed — see comment above.
+      })
+    )
+  );
 }
 
 // DELETE /api/apps/[id]/connect
