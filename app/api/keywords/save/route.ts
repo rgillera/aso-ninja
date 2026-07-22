@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { createAdminClient } from "@/libs/supabase/admin";
+import { syncAppDownloads } from "@/libs/store-connections/sync";
 
 type MetricsMap = Record<string, {
   volume: number; diff: number; chance: number;
@@ -57,7 +59,31 @@ export async function POST(request: NextRequest) {
     // run and burn the workspace's keyword quota on terms for an app that
     // was never actually tracked.
     if (appErr) return NextResponse.json({ error: appErr.message }, { status: 403 });
-    if (app) appId = app.id;
+    if (app) {
+      appId = app.id;
+
+      // Same rare-path fixup as followAppAction (features/app/actions.ts): a
+      // country touched for the first time here (rather than via the ＋Follow
+      // button) can get auto-marked 'connected' by
+      // trg_auto_connect_new_country_app if this bundle's already connected
+      // under another country — one credential covers every storefront. Left
+      // alone, that row would sit pending (clock icon) until the next daily
+      // cron tick since nothing else kicks off its first sync. Only fires
+      // when a fresh apps row was just resolved above, not on every save.
+      const admin = createAdminClient();
+      const { data: connection } = await admin
+        .from("app_store_connections")
+        .select("status, last_synced_on")
+        .eq("app_id", appId!)
+        .maybeSingle();
+      if (connection?.status === "connected" && !connection.last_synced_on) {
+        await syncAppDownloads(appId!, admin).catch(() => {
+          // Best-effort — see app/api/apps/[id]/connect/route.ts's
+          // syncAllSiblingCountries for why a sync failure here (report not
+          // ready yet) must not fail the surrounding request.
+        });
+      }
+    }
   }
 
   // 2. Upsert keyword terms
