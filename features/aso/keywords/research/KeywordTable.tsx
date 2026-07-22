@@ -842,7 +842,6 @@ export function KeywordTable({
                     <span className={`flex-1 text-xs ${active ? "text-white" : "text-gray-400"}`}>
                       {col.label}
                     </span>
-                    {col.smart && <SparklesIcon className="size-3 text-indigo-400 shrink-0" />}
                     {col.isNew && (
                       <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-red-500 text-white leading-none">
                         NEW
