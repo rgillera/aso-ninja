@@ -57,6 +57,7 @@ export const PLANS: Plan[] = [
     features: [
       "1 workspace",
       "Unlimited keywords",
+      "Relevancy & opportunity scoring (up to 1,000 keywords)",
       "10 apps & 3 competitors per app",
       "Metadata optimization",
       "Keyword research",
@@ -66,7 +67,6 @@ export const PLANS: Plan[] = [
       "Metadata benchmark vs. category",
       "Reviews & ratings tracking",
       "AI keyword suggestions",
-      "Relevancy & opportunity scoring (up to 1,000 keywords)",
       "Live chat & email support",
     ],
   },
@@ -80,6 +80,7 @@ export const PLANS: Plan[] = [
     features: [
       "4 workspaces",
       "Unlimited keywords",
+      "Relevancy & opportunity scoring (up to 3,000 keywords)",
       "20 apps & 5 competitors per app",
       "Metadata optimization",
       "Advanced keyword research",
@@ -89,7 +90,6 @@ export const PLANS: Plan[] = [
       "Metadata benchmark vs. category",
       "Reviews & ratings tracking",
       "AI keyword suggestions",
-      "Relevancy & opportunity scoring (up to 3,000 keywords)",
       "Long tail keyword tool",
       "Ranked keywords view",
       "Group by intent",

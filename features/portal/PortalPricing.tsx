@@ -108,7 +108,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             Simple, transparent pricing
           </h2>
           <p className="mt-6 text-lg text-gray-400">
-            Start free. Scale as you grow — from solo indie devs to global publishing teams.
+            Start free. Scale as you grow, from solo indie devs to global publishing teams.
           </p>
 
           {/* Billing toggle */}
@@ -211,15 +211,15 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
           })}
         </div>
 
-        <div className="mx-auto mt-8 flex max-w-5xl flex-col items-center justify-between gap-5 rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-10 py-8 sm:flex-row">
-          <p className="text-lg text-gray-300">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
+          <p className="text-sm text-gray-300">
             Need more apps, seats, or a hands-on team? <span className="text-gray-500">Managed ASO adds a dedicated growth manager and ASO specialist.</span>
           </p>
           <a
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
             target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
             rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-white/[0.08] px-6 py-3 text-base font-semibold text-white ring-1 ring-white/[0.12] transition-colors hover:bg-white/[0.13]"
+            className="shrink-0 rounded-lg bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/[0.12] transition-colors hover:bg-white/[0.13]"
           >
             Talk to us
           </a>

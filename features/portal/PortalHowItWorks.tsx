@@ -4,7 +4,7 @@ const STEPS = [
   {
     n: 1,
     title: "Add your app",
-    description: "Search by name, bundle ID, or store URL — for iOS or Android — and start tracking it in seconds.",
+    description: "Search by name, bundle ID, or store URL (for iOS or Android) and start tracking it in seconds.",
     visual: <AppSearchDemo />,
   },
   {
