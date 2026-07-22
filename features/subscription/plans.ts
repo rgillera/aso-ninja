@@ -57,6 +57,7 @@ export const PLANS: Plan[] = [
     features: [
       "1 workspace",
       "Unlimited keywords",
+      "Est. downloads per keyword",
       "Relevancy & opportunity scoring (up to 1,000 keywords)",
       "10 apps & 3 competitors per app",
       "Metadata optimization",
@@ -80,6 +81,7 @@ export const PLANS: Plan[] = [
     features: [
       "4 workspaces",
       "Unlimited keywords",
+      "Est. downloads per keyword",
       "Relevancy & opportunity scoring (up to 3,000 keywords)",
       "20 apps & 5 competitors per app",
       "Metadata optimization",

@@ -16,12 +16,14 @@ import { PerformanceTable } from "./PerformanceTable";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { RankHistoryPanel } from "./RankHistoryPanel";
+import { DownloadsHistoryPanel } from "./DownloadsHistoryPanel";
 import {
   DEFAULT_FILTERS, wordCount,
   type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
 } from "./types";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
+import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 
@@ -74,6 +76,8 @@ export default function KeywordPerformancePage() {
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
   const [rankHistory, setRankHistory] = useState<{ term: string; storeId: string } | null>(null);
+  const [downloadsHistoryTerm, setDownloadsHistoryTerm] = useState<string | null>(null);
+  const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   // Counts in-flight adds (fast metrics → Supabase save) — keeps the Add
   // button in a loading state until the keyword is actually persisted, so
   // users don't refresh mid-add and lose it.
@@ -168,6 +172,7 @@ export default function KeywordPerformancePage() {
     if (!key || isLocked || loadedAppId.current === key) return;
     loadedAppId.current = key;
     setKeywords([]);
+    setDownloadsConnection(undefined);
     const params = activeApp?.id
       ? new URLSearchParams({ appId: activeApp.id })
       : new URLSearchParams({
@@ -178,7 +183,8 @@ export default function KeywordPerformancePage() {
         });
     fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
-      .then(({ keywords: savedRaw }: { keywords: SavedKeyword[] }) => {
+      .then(({ keywords: savedRaw, downloadsConnection: dc }: { keywords: SavedKeyword[]; downloadsConnection?: DownloadsConnection }) => {
+        setDownloadsConnection(dc);
         if (!savedRaw?.length) return;
         // Distinct keyword rows can carry the same displayed term (e.g. a
         // stray duplicate created before normalization was tightened) —
@@ -208,6 +214,7 @@ export default function KeywordPerformancePage() {
             rank:    s.rank,
             starred: starred.has(s.term.toLowerCase()),
             loading: false,
+            estimatedDownloads: s.estimatedDownloads,
           }))
         );
         if (needsMetrics.length) handleAddKeywords(needsMetrics, { silent: true });
@@ -659,6 +666,8 @@ export default function KeywordPerformancePage() {
               onLiveSearch={setLiveSearchTerm}
               onViewVolumeHistory={setVolumeHistoryTerm}
               onViewRankHistory={(term, storeId) => setRankHistory({ term, storeId })}
+              onViewDownloadsHistory={setDownloadsHistoryTerm}
+              downloadsConnection={downloadsConnection}
               onRefetchRanks={handleRefetchRanks}
               refetchingRanks={refetchingRanks}
               stuckRankCount={stuckTerms.length}
@@ -698,6 +707,14 @@ export default function KeywordPerformancePage() {
           store={activeApp.store ?? "ios"}
           country={activeApp.country ?? "us"}
           onClose={() => setRankHistory(null)}
+        />
+      )}
+
+      {downloadsHistoryTerm && activeApp.id && (
+        <DownloadsHistoryPanel
+          term={downloadsHistoryTerm}
+          appId={activeApp.id}
+          onClose={() => setDownloadsHistoryTerm(null)}
         />
       )}
     </div>

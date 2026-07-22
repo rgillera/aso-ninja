@@ -29,7 +29,7 @@ export function AnalyzeAllButton({ onClick, locked }: { onClick: () => void; loc
       >
         <LockClosedIcon className="size-3" />
         + Analyze all
-        <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">Pro</span>
+        <span className="rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400">Pro</span>
       </span>
     );
   }

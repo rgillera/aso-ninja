@@ -16,12 +16,17 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ArrowsUpDownIcon,
+  InformationCircleIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { effectiveRank, effectiveRankDate, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
+import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
@@ -48,6 +53,8 @@ type Props = {
   onLiveSearch: (term: string) => void;
   onViewVolumeHistory: (term: string) => void;
   onViewRankHistory: (term: string, storeId: string) => void;
+  onViewDownloadsHistory: (term: string) => void;
+  downloadsConnection?: DownloadsConnection;
   onRefetchRanks: () => void;
   refetchingRanks: boolean;
   stuckRankCount: number;
@@ -62,9 +69,12 @@ const PAGE_SIZE = 25;
 // used to compute how much room is left for the Keyword column to grow into.
 const CHECKBOX_COL_W = 40;    // w-10
 const VOLUME_COL_W = 208;     // w-52
+const DOWNLOADS_COL_W = 144;  // w-36
 const RANK_GROUP_W = 288;     // w-40 + w-32
 const ACTIONS_COL_W = 80;     // w-20
 const KEYWORD_MIN_W = 320;    // w-80
+
+const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 type SortKey = "keyword" | "volume" | "rank" | "change" | `rank:${string}` | `change:${string}`;
 
@@ -119,14 +129,54 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
   );
 }
 
+// Real total app downloads (from a connected App Store Connect / Play
+// Console account) apportioned across tracked keywords — see
+// libs/keyword-downloads-apportionment.ts. Not connected / still syncing
+// read as plain muted text rather than a clickable value, since there's
+// nothing to drill into yet.
+function DownloadsCell({ value, connected, pending, locked, onClick }: { value: number | null | undefined; connected: boolean; pending: boolean; locked: boolean; onClick: () => void }) {
+  if (locked) {
+    return (
+      <span
+        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400"
+        title="Est. Downloads requires the Pro plan"
+      >
+        <LockClosedIcon className="size-2.5" />
+        Pro
+      </span>
+    );
+  }
+  if (!connected) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+        Not connected
+        <InformationCircleIcon
+          className="size-3.5 text-gray-600 shrink-0"
+          title="First follow this app, then use the settings (gear) icon next to the app name in the header above to connect it and see real download data."
+        />
+      </span>
+    );
+  }
+  if (pending) return <span className="text-xs text-gray-600">Syncing…</span>;
+  if (value == null) return <span className="text-sm text-gray-600">-</span>;
+  return (
+    <button onClick={onClick} className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors" title="View downloads history">
+      <span className="text-sm text-gray-300">~{DOWNLOADS_FORMATTER.format(value)}</span>
+      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+    </button>
+  );
+}
+
 export function PerformanceTable({
   keywords, filtered, appName, appIcon, activeApp, competitors, onCompetitorsChange,
   filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
   onAddKeywords, onToggleStar, onStarSelected, onRemoveKeyword, onRemoveSelected,
-  onLiveSearch, onViewVolumeHistory, onViewRankHistory,
+  onLiveSearch, onViewVolumeHistory, onViewRankHistory, onViewDownloadsHistory, downloadsConnection,
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
 }: Props) {
+  const planSlug = usePlanSlug();
+  const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
   const [input, setInput] = useState("");
   const [page,  setPage]  = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -208,8 +258,8 @@ export function PerformanceTable({
 
   function handleExportSelected() {
     const rows = filtered.filter((k) => selected.has(k.term));
-    const headers = ["Keyword", "Volume", "Rank"];
-    const data = rows.map((k) => [k.term, k.volume, k.rank ?? "Unranked"]);
+    const headers = ["Keyword", "Volume", "Rank", "Est. Downloads"];
+    const data = rows.map((k) => [k.term, k.volume, k.rank ?? "Unranked", k.estimatedDownloads ?? "—"]);
     downloadCsv(`keywords-${Date.now()}.csv`, headers, data);
   }
 
@@ -230,7 +280,7 @@ export function PerformanceTable({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const otherColsWidth = CHECKBOX_COL_W + VOLUME_COL_W + RANK_GROUP_W * (1 + competitors.length) + ACTIONS_COL_W;
+  const otherColsWidth = CHECKBOX_COL_W + VOLUME_COL_W + DOWNLOADS_COL_W + RANK_GROUP_W * (1 + competitors.length) + ACTIONS_COL_W;
   const keywordWidth = Math.max(KEYWORD_MIN_W, containerWidth - otherColsWidth);
 
   function handleAdd() {
@@ -246,10 +296,15 @@ export function PerformanceTable({
   const summary = useMemo(() => {
     const volLatests  = filtered.map((k) => snapshots[k.term]?.volumeLatest ?? k.volume).filter((v): v is number => v != null);
     const rankLatests = filtered.map((k) => snapshots[k.term]?.rankLatest).filter((v): v is number => typeof v === "number");
+    const downloadValues = filtered.map((k) => k.estimatedDownloads).filter((v): v is number => v != null);
     const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : null;
     return {
       volumeLatest: avg(volLatests),
       rankLatest:   avg(rankLatests),
+      // A sum (not an average) — since each keyword's estimate is already a
+      // share of the same real total, summing the tracked keywords' shares
+      // approximates how much of that total they collectively account for.
+      downloadsTotal: downloadValues.length ? downloadValues.reduce((s, v) => s + v, 0) : null,
     };
   }, [filtered, snapshots]);
 
@@ -338,6 +393,7 @@ export function PerformanceTable({
               <col className="w-10" />
               <col style={{ width: keywordWidth, minWidth: keywordWidth }} />
               <col className="w-52" />
+              <col className="w-36" />
               <col className="w-40" />
               <col className="w-32" />
               {competitors.map((c) => (
@@ -367,6 +423,9 @@ export function PerformanceTable({
                   <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "volume" ? "text-gray-300" : ""}`}>
                     Volume <SortIcon active={sortKey === "volume"} dir={sortDir} />
                   </button>
+                </th>
+                <th rowSpan={2} className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom whitespace-nowrap">
+                  Est. Downloads
                 </th>
                 <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
@@ -454,6 +513,19 @@ export function PerformanceTable({
                         />
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      {k.loading ? (
+                        <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
+                      ) : (
+                        <DownloadsCell
+                          value={k.estimatedDownloads}
+                          connected={!!downloadsConnection?.connected}
+                          pending={!!downloadsConnection?.pending}
+                          locked={downloadsLocked}
+                          onClick={() => onViewDownloadsHistory(k.term)}
+                        />
+                      )}
+                    </td>
                     {k.loading ? (
                       <td colSpan={2 + competitors.length * 2} className="px-4 py-3"><div className="h-3 w-full rounded bg-white/[0.06] animate-pulse" /></td>
                     ) : (
@@ -506,6 +578,7 @@ export function PerformanceTable({
                 <td className="sticky left-0 z-10 bg-[#1c1f27] border-r border-white/[0.07]" />
                 <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] border-r border-white/[0.07] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
                 <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] border-l border-r border-white/[0.07] px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.volumeLatest ?? "-"}</td>
+                <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">{summary.downloadsTotal != null ? `~${DOWNLOADS_FORMATTER.format(summary.downloadsTotal)}` : "-"}</td>
                 <td className="px-3 py-3 border-l border-white/[0.04] text-sm text-gray-300 tabular-nums">{summary.rankLatest ?? "-"}</td>
                 <td className="px-3 py-3" />
                 {competitors.map((c) => (

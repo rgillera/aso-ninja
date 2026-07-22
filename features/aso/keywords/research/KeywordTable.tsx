@@ -13,25 +13,24 @@ import {
   TableCellsIcon,
   ArrowsUpDownIcon,
   SparklesIcon,
-  ArrowTrendingUpIcon,
   ClockIcon,
   LockClosedIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar } from "./ui";
-import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { LiveSearchPanel } from "./LiveSearchPanel";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import type { Keyword } from "./types";
+import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
+import type { Keyword, DownloadsConnection } from "./types";
 
-function LockedCell() {
+function LockedCell({ title = "Relevancy and Opportunity require the Pro plan" }: { title?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500"
-      title="Relevancy and Opportunity require the Pro plan"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400"
+      title={title}
     >
       <LockClosedIcon className="size-2.5" />
       Pro
@@ -123,6 +122,7 @@ type Props = {
   keywords: Keyword[];
   store: "ios" | "android";
   country: string;
+  downloadsConnection?: DownloadsConnection;
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
@@ -151,6 +151,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "chance",      label: "Chance",        defaultVisible: true,  tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
   { key: "relevancy",   label: "Relevancy",     defaultVisible: true,  smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
   { key: "opportunity", label: "Opportunity",   defaultVisible: true,  smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
+  { key: "estimatedDownloads", label: "Est. Downloads", defaultVisible: true, tooltip: "This app's real total downloads (from your connected App Store Connect / Play Console account), split across tracked keywords by search volume and current rank. Neither store attributes downloads to specific search terms, so this is a modeled share of a real number." },
   { key: "rank",        label: "App Rank",      defaultVisible: true,  tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
 ];
 
@@ -158,6 +159,11 @@ const DEFAULT_VISIBLE = new Set(
   COLUMN_DEFS.filter((c) => c.defaultVisible).map((c) => c.key)
 );
 
+const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+
+function PendingSyncCell() {
+  return <ClockIcon className="size-4 text-gray-600 animate-pulse" />;
+}
 
 function ColumnTooltip({ text }: { text: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -186,10 +192,20 @@ function ColumnTooltip({ text }: { text: string }) {
   );
 }
 
+function ConnectDownloadsCell() {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-gray-500">
+      Not connected
+      <ColumnTooltip text="First follow this app, then use the settings (gear) icon next to the app name in the header above to connect it and see real download data." />
+    </span>
+  );
+}
+
 export function KeywordTable({
   keywords,
   store,
   country,
+  downloadsConnection,
   translateToggle,
   translateLocked = false,
   onTranslateToggle,
@@ -202,6 +218,10 @@ export function KeywordTable({
 }: Props) {
   const planSlug = usePlanSlug();
   const relevancyLocked = !isPlanAtLeast(planSlug, "pro");
+  // Same tier as Relevancy/Opportunity — aliased rather than reusing
+  // relevancyLocked directly so the two features can diverge later without
+  // a rename.
+  const downloadsLocked = relevancyLocked;
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -210,10 +230,23 @@ export function KeywordTable({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
-  const [visibleCols, setVisibleCols] = useState<Set<string>>(DEFAULT_VISIBLE);
+  // Always starts from the static defaults, not a previously-saved
+  // selection — reading localStorage inside the useState initializer would
+  // run identically during SSR (where it's unavailable, so it'd silently
+  // fall back anyway) and the client's first render (where a real saved
+  // value can differ from what the server rendered), producing a hydration
+  // mismatch. The effect below restores the saved selection one tick after
+  // mount instead, once hydration has already settled.
+  const [visibleCols, setVisibleCols] = useState<Set<string>>(new Set(DEFAULT_VISIBLE));
+
+  useEffect(() => {
+    const saved = getVisibleColumns();
+    if (!saved) return;
+    queueMicrotask(() => setVisibleCols(saved));
+  }, []);
+
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
-  const [historyKeyword, setHistoryKeyword] = useState<string | null>(null);
   const [liveSearchKeyword, setLiveSearchKeyword] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
@@ -319,6 +352,7 @@ export function KeywordTable({
     setVisibleCols((prev) => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
+      saveVisibleColumns(next);
       return next;
     });
   }
@@ -473,16 +507,7 @@ export function KeywordTable({
 
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
-      case "volume":      return (
-        <button
-          onClick={() => setHistoryKeyword(row.keyword)}
-          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
-          title="View volume history"
-        >
-          <VolumeBar value={row.volume} />
-          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
-        </button>
-      );
+      case "volume":      return <VolumeBar value={row.volume} />;
       case "diff":        return (
         <span className={`text-sm ${row.diff > 60 ? "text-red-400" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>
           {row.diff}
@@ -518,6 +543,17 @@ export function KeywordTable({
       case "results":     return (
         row.results !== undefined
           ? <span className="text-sm text-gray-300">{row.results.toLocaleString()}</span>
+          : <span className="text-sm text-gray-600">—</span>
+      );
+      case "estimatedDownloads": return (
+        downloadsLocked
+          ? <LockedCell title="Est. Downloads requires the Pro plan" />
+          : !downloadsConnection?.connected
+          ? <ConnectDownloadsCell />
+          : downloadsConnection.pending
+          ? <PendingSyncCell />
+          : row.estimatedDownloads != null
+          ? <span className="text-sm text-gray-300" title="Modeled from real total downloads — see column tooltip">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
           : <span className="text-sm text-gray-600">—</span>
       );
       case "relevancy":   return (
@@ -757,7 +793,11 @@ export function KeywordTable({
             {/* Add all / Remove all */}
             <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.07]">
               <button
-                onClick={() => setVisibleCols(new Set(COLUMN_DEFS.map((c) => c.key)))}
+                onClick={() => {
+                  const next = new Set(COLUMN_DEFS.map((c) => c.key));
+                  setVisibleCols(next);
+                  saveVisibleColumns(next);
+                }}
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
               >
                 <PlusIcon className="size-3" />
@@ -765,7 +805,10 @@ export function KeywordTable({
               </button>
               <span className="text-gray-700 mx-1">·</span>
               <button
-                onClick={() => setVisibleCols(new Set())}
+                onClick={() => {
+                  setVisibleCols(new Set());
+                  saveVisibleColumns(new Set());
+                }}
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
               >
                 <XMarkIcon className="size-3" />
@@ -969,15 +1012,6 @@ export function KeywordTable({
         onExport={handleExportSelected}
         onDelete={handleRemoveSelected}
       />
-
-      {historyKeyword && (
-        <VolumeHistoryPanel
-          keyword={historyKeyword}
-          store={store}
-          country={country}
-          onClose={() => setHistoryKeyword(null)}
-        />
-      )}
 
       {liveSearchKeyword && (
         <LiveSearchPanel

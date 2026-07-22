@@ -48,7 +48,7 @@ function requiredAccessFor(pathname: string): WorkspaceAccess | undefined {
 // ...) — including the app-scoped ones above — navigates to the app's Report.
 const STAY_IN_PLACE_PREFIXES = ["/dashboard/keywords", "/dashboard/reviews"];
 
-type MetaSection = "report" | "preview" | "timeline" | "benchmark";
+type MetaSection = "report" | "preview" | "timeline" | "benchmark" | "settings";
 
 // Which Report/Metadata sub-page the user is currently looking at, so that
 // switching apps from search lands on the equivalent page for the new app
@@ -56,7 +56,7 @@ type MetaSection = "report" | "preview" | "timeline" | "benchmark";
 function sectionFromPath(pathname: string, isOnPreview: boolean, previewPage: string | null): MetaSection {
   if (pathname.startsWith("/dashboard/apps/")) {
     const seg = pathname.split("/")[4];
-    if (seg === "timeline" || seg === "benchmark" || seg === "preview") return seg;
+    if (seg === "timeline" || seg === "benchmark" || seg === "preview" || seg === "settings") return seg;
     return "report";
   }
   if (pathname.startsWith("/dashboard/metadata/timeline")) return "timeline";

@@ -13,7 +13,7 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
-import type { Keyword } from "./types";
+import type { Keyword, DownloadsConnection } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 
@@ -37,6 +37,7 @@ export default function KeywordResearchPage() {
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
   const canUseRelevancy = isPlanAtLeast(planSlug, "pro");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
+  const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
   // Counts in-flight adds (fast metrics → full metrics → Supabase save) — used
@@ -134,6 +135,7 @@ export default function KeywordResearchPage() {
     if (!key || loadedAppId.current === key) return;
     loadedAppId.current = key;
     setKeywords([]);
+    setDownloadsConnection(undefined);
     const params = activeApp?.id
       ? new URLSearchParams({ appId: activeApp.id })
       : new URLSearchParams({
@@ -144,7 +146,8 @@ export default function KeywordResearchPage() {
         });
     fetch(`/api/keywords/list?${params}`)
       .then((r) => r.json())
-      .then(({ keywords: savedRaw }: { keywords: SavedKeyword[] }) => {
+      .then(({ keywords: savedRaw, downloadsConnection: dc }: { keywords: SavedKeyword[]; downloadsConnection?: DownloadsConnection }) => {
+        setDownloadsConnection(dc);
         if (!savedRaw?.length) return;
 
         // Distinct keyword rows can carry the same displayed term (e.g. a
@@ -181,6 +184,7 @@ export default function KeywordResearchPage() {
             starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
             frozen:      s.frozen,
+            estimatedDownloads: s.estimatedDownloads,
           }))
         );
 
@@ -549,6 +553,7 @@ export default function KeywordResearchPage() {
           keywords={keywords}
           store={activeApp?.store ?? "ios"}
           country={activeApp?.country ?? "us"}
+          downloadsConnection={downloadsConnection}
           translateToggle={translateToggle && !translateLocked}
           translateLocked={translateLocked}
           onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}

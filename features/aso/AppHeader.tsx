@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { InformationCircleIcon, DevicePhoneMobileIcon, PlusIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon, DevicePhoneMobileIcon, PlusIcon, CheckIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import { countryFlag } from "@/libs/countries";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { followAppAction, deleteAppAction } from "@/features/app/actions";
@@ -176,6 +177,25 @@ export function StoreLinkButton({ app }: { app: ActiveApp }) {
   );
 }
 
+// Only shown for followed apps — settings (store connection, etc.) has
+// nothing to attach to until the app has a real row (see FollowButton's
+// isFollowed check above for the same "has a real id" rule). Static link,
+// no status fetch: showing live connected/not-connected state here would
+// mean a request on every dashboard page (AppHeader renders on all of
+// them), not just Settings — not worth it for a badge.
+function SettingsLinkButton({ app }: { app: ActiveApp }) {
+  if (!app.id || app.id === "__preview__") return null;
+  return (
+    <Link
+      href={`/dashboard/apps/${app.id}/settings`}
+      title="App settings"
+      className="flex items-center justify-center rounded-full bg-white/[0.06] p-1.5 text-gray-400 ring-1 ring-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
+    >
+      <Cog6ToothIcon className="size-3.5" />
+    </Link>
+  );
+}
+
 export function AppHeader({ app, title }: Props) {
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
@@ -207,6 +227,7 @@ export function AppHeader({ app, title }: Props) {
             </div>
             <FollowButton app={app} />
             <StoreLinkButton app={app} />
+            <SettingsLinkButton app={app} />
           </>
         ) : (
           <>

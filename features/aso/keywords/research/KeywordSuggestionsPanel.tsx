@@ -86,7 +86,7 @@ export function KeywordSuggestionsPanel({
                     <span className="text-[10px]">✦</span>
                     {tab.label}
                     {aiLocked && (
-                      <span className="rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-500">
+                      <span className="rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400">
                         Pro
                       </span>
                     )}

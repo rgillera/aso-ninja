@@ -7,11 +7,12 @@ import type { App, PlanSlug } from "@/libs/contracts";
 type Props = {
   activeWorkspaceId?: string;
   apps: App[];
+  connectedAppIds?: string[];
   planSlug?: PlanSlug;
   hasUsedTrial?: boolean;
 };
 
-export default function DashboardPage({ activeWorkspaceId, apps, planSlug, hasUsedTrial }: Props) {
+export default function DashboardPage({ activeWorkspaceId, apps, connectedAppIds, planSlug, hasUsedTrial }: Props) {
   const trialDays = PLANS.find((p) => p.id === "pro")?.trialDays;
 
   return (
@@ -20,7 +21,7 @@ export default function DashboardPage({ activeWorkspaceId, apps, planSlug, hasUs
         <TrialBanner workspaceId={activeWorkspaceId} trialDays={trialDays} />
       )}
       <RecentlyViewedApps apps={apps} />
-      <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} />
+      <MyApps apps={apps} workspaceId={activeWorkspaceId ?? ""} connectedAppIds={connectedAppIds ?? []} />
     </div>
   );
 }

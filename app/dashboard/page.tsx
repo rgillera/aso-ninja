@@ -20,10 +20,20 @@ export default async function Page({ searchParams }: PageProps) {
     activeWorkspaceId ? getWorkspacePlanState(activeWorkspaceId) : Promise.resolve(undefined),
   ]);
 
+  // One batched query for every followed app's connection status, rather
+  // than a per-row fetch — this list is typically small, so a single
+  // `in (...)` lookup is cheap regardless of how many apps are shown.
+  const appIds = (apps ?? []).map((a) => a.id);
+  const { data: connections } = appIds.length
+    ? await supabase.from("app_store_connections").select("app_id").eq("status", "connected").in("app_id", appIds)
+    : { data: [] };
+  const connectedAppIds = (connections ?? []).map((c) => c.app_id);
+
   return (
     <DashboardPage
       activeWorkspaceId={activeWorkspaceId}
       apps={(apps ?? []) as App[]}
+      connectedAppIds={connectedAppIds}
       planSlug={planState && !("error" in planState) ? planState.plan.slug : undefined}
       hasUsedTrial={planState && !("error" in planState) ? planState.hasUsedTrial : undefined}
     />

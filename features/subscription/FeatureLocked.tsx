@@ -18,22 +18,22 @@ const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button:
     check: "text-emerald-500/80",
   },
   pro: {
-    icon: "text-red-500",
-    ring: "bg-red-500/10",
-    button: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-    check: "text-red-500/80",
-  },
-  pro_plus: {
     icon: "text-violet-400",
     ring: "bg-violet-500/10",
     button: "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20",
     check: "text-violet-400/80",
   },
+  pro_plus: {
+    icon: "text-amber-500",
+    ring: "bg-amber-500/10",
+    button: "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20",
+    check: "text-amber-500/80",
+  },
   enterprise: {
-    icon: "text-amber-400",
-    ring: "bg-amber-400/10",
-    button: "bg-amber-400/10 text-amber-400 hover:bg-amber-400/20",
-    check: "text-amber-400/80",
+    icon: "text-indigo-400",
+    ring: "bg-indigo-500/10",
+    button: "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20",
+    check: "text-indigo-400/80",
   },
 };
 

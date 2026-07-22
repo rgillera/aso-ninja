@@ -12,6 +12,10 @@ export type PerformanceKeyword = {
   rank: number | null;
   starred: boolean;
   loading: boolean;
+  // Real total app downloads apportioned across tracked keywords — see
+  // libs/keyword-downloads-apportionment.ts. null when unranked; absent
+  // until the next full list reload for a keyword just added this session.
+  estimatedDownloads?: number | null;
 };
 
 export type DateRange = { from: string; to: string };

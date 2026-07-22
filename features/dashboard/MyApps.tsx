@@ -9,6 +9,7 @@ import {
   GlobeAltIcon,
   ChevronDownIcon,
   CheckIcon,
+  CheckCircleIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
@@ -19,6 +20,7 @@ import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 type Props = {
   apps: App[];
   workspaceId: string;
+  connectedAppIds: string[];
 };
 
 function IosIcon() {
@@ -103,7 +105,7 @@ function ConfirmRemoveDialog({
   );
 }
 
-function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: (group: AppGroup) => void }) {
+function AppRow({ group, connected, onRequestDelete }: { group: AppGroup; connected: boolean; onRequestDelete: (group: AppGroup) => void }) {
   const { primary, entries } = group;
 
   return (
@@ -134,6 +136,15 @@ function AppRow({ group, onRequestDelete }: { group: AppGroup; onRequestDelete: 
               title="This app is over your plan's limit. Upgrade to resume tracking."
             >
               Paused
+            </span>
+          )}
+          {connected && (
+            <span
+              className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-semibold text-emerald-500 shrink-0"
+              title="Connected to real download data"
+            >
+              <CheckCircleIcon className="size-2.5" />
+              Connected
             </span>
           )}
         </p>
@@ -174,9 +185,10 @@ function focusGlobalSearch() {
   window.dispatchEvent(new Event("aso:focus-search"));
 }
 
-export default function MyApps({ apps, workspaceId }: Props) {
+export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
   const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
   const [, startTransition] = useTransition();
+  const connectedIds = useMemo(() => new Set(connectedAppIds), [connectedAppIds]);
 
   function handleDelete(ids: string[], bundleId: string, store: string) {
     startTransition(async () => {
@@ -383,7 +395,7 @@ export default function MyApps({ apps, workspaceId }: Props) {
             ) : (
               <div className="divide-y divide-white/[0.07]">
                 {groupApps(filtered).map((group) => (
-                  <AppRow key={group.key} group={group} onRequestDelete={setPendingDelete} />
+                  <AppRow key={group.key} group={group} connected={connectedIds.has(group.primary.id)} onRequestDelete={setPendingDelete} />
                 ))}
               </div>
             )}

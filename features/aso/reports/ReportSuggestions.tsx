@@ -57,7 +57,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
         </div>
         {expanded && (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-            <span className="mb-3 flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-500">
+            <span className="mb-3 flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400">
               <LockClosedIcon className="size-2.5" />
               Pro
             </span>

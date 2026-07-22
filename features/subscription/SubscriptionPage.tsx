@@ -44,9 +44,9 @@ type Billing = "monthly" | "yearly";
 
 function nameColor(planId: PlanId) {
   if (planId === "basic") return "text-emerald-500";
-  if (planId === "pro") return "text-red-500";
-  if (planId === "pro_plus") return "text-violet-400";
-  if (planId === "enterprise") return "text-amber-400";
+  if (planId === "pro") return "text-violet-400";
+  if (planId === "pro_plus") return "text-amber-500";
+  if (planId === "enterprise") return "text-indigo-400";
   return "text-white";
 }
 
@@ -178,7 +178,7 @@ export default function SubscriptionPage({
               >
                 {isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-yellow-900 shadow-lg shadow-yellow-900/30">
+                    <span className="rounded-full bg-violet-400 px-4 py-1.5 text-xs font-bold text-violet-950 shadow-lg shadow-violet-900/30">
                       ★ Most Popular
                     </span>
                   </div>
@@ -252,7 +252,7 @@ export default function SubscriptionPage({
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
           <p className="text-sm text-gray-300">
             {currentPlanId === "enterprise" ? (
-              <>You&apos;re on <span className="text-amber-400 font-medium">Managed ASO</span>.</>
+              <>You&apos;re on <span className="text-indigo-400 font-medium">Managed ASO</span>.</>
             ) : (
               <>Need more apps, seats, or a hands-on team? <span className="text-gray-500">Managed ASO adds a dedicated growth manager and ASO specialist.</span></>
             )}

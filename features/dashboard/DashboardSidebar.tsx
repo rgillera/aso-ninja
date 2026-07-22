@@ -35,16 +35,16 @@ import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs
 const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   free: { label: "Free", className: "bg-white/5 text-gray-400" },
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
-  pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
-  pro_plus: { label: "Pro+", className: "bg-violet-500/10 text-violet-400" },
-  enterprise: { label: "Managed ASO", className: "bg-amber-400/10 text-amber-400" },
+  pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
+  pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
+  enterprise: { label: "Managed ASO", className: "bg-indigo-500/10 text-indigo-400" },
 };
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
-  pro: { label: "Pro", className: "bg-red-500/10 text-red-500" },
-  pro_plus: { label: "Pro+", className: "bg-violet-500/10 text-violet-400" },
-  enterprise: { label: "Managed ASO", className: "bg-amber-400/10 text-amber-400" },
+  pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
+  pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
+  enterprise: { label: "Managed ASO", className: "bg-indigo-500/10 text-indigo-400" },
 };
 
 function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {

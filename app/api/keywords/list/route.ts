@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { computeShares } from "@/libs/keyword-downloads-apportionment";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 export type SavedKeyword = {
   term: string;
@@ -11,6 +14,12 @@ export type SavedKeyword = {
   rank: number | null;
   intentThemeId: string | null;
   hasCachedMetrics: boolean;
+  // Real total app downloads (from a connected App Store Connect / Play
+  // Console account) apportioned across tracked keywords by volume + rank —
+  // see the comment above the apportionment block below. null when this
+  // keyword isn't ranked (no share attributed); always null when the app
+  // isn't connected — see the top-level `downloadsConnection` field instead.
+  estimatedDownloads: number | null;
   // Frozen when this keyword is beyond the workspace owner's current plan
   // limit (e.g. after a downgrade) — see reconcile_plan_limits in
   // supabase/migrations/20260713000001_plan_limit_reconciliation.sql.
@@ -51,8 +60,8 @@ export async function GET(request: NextRequest) {
 
   if (!appId) return NextResponse.json({ keywords: [] });
 
-  // Two separate queries — no direct FK exists between app_keywords and keyword_metrics
-  const [akResult, metricsResult] = await Promise.all([
+  // Five separate queries — no direct FK exists between app_keywords and keyword_metrics
+  const [akResult, metricsResult, connectionResult, downloadsResult, appResult] = await Promise.all([
     supabase
       .from("app_keywords")
       .select("keyword_id, keywords!inner(id, term, status)")
@@ -62,6 +71,19 @@ export async function GET(request: NextRequest) {
       .from("keyword_metrics")
       .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id")
       .eq("app_id", appId),
+    supabase
+      .from("app_store_connections")
+      .select("status, last_synced_on")
+      .eq("app_id", appId)
+      .maybeSingle(),
+    supabase
+      .from("app_download_history")
+      .select("downloads")
+      .eq("app_id", appId)
+      .order("recorded_on", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase.from("apps").select("workspace_id").eq("id", appId).maybeSingle(),
   ]);
 
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
@@ -106,9 +128,35 @@ export async function GET(request: NextRequest) {
         intentThemeId:    m?.intentThemeId ?? null,
         hasCachedMetrics: !!m,
         frozen:           kw?.status === "frozen",
+        estimatedDownloads: null, // filled in below once the full set's weights are known
       } satisfies SavedKeyword;
     })
     .filter(Boolean) as SavedKeyword[];
 
-  return NextResponse.json({ keywords });
+  // Est. Downloads is a Pro-and-up feature, same tier as Relevancy/
+  // Opportunity (see app/api/keywords/metrics/route.ts) — stripped here
+  // rather than left to the client, so a below-Pro workspace never receives
+  // the computed values over the network at all.
+  const planState = appResult.data?.workspace_id ? await getWorkspacePlanState(appResult.data.workspace_id) : null;
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  const hasDownloadsAccess = isPlanAtLeast(planSlug, "pro");
+
+  // See libs/keyword-downloads-apportionment.ts for what this split means
+  // and why. Computed on the fly rather than cached — the inputs are
+  // already loaded above and the arithmetic is O(n) over rows already in
+  // hand, so there's nothing worth persisting.
+  const latestTotal = downloadsResult.data?.downloads ?? null;
+  if (hasDownloadsAccess && latestTotal !== null) {
+    const shares = computeShares(keywords);
+    keywords.forEach((k, i) => {
+      k.estimatedDownloads = shares[i] > 0 ? Math.round(latestTotal * shares[i]) : null;
+    });
+  }
+
+  const downloadsConnection = {
+    connected: connectionResult.data?.status === "connected",
+    pending: connectionResult.data?.status === "connected" && !connectionResult.data.last_synced_on,
+  };
+
+  return NextResponse.json({ keywords, downloadsConnection });
 }

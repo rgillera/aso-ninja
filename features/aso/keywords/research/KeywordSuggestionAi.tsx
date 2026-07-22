@@ -201,7 +201,7 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
   if (locked) {
     return (
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-        <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-500 mb-3">
+        <span className="flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 mb-3">
           <LockClosedIcon className="size-2.5" />
           Pro
         </span>
