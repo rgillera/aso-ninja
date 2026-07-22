@@ -50,6 +50,20 @@ join apps a on a.id = c.app_id
 where c.vault_secret_id is not null
 order by a.workspace_id, a.store, a.bundle_id, c.created_at asc;
 
+-- The "distinct on" above only keeps one secret per bundle — any other
+-- pre-existing secret from a bundle that already had multiple countries
+-- independently connected (the exact workaround this migration removes the
+-- need for) is now unreferenced by anything. Must run before the column
+-- drop below removes the only pointer to them, or they'd be unrecoverable
+-- dead rows in vault.secrets forever.
+delete from vault.secrets
+where id in (
+  select c.vault_secret_id
+  from app_store_connections c
+  where c.vault_secret_id is not null
+    and c.vault_secret_id not in (select vault_secret_id from app_store_credentials)
+);
+
 -- Drop the old secret-cleanup trigger before dropping the column it reads —
 -- it references app_store_connections.vault_secret_id, which no longer
 -- exists once that credential material moves to app_store_credentials.
