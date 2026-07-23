@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
+import { InstallBanner } from "@/features/mobile/InstallBanner";
 
 // Deliberately not nested under app/dashboard/layout.tsx — this route never
 // inherits DashboardShell's sidebar/nav. Points at its own manifest (see
@@ -16,5 +17,10 @@ export default async function MobileLayout({ children }: { children: React.React
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  return <div className="min-h-full bg-[#111318] text-gray-300">{children}</div>;
+  return (
+    <div className="min-h-full bg-[#111318] text-gray-300">
+      <InstallBanner />
+      {children}
+    </div>
+  );
 }

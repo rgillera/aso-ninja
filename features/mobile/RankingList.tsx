@@ -18,11 +18,11 @@ type Row = { keyword: SavedKeyword; rank: ReturnType<typeof effectiveRank>; grow
 const DEFAULT_DIR: Record<SortKey, SortDir> = { rank: "asc", volume: "desc", growth: "desc" };
 
 function GrowthBadge({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-gray-600">–</span>;
-  if (value === 0) return <span className="text-xs text-gray-500">0</span>;
+  if (value === null) return <span className="text-sm text-gray-600">–</span>;
+  if (value === 0) return <span className="text-sm text-gray-500">0</span>;
   const up = value > 0;
   return (
-    <span className={`text-xs font-medium ${up ? "text-emerald-400" : "text-red-400"}`}>
+    <span className={`text-sm font-medium ${up ? "text-emerald-400" : "text-red-400"}`}>
       {up ? "▲" : "▼"}
       {Math.abs(value)}
     </span>
@@ -101,9 +101,9 @@ export function RankingList({
 
   return (
     <>
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-2 rounded-lg bg-white/[0.05] px-3 py-2">
-          <MagnifyingGlassIcon className="size-3.5 shrink-0 text-gray-500" />
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-center gap-2.5 rounded-xl bg-white/[0.06] px-4 py-3.5">
+          <MagnifyingGlassIcon className="size-5 shrink-0 text-gray-500" />
           <input
             value={query}
             onChange={(e) => {
@@ -111,17 +111,17 @@ export function RankingList({
               setPage(0);
             }}
             placeholder="Search keywords…"
-            className="w-full bg-transparent text-sm text-gray-200 placeholder-gray-600 outline-none"
+            className="w-full bg-transparent text-base text-gray-200 placeholder-gray-600 outline-none"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4 border-b border-white/[0.06] px-4 pb-2 text-xs text-gray-500">
+      <div className="flex items-center gap-1 border-b border-white/[0.06] px-2 pb-2 text-sm text-gray-500">
         {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
           <button
             key={key}
             onClick={() => toggleSort(key)}
-            className={`flex items-center gap-0.5 ${sortKey === key ? "font-medium text-gray-200" : "hover:text-gray-300"}`}
+            className={`flex items-center gap-1 rounded-lg px-3 py-2.5 ${sortKey === key ? "font-medium text-gray-200" : "active:bg-white/[0.05]"}`}
           >
             {SORT_LABELS[key]}
             {sortKey === key && <span>{sortDir === "asc" ? "▲" : "▼"}</span>}
@@ -136,14 +136,14 @@ export function RankingList({
       ) : (
         <ul className="divide-y divide-white/[0.06]">
           {pageItems.map(({ keyword, rank, growth }) => (
-            <li key={keyword.term} className="flex items-center justify-between px-4 py-3">
+            <li key={keyword.term} className="flex items-center justify-between px-4 py-4">
               <div className="min-w-0">
-                <p className="truncate text-sm text-gray-200">{keyword.term}</p>
-                <p className="text-xs text-gray-600">Volume {keyword.volume}</p>
+                <p className="truncate text-base text-gray-200">{keyword.term}</p>
+                <p className="mt-0.5 text-sm text-gray-600">Volume {keyword.volume}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <GrowthBadge value={growth} />
-                <span className={`text-sm tabular-nums ${rank === "unranked" ? "text-gray-600" : "text-gray-200"}`}>
+                <span className={`text-base font-medium tabular-nums ${rank === "unranked" ? "text-gray-600" : "text-gray-200"}`}>
                   {formatRank(rank)}
                 </span>
               </div>
@@ -153,21 +153,21 @@ export function RankingList({
       )}
 
       {pageCount > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 text-xs text-gray-500">
+        <div className="flex items-center justify-between px-3 py-2 text-sm text-gray-500">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={safePage === 0}
-            className="rounded-md px-2 py-1 disabled:opacity-30 enabled:hover:text-gray-200"
+            className="rounded-lg px-4 py-2.5 disabled:opacity-30 enabled:active:bg-white/[0.05] enabled:hover:text-gray-200"
           >
             ‹ Prev
           </button>
-          <span>
+          <span className="text-xs">
             {start + 1}–{Math.min(start + PAGE_SIZE, sorted.length)} of {sorted.length}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
             disabled={safePage >= pageCount - 1}
-            className="rounded-md px-2 py-1 disabled:opacity-30 enabled:hover:text-gray-200"
+            className="rounded-lg px-4 py-2.5 disabled:opacity-30 enabled:active:bg-white/[0.05] enabled:hover:text-gray-200"
           >
             Next ›
           </button>

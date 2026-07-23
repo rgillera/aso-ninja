@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import { RankingList } from "@/features/mobile/RankingList";
-import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 import { NavigationDrawer } from "@/features/mobile/NavigationDrawer";
+import { countryFlag } from "@/libs/countries";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — matches DashboardShell.tsx
 
@@ -73,9 +73,10 @@ export function MobileMonitor({
         ) : null}
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-sm font-medium text-gray-100">{appName}</h1>
-          <p className="text-xs text-gray-600">Keyword rankings</p>
+          <p className="text-xs text-gray-600">
+            {country ? `${countryFlag(country)} ${country} · ` : ""}Keyword rankings
+          </p>
         </div>
-        <NotificationToggle />
       </header>
 
       {keywords === null ? (

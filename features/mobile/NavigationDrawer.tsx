@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
+import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 
 type NavWorkspace = { id: string; name: string };
 type NavApp = { id: string; name: string };
@@ -54,6 +55,10 @@ export function NavigationDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          <div className="border-b border-white/[0.06] px-4 py-3">
+            <NotificationToggle />
+          </div>
+
           <p className="px-4 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
             Workspaces
           </p>

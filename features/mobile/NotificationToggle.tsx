@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isIosDevice, isStandaloneDisplay } from "@/features/mobile/pwa-install";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -16,9 +17,14 @@ type Status = "checking" | "unsupported" | "subscribed" | "unsubscribed";
 export function NotificationToggle() {
   const [status, setStatus] = useState<Status>("checking");
   const [busy, setBusy] = useState(false);
+  // iOS only exposes the Push API once the app's been added to the home
+  // screen — distinguishes "not installed yet" from a genuinely unsupported
+  // browser, so the message can actually tell you what to do about it.
+  const [needsInstall, setNeedsInstall] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setNeedsInstall(isIosDevice() && !isStandaloneDisplay());
       setStatus("unsupported");
       return;
     }
@@ -76,7 +82,13 @@ export function NotificationToggle() {
 
   if (status === "checking") return null;
   if (status === "unsupported") {
-    return <p className="text-xs text-gray-600">Push notifications aren&apos;t supported in this browser.</p>;
+    return (
+      <p className="text-xs text-gray-600">
+        {needsInstall
+          ? "Add this app to your home screen to enable notifications."
+          : "Push notifications aren’t supported in this browser."}
+      </p>
+    );
   }
 
   return (
