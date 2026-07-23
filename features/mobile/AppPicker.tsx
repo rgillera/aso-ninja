@@ -14,7 +14,7 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
   return (
     <main className="mx-auto max-w-md">
       <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-4">
-        <Link href="/mobile" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
+        <Link href="/mobile?switch=1" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
           <ChevronLeftIcon className="size-3.5" />
           Workspaces
         </Link>

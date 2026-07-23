@@ -23,7 +23,7 @@ declare global {
 // persists across client-side navigation, so the widget (once loaded) is
 // toggled via Tawk's own show/hideWidget API rather than mounted/unmounted,
 // which wouldn't undo its already-injected DOM.
-const EXCLUDED_PATH_PREFIXES = ["/dashboard"];
+const EXCLUDED_PATH_PREFIXES = ["/dashboard", "/mobile"];
 
 export function TawkTo() {
   const pathname = usePathname();

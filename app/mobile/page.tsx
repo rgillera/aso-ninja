@@ -1,30 +1,27 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
+import { getEligibleWorkspaces } from "@/libs/mobile-nav";
 import { WorkspacePicker } from "@/features/mobile/WorkspacePicker";
 
 // Entry point for the mobile rankings monitor. Skips straight to a
 // remembered workspace (or the only one, if there's just one) — the picker
-// only shows up when there's an actual choice to make.
-export default async function MobilePage() {
+// only shows up when there's an actual choice to make, or when explicitly
+// requested via ?switch=1 (the "Switch workspace" link inside MobileMonitor
+// — without this bypass, that link would just immediately redirect back to
+// the same workspace via the same logic it's trying to escape).
+export default async function MobilePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ switch?: string }>;
+}) {
+  const { switch: forceSwitch } = await searchParams;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // RLS already scopes both queries to this user's own memberships.
-  const [{ data: workspaces }, { data: memberships }] = await Promise.all([
-    supabase.from("workspaces").select("id, name"),
-    supabase.from("workspace_members").select("workspace_id, access").eq("user_id", user.id),
-  ]);
-
-  // Same access area that gates /dashboard/keywords etc. on the web — see
-  // ASO_INTELLIGENCE_PREFIXES in features/dashboard/DashboardShell.tsx.
-  const accessibleIds = new Set(
-    (memberships ?? [])
-      .filter((m) => (m.access ?? []).includes("aso_intelligence"))
-      .map((m) => m.workspace_id)
-  );
-  const eligible = (workspaces ?? []).filter((w) => accessibleIds.has(w.id));
+  const eligible = await getEligibleWorkspaces(supabase, user.id);
 
   if (!eligible.length) {
     return (
@@ -35,11 +32,13 @@ export default async function MobilePage() {
     );
   }
 
-  const cookieStore = await cookies();
-  const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
-  const remembered = eligible.find((w) => w.id === lastWorkspaceId);
-  if (remembered) redirect(`/mobile/${remembered.id}`);
-  if (eligible.length === 1) redirect(`/mobile/${eligible[0].id}`);
+  if (!forceSwitch) {
+    const cookieStore = await cookies();
+    const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
+    const remembered = eligible.find((w) => w.id === lastWorkspaceId);
+    if (remembered) redirect(`/mobile/${remembered.id}`);
+    if (eligible.length === 1) redirect(`/mobile/${eligible[0].id}`);
+  }
 
   return <WorkspacePicker workspaces={eligible} />;
 }
