@@ -6,7 +6,7 @@ import type { PlanSlug } from "@/libs/contracts";
 
 const PLAN_LABEL: Partial<Record<PlanSlug, string>> = {
   pro: "Pro",
-  enterprise: "Managed ASO",
+  enterprise: "Enterprise",
 };
 
 export default function LearnPage() {

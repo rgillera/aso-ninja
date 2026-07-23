@@ -100,7 +100,7 @@ export const PLANS: Plan[] = [
   },
   {
     id: "enterprise",
-    name: "Managed ASO",
+    name: "Enterprise",
     priceMonthlyCents: 179640,
     priceYearlyCents: 1796400,
     description: "Everything in Pro+, plus a dedicated growth manager and ASO specialist to manage it all for you.",

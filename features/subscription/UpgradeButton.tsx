@@ -45,7 +45,7 @@ export function UpgradeButton({
     );
   }
 
-  // Managed ASO ("enterprise" slug) is a done-for-you service staffed by an
+  // Enterprise ("enterprise" slug) is a done-for-you service staffed by an
   // actual ASO specialist — it can't be auto-provisioned by an instant Stripe
   // checkout the way a software tier can, so this books a call instead.
   if (planSlug === "enterprise") {

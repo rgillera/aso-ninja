@@ -7,7 +7,7 @@ const TIER_LABEL: Partial<Record<PlanSlug, string>> = {
   basic: "Basic",
   pro: "Pro",
   pro_plus: "Pro+",
-  enterprise: "Managed ASO",
+  enterprise: "Enterprise",
 };
 
 const TIER_COLOR: Partial<Record<PlanSlug, { icon: string; ring: string; button: string; check: string }>> = {
@@ -80,7 +80,7 @@ export function FeatureLocked({
         href="/dashboard/subscription"
         className={`mt-6 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${color.button}`}
       >
-        Upgrade to {TIER_LABEL[minPlan] ?? "Managed ASO"}
+        Upgrade to {TIER_LABEL[minPlan] ?? "Enterprise"}
       </Link>
     </div>
   );

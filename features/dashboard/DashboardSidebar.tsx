@@ -37,14 +37,14 @@ const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
   pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
-  enterprise: { label: "Managed ASO", className: "bg-indigo-500/10 text-indigo-400" },
+  enterprise: { label: "Enterprise", className: "bg-indigo-500/10 text-indigo-400" },
 };
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
   pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
   pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
-  enterprise: { label: "Managed ASO", className: "bg-indigo-500/10 text-indigo-400" },
+  enterprise: { label: "Enterprise", className: "bg-indigo-500/10 text-indigo-400" },
 };
 
 function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {

@@ -95,7 +95,7 @@ export default function SubscriptionPage({
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
-  // Managed ASO is a done-for-you service, not a self-serve tier — it gets a
+  // Enterprise is a done-for-you service, not a self-serve tier — it gets a
   // "talk to us" banner below the grid instead of a card (see PortalPricing.tsx,
   // which does the same thing on the marketing pricing page).
   const sellablePlans = PLANS.filter((plan) => plan.id !== "enterprise");
@@ -252,9 +252,9 @@ export default function SubscriptionPage({
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
           <p className="text-sm text-gray-300">
             {currentPlanId === "enterprise" ? (
-              <>You&apos;re on <span className="text-indigo-400 font-medium">Managed ASO</span>.</>
+              <>You&apos;re on <span className="text-indigo-400 font-medium">Enterprise</span>.</>
             ) : (
-              <>Need more apps, seats, or a hands-on team? <span className="text-gray-500">Managed ASO adds a dedicated growth manager and ASO specialist.</span></>
+              <>Need more apps, seats, or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span></>
             )}
           </p>
           <a

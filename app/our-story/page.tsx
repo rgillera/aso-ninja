@@ -31,11 +31,7 @@ const milestones: { year: string; title: string; description: ReactNode }[] = [
       <>
         We started building AppASO, putting the same keyword research and metadata tooling we use for our
         ASO clients into a self-serve SaaS workspace. We&apos;ve since retired the ASO Ninja brand, but we
-        still take on select clients one-on-one through our{" "}
-        <a href="/#pricing" className="text-indigo-400 hover:text-indigo-300 transition-colors">
-          Managed ASO
-        </a>{" "}
-        plan.
+        still take on select clients one-on-one plan.
       </>
     ),
   },
