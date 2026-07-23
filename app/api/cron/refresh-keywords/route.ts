@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { getWebPushClient } from "@/libs/webpush";
 
 // Vercel: 300s on Pro, 60s on Hobby (~40 keywords/run on Hobby)
 export const maxDuration = 300;
@@ -34,6 +35,23 @@ function computeIosVolumeAndDiff(apps: RawApp[], term: string) {
   return { volume, diff };
 }
 
+// One entry per keyword whose rank moved enough to be worth a push — fed to
+// notifyRankChanges() once the whole cron run is done, so a user tracking
+// many keywords gets a single digest push, not one per keyword.
+type SignificantChange = { appId: string; appName: string; term: string; previousRank: number; rank: number };
+
+// A change is only "significant" when we have two real ranks to compare —
+// first-appearance (previousRank null) and dropping out of results entirely
+// (rank null) are common noise, not the kind of move worth waking someone
+// up for. Otherwise: a >=5 spot swing, or crossing the top-10 boundary
+// either direction, mirrors the threshold discussed for the (shelved) email
+// digest — big enough to matter, not so sensitive it fires daily.
+function isSignificantRankChange(previousRank: number | null, rank: number | null): boolean {
+  if (previousRank === null || rank === null) return false;
+  if (Math.abs(previousRank - rank) >= 5) return true;
+  return (previousRank > 10 && rank <= 10) || (previousRank <= 10 && rank > 10);
+}
+
 // Refreshes rank + chance for every app already tracking `term` in this
 // store/country, using the result names this run just fetched — no extra
 // network calls. Skips volume/diff/relevancy/opportunity entirely (no AI,
@@ -42,12 +60,13 @@ function computeIosVolumeAndDiff(apps: RawApp[], term: string) {
 // route uses, closing the staleness gap between keyword_metrics.rank and
 // keyword_rankings_history.position from up to 7 days down to ~1 day.
 async function refreshKeywordMetrics(
-  supabase: AdminClient, term: string, store: string, country: string, names: string[]
+  supabase: AdminClient, term: string, store: string, country: string, names: string[],
+  changes: SignificantChange[]
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows } = await (supabase as any)
     .from("keyword_metrics")
-    .select("app_id, keyword_id, diff, apps!inner(name, store, country), keywords!inner(term, status)")
+    .select("app_id, keyword_id, diff, rank, apps!inner(name, store, country), keywords!inner(term, status)")
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.store", store)
@@ -60,10 +79,78 @@ async function refreshKeywordMetrics(
     const rankIdx = findRankIdx(names, row.apps.name);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(row.diff ?? 0, rank);
+
+    if (isSignificantRankChange(row.rank, rank)) {
+      changes.push({ appId: row.app_id, appName: row.apps.name, term, previousRank: row.rank, rank: rank! });
+    }
+
     return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, updated_at: new Date().toISOString() };
   });
 
   await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
+}
+
+// Sends exactly one push per user for the whole cron run, covering every
+// significant change across every app/workspace they belong to — never one
+// push per keyword (see isSignificantRankChange's comment for why that
+// matters: this is the same "digest, not per-event" reasoning that ruled out
+// per-event email for the same feature).
+async function notifyRankChanges(supabase: AdminClient, changes: SignificantChange[]) {
+  if (!changes.length) return;
+
+  const appIds = [...new Set(changes.map((c) => c.appId))];
+  const { data: apps } = await supabase.from("apps").select("id, workspace_id").in("id", appIds);
+  const workspaceIdByApp = new Map((apps ?? []).map((a) => [a.id, a.workspace_id]));
+
+  const workspaceIds = [...new Set(workspaceIdByApp.values())];
+  if (!workspaceIds.length) return;
+
+  const { data: members } = await supabase
+    .from("workspace_members")
+    .select("user_id, workspace_id")
+    .in("workspace_id", workspaceIds);
+  if (!members?.length) return;
+
+  const { data: subs } = await supabase
+    .from("push_subscriptions")
+    .select("id, user_id, endpoint, p256dh, auth_key")
+    .in("user_id", [...new Set(members.map((m) => m.user_id))]);
+  if (!subs?.length) return;
+
+  const changesByUser = new Map<string, SignificantChange[]>();
+  for (const member of members) {
+    for (const change of changes) {
+      if (workspaceIdByApp.get(change.appId) !== member.workspace_id) continue;
+      const list = changesByUser.get(member.user_id) ?? [];
+      list.push(change);
+      changesByUser.set(member.user_id, list);
+    }
+  }
+
+  const webpush = getWebPushClient();
+
+  for (const sub of subs) {
+    const userChanges = changesByUser.get(sub.user_id);
+    if (!userChanges?.length) continue;
+
+    const [first] = userChanges;
+    const body = userChanges.length === 1
+      ? `"${first.term}" moved from #${first.previousRank} to #${first.rank} for ${first.appName}`
+      : `${userChanges.length} keyword rank changes today, including "${first.term}" (#${first.previousRank} → #${first.rank})`;
+
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },
+        JSON.stringify({ title: "Ranking changes", body, url: "/mobile" })
+      );
+    } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const statusCode = (err as any)?.statusCode;
+      if (statusCode === 404 || statusCode === 410) {
+        await supabase.from("push_subscriptions").delete().eq("id", sub.id);
+      }
+    }
+  }
 }
 
 export async function GET(req: Request) {
@@ -91,6 +178,7 @@ export async function GET(req: Request) {
   let refreshed = 0;
   let failed = 0;
   let rateLimited = false;
+  const changes: SignificantChange[] = [];
 
   for (const { term, store, country } of stale as { term: string; store: string; country: string }[]) {
     if (rateLimited && store === "ios") continue;
@@ -134,7 +222,7 @@ export async function GET(req: Request) {
           );
         }
 
-        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName));
+        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName), changes);
         refreshed++;
       } else if (store === "android") {
         const gplay = await import("google-play-scraper");
@@ -177,7 +265,7 @@ export async function GET(req: Request) {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""));
+        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""), changes);
         refreshed++;
       }
     } catch {
@@ -185,11 +273,14 @@ export async function GET(req: Request) {
     }
   }
 
+  await notifyRankChanges(supabase, changes);
+
   return NextResponse.json({
     refreshed,
     failed,
     rateLimited,
     total: stale.length,
+    notified: changes.length,
     message: rateLimited
       ? `Rate limited after ${refreshed} keywords. Remaining will be picked up tomorrow.`
       : `Refreshed ${refreshed}/${stale.length} keywords.`,

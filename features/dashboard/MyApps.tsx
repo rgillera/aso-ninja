@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import {
   PlusIcon,
   DevicePhoneMobileIcon,
@@ -11,6 +12,7 @@ import {
   CheckIcon,
   CheckCircleIcon,
   TrashIcon,
+  QrCodeIcon,
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
@@ -185,6 +187,47 @@ function focusGlobalSearch() {
   window.dispatchEvent(new Event("aso:focus-search"));
 }
 
+function MobileAppQrButton() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  // /mobile follows whichever app you last viewed on the web (same
+  // lastAppId/lastWorkspaceId cookies DashboardShell writes) — see
+  // app/mobile/page.tsx — so this QR always opens the right rankings once
+  // at least one app has been viewed.
+  const mobileUrl = `${process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io"}/mobile`;
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] ring-1 px-3 py-2.5 text-xs transition-colors ${open ? "text-white ring-indigo-500/50" : "ring-white/[0.08] text-gray-400 hover:text-gray-200"}`}
+      >
+        <QrCodeIcon className="size-3.5" />
+        Get mobile app
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-1.5 z-50 w-64 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 p-4">
+          <div className="flex justify-center rounded-lg bg-white p-3">
+            <QRCodeSVG value={mobileUrl} size={144} />
+          </div>
+          <p className="mt-3 text-center text-xs text-gray-400">
+            Scan with your phone to track rankings and get push notifications the moment they change.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
   const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
   const [, startTransition] = useTransition();
@@ -356,8 +399,9 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
             </button>
           )}
 
-          {/* Add app — right side */}
-          <div className="ml-auto">
+          {/* Mobile app QR + Add app — right side */}
+          <div className="ml-auto flex items-center gap-2">
+            <MobileAppQrButton />
             <button
               onClick={focusGlobalSearch}
               className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-[#22252f] transition-colors"

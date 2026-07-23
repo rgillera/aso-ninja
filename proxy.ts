@@ -1,8 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED = ["/dashboard", "/workspace"];
+const PROTECTED = ["/dashboard", "/workspace", "/mobile"];
 const AUTH_PAGES = ["/login", "/signup"];
+
+// Plain startsWith would also match e.g. "/mobile-manifest.webmanifest"
+// against "/mobile" — matches only the route itself or a nested segment.
+function matchesRoute(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -36,13 +42,13 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (!user && matchesRoute(pathname, PROTECTED)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
+  if (user && matchesRoute(pathname, AUTH_PAGES)) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
     url.pathname = next?.startsWith("/") ? next : "/dashboard";

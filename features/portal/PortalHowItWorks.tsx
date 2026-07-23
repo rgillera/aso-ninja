@@ -1,4 +1,4 @@
-import { AppSearchDemo, KeywordTableDemo, RankChartDemo } from "@/features/onboarding/demo";
+import { AppSearchDemo, KeywordTableDemo, RankChartDemo, PushNotificationDemo } from "@/features/onboarding/demo";
 
 const STEPS = [
   {
@@ -22,6 +22,12 @@ const STEPS = [
     description: "We check your rank daily and plot the history, so you can see whether your app is climbing, falling, or holding steady.",
     visual: <RankChartDemo />,
   },
+  {
+    n: 4,
+    title: "Get notified on your phone",
+    description: "Install the rankings monitor to your home screen and get a push notification the moment a keyword makes a big move — up or down.",
+    visual: <PushNotificationDemo />,
+  },
 ];
 
 export default function PortalHowItWorks() {
@@ -31,7 +37,7 @@ export default function PortalHowItWorks() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">How it works</p>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Three steps to your first insight
+            Four steps to your first insight
           </h2>
           <p className="mt-6 text-lg text-gray-400">
             No spreadsheets, no guesswork. Here&rsquo;s what tracking a keyword actually looks like.

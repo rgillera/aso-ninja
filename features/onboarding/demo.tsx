@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import {
   MagnifyingGlassIcon, StarIcon, ChevronDownIcon, CameraIcon,
 } from "@heroicons/react/24/outline";
@@ -119,6 +120,65 @@ export function KeywordTableDemo() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+export function PushNotificationDemo() {
+  // Only the top portion of the phone is shown (h-[288px] wrapper clipping a
+  // 600px-tall frame) — reads as the device peeking into frame, not a full
+  // mockup. The banner only starts its --animate-notif-in entrance once
+  // scrolled into view — a plain mount-time animation would already be over
+  // by the time anyone scrolls down to step 4, since this section renders
+  // (off-screen) with the rest of the page on load.
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setVisible(true);
+        observer.disconnect();
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="relative mx-auto h-[288px] w-[300px] overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-[600px] w-[300px] rounded-[3rem] bg-black p-2 ring-1 ring-white/10 shadow-2xl">
+        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-indigo-950 via-[#15171d] to-[#0c0d10]">
+          <div className="absolute left-1/2 top-4 h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black" />
+          <span className="absolute inset-x-0 top-5 text-center text-xs font-semibold text-white/90">
+            9:41
+          </span>
+
+          <div className={`absolute inset-x-4 top-20 ${visible ? "animate-notif-in" : "opacity-0"}`}>
+            <div className="rounded-2xl bg-[#1c1e26]/95 p-3.5 ring-1 ring-white/10 shadow-lg backdrop-blur">
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
+                  <CameraIcon className="size-4 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-semibold text-gray-300">AppASO Rankings</span>
+                    <span className="shrink-0 text-[10px] text-gray-500">now</span>
+                  </div>
+                  <p className="mt-0.5 text-sm font-medium text-white">Ranking changes</p>
+                  <p className="mt-0.5 text-xs leading-snug text-gray-400">
+                    &ldquo;instagram&rdquo; moved from #18 to #12
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
