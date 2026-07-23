@@ -1,8 +1,20 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
+import { isMobileUserAgent } from "@/libs/user-agent";
 import type { AuthState } from "@/libs/contracts";
+
+// Server Actions don't receive the request object directly like Route
+// Handlers do — read the User-Agent via next/headers instead. Not exported
+// from libs/user-agent.ts itself since that file is also imported by
+// proxy.ts (Edge Middleware), where next/headers's request-scoped APIs
+// aren't available.
+async function isMobileRequest(): Promise<boolean> {
+  const h = await headers();
+  return isMobileUserAgent(h.get("user-agent") ?? "");
+}
 
 export async function loginAction(
   _prev: AuthState,
@@ -19,7 +31,7 @@ export async function loginAction(
 
   if (error) return { error: error.message };
 
-  redirect(next?.startsWith("/") ? next : "/dashboard");
+  redirect(next?.startsWith("/") ? next : (await isMobileRequest()) ? "/mobile" : "/dashboard");
 }
 
 export async function registerAction(
@@ -77,7 +89,7 @@ export async function registerAction(
     if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
   }
 
-  redirect(safeNext ?? "/dashboard");
+  redirect(safeNext ?? ((await isMobileRequest()) ? "/mobile" : "/dashboard"));
 }
 
 export type ResendState = { error?: string; success?: boolean } | null;

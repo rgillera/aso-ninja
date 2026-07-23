@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ChevronLeftIcon } from "@heroicons/react/24/outline";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import { RankingList } from "@/features/mobile/RankingList";
 import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — matches DashboardShell.tsx
+
 export function MobileMonitor({
+  workspaceId,
   appId,
   appName,
   appIconUrl,
@@ -14,6 +19,7 @@ export function MobileMonitor({
   storeId,
   country,
 }: {
+  workspaceId: string;
   appId: string;
   appName: string;
   appIconUrl: string | null;
@@ -23,6 +29,13 @@ export function MobileMonitor({
 }) {
   const [keywords, setKeywords] = useState<SavedKeyword[] | null>(null);
   const [snapshots, setSnapshots] = useState<PerformanceSnapshotResult>({});
+
+  // Remembers this pick the same way DashboardShell.tsx does, so the next
+  // visit to /mobile skips both pickers straight to this app.
+  useEffect(() => {
+    document.cookie = `lastAppId=${appId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+    document.cookie = `lastWorkspaceId=${workspaceId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+  }, [appId, workspaceId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +66,16 @@ export function MobileMonitor({
 
   return (
     <main className="mx-auto max-w-md">
+      <div className="flex items-center justify-between px-4 pt-3">
+        <Link href={`/mobile/${workspaceId}`} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
+          <ChevronLeftIcon className="size-3.5" />
+          Apps
+        </Link>
+        <Link href="/dashboard" className="text-xs text-gray-500 hover:text-gray-300">
+          View full dashboard →
+        </Link>
+      </div>
+
       <header className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
         {appIconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

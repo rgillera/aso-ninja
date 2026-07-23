@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
+import { isMobileUserAgent } from "@/libs/user-agent";
 
 const PROTECTED = ["/dashboard", "/workspace", "/mobile"];
 const AUTH_PAGES = ["/login", "/signup"];
@@ -51,7 +52,11 @@ export async function proxy(request: NextRequest) {
   if (user && matchesRoute(pathname, AUTH_PAGES)) {
     const next = request.nextUrl.searchParams.get("next");
     const url = request.nextUrl.clone();
-    url.pathname = next?.startsWith("/") ? next : "/dashboard";
+    url.pathname = next?.startsWith("/")
+      ? next
+      : isMobileUserAgent(request.headers.get("user-agent") ?? "")
+        ? "/mobile"
+        : "/dashboard";
     url.search = "";
     return NextResponse.redirect(url);
   }
