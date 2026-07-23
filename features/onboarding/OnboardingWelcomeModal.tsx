@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon, RocketLaunchIcon } from "@heroicons/react/24/outline";
 import { loadOnboarding, saveOnboarding } from "./onboarding-checklist";
-import { AppSearchDemo, KeywordTableDemo, RankChartDemo } from "./demo";
+import { AppSearchDemo, KeywordTableDemo, RankChartDemo, PushNotificationDemo } from "./demo";
 
 type Props = {
   hasApp: boolean;
@@ -60,12 +60,25 @@ function MonitorPage() {
   );
 }
 
-const PAGES = [WelcomePage, AddAppPage, AddKeywordsPage, MonitorPage];
+function NotifyPage() {
+  return (
+    <div>
+      <PushNotificationDemo />
+      <p className="mt-4 text-xs text-gray-500">
+        Install the rankings monitor to your home screen and get a push notification the moment
+        a keyword makes a big move — up or down.
+      </p>
+    </div>
+  );
+}
+
+const PAGES = [WelcomePage, AddAppPage, AddKeywordsPage, MonitorPage, NotifyPage];
 const PAGE_TITLES = [
   "Welcome to AppASO",
   "Add your app",
   "Add keywords to track",
   "Monitor rankings over time",
+  "Get notified on your phone",
 ];
 
 export function OnboardingWelcomeModal({ hasApp, workspaceId }: Props) {

@@ -29,6 +29,7 @@ import {
   RocketLaunchIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
+import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
@@ -501,6 +502,7 @@ export default function DashboardSidebar({
           <AcademicCapIcon className="size-4 shrink-0" />
           Learning Center
         </a>
+        <MobileAppQrButton variant="row" />
         <button
           type="button"
           onClick={() => window.Tawk_API?.maximize?.()}
