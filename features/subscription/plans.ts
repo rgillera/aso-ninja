@@ -79,7 +79,7 @@ export const PLANS: Plan[] = [
     name: "Pro+",
     priceMonthlyCents: 23640,
     priceYearlyCents: 236400,
-    description: "Everything in Pro, plus long tail keyword tools, ranked keywords, group by intent, and a bigger relevancy & opportunity scoring pool across up to 20 apps.",
+    description: "Everything in Pro, plus long tail keyword tools, ranked keywords, group by intent, keyword simulator, and a bigger relevancy & opportunity scoring pool across up to 20 apps.",
     badge: null,
     features: [
       "4 workspaces",
@@ -98,6 +98,7 @@ export const PLANS: Plan[] = [
       "Long tail keyword tool",
       "Ranked keywords view",
       "Group by intent",
+      "Keyword simulator",
       "Installable mobile app (with keyword ranking push notifications)",
       "Live chat & email support",
     ],

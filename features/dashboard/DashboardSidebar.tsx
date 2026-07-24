@@ -73,7 +73,7 @@ const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassI
   { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
   { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
   { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro_plus" },
-  { label: "Keyword Simulator",    href: "/dashboard/keywords/simulator",    icon: BeakerIcon,                 minPlan: "pro" },
+  { label: "Keyword Simulator",    href: "/dashboard/keywords/simulator",    icon: BeakerIcon,                 minPlan: "pro_plus" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [

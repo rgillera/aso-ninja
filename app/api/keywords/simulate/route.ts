@@ -48,14 +48,22 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Keyword Simulator itself is a Pro+-and-up feature (distinct from the
+  // relevancy pool check below, which is Pro-and-up) — checked first so a
+  // Pro (not Pro+) workspace gets a clear "needs Pro+" message instead of
+  // silently falling through to the relevancy-pool response shape.
+  const planState = await getWorkspacePlanState(workspaceId);
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  if (!isPlanAtLeast(planSlug, "pro_plus")) {
+    return NextResponse.json({ error: "Keyword Simulator requires the Pro+ plan or above." }, { status: 403 });
+  }
+
   // Same gating as the real add flow (app/api/keywords/metrics/route.ts) —
   // relevancy_scored_count is a live COUNT of already-scored keyword_metrics
   // rows, not a spendable balance, so there's nothing to "charge" a re-run
   // against. Blocking simulate once the pool is already exhausted is the
   // correct read of "count against the same pool" without inventing new
   // schema or risking a permanent double-spend on already-scored keywords.
-  const planState = await getWorkspacePlanState(workspaceId);
-  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
   const hasRelevancyAccess = isPlanAtLeast(planSlug, "pro");
   const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : null;
   const relevancyScoredCount = planState && !("error" in planState) ? planState.usage.relevancy_scored_count : 0;

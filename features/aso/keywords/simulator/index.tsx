@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { DevicePhoneMobileIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import type { App, StoreData } from "@/libs/contracts";
-import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
-import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { AppHeader } from "@/features/aso/AppHeader";
+import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { MetadataSection } from "@/features/aso/metadata/preview/MetadataFieldCard";
 import { SimulatedRelevancyTable } from "./SimulatedRelevancyTable";
 import type { SavedKeyword, SimulatedResult, SimulatorRow } from "./types";
@@ -12,16 +15,30 @@ import type { SavedKeyword, SimulatedResult, SimulatorRow } from "./types";
 // Matches MAX_TERMS in app/api/keywords/simulate/route.ts.
 const MAX_TERMS = 50;
 
-type Props = { app: App; storeData: StoreData };
+function NoAppSelected() {
+  return (
+    <div className="h-full flex items-center justify-center bg-[#111318]">
+      <div className="text-center">
+        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+      </div>
+    </div>
+  );
+}
 
-export default function KeywordSimulator({ app, storeData }: Props) {
+export default function KeywordSimulator() {
+  const activeApp = useActiveApp();
+  const workspaceId = useWorkspaceId();
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro_plus");
+
+  const [storeSubtitle, setStoreSubtitle] = useState("");
   const [keywords, setKeywords] = useState<SavedKeyword[]>([]);
   const [loadingKeywords, setLoadingKeywords] = useState(true);
 
-  const originalTitle = app.name;
-  const originalSubtitle = storeData?.subtitle ?? "";
-  const [hypotheticalTitle, setHypotheticalTitle] = useState(originalTitle);
-  const [hypotheticalSubtitle, setHypotheticalSubtitle] = useState(originalSubtitle);
+  const [hypotheticalTitle, setHypotheticalTitle] = useState("");
+  const [hypotheticalSubtitle, setHypotheticalSubtitle] = useState("");
 
   const [simulating, setSimulating] = useState(false);
   const [simulatedResults, setSimulatedResults] = useState<Record<string, SimulatedResult> | null>(null);
@@ -29,18 +46,62 @@ export default function KeywordSimulator({ app, storeData }: Props) {
   const [aiDown, setAiDown] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Keyed on bundle_id rather than the internal id: a previewed-but-not-yet-
+  // followed app never gets an `id` from ActiveAppContext, so gating on it
+  // would skip loading entirely for apps that aren't tracked yet — Keyword
+  // Simulator should still render for those, just with an empty keyword table
+  // (same "No tracked keywords yet" state a followed app with none shows).
+  const loadedAppKey = useRef<string | undefined>(undefined);
   useEffect(() => {
-    fetch(`/api/keywords/list?appId=${app.id}`)
+    const key = activeApp?.id ?? activeApp?.bundle_id;
+    if (!key || isLocked || loadedAppKey.current === key) return;
+    loadedAppKey.current = key;
+
+    setHypotheticalTitle(activeApp?.name ?? "");
+    setHypotheticalSubtitle("");
+    setStoreSubtitle("");
+    setSimulatedResults(null);
+    setRelevancyLimitReached(false);
+    setAiDown(false);
+    setError(null);
+    setKeywords([]);
+    setLoadingKeywords(true);
+
+    const storeDataParams = new URLSearchParams({
+      store: activeApp?.store ?? "ios",
+      storeId: activeApp?.store_id ?? "",
+      bundleId: activeApp?.bundle_id ?? "",
+      country: activeApp?.country ?? "us",
+    });
+    fetch(`/api/apps/store-data?${storeDataParams}`)
+      .then((r) => r.json())
+      .then((data: { subtitle: string }) => {
+        setStoreSubtitle(data.subtitle ?? "");
+        setHypotheticalSubtitle(data.subtitle ?? "");
+      })
+      .catch(() => {});
+
+    const kwParams = activeApp?.id
+      ? new URLSearchParams({ appId: activeApp.id })
+      : new URLSearchParams({
+          workspaceId: workspaceId ?? "",
+          bundleId: activeApp?.bundle_id ?? "",
+          store: activeApp?.store ?? "ios",
+          country: activeApp?.country ?? "us",
+        });
+    fetch(`/api/keywords/list?${kwParams}`)
       .then((r) => r.json())
       .then((data: { keywords: SavedKeyword[] }) => setKeywords(data.keywords ?? []))
       .finally(() => setLoadingKeywords(false));
-  }, [app.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeApp?.id, activeApp?.bundle_id, isLocked]);
 
-  const hasChanges = hypotheticalTitle !== originalTitle || hypotheticalSubtitle !== originalSubtitle;
+  const originalTitle = activeApp?.name ?? "";
+  const hasChanges = hypotheticalTitle !== originalTitle || hypotheticalSubtitle !== storeSubtitle;
 
   function handleClearAll() {
     setHypotheticalTitle(originalTitle);
-    setHypotheticalSubtitle(originalSubtitle);
+    setHypotheticalSubtitle(storeSubtitle);
     setSimulatedResults(null);
     setRelevancyLimitReached(false);
     setAiDown(false);
@@ -48,7 +109,7 @@ export default function KeywordSimulator({ app, storeData }: Props) {
   }
 
   async function handleSimulate() {
-    if (!hasChanges || simulating) return;
+    if (!hasChanges || simulating || !activeApp?.id) return;
     setSimulating(true);
     setError(null);
     setRelevancyLimitReached(false);
@@ -66,11 +127,11 @@ export default function KeywordSimulator({ app, storeData }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          appId: app.id,
-          workspaceId: app.workspace_id,
-          appName: app.name,
-          store: app.store,
-          country: app.country ?? "us",
+          appId: activeApp.id,
+          workspaceId,
+          appName: activeApp.name,
+          store: activeApp.store,
+          country: activeApp.country ?? "us",
           hypotheticalTitle,
           hypotheticalSubtitle,
           terms,
@@ -101,40 +162,35 @@ export default function KeywordSimulator({ app, storeData }: Props) {
     simulatedOpportunity: simulatedResults?.[k.term]?.opportunity ?? null,
   })), [keywords, simulatedResults]);
 
-  const limits = app.store === "android"
+  if (!activeApp) {
+    return <NoAppSelected />;
+  }
+
+  if (isLocked) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+        <AppHeader app={activeApp} title="Keyword Simulator" />
+        <FeatureLocked
+          minPlan="pro_plus"
+          icon={BeakerIcon}
+          title="Keyword Simulator is a Pro+ feature"
+          description="Upgrade to Pro+ or above to preview how a title/subtitle change would move your tracked keywords' relevancy before you publish it."
+          benefits={[
+            "Try a new title & subtitle against your already-tracked keywords",
+            "See predicted relevancy and opportunity deltas before publishing",
+          ]}
+        />
+      </div>
+    );
+  }
+
+  const limits = activeApp.store === "android"
     ? { title: 30, subtitle: 80 }
     : { title: 30, subtitle: 30 };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
-      {/* Page header */}
-      <div className="shrink-0 border-b border-white/[0.07] bg-[#111318] px-6 py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            {app.icon_url ? (
-              <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
-            ) : (
-              <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
-                <DevicePhoneMobileIcon className="size-4 text-gray-500" />
-              </div>
-            )}
-            <div>
-              <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
-              <p className="text-xs text-gray-500 leading-tight">
-                {app.store === "ios" ? "App Store" : "Google Play"}
-                {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
-              </p>
-            </div>
-            <FollowButton app={app} />
-            <StoreLinkButton app={app} />
-          </div>
-          {app.country && (
-            <span className="flex items-center gap-1.5 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-3.5 text-xs text-gray-300">
-              {countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country}
-            </span>
-          )}
-        </div>
-      </div>
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <AppHeader app={activeApp} title="Keyword Simulator" />
 
       <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         {/* Left: hypothetical title/subtitle */}
@@ -154,27 +210,31 @@ export default function KeywordSimulator({ app, storeData }: Props) {
               onChange={setHypotheticalTitle}
             />
             <MetadataSection
-              title={app.store === "android" ? "Short Description" : "App Subtitle"}
+              title={activeApp.store === "android" ? "Short Description" : "App Subtitle"}
               value={hypotheticalSubtitle}
               limit={limits.subtitle}
-              placeholder={app.store === "android" ? "Enter short description…" : "Enter subtitle…"}
+              placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
               dark
-              rows={app.store === "android" ? 3 : 2}
-              originalValue={originalSubtitle}
+              rows={activeApp.store === "android" ? 3 : 2}
+              originalValue={storeSubtitle}
               onChange={setHypotheticalSubtitle}
             />
             <button
               onClick={handleSimulate}
-              disabled={!hasChanges || simulating || loadingKeywords || keywords.length === 0}
+              disabled={!hasChanges || simulating || loadingKeywords || keywords.length === 0 || !activeApp.id}
               className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {simulating ? "Simulating…" : "Simulate"}
             </button>
-            {!hasChanges && (
+            {!activeApp.id ? (
+              <p className="text-xs text-gray-600">
+                Follow this app and track some keywords in Keyword Research to run a simulation.
+              </p>
+            ) : !hasChanges ? (
               <p className="text-xs text-gray-600">
                 Edit the title or subtitle above, then click Simulate to see how your tracked keywords&rsquo; relevancy would change. Nothing here is saved or published.
               </p>
-            )}
+            ) : null}
           </div>
         </div>
 
