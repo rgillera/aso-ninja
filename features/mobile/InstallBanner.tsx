@@ -58,13 +58,13 @@ export function InstallBanner() {
       {!isIOS && deferredPrompt && (
         <button
           onClick={install}
-          className="shrink-0 rounded-md bg-indigo-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-400"
+          className="shrink-0 rounded-md bg-indigo-500 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-400"
         >
           Install
         </button>
       )}
-      <button onClick={dismiss} aria-label="Dismiss" className="shrink-0 text-indigo-300 hover:text-white">
-        <XMarkIcon className="size-4" />
+      <button onClick={dismiss} aria-label="Dismiss" className="-m-2 shrink-0 p-2 text-indigo-300 hover:text-white">
+        <XMarkIcon className="size-5" />
       </button>
     </div>
   );

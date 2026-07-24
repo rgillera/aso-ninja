@@ -63,7 +63,7 @@ export function NotificationSettingsList({ apps }: { apps: NotificationSettingsA
       {apps.map((app) => {
         const enabled = enabledIds.has(app.id);
         return (
-          <li key={app.id} className="flex items-center gap-3 px-4 py-3">
+          <li key={app.id} className="flex items-center gap-3 px-5 py-4">
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-gray-200">
                 {app.name}
@@ -78,15 +78,19 @@ export function NotificationSettingsList({ apps }: { apps: NotificationSettingsA
               aria-label={`Rank-change alerts for ${app.name}${app.country ? ` (${app.country})` : ""}`}
               disabled={busyId === app.id}
               onClick={() => toggle(app.id)}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-                enabled ? "bg-indigo-500" : "bg-white/[0.12]"
-              }`}
+              className="-m-3 shrink-0 p-3 disabled:opacity-50"
             >
               <span
-                className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white transition-transform ${
-                  enabled ? "translate-x-5" : "translate-x-0"
+                className={`relative block h-7 w-12 rounded-full transition-colors ${
+                  enabled ? "bg-indigo-500" : "bg-white/[0.12]"
                 }`}
-              />
+              >
+                <span
+                  className={`absolute left-0.5 top-0.5 size-6 rounded-full bg-white transition-transform ${
+                    enabled ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </span>
             </button>
           </li>
         );

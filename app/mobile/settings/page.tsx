@@ -26,16 +26,19 @@ export default async function MobileSettingsPage() {
 
   return (
     <main className="mx-auto max-w-md">
-      <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-4">
-        <Link href="/mobile" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
-          <ChevronLeftIcon className="size-3.5" />
+      <header className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-5">
+        <Link
+          href="/mobile"
+          className="-m-2 flex items-center gap-1 p-2 text-sm text-gray-400 hover:text-gray-200"
+        >
+          <ChevronLeftIcon className="size-5" />
           Back
         </Link>
       </header>
 
-      <div className="px-4 pb-2 pt-4">
-        <h1 className="text-sm font-medium text-gray-100">Notification settings</h1>
-        <p className="mt-0.5 text-xs text-gray-600">Choose which apps send you rank-change alerts.</p>
+      <div className="px-5 pb-3 pt-5">
+        <h1 className="text-base font-medium text-gray-100">Notification settings</h1>
+        <p className="mt-0.5 text-sm text-gray-600">Choose which apps send you rank-change alerts.</p>
       </div>
 
       {rows.length === 0 ? (

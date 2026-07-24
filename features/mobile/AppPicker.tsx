@@ -22,14 +22,17 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
 
   return (
     <main className="mx-auto max-w-md">
-      <header className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-4">
-        <Link href="/mobile?switch=1" className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300">
-          <ChevronLeftIcon className="size-3.5" />
+      <header className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-5">
+        <Link
+          href="/mobile?switch=1"
+          className="-m-2 flex items-center gap-1 p-2 text-sm text-gray-400 hover:text-gray-200"
+        >
+          <ChevronLeftIcon className="size-5" />
           Workspaces
         </Link>
       </header>
 
-      <p className="px-4 pt-4 pb-2 text-xs text-gray-600">Pick an app to view its keyword rankings</p>
+      <p className="px-5 pt-5 pb-2 text-sm text-gray-600">Pick an app to view its keyword rankings</p>
 
       <ul className="divide-y divide-white/[0.06]">
         {groups.map((group) => {
@@ -39,10 +42,10 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
 
           const icon = primary.icon_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={primary.icon_url} alt="" className="size-9 shrink-0 rounded-xl object-cover" />
+            <img src={primary.icon_url} alt="" className="size-11 shrink-0 rounded-xl object-cover" />
           ) : (
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">
-              <DevicePhoneMobileIcon className="size-4 text-gray-500" />
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.06]">
+              <DevicePhoneMobileIcon className="size-5 text-gray-500" />
             </div>
           );
 
@@ -51,7 +54,7 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
               {multiCountry ? (
                 <button
                   onClick={() => setExpandedKey(expanded ? null : key)}
-                  className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-white/[0.04]"
+                  className="flex w-full items-center gap-3 px-5 py-4 text-left active:bg-white/[0.04]"
                 >
                   {icon}
                   <div className="min-w-0 flex-1">
@@ -65,7 +68,7 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
               ) : (
                 <Link
                   href={`/mobile/${workspaceId}/${primary.id}`}
-                  className="flex items-center gap-3 px-4 py-3 active:bg-white/[0.04]"
+                  className="flex items-center gap-3 px-5 py-4 active:bg-white/[0.04]"
                 >
                   {icon}
                   <div className="min-w-0 flex-1">
@@ -85,7 +88,7 @@ export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: Pi
                     <li key={entry.id}>
                       <Link
                         href={`/mobile/${workspaceId}/${entry.id}`}
-                        className="flex items-center gap-2 py-2.5 pl-16 pr-4 text-sm text-gray-300 active:bg-white/[0.04]"
+                        className="flex items-center gap-2 py-3.5 pl-19 pr-5 text-sm text-gray-300 active:bg-white/[0.04]"
                       >
                         {entry.country && <span className="text-base leading-none">{countryFlag(entry.country)}</span>}
                         <span>{entry.country}</span>
