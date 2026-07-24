@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon, ComputerDesktopIcon, BellIcon } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
-import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 import { countryFlag } from "@/libs/countries";
 import { groupAppsByBundle, keywordCountLabel } from "@/libs/mobile-nav";
 
@@ -21,13 +20,9 @@ type NavApp = {
 export function NavigationDrawer({
   workspaceId,
   appId,
-  appName,
-  country,
 }: {
   workspaceId: string;
   appId: string;
-  appName: string;
-  country: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -71,7 +66,14 @@ export function NavigationDrawer({
 
         <div className="flex-1 overflow-y-auto">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <NotificationToggle appId={appId} appName={appName} country={country} />
+            <Link
+              href="/mobile/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200"
+            >
+              <BellIcon className="size-4 shrink-0" />
+              Notification settings
+            </Link>
           </div>
 
           <p className="px-4 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">

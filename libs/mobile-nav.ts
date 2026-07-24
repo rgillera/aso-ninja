@@ -63,6 +63,39 @@ export async function getWorkspaceApps(
   return apps.map((a) => ({ ...a, keywordCount: counts.get(a.id) ?? 0 }));
 }
 
+export type TrackedApp = {
+  id: string;
+  name: string;
+  country: string | null;
+  workspaceId: string;
+  workspaceName: string;
+};
+
+// Every app across every workspace the user can see mobile rankings for —
+// feeds app/mobile/settings/page.tsx's per-app notification toggle list, so
+// it doesn't need one round trip per workspace the way the nav drawer does.
+export async function getAllTrackedApps(
+  supabase: SupabaseServerClient,
+  workspaces: EligibleWorkspace[]
+): Promise<TrackedApp[]> {
+  if (!workspaces.length) return [];
+  const workspaceNameById = new Map(workspaces.map((w) => [w.id, w.name]));
+
+  const { data: apps } = await supabase
+    .from("apps")
+    .select("id, name, country, workspace_id")
+    .in("workspace_id", workspaces.map((w) => w.id))
+    .order("name", { ascending: true });
+
+  return (apps ?? []).map((a) => ({
+    id: a.id,
+    name: a.name,
+    country: a.country,
+    workspaceId: a.workspace_id,
+    workspaceName: workspaceNameById.get(a.workspace_id) ?? "",
+  }));
+}
+
 export type AppGroup<T> = { key: string; primary: T; entries: T[] };
 
 // The same app tracked in several countries gets one `apps` row per

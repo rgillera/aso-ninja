@@ -96,7 +96,7 @@ async function refreshKeywordMetrics(
 // isSignificantRankChange's comment for why that matters: this is the same
 // "digest, not per-event" reasoning that ruled out per-event email for the
 // same feature) and never for an app they haven't turned alerts on for
-// (see features/mobile/NotificationToggle.tsx).
+// (see features/mobile/NotificationSettingsList.tsx).
 async function notifyRankChanges(supabase: AdminClient, changes: SignificantChange[]) {
   if (!changes.length) return;
 

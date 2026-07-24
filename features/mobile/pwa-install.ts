@@ -1,4 +1,4 @@
-// Shared by InstallBanner.tsx and NotificationToggle.tsx — client-only
+// Shared by InstallBanner.tsx and NotificationSettingsList.tsx — client-only
 // checks (navigator/window aren't available during SSR), so callers must
 // only invoke these from an effect or event handler, never at render time.
 
