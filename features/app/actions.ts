@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, refresh } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { syncAppDownloads } from "@/libs/store-connections/sync";
@@ -39,6 +39,7 @@ export async function createAppAction(
   if (error) return { error: error.message };
 
   revalidatePath("/dashboard");
+  refresh();
   return null;
 }
 
@@ -46,6 +47,11 @@ export async function deleteAppAction(appId: string): Promise<void> {
   const supabase = await createClient();
   await supabase.from("apps").delete().eq("id", appId);
   revalidatePath("/dashboard");
+  // revalidatePath only invalidates the cache for future requests — it doesn't
+  // push fresh data to this already-mounted page. Without refresh(), the row
+  // deletes server-side but the country chip (or app row) stays visible until
+  // some later, unrelated navigation happens to catch it up.
+  refresh();
 }
 
 export type FollowAppInput = {
@@ -106,5 +112,6 @@ export async function followAppAction(
   }
 
   revalidatePath("/dashboard");
+  refresh();
   return { id: data.id };
 }
