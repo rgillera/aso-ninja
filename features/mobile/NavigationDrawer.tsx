@@ -6,7 +6,7 @@ import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon }
 import { signOutAction } from "@/features/auth/actions";
 import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 import { countryFlag } from "@/libs/countries";
-import { groupAppsByBundle } from "@/libs/mobile-nav";
+import { groupAppsByBundle, keywordCountLabel } from "@/libs/mobile-nav";
 
 type NavWorkspace = { id: string; name: string };
 type NavApp = {
@@ -110,7 +110,6 @@ export function NavigationDrawer({
                       className={`flex w-full items-center gap-1 px-4 py-2.5 text-left text-sm ${activeInGroup ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
                     >
                       <span className="min-w-0 flex-1 truncate">{primary.name}</span>
-                      <span className="shrink-0 text-xs text-gray-600">{entries.length} countries</span>
                       <ChevronDownIcon className={`size-3.5 shrink-0 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`} />
                     </button>
                   ) : (
@@ -120,7 +119,7 @@ export function NavigationDrawer({
                       className={`flex items-center gap-1 px-4 py-2.5 text-sm ${primary.id === appId ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
                     >
                       <span className="min-w-0 flex-1 truncate">{primary.name}</span>
-                      <span className="shrink-0 text-xs text-gray-600">{primary.keywordCount}</span>
+                      <span className="shrink-0 text-xs text-gray-600">{keywordCountLabel(primary.keywordCount)}</span>
                     </Link>
                   )}
 
@@ -134,7 +133,8 @@ export function NavigationDrawer({
                             className={`flex items-center gap-1.5 py-2 pl-8 pr-4 text-sm ${entry.id === appId ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
                           >
                             {entry.country && <span className="text-sm leading-none">{countryFlag(entry.country)}</span>}
-                            {entry.country}
+                            <span>{entry.country}</span>
+                            <span className="ml-auto shrink-0 text-xs text-gray-600">{keywordCountLabel(entry.keywordCount)}</span>
                           </Link>
                         </li>
                       ))}

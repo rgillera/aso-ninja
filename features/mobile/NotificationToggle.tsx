@@ -38,6 +38,14 @@ export function NotificationToggle() {
   }, []);
 
   async function subscribe() {
+    // Subscribing is account-wide, not scoped to whichever app/workspace
+    // you're currently viewing (push_subscriptions has no app_id/workspace_id
+    // — see supabase/migrations/20260723000001_push_subscriptions.sql), so
+    // make that explicit before turning it on rather than let the button's
+    // per-page placement imply it's just for this one app.
+    if (!window.confirm("This turns on rank-change alerts for every app across every workspace you have access to, not just this one. Continue?")) {
+      return;
+    }
     setBusy(true);
     try {
       const registration = await navigator.serviceWorker.ready;

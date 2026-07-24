@@ -81,3 +81,9 @@ export function groupAppsByBundle<T extends { store: string; bundle_id: string }
   }
   return [...map.entries()].map(([key, entries]) => ({ key, primary: entries[0], entries }));
 }
+
+// Shared by AppPicker.tsx and NavigationDrawer.tsx so "1 keyword" vs
+// "2 keywords" pluralization can't drift between the two.
+export function keywordCountLabel(count: number): string {
+  return `${count} keyword${count === 1 ? "" : "s"}`;
+}

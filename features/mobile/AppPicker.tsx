@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DevicePhoneMobileIcon, ChevronLeftIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { countryFlag } from "@/libs/countries";
-import { groupAppsByBundle } from "@/libs/mobile-nav";
+import { groupAppsByBundle, keywordCountLabel } from "@/libs/mobile-nav";
 
 type PickerApp = {
   id: string;
@@ -15,10 +15,6 @@ type PickerApp = {
   country: string | null;
   keywordCount: number;
 };
-
-function keywordCountLabel(count: number) {
-  return `${count} keyword${count === 1 ? "" : "s"}`;
-}
 
 export function AppPicker({ workspaceId, apps }: { workspaceId: string; apps: PickerApp[] }) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);

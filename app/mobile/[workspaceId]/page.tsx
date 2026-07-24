@@ -20,22 +20,20 @@ export default async function MobileWorkspacePage({
   // Was `redirect("/mobile")` — but for a brand-new account (one eligible
   // workspace, zero apps), /mobile's own single-workspace auto-skip would
   // just bounce straight back here, looping forever. Setup itself can only
-  // happen on the web (mobile is view-only), so show that instead of
-  // silently redirecting nowhere useful.
+  // happen on the web (mobile is view-only) — deliberately no link/button to
+  // /dashboard here: tapping through to it would just load the desktop-
+  // oriented dashboard UI cramped onto a phone screen, which isn't the point.
+  // Plain text pointing at a computer instead.
   if (!apps.length) {
+    const siteHost = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io").host;
     return (
       <main className="mx-auto max-w-md p-6 text-center text-sm text-neutral-500">
         <p>No apps in this workspace yet.</p>
         <p className="mt-2">
-          Mobile is for viewing your rankings, not managing them — add your first app from the
-          web dashboard on your computer.
+          Mobile is for viewing your rankings only — setup happens on a computer. Open{" "}
+          <span className="font-medium text-gray-300">{siteHost}</span> in a web browser on your
+          laptop or computer to add your first app.
         </p>
-        <a
-          href="/dashboard"
-          className="mt-4 inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white"
-        >
-          Open web dashboard
-        </a>
       </main>
     );
   }
