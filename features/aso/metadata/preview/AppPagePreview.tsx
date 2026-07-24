@@ -5,7 +5,6 @@ import {
   DevicePhoneMobileIcon,
   SunIcon,
   MoonIcon,
-  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import PhonePreview from "@/features/aso/metadata/preview/PhonePreview";
 import AppTextPreview from "@/features/aso/metadata/preview/AppTextPreview";
@@ -28,7 +27,6 @@ type Props = {
 export default function AppPagePreview({ app, storeData }: Props) {
   const [tab, setTab] = useState<Tab>("text");
   const [dark, setDark] = useState(true);
-  const [previewMode, setPreviewMode] = useState<"phone" | "tablet">("phone");
 
   // Local, unsaved overrides for trying out new creatives against the live preview
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
@@ -136,15 +134,6 @@ export default function AppPagePreview({ app, storeData }: Props) {
                   {countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country}
                 </span>
               )}
-
-              <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-1.5">
-                <button onClick={() => setPreviewMode("phone")} className={`rounded-md p-2 transition-colors ${previewMode === "phone" ? "bg-white/10 text-white" : "text-gray-500"}`}>
-                  <DevicePhoneMobileIcon className="size-4" />
-                </button>
-                <button onClick={() => setPreviewMode("tablet")} className={`rounded-md p-2 transition-colors ${previewMode === "tablet" ? "bg-white/10 text-white" : "text-gray-500"}`}>
-                  <Squares2X2Icon className="size-4" />
-                </button>
-              </div>
 
               <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-1.5">
                 <button onClick={() => setDark(false)} className={`rounded-md p-2 transition-colors ${!dark ? "bg-white/10 text-white" : "text-gray-500"}`}>

@@ -11,6 +11,7 @@ import {
   CheckIcon,
   CheckCircleIcon,
   TrashIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
@@ -106,7 +107,75 @@ function ConfirmRemoveDialog({
   );
 }
 
-function AppRow({ group, connected, onRequestDelete }: { group: AppGroup; connected: boolean; onRequestDelete: (group: AppGroup) => void }) {
+function ConfirmRemoveCountryDialog({
+  group,
+  entry,
+  onConfirm,
+  onCancel,
+}: {
+  group: AppGroup;
+  entry: App;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const { primary } = group;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-sm rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          {primary.icon_url ? (
+            <img src={primary.icon_url} alt={primary.name} className="size-10 rounded-xl object-cover shrink-0" />
+          ) : (
+            <div className="size-10 rounded-xl bg-[#0d0f14] flex items-center justify-center shrink-0">
+              <DevicePhoneMobileIcon className="size-5 text-gray-600" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{primary.name}</p>
+            <p className="text-xs text-gray-500 truncate">{primary.bundle_id}</p>
+          </div>
+        </div>
+
+        <p className="text-sm text-gray-300 mb-2">
+          Stop tracking <span className="font-semibold text-white">{primary.name}</span> in{" "}
+          <span className="font-semibold text-white">
+            {countryFlag(entry.country ?? "")} {COUNTRY_MAP[entry.country ?? ""] ?? entry.country}
+          </span>?
+        </p>
+        <p className="text-xs text-red-400/80 mb-6">
+          All tracked keywords and metrics for this country will be permanently deleted. This cannot be undone.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-lg bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/[0.10] hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 rounded-lg bg-red-500/90 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-500 transition-colors"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AppRow({
+  group,
+  connected,
+  onRequestDelete,
+  onRequestRemoveCountry,
+}: {
+  group: AppGroup;
+  connected: boolean;
+  onRequestDelete: (group: AppGroup) => void;
+  onRequestRemoveCountry: (group: AppGroup, entry: App) => void;
+}) {
   const { primary, entries } = group;
 
   return (
@@ -157,15 +226,29 @@ function AppRow({ group, connected, onRequestDelete }: { group: AppGroup; connec
         <div className="flex items-center gap-1.5">
           {entries.map((app) =>
             app.country ? (
-              <Link
-                key={app.id}
-                href={`/dashboard/apps/${app.id}/report`}
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] px-3 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-white/[0.08] hover:bg-white/[0.08] hover:text-white transition-colors"
-              >
-                <span className="text-base leading-none">{countryFlag(app.country)}</span>
-                {app.country}
-              </Link>
+              <div key={app.id} className="relative group/country">
+                <Link
+                  href={`/dashboard/apps/${app.id}/report`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] px-3 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-white/[0.08] hover:bg-white/[0.08] hover:text-white transition-colors"
+                >
+                  <span className="text-base leading-none">{countryFlag(app.country)}</span>
+                  {app.country}
+                </Link>
+                {entries.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onRequestRemoveCountry(group, app);
+                    }}
+                    title={`Stop tracking ${app.country}`}
+                    className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 ring-2 ring-[#1a1d24] transition-opacity group-hover/country:opacity-100"
+                  >
+                    <XMarkIcon className="size-2.5 stroke-[3]" />
+                  </button>
+                )}
+              </div>
             ) : null
           )}
         </div>
@@ -188,6 +271,7 @@ function focusGlobalSearch() {
 
 export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
   const [pendingDelete, setPendingDelete] = useState<AppGroup | null>(null);
+  const [pendingCountryRemoval, setPendingCountryRemoval] = useState<{ group: AppGroup; entry: App } | null>(null);
   const [, startTransition] = useTransition();
   const connectedIds = useMemo(() => new Set(connectedAppIds), [connectedAppIds]);
 
@@ -196,6 +280,13 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
       for (const id of ids) await deleteAppAction(id);
       removeRecentEntry(workspaceId, bundleId, store);
       setPendingDelete(null);
+    });
+  }
+
+  function handleRemoveCountry(entryId: string) {
+    startTransition(async () => {
+      await deleteAppAction(entryId);
+      setPendingCountryRemoval(null);
     });
   }
   const [storeFilter, setStoreFilter] = useState<"all" | "ios" | "android">("all");
@@ -247,6 +338,15 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
           group={pendingDelete}
           onConfirm={() => handleDelete(pendingDelete.entries.map(e => e.id), pendingDelete.primary.bundle_id, pendingDelete.primary.store)}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingCountryRemoval && (
+        <ConfirmRemoveCountryDialog
+          group={pendingCountryRemoval.group}
+          entry={pendingCountryRemoval.entry}
+          onConfirm={() => handleRemoveCountry(pendingCountryRemoval.entry.id)}
+          onCancel={() => setPendingCountryRemoval(null)}
         />
       )}
 
@@ -399,7 +499,13 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
             ) : (
               <div className="divide-y divide-white/[0.07]">
                 {groupApps(filtered).map((group) => (
-                  <AppRow key={group.key} group={group} connected={connectedIds.has(group.primary.id)} onRequestDelete={setPendingDelete} />
+                  <AppRow
+                    key={group.key}
+                    group={group}
+                    connected={connectedIds.has(group.primary.id)}
+                    onRequestDelete={setPendingDelete}
+                    onRequestRemoveCountry={(group, entry) => setPendingCountryRemoval({ group, entry })}
+                  />
                 ))}
               </div>
             )}
