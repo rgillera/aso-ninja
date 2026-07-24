@@ -99,6 +99,10 @@ type Props = {
   planSlug?: PlanSlug;
   /** Max workspaces the current user may own under their plan; null = unlimited */
   workspaceLimit?: number | null;
+  /** Below the lg breakpoint the sidebar renders as an off-canvas drawer, shown when true */
+  isMobileOpen?: boolean;
+  /** Closes the drawer — backdrop click, a nav link click, or Escape */
+  onMobileClose?: () => void;
 };
 
 function workspaceInitial(name: string) {
@@ -116,6 +120,8 @@ export default function DashboardSidebar({
   role,
   planSlug = "free",
   workspaceLimit,
+  isMobileOpen = false,
+  onMobileClose,
 }: Props) {
   const planBadge = PLAN_BADGE[planSlug];
   const canManagePlan = role === "owner";
@@ -176,10 +182,36 @@ export default function DashboardSidebar({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Escape closes the mobile drawer — has no effect once lg: forces it open/static
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onMobileClose?.();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [isMobileOpen, onMobileClose]);
+
   return (
     <>
     {showCreate && <CreateWorkspace onClose={() => setShowCreate(false)} />}
-    <aside className="flex h-full w-72 shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07]">
+    {isMobileOpen && (
+      <div
+        className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+        onClick={onMobileClose}
+        aria-hidden="true"
+      />
+    )}
+    <aside
+      onClick={(e) => {
+        // Nav links do a full page navigation (plain <a>, no client routing) so this
+        // is mostly cosmetic — avoids the drawer visibly staying open mid-navigation.
+        if ((e.target as HTMLElement).closest("a")) onMobileClose?.();
+      }}
+      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+        isMobileOpen ? "translate-x-0" : "-translate-x-full"
+      }`}
+    >
       {/* Workspace switcher */}
       <div className="relative p-4 border-b border-white/[0.07]" ref={ref}>
         <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">

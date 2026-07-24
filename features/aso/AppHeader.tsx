@@ -241,7 +241,7 @@ export function AppHeader({ app, title }: Props) {
           </>
         )}
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="hidden items-center gap-1.5 sm:flex">
         <h1 className="text-sm font-semibold text-white">{title}</h1>
         <InformationCircleIcon className="size-4 text-gray-500" />
       </div>

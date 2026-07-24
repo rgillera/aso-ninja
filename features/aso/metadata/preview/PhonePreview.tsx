@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
 import { StarIcon as StarSolid } from "@heroicons/react/24/solid";
 import { StarIcon } from "@heroicons/react/24/outline";
@@ -487,6 +488,15 @@ function AndroidPreview({ app, dark, storeData, videoUrl }: { app: App; dark: bo
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
 
+// Everything inside the mockup (IosPreview/AndroidPreview) is built at a fixed
+// 520x~924 pixel size — every padding, font size, and icon is a literal px value,
+// not proportional. Below lg (where it stacks under the metadata form instead of
+// sitting beside it, see AppPagePreview) there isn't 520px of width to give it, so
+// rather than reflowing all of that internal sizing, this scales the whole block
+// down as a unit via a measured transform and collapses the outer wrapper to match
+// the scaled-down height (transforms don't shrink layout size on their own).
+const NATURAL_WIDTH = 520;
+
 export default function PhonePreview({
   app,
   dark,
@@ -498,13 +508,58 @@ export default function PhonePreview({
   storeData: StoreData;
   videoUrl?: string | null;
 }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  // 0 = "no override" (lg+: let the flex row's default stretch + lg:overflow-y-auto
+  // handle sizing, same as before this component supported scaling at all)
+  const [scaledHeight, setScaledHeight] = useState(0);
+
+  useEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    // Matches Tailwind's lg: breakpoint — the point where AppPagePreview switches
+    // from a stacked single column to the side-by-side form/preview split.
+    const mq = window.matchMedia("(min-width: 1024px)");
+    function update() {
+      if (mq.matches) {
+        setScale(1);
+        setScaledHeight(0);
+        return;
+      }
+      const width = outer!.clientWidth;
+      const s = width > 0 ? Math.min(1, width / NATURAL_WIDTH) : 1;
+      setScale(s);
+      setScaledHeight(inner!.offsetHeight * s);
+    }
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(outer);
+    mq.addEventListener("change", update);
+    return () => {
+      ro.disconnect();
+      mq.removeEventListener("change", update);
+    };
+  }, []);
+
   return (
-    <div className="w-[520px] shrink-0 flex items-start justify-center overflow-y-auto p-8">
-      {app.store === "android" ? (
-        <AndroidPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
-      ) : (
-        <IosPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
-      )}
+    <div
+      ref={outerRef}
+      className="w-full shrink-0 overflow-hidden lg:w-[520px] lg:overflow-y-auto"
+      style={scaledHeight ? { height: scaledHeight } : undefined}
+    >
+      <div
+        ref={innerRef}
+        className="w-[520px] flex items-start justify-center p-8"
+        style={scale !== 1 ? { transform: `scale(${scale})`, transformOrigin: "top center" } : undefined}
+      >
+        {app.store === "android" ? (
+          <AndroidPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
+        ) : (
+          <IosPreview app={app} dark={dark} storeData={storeData} videoUrl={videoUrl} />
+        )}
+      </div>
     </div>
   );
 }

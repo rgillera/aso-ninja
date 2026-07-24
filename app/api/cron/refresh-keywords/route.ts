@@ -91,40 +91,39 @@ async function refreshKeywordMetrics(
 }
 
 // Sends exactly one push per user for the whole cron run, covering every
-// significant change across every app/workspace they belong to — never one
-// push per keyword (see isSignificantRankChange's comment for why that
-// matters: this is the same "digest, not per-event" reasoning that ruled out
-// per-event email for the same feature).
+// significant change across every app they've individually opted into via
+// push_app_subscriptions — never one push per keyword (see
+// isSignificantRankChange's comment for why that matters: this is the same
+// "digest, not per-event" reasoning that ruled out per-event email for the
+// same feature) and never for an app they haven't turned alerts on for
+// (see features/mobile/NotificationToggle.tsx).
 async function notifyRankChanges(supabase: AdminClient, changes: SignificantChange[]) {
   if (!changes.length) return;
 
   const appIds = [...new Set(changes.map((c) => c.appId))];
-  const { data: apps } = await supabase.from("apps").select("id, workspace_id").in("id", appIds);
-  const workspaceIdByApp = new Map((apps ?? []).map((a) => [a.id, a.workspace_id]));
-
-  const workspaceIds = [...new Set(workspaceIdByApp.values())];
-  if (!workspaceIds.length) return;
-
-  const { data: members } = await supabase
-    .from("workspace_members")
-    .select("user_id, workspace_id")
-    .in("workspace_id", workspaceIds);
-  if (!members?.length) return;
+  const { data: appSubs } = await supabase
+    .from("push_app_subscriptions")
+    .select("user_id, app_id")
+    .in("app_id", appIds);
+  if (!appSubs?.length) return;
 
   const { data: subs } = await supabase
     .from("push_subscriptions")
     .select("id, user_id, endpoint, p256dh, auth_key")
-    .in("user_id", [...new Set(members.map((m) => m.user_id))]);
+    .in("user_id", [...new Set(appSubs.map((s) => s.user_id))]);
   if (!subs?.length) return;
 
+  const appIdsByUser = new Map<string, Set<string>>();
+  for (const appSub of appSubs) {
+    const set = appIdsByUser.get(appSub.user_id) ?? new Set<string>();
+    set.add(appSub.app_id);
+    appIdsByUser.set(appSub.user_id, set);
+  }
+
   const changesByUser = new Map<string, SignificantChange[]>();
-  for (const member of members) {
-    for (const change of changes) {
-      if (workspaceIdByApp.get(change.appId) !== member.workspace_id) continue;
-      const list = changesByUser.get(member.user_id) ?? [];
-      list.push(change);
-      changesByUser.set(member.user_id, list);
-    }
+  for (const [userId, enabledAppIds] of appIdsByUser) {
+    const userChanges = changes.filter((c) => enabledAppIds.has(c.appId));
+    if (userChanges.length) changesByUser.set(userId, userChanges);
   }
 
   const webpush = getWebPushClient();

@@ -357,8 +357,10 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
             </button>
           )}
 
-          {/* Mobile app QR + Add app — right side */}
-          <div className="ml-auto flex items-center gap-2">
+          {/* Mobile app QR + Add app — right side; hidden on mobile, where "Add App"
+              is redundant with the always-visible top search bar and a QR prompt
+              to get the mobile app is pointless if you're already on one */}
+          <div className="ml-auto hidden items-center gap-2 sm:flex">
             <MobileAppQrButton />
             <button
               onClick={focusGlobalSearch}

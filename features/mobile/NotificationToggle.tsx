@@ -14,7 +14,7 @@ function urlBase64ToUint8Array(base64String: string) {
 
 type Status = "checking" | "unsupported" | "subscribed" | "unsubscribed";
 
-export function NotificationToggle() {
+export function NotificationToggle({ appId, appName }: { appId: string; appName: string }) {
   const [status, setStatus] = useState<Status>("checking");
   const [busy, setBusy] = useState(false);
   // iOS only exposes the Push API once the app's been added to the home
@@ -28,40 +28,50 @@ export function NotificationToggle() {
       setStatus("unsupported");
       return;
     }
-    navigator.serviceWorker
-      .register("/sw-mobile.js", { scope: "/mobile", updateViaCache: "none" })
-      .then(async (registration) => {
-        const sub = await registration.pushManager.getSubscription();
-        setStatus(sub ? "subscribed" : "unsubscribed");
+    let cancelled = false;
+    fetch(`/api/push/app-status?appId=${appId}`)
+      .then((r) => r.json())
+      .then(({ enabled }: { enabled: boolean }) => {
+        if (!cancelled) setStatus(enabled ? "subscribed" : "unsubscribed");
       })
-      .catch(() => setStatus("unsupported"));
-  }, []);
+      .catch(() => {
+        if (!cancelled) setStatus("unsubscribed");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appId]);
 
   async function subscribe() {
-    // Subscribing is account-wide, not scoped to whichever app/workspace
-    // you're currently viewing (push_subscriptions has no app_id/workspace_id
-    // — see supabase/migrations/20260723000001_push_subscriptions.sql), so
-    // make that explicit before turning it on rather than let the button's
-    // per-page placement imply it's just for this one app.
-    if (!window.confirm("This turns on rank-change alerts for every app across every workspace you have access to, not just this one. Continue?")) {
-      return;
-    }
     setBusy(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const sub = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+      const registration = await navigator.serviceWorker.register("/sw-mobile.js", {
+        scope: "/mobile",
+        updateViaCache: "none",
       });
-      const json = sub.toJSON();
-      await fetch("/api/push/subscribe", {
+      // The device only needs one push registration total — reuse it if
+      // some other app was already enabled, only create it the first time.
+      let sub = await registration.pushManager.getSubscription();
+      if (!sub) {
+        sub = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!),
+        });
+        const json = sub.toJSON();
+        await fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint: sub.endpoint,
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
+          }),
+        });
+      }
+      await fetch("/api/push/subscribe-app", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          endpoint: sub.endpoint,
-          p256dh: json.keys?.p256dh,
-          auth: json.keys?.auth,
-        }),
+        body: JSON.stringify({ appId }),
       });
       setStatus("subscribed");
     } finally {
@@ -72,16 +82,11 @@ export function NotificationToggle() {
   async function unsubscribe() {
     setBusy(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const sub = await registration.pushManager.getSubscription();
-      if (sub) {
-        await fetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        });
-        await sub.unsubscribe();
-      }
+      await fetch("/api/push/unsubscribe-app", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appId }),
+      });
       setStatus("unsubscribed");
     } finally {
       setBusy(false);
@@ -105,7 +110,7 @@ export function NotificationToggle() {
       disabled={busy}
       className="rounded-md bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/[0.1] disabled:opacity-50"
     >
-      {status === "subscribed" ? "Notifications on" : "Enable rank-change alerts"}
+      {status === "subscribed" ? `Alerts on for ${appName}` : `Enable rank-change alerts for ${appName}`}
     </button>
   );
 }

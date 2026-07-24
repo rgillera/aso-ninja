@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname, useParams, useSearchParams, useRouter } from "next/navigation";
+import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
@@ -133,6 +134,13 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // first instead of silently losing the in-progress add.
   const [guardMessage, setGuardMessage] = useState<string | null>(null);
   const [pendingHref,  setPendingHref]  = useState<string | null>(null);
+
+  // Off-canvas sidebar toggle for mobile/tablet (< lg) — always closed on desktop,
+  // where DashboardSidebar forces itself open via its own lg: classes regardless.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   function handleNavClickCapture(e: React.MouseEvent) {
     if (!guardMessage) return;
@@ -423,8 +431,23 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           role={currentRole}
           planSlug={planSlug}
           workspaceLimit={workspaceLimit}
+          isMobileOpen={mobileNavOpen}
+          onMobileClose={() => setMobileNavOpen(false)}
         />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
+          <div className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMobileNavOpen(true)}
+              className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+              aria-label="Open navigation"
+            >
+              <Bars3Icon className="size-5" />
+            </button>
+            <span className="text-sm font-medium text-white truncate">
+              {activeWorkspace?.name ?? "My Workspace"}
+            </span>
+          </div>
           <DashboardSearch
             apps={activeWorkspaceApps}
             workspaceId={activeWorkspaceId ?? ""}

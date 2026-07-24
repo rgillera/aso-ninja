@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon, ComputerDesktopIcon } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import { NotificationToggle } from "@/features/mobile/NotificationToggle";
 import { countryFlag } from "@/libs/countries";
@@ -21,9 +21,11 @@ type NavApp = {
 export function NavigationDrawer({
   workspaceId,
   appId,
+  appName,
 }: {
   workspaceId: string;
   appId: string;
+  appName: string;
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -67,7 +69,7 @@ export function NavigationDrawer({
 
         <div className="flex-1 overflow-y-auto">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <NotificationToggle />
+            <NotificationToggle appId={appId} appName={appName} />
           </div>
 
           <p className="px-4 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
@@ -147,6 +149,13 @@ export function NavigationDrawer({
         </div>
 
         <div className="border-t border-white/[0.06] p-3">
+          <Link
+            href="/dashboard"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+          >
+            <ComputerDesktopIcon className="size-4 shrink-0" />
+            View Dashboard
+          </Link>
           <form action={signOutAction}>
             <button
               type="submit"
