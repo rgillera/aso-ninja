@@ -6,11 +6,6 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const next = searchParams.get("next");
-  const redirectPath = next?.startsWith("/")
-    ? next
-    : isMobileUserAgent(request.headers.get("user-agent") ?? "")
-      ? "/mobile"
-      : "/dashboard";
 
   if (code) {
     const supabase = await createClient();
@@ -23,7 +18,9 @@ export async function GET(request: NextRequest) {
         .select("*", { count: "exact", head: true })
         .eq("user_id", data.user.id);
 
-      if (count === 0) {
+      const isFirstLogin = count === 0;
+
+      if (isFirstLogin) {
         const displayName =
           data.user.user_metadata?.full_name ??
           data.user.email?.split("@")[0] ??
@@ -34,6 +31,15 @@ export async function GET(request: NextRequest) {
           p_name: displayName,
         });
       }
+
+      // First-ever login always lands on /dashboard, even on mobile —
+      // there's no app tracked yet for /mobile to show anything useful for.
+      // Returning logins on mobile go to /mobile instead.
+      const redirectPath = next?.startsWith("/")
+        ? next
+        : !isFirstLogin && isMobileUserAgent(request.headers.get("user-agent") ?? "")
+          ? "/mobile"
+          : "/dashboard";
 
       return NextResponse.redirect(`${origin}${redirectPath}`);
     }

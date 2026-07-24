@@ -66,7 +66,7 @@ export function MobileMonitor({
   return (
     <main className="mx-auto max-w-md">
       <header className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
-        <NavigationDrawer workspaceId={workspaceId} appId={appId} appName={appName} />
+        <NavigationDrawer workspaceId={workspaceId} appId={appId} appName={appName} country={country} />
         {appIconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={appIconUrl} alt="" className="size-9 rounded-lg" />

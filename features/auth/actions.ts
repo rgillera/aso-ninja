@@ -89,7 +89,10 @@ export async function registerAction(
     if (workspaceError) return { error: "Account created but workspace setup failed. Please contact support." };
   }
 
-  redirect(safeNext ?? ((await isMobileRequest()) ? "/mobile" : "/dashboard"));
+  // First-ever login always lands on /dashboard, even on mobile — there's
+  // no app tracked yet for /mobile to show anything useful for. Returning
+  // logins on mobile go to /mobile instead, see loginAction below.
+  redirect(safeNext ?? "/dashboard");
 }
 
 export type ResendState = { error?: string; success?: boolean } | null;

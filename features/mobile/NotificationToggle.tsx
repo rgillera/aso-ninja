@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { isIosDevice, isStandaloneDisplay } from "@/features/mobile/pwa-install";
+import { countryFlag } from "@/libs/countries";
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -14,7 +15,15 @@ function urlBase64ToUint8Array(base64String: string) {
 
 type Status = "checking" | "unsupported" | "subscribed" | "unsubscribed";
 
-export function NotificationToggle({ appId, appName }: { appId: string; appName: string }) {
+export function NotificationToggle({
+  appId,
+  appName,
+  country,
+}: {
+  appId: string;
+  appName: string;
+  country: string | null;
+}) {
   const [status, setStatus] = useState<Status>("checking");
   const [busy, setBusy] = useState(false);
   // iOS only exposes the Push API once the app's been added to the home
@@ -43,6 +52,14 @@ export function NotificationToggle({ appId, appName }: { appId: string; appName:
   }, [appId]);
 
   async function subscribe() {
+    // Alerts are scoped to this one app+country row (see push_app_subscriptions
+    // migration) — an app tracked in several countries needs a separate toggle
+    // per country, so make that explicit before subscribing rather than let
+    // people assume one toggle covers every country they track.
+    const scope = country ? `${appName} (${country})` : appName;
+    if (!window.confirm(`Enable rank-change alerts for ${scope}?\n\nYou'll only be notified for this country. If you track ${appName} in other countries, enable alerts separately for each one.`)) {
+      return;
+    }
     setBusy(true);
     try {
       const registration = await navigator.serviceWorker.register("/sw-mobile.js", {
@@ -110,7 +127,9 @@ export function NotificationToggle({ appId, appName }: { appId: string; appName:
       disabled={busy}
       className="rounded-md bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-gray-200 hover:bg-white/[0.1] disabled:opacity-50"
     >
-      {status === "subscribed" ? `Alerts on for ${appName}` : `Enable rank-change alerts for ${appName}`}
+      {status === "subscribed"
+        ? `Alerts on for ${appName}${country ? ` ${countryFlag(country)} ${country}` : ""}`
+        : `Enable rank-change alerts for ${appName}${country ? ` ${countryFlag(country)} ${country}` : ""}`}
     </button>
   );
 }

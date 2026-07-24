@@ -22,10 +22,12 @@ export function NavigationDrawer({
   workspaceId,
   appId,
   appName,
+  country,
 }: {
   workspaceId: string;
   appId: string;
   appName: string;
+  country: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -69,7 +71,7 @@ export function NavigationDrawer({
 
         <div className="flex-1 overflow-y-auto">
           <div className="border-b border-white/[0.06] px-4 py-3">
-            <NotificationToggle appId={appId} appName={appName} />
+            <NotificationToggle appId={appId} appName={appName} country={country} />
           </div>
 
           <p className="px-4 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-gray-600">
