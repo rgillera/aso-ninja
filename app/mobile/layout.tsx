@@ -24,7 +24,7 @@ export default async function MobileLayout({ children }: { children: React.React
   if (!user) redirect("/login");
 
   return (
-    <div className="min-h-full bg-[#111318] text-gray-300">
+    <div className="min-h-full overscroll-y-contain bg-[#111318] text-gray-300">
       <InstallBanner />
       {children}
     </div>

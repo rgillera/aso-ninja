@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import { RankingList } from "@/features/mobile/RankingList";
 import { NavigationDrawer } from "@/features/mobile/NavigationDrawer";
+import { PullToRefresh } from "@/features/mobile/PullToRefresh";
 import { countryFlag } from "@/libs/countries";
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days — matches DashboardShell.tsx
@@ -28,6 +29,7 @@ export function MobileMonitor({
 }) {
   const [keywords, setKeywords] = useState<SavedKeyword[] | null>(null);
   const [snapshots, setSnapshots] = useState<PerformanceSnapshotResult>({});
+  const mountedRef = useRef(true);
 
   // Remembers this pick the same way DashboardShell.tsx does, so the next
   // visit to /mobile skips both pickers straight to this app.
@@ -36,32 +38,36 @@ export function MobileMonitor({
     document.cookie = `lastWorkspaceId=${workspaceId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
   }, [appId, workspaceId]);
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/keywords/list?appId=${appId}`)
-      .then((r) => r.json())
-      .then(({ keywords: kws }: { keywords: SavedKeyword[] }) => {
-        if (cancelled) return;
-        setKeywords(kws ?? []);
-
-        if (kws?.length && storeId && country) {
-          const params = new URLSearchParams({
-            terms: kws.map((k) => k.term).join(","),
-            store,
-            country,
-            storeId,
-          });
-          fetch(`/api/keywords/performance-snapshots?${params}`)
-            .then((r) => r.json())
-            .then((data: PerformanceSnapshotResult) => {
-              if (!cancelled) setSnapshots(data);
-            });
-        }
-      });
-    return () => {
-      cancelled = true;
+  // Shared by the initial load and the pull-to-refresh gesture (see
+  // features/mobile/PullToRefresh.tsx) so there's one fetch path, not two.
+  const fetchRankings = useCallback(async () => {
+    const { keywords: kws } = (await fetch(`/api/keywords/list?appId=${appId}`).then((r) => r.json())) as {
+      keywords: SavedKeyword[];
     };
+    if (!mountedRef.current) return;
+    setKeywords(kws ?? []);
+
+    if (kws?.length && storeId && country) {
+      const params = new URLSearchParams({
+        terms: kws.map((k) => k.term).join(","),
+        store,
+        country,
+        storeId,
+      });
+      const data = (await fetch(
+        `/api/keywords/performance-snapshots?${params}`
+      ).then((r) => r.json())) as PerformanceSnapshotResult;
+      if (mountedRef.current) setSnapshots(data);
+    }
   }, [appId, store, storeId, country]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchRankings();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchRankings]);
 
   return (
     <main className="mx-auto max-w-md">
@@ -79,11 +85,13 @@ export function MobileMonitor({
         </div>
       </header>
 
-      {keywords === null ? (
-        <p className="px-4 py-8 text-center text-sm text-gray-500">Loading…</p>
-      ) : (
-        <RankingList key={appId} keywords={keywords} snapshots={snapshots} />
-      )}
+      <PullToRefresh onRefresh={fetchRankings}>
+        {keywords === null ? (
+          <p className="px-4 py-8 text-center text-sm text-gray-500">Loading…</p>
+        ) : (
+          <RankingList key={appId} keywords={keywords} snapshots={snapshots} />
+        )}
+      </PullToRefresh>
     </main>
   );
 }

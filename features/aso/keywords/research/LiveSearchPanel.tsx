@@ -1,11 +1,19 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { XMarkIcon, CalendarDaysIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, PlusIcon, CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
-import type { RankingEntry } from "@/app/api/keywords/rankings-history/route";
 import { fetchLiveSearchResults } from "./liveSearch";
+import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+
+type AddStatus = "idle" | "adding" | "added";
+
+function rowStoreId(app: AppSearchResult, store: "ios" | "android"): string {
+  return store === "ios" ? String(app.trackId) : app.appId ?? String(app.trackId);
+}
 
 type Props = {
   keyword: string;
@@ -13,8 +21,6 @@ type Props = {
   country: string;
   onClose: () => void;
 };
-
-const TABS = ["Live Search", "Past Results"];
 
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -49,7 +55,15 @@ function Stars({ rating }: { rating: number }) {
 }
 
 
-function AppRow({ app, store }: { app: AppSearchResult; store: "ios" | "android" }) {
+function AppRow({
+  app, store, isCurrentApp, addStatus, onAddCompetitor,
+}: {
+  app: AppSearchResult;
+  store: "ios" | "android";
+  isCurrentApp: boolean;
+  addStatus: AddStatus;
+  onAddCompetitor: (app: AppSearchResult) => void;
+}) {
   const storeUrl = store === "ios" && app.trackId
     ? `https://apps.apple.com/app/id${app.trackId}`
     : null;
@@ -58,7 +72,7 @@ function AppRow({ app, store }: { app: AppSearchResult; store: "ios" | "android"
     <div className="border-b border-gray-100 last:border-0 px-3 py-2">
       <div className="flex items-center gap-2.5">
         <span className="text-[9px] font-bold text-gray-300 w-3 shrink-0 text-center">{app.position}</span>
-        <div className={`w-11 h-11 overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06] ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
+        <div className={`relative w-11 h-11 overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06] ${store === "android" ? "rounded-xl" : "rounded-2xl"} ${!isCurrentApp ? "group/icon" : ""}`}>
           {app.icon && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -67,6 +81,24 @@ function AppRow({ app, store }: { app: AppSearchResult; store: "ios" | "android"
               className="w-full h-full object-cover"
               onError={(e) => { e.currentTarget.style.display = "none"; }}
             />
+          )}
+          {!isCurrentApp && (
+            <button
+              type="button"
+              onClick={() => onAddCompetitor(app)}
+              disabled={addStatus !== "idle"}
+              aria-label={addStatus === "added" ? `${app.name} added as competitor` : `Add ${app.name} as competitor`}
+              title={addStatus === "added" ? "Added as competitor" : "Add as competitor"}
+              className={`absolute inset-0 flex items-center justify-center bg-black/60 transition-opacity ${
+                addStatus === "added" ? "opacity-100" : "opacity-0 group-hover/icon:opacity-100"
+              } ${addStatus === "adding" ? "cursor-wait" : addStatus === "added" ? "cursor-default" : "cursor-pointer"}`}
+            >
+              {addStatus === "added" ? (
+                <CheckIcon className="size-4 text-white" />
+              ) : (
+                <PlusIcon className={`size-4 text-white ${addStatus === "adding" ? "opacity-50" : ""}`} />
+              )}
+            </button>
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -106,7 +138,19 @@ function AppRow({ app, store }: { app: AppSearchResult; store: "ios" | "android"
   );
 }
 
-function PhoneFrame({ keyword, apps, loading, error, store }: { keyword: string; apps: AppSearchResult[]; loading: boolean; error?: string | null; store: "ios" | "android" }) {
+function PhoneFrame({
+  keyword, apps, loading, error, store, currentStoreId, addingStoreId, addedStoreIds, onAddCompetitor,
+}: {
+  keyword: string;
+  apps: AppSearchResult[];
+  loading: boolean;
+  error?: string | null;
+  store: "ios" | "android";
+  currentStoreId?: string;
+  addingStoreId: string | null;
+  addedStoreIds: Set<string>;
+  onAddCompetitor: (app: AppSearchResult) => void;
+}) {
   const isAndroid = store === "android";
   return (
     <div
@@ -243,9 +287,19 @@ function PhoneFrame({ keyword, apps, loading, error, store }: { keyword: string;
                   </p>
                 </div>
               )
-            : apps.map((app) => (
-                <AppRow key={app.position} app={app} store={store} />
-              ))}
+            : apps.map((app) => {
+                const id = rowStoreId(app, store);
+                return (
+                  <AppRow
+                    key={app.position}
+                    app={app}
+                    store={store}
+                    isCurrentApp={!!currentStoreId && id === currentStoreId}
+                    addStatus={addingStoreId === id ? "adding" : addedStoreIds.has(id) ? "added" : "idle"}
+                    onAddCompetitor={onAddCompetitor}
+                  />
+                );
+              })}
         </div>
 
         {/* Bottom bar */}
@@ -267,208 +321,63 @@ function PhoneFrame({ keyword, apps, loading, error, store }: { keyword: string;
   );
 }
 
-// ── Past Results grid ────────────────────────────────────────────────────────
-
-function toYMD(d: Date) {
-  return d.toISOString().split("T")[0];
-}
-
-function dateRange(from: string, to: string): string[] {
-  const dates: string[] = [];
-  const cur = new Date(from + "T00:00:00");
-  const end = new Date(to   + "T00:00:00");
-  while (cur <= end) { dates.push(toYMD(cur)); cur.setDate(cur.getDate() + 1); }
-  return dates;
-}
-
-function PastResultsGrid({
-  keyword, store, country,
-}: { keyword: string; store: string; country: string }) {
-  const defaultTo   = toYMD(new Date());
-  const defaultFrom = toYMD(new Date(Date.now() - 29 * 86400_000));
-
-  const [from, setFrom] = useState(defaultFrom);
-  const [to,   setTo]   = useState(defaultTo);
-  const [rows, setRows] = useState<RankingEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(
-      `/api/keywords/rankings-history?keyword=${encodeURIComponent(keyword)}&store=${store}&country=${country}&from=${from}&to=${to}`
-    )
-      .then((r) => r.json())
-      .then((d) => { setRows(d.rows ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [keyword, store, country, from, to]);
-
-  const dates = useMemo(() => dateRange(from, to), [from, to]);
-
-  // Build lookup: date → position → entry
-  const grid = useMemo(() => {
-    const map = new Map<string, Map<number, RankingEntry>>();
-    for (const r of rows) {
-      if (!map.has(r.recorded_on)) map.set(r.recorded_on, new Map());
-      map.get(r.recorded_on)!.set(r.position, r);
-    }
-    return map;
-  }, [rows]);
-
-  const maxPos = useMemo(() => {
-    let m = 0;
-    for (const r of rows) if (r.position > m) m = r.position;
-    return Math.max(m, 10);
-  }, [rows]);
-
-  // Group dates by month for header
-  const months = useMemo(() => {
-    const groups: { label: string; dates: string[] }[] = [];
-    for (const d of dates) {
-      const label = new Date(d + "T00:00:00").toLocaleString("en", { month: "long", year: "numeric" });
-      if (!groups.length || groups[groups.length - 1].label !== label)
-        groups.push({ label, dates: [] });
-      groups[groups.length - 1].dates.push(d);
-    }
-    return groups;
-  }, [dates]);
-
-  const hasData = rows.length > 0;
-
-  return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Header row: title + date range */}
-      <div className="flex items-center justify-between gap-4 shrink-0">
-        <p className="text-sm font-medium text-gray-300">
-          Ranking History on the selected period for this keyword
-        </p>
-        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-400 shrink-0">
-          <CalendarDaysIcon className="size-3.5 text-gray-500" />
-          <input
-            type="date"
-            value={from}
-            max={to}
-            onChange={(e) => setFrom(e.target.value)}
-            className="bg-transparent text-gray-300 outline-none"
-            style={{ colorScheme: "dark", width: "6.5rem" }}
-          />
-          <span className="text-gray-600">–</span>
-          <input
-            type="date"
-            value={to}
-            min={from}
-            onChange={(e) => setTo(e.target.value)}
-            className="bg-transparent text-gray-300 outline-none"
-            style={{ colorScheme: "dark", width: "6.5rem" }}
-          />
-        </div>
-      </div>
-
-      {/* Grid */}
-      <div className="flex-1 overflow-auto">
-        {loading ? (
-          <div className="flex items-center justify-center h-40">
-            <div className="text-xs text-gray-600 animate-pulse">Loading ranking history…</div>
-          </div>
-        ) : !hasData ? (
-          <div className="flex flex-col items-center justify-center h-40 gap-2">
-            <p className="text-sm text-gray-600">No history yet for this keyword.</p>
-            <p className="text-xs text-gray-700">Open Live Search to start recording daily rankings.</p>
-          </div>
-        ) : (
-          <table className="border-separate border-spacing-0 text-[10px]">
-            <thead>
-              {/* Month groups */}
-              <tr>
-                <th className="sticky left-0 z-20 bg-[#141417] w-8" />
-                {months.map((m) => (
-                  <th
-                    key={m.label}
-                    colSpan={m.dates.length}
-                    className="text-left text-gray-500 font-medium px-1 pb-0.5 whitespace-nowrap"
-                  >
-                    {m.label}
-                  </th>
-                ))}
-              </tr>
-              {/* Day numbers */}
-              <tr>
-                <th className="sticky left-0 z-20 bg-[#141417] w-8" />
-                {dates.map((d) => {
-                  const day = new Date(d + "T00:00:00").getDate();
-                  const hasEntries = grid.has(d);
-                  return (
-                    <th key={d} className={`text-center pb-2 px-0.5 font-medium ${hasEntries ? "text-gray-400" : "text-gray-700"}`}>
-                      {day}
-                    </th>
-                  );
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: maxPos }, (_, idx) => idx + 1).map((pos) => (
-                <tr key={pos}>
-                  {/* Position label */}
-                  <td className="sticky left-0 z-10 bg-[#141417] text-right pr-2 text-gray-600 font-bold tabular-nums align-middle">
-                    {pos}
-                  </td>
-                  {dates.map((d) => {
-                    const entry = grid.get(d)?.get(pos);
-                    return (
-                      <td key={d} className="p-0.5 align-middle">
-                        {entry ? (
-                          <div className="relative group/cell">
-                            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white/[0.05]">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={entry.app_icon}
-                                alt=""
-                                className="w-full h-full object-cover"
-                                onError={(e) => { e.currentTarget.style.display = "none"; }}
-                              />
-                            </div>
-                            {/* Tooltip */}
-                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-30 opacity-0 group-hover/cell:opacity-100 transition-opacity">
-                              <div className="bg-[#0d0f14] ring-1 ring-white/[0.12] rounded-lg px-2 py-1.5 text-[9px] text-gray-200 whitespace-nowrap shadow-xl">
-                                <p className="font-semibold">#{pos}</p>
-                                <p>{entry.app_name}</p>
-                                <p className="text-gray-500">{d}</p>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="w-8 h-8" />
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
+  const activeApp   = useActiveApp();
+  const workspaceId = useWorkspaceId();
   const [apps, setApps]           = useState<AppSearchResult[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("Live Search");
+  const [addingStoreId, setAddingStoreId] = useState<string | null>(null);
+  const [addedStoreIds, setAddedStoreIds] = useState<Set<string>>(new Set());
+  const [addError, setAddError]           = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setApps([]);
     setError(null);
+    setAddedStoreIds(new Set());
+    setAddError(null);
     fetchLiveSearchResults(keyword, store, country)
       .then((apps) => { setApps(apps); setLoading(false); })
       .catch(() => { setError("unavailable"); setLoading(false); });
   }, [keyword, store, country]);
 
-  const isPastResults = activeTab === "Past Results";
+  async function handleAddCompetitor(app: AppSearchResult) {
+    if (!activeApp || addingStoreId) return;
+    const storeId = rowStoreId(app, store);
+    if (addedStoreIds.has(storeId)) return;
+
+    setAddError(null);
+    setAddingStoreId(storeId);
+    try {
+      const res = await fetch("/api/competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          bundleId: activeApp.bundle_id,
+          storeId:  activeApp.store_id,
+          appName:  activeApp.name,
+          iconUrl:  activeApp.icon_url ?? undefined,
+          store:    activeApp.store,
+          country:  activeApp.country,
+          competitor: { storeId, name: app.name, icon: app.icon, developer: app.developer },
+        }),
+      });
+      if (!res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        setAddError(body.error ?? "Couldn't add this app as a competitor.");
+        return;
+      }
+      setAddedStoreIds((prev) => new Set(prev).add(storeId));
+    } catch {
+      setAddError("Couldn't add this app as a competitor.");
+    } finally {
+      setAddingStoreId(null);
+    }
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -476,7 +385,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal card */}
-      <div className={`relative z-10 w-full bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col transition-all ${isPastResults ? "max-w-5xl" : "max-w-xl"}`}
+      <div className="relative z-10 w-full max-w-xl bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col"
         style={{ maxHeight: "90vh" }}
       >
         {/* Header */}
@@ -490,33 +399,30 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-0 px-6 border-b border-white/[0.07] shrink-0">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-3 text-xs font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
-                activeTab === tab
-                  ? "border-indigo-500 text-white"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
-              }`}
-            >
-              {tab}
+        {addError && (
+          <div className="flex items-center gap-2 px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-[11px] shrink-0">
+            <ExclamationTriangleIcon className="size-3.5 shrink-0" />
+            <span className="flex-1"><PlanLimitMessage message={addError} /></span>
+            <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300">
+              <XMarkIcon className="size-3.5" />
             </button>
-          ))}
-        </div>
-
-        {/* Body */}
-        {isPastResults ? (
-          <div className="p-6 flex-1 overflow-hidden flex flex-col min-h-0">
-            <PastResultsGrid keyword={keyword} store={store} country={country} />
-          </div>
-        ) : (
-          <div className="flex justify-center p-8 overflow-auto">
-            <PhoneFrame keyword={keyword} apps={apps} loading={loading} error={error} store={store} />
           </div>
         )}
+
+        {/* Body */}
+        <div className="flex justify-center p-8 overflow-auto">
+          <PhoneFrame
+            keyword={keyword}
+            apps={apps}
+            loading={loading}
+            error={error}
+            store={store}
+            currentStoreId={activeApp?.store_id}
+            addingStoreId={addingStoreId}
+            addedStoreIds={addedStoreIds}
+            onAddCompetitor={handleAddCompetitor}
+          />
+        </div>
       </div>
     </div>,
     document.body
