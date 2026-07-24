@@ -20,10 +20,10 @@ export function findRankIdx(resultNames: string[], appName: string): number {
   let idx = resultNames.findIndex((n) => n.toLowerCase().trim() === name);
   if (idx >= 0) return idx;
 
+  if (!nameNorm) return -1;
+
   idx = resultNames.findIndex((n) => normalizeForRankMatch(n) === nameNorm);
   if (idx >= 0) return idx;
-
-  if (!nameNorm) return -1;
 
   return resultNames.findIndex((n) => {
     const nNorm = normalizeForRankMatch(n);
