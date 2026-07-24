@@ -1,6 +1,6 @@
 {
-  "name": "AppASO Rankings",
-  "short_name": "Rankings",
+  "name": "AppASO",
+  "short_name": "AppASO",
   "description": "Keyword rank monitoring for AppASO",
   "start_url": "/mobile",
   "scope": "/mobile",

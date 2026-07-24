@@ -10,6 +10,12 @@ import { InstallBanner } from "@/features/mobile/InstallBanner";
 export const metadata: Metadata = {
   title: "Rankings",
   manifest: "/mobile-manifest.webmanifest",
+  // iOS's "Add to Home Screen" prefers this over the manifest's short_name
+  // (and otherwise falls back to the page <title> above, "Rankings") — set
+  // explicitly so the install name matches Android's too.
+  appleWebApp: {
+    title: "AppASO",
+  },
 };
 
 export default async function MobileLayout({ children }: { children: React.ReactNode }) {

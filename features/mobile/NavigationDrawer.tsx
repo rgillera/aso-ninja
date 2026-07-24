@@ -2,12 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
 import { NotificationToggle } from "@/features/mobile/NotificationToggle";
+import { countryFlag } from "@/libs/countries";
+import { groupAppsByBundle } from "@/libs/mobile-nav";
 
 type NavWorkspace = { id: string; name: string };
-type NavApp = { id: string; name: string };
+type NavApp = {
+  id: string;
+  name: string;
+  store: string;
+  bundle_id: string;
+  country: string | null;
+  keywordCount: number;
+};
 
 export function NavigationDrawer({
   workspaceId,
@@ -20,6 +29,8 @@ export function NavigationDrawer({
   const [loaded, setLoaded] = useState(false);
   const [workspaces, setWorkspaces] = useState<NavWorkspace[]>([]);
   const [apps, setApps] = useState<NavApp[]>([]);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const appGroups = groupAppsByBundle(apps);
 
   function openDrawer() {
     setOpen(true);
@@ -85,17 +96,53 @@ export function NavigationDrawer({
             Apps
           </p>
           <ul>
-            {apps.map((app) => (
-              <li key={app.id}>
-                <Link
-                  href={`/mobile/${workspaceId}/${app.id}`}
-                  onClick={() => setOpen(false)}
-                  className={`block px-4 py-2.5 text-sm ${app.id === appId ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
-                >
-                  {app.name}
-                </Link>
-              </li>
-            ))}
+            {appGroups.map((group) => {
+              const { primary, entries, key } = group;
+              const multiCountry = entries.length > 1;
+              const expanded = expandedKey === key;
+              const activeInGroup = entries.some((e) => e.id === appId);
+
+              return (
+                <li key={key}>
+                  {multiCountry ? (
+                    <button
+                      onClick={() => setExpandedKey(expanded ? null : key)}
+                      className={`flex w-full items-center gap-1 px-4 py-2.5 text-left text-sm ${activeInGroup ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{primary.name}</span>
+                      <span className="shrink-0 text-xs text-gray-600">{entries.length} countries</span>
+                      <ChevronDownIcon className={`size-3.5 shrink-0 text-gray-500 transition-transform ${expanded ? "rotate-180" : ""}`} />
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/mobile/${workspaceId}/${primary.id}`}
+                      onClick={() => setOpen(false)}
+                      className={`flex items-center gap-1 px-4 py-2.5 text-sm ${primary.id === appId ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
+                    >
+                      <span className="min-w-0 flex-1 truncate">{primary.name}</span>
+                      <span className="shrink-0 text-xs text-gray-600">{primary.keywordCount}</span>
+                    </Link>
+                  )}
+
+                  {multiCountry && expanded && (
+                    <ul>
+                      {entries.map((entry) => (
+                        <li key={entry.id}>
+                          <Link
+                            href={`/mobile/${workspaceId}/${entry.id}`}
+                            onClick={() => setOpen(false)}
+                            className={`flex items-center gap-1.5 py-2 pl-8 pr-4 text-sm ${entry.id === appId ? "font-medium text-white" : "text-gray-400 hover:text-gray-200"}`}
+                          >
+                            {entry.country && <span className="text-sm leading-none">{countryFlag(entry.country)}</span>}
+                            {entry.country}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
