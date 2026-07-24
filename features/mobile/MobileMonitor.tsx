@@ -65,15 +65,15 @@ export function MobileMonitor({
 
   return (
     <main className="mx-auto max-w-md">
-      <header className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-4">
+      <header className="flex items-center gap-4 border-b border-white/[0.06] px-5 py-6">
         <NavigationDrawer workspaceId={workspaceId} appId={appId} />
         {appIconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={appIconUrl} alt="" className="size-9 rounded-lg" />
+          <img src={appIconUrl} alt="" className="size-12 rounded-xl" />
         ) : null}
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-sm font-medium text-gray-100">{appName}</h1>
-          <p className="text-xs text-gray-600">
+          <h1 className="truncate text-base font-medium text-gray-100">{appName}</h1>
+          <p className="mt-0.5 text-sm text-gray-600">
             {country ? `${countryFlag(country)} ${country} · ` : ""}Keyword rankings
           </p>
         </div>
