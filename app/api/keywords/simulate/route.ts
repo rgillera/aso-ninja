@@ -6,8 +6,6 @@ import { isGeminiReachable, embedText } from "@/libs/gemini";
 import {
   type IntentTheme,
   computeRelevancy,
-  getDescRelevanceScoresBatch,
-  isBrandKeyword,
   fetchIosAppMeta,
   fetchAndroidAppMeta,
   getCachedIosSearch,
@@ -136,24 +134,13 @@ export async function POST(request: NextRequest) {
         .order("sort_order", { ascending: true })).data ?? []) as IntentTheme[]
     : [];
 
-  // One LLM call for every term's description-relevance score, instead of one
-  // call per term — the loop below only does per-term store-search lookups
-  // and embeddings, not per-term LLM completions. Brand terms are excluded:
-  // computeRelevancy short-circuits those to a fixed 100 without ever looking
-  // at descScore, so scoring them here would just be wasted prompt content.
-  const hasDesc = hypotheticalDescription.length > 10;
-  const scorableTerms = validated
-    .map((v) => v.term)
-    .filter((term) => !isBrandKeyword(term, hypotheticalTitle));
-  const descScores = hasDesc && scorableTerms.length
-    ? await getDescRelevanceScoresBatch(scorableTerms, hypotheticalDescription, themes)
-    : new Map();
-
-  // Everything above resolves quickly; the per-term store-search lookups
-  // below are what actually takes time across up to MAX_TERMS keywords, so
-  // the response streams an NDJSON progress line after each one finishes —
-  // the client uses these to show "Simulating… N%" instead of a single opaque
-  // wait ending in one JSON blob.
+  // Per-term work (store search + LLM/embedding scoring) runs concurrently
+  // rather than one term at a time — each term's computeRelevancy call stays
+  // fully independent (same prompt as scoring a single keyword), so scores
+  // stay comparable with Current Relevancy (computed the same way on the real
+  // add path). Only wall-clock time changes: actual Gemini/Apple concurrency
+  // is bounded by the shared queues in libs/gemini.ts and
+  // libs/apple-rate-limiter.ts, not by this route.
   const encoder = new TextEncoder();
   const total = validated.length;
 
@@ -163,7 +150,7 @@ export async function POST(request: NextRequest) {
       const results: Record<string, SimulateResult> = {};
       let done = 0;
 
-      for (const { term, volume, chance } of validated) {
+      await Promise.all(validated.map(async ({ term, volume, chance }) => {
         let topTitles: string[] = [];
         if (resolvedStore === "ios") {
           let apps = await getCachedIosSearch(supabase, term, normalizedCountry);
@@ -185,14 +172,14 @@ export async function POST(request: NextRequest) {
         }
 
         const { score: relevancy, intentThemeId } = await computeRelevancy(
-          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes, descScores.get(term)
+          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes
         );
         const opportunity = Math.round(Math.sqrt(volume * chance) * Math.pow(relevancy / 100, 2));
         results[term] = { relevancy, opportunity, intentThemeId };
 
         done++;
         send({ type: "progress", done, total });
-      }
+      }));
 
       send({ type: "done", results });
       controller.close();

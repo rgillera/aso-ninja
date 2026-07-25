@@ -119,97 +119,6 @@ Critical: score USER INTENT, not category overlap. Two apps in the same category
   }
 }
 
-// Same scoring as getDescRelevanceScore, but for many keywords in ONE
-// generateText call instead of one call per keyword — used by the Keyword
-// Simulator, which can score up to MAX_TERMS keywords from a single click and
-// would otherwise fire that many separate (expensive) LLM completions.
-// Already-cached keywords (see descScoreCacheKey) are skipped and never enter
-// the prompt.
-export async function getDescRelevanceScoresBatch(
-  keywords: string[], description: string, themes: IntentTheme[]
-): Promise<Map<string, DescScoreResult>> {
-  const results = new Map<string, DescScoreResult>();
-  const uncached: string[] = [];
-  for (const keyword of keywords) {
-    const cached = llmScoreCache.get(descScoreCacheKey(keyword, description, themes));
-    if (cached) results.set(keyword, cached);
-    else if (!uncached.includes(keyword)) uncached.push(keyword);
-  }
-  if (!uncached.length) return results;
-
-  const fallback = async (keyword: string): Promise<DescScoreResult> => ({
-    score: await embeddingDescScore(keyword, description), intentThemeId: null,
-  });
-
-  try {
-    const intentSection = themes.length
-      ? `\n\nAlso classify EACH keyword's search intent against this app's theme list: ${JSON.stringify(themes.map((t) => t.label))}. Pick the single best-matching theme label verbatim, or "Other" if none reasonably fits.`
-      : "";
-    const list = uncached.map((k, i) => `${i + 1}. "${k}"`).join("\n");
-    const prompt = `You are an ASO expert scoring keyword intent. A user typed each of the following keywords into the App Store search bar. For EACH keyword, score the probability (0-100) that they are specifically looking for THIS app.
-
-App description: "${description}"
-
-Keywords:
-${list}
-
-Rules — apply in order per keyword, stop at first match:
-1. If the keyword is another app's brand name or company name → score 0-10. The user wants that specific product, not this one.
-2. If the keyword describes a completely unrelated category (e.g. "baby tracker", "pet care", "ride sharing" for a nutrition app) → score 0-15.
-3. If the keyword is loosely related but this app is unlikely to satisfy the search intent → score 16-40.
-4. If the keyword is a secondary use case this app genuinely supports → score 41-60.
-5. If the keyword directly describes a core feature of this app → score 61-80.
-6. If the keyword is exactly what this app is built for → score 81-100.
-
-Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents.${intentSection}
-
-Reply with EXACTLY ${uncached.length} lines, one per keyword, IN THE SAME ORDER as the list above, each formatted exactly as:
-<number>. <score>${themes.length ? " | <theme label or Other>" : ""}
-No other text, no blank lines, no explanations.`;
-
-    const raw = await generateText(prompt, 0);
-    if (!raw) throw new Error("empty response");
-
-    const byIndex = new Map<number, string>();
-    for (const line of raw.trim().split("\n").map((l) => l.trim()).filter(Boolean)) {
-      const m = line.match(/^(\d+)\.\s*(.+)$/);
-      if (m) byIndex.set(parseInt(m[1], 10), m[2]);
-    }
-
-    for (let i = 0; i < uncached.length; i++) {
-      const keyword = uncached[i];
-      const rest = byIndex.get(i + 1);
-      const [scorePart, themePart] = (rest ?? "").split("|").map((s) => s.trim());
-      const num = parseInt(scorePart?.match(/\d+/)?.[0] ?? "", 10);
-
-      let result: DescScoreResult;
-      if (isNaN(num)) {
-        result = await fallback(keyword);
-      } else {
-        const score = Math.max(0, Math.min(100, num));
-        let intentThemeId: string | null = null;
-        if (themes.length && themePart) {
-          const label = themePart.replace(/^["'-]+|["'-]+$/g, "").trim().toLowerCase();
-          intentThemeId = themes.find((t) => t.label.toLowerCase() === label)?.id ?? null;
-        }
-        result = { score, intentThemeId };
-      }
-      console.log(`[llm-desc-batch] "${keyword}" → line="${rest ?? "(missing)"}" score=${result.score} intent=${result.intentThemeId ?? "none"}`);
-      llmScoreCache.set(descScoreCacheKey(keyword, description, themes), result);
-      results.set(keyword, result);
-    }
-  } catch {
-    for (const keyword of uncached) {
-      if (results.has(keyword)) continue;
-      const result = await fallback(keyword);
-      llmScoreCache.set(descScoreCacheKey(keyword, description, themes), result);
-      results.set(keyword, result);
-    }
-  }
-
-  return results;
-}
-
 export function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0, magA = 0, magB = 0;
   for (let i = 0; i < a.length; i++) {
@@ -275,10 +184,6 @@ export async function computeRelevancy(
   appEmbedding: number[] | null,
   appDescription: string | undefined,
   themes: IntentTheme[],
-  // Callers scoring many keywords at once (the simulator) fetch these in one
-  // batched getDescRelevanceScoresBatch call up front and pass each result in
-  // here, instead of every call triggering its own getDescRelevanceScore hit.
-  precomputedDescScore?: DescScoreResult,
 ): Promise<RelevancyResult> {
   const appWords = wordTokens(appName);
   if (!wordTokens(keyword).length || !appWords.length) return { score: 0, intentThemeId: null };
@@ -295,7 +200,7 @@ export async function computeRelevancy(
   let descScore = 0;
   let intentThemeId: string | null = null;
   if (hasDesc) {
-    const result = precomputedDescScore ?? await getDescRelevanceScore(keyword, appDescription!, themes);
+    const result = await getDescRelevanceScore(keyword, appDescription!, themes);
     descScore = result.score;
     intentThemeId = result.intentThemeId;
   }

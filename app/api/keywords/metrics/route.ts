@@ -56,7 +56,16 @@ async function persistIosSearch(
   }
 }
 
-async function fetchIosMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null | "rate_limited"> {
+// Everything iOS needs before relevancy scoring: the search itself must stay
+// serial (Apple's per-IP rate limit, via enqueueAppleRequest), but nothing
+// past this point does — see the route handler below, which runs this in a
+// loop and then scores all the results concurrently afterward.
+type IosBase = {
+  volume: number; diff: number; chance: number; results: number;
+  rank: number | null; topTitles: string[];
+};
+
+async function fetchIosMetricsBase(term: string, country: string, appName: string, supabase: SupabaseClient): Promise<IosBase | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
 
@@ -95,28 +104,30 @@ async function fetchIosMetrics(term: string, country: string, appName: string, a
     const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(diff, rank);
+    const topTitles = apps.slice(0, 10).map((r) => r.trackName);
 
-    let relevancy: number | null = null;
-    let opportunity: number | null = null;
-    let intentThemeId: string | null = null;
-    // AI provider down → leave both null rather than guessing. A null relevancy is
-    // what already signals "needs (re)computing" everywhere downstream (DB
-    // cache eligibility, mount-time backfill), so this keyword is retried —
-    // and re-flagged via _aiDown — on the very next fetch instead of
-    // getting stuck behind a fake persisted score.
-    if (withRelevancy && aiReachable) {
-      const topTitles = apps.slice(0, 10).map((r) => r.trackName);
-      const result = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description, themes);
-      relevancy = result.score;
-      intentThemeId = result.intentThemeId;
-      const base = Math.sqrt(volume * chance);
-      opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
-    }
-
-    return { volume, diff, chance, opportunity, results: count, relevancy, rank, intentThemeId };
+    return { volume, diff, chance, results: count, rank, topTitles };
   } catch {
     return null;
   }
+}
+
+// AI provider down → leave both null rather than guessing. A null relevancy is
+// what already signals "needs (re)computing" everywhere downstream (DB cache
+// eligibility, mount-time backfill), so this keyword is retried — and
+// re-flagged via _aiDown — on the very next fetch instead of getting stuck
+// behind a fake persisted score.
+async function scoreMetrics(term: string, appName: string, base: IosBase, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, themes: IntentTheme[]): Promise<Metrics> {
+  let relevancy: number | null = null;
+  let opportunity: number | null = null;
+  let intentThemeId: string | null = null;
+  if (withRelevancy && aiReachable) {
+    const result = await computeRelevancy(term, appName, base.topTitles, appMeta.embedding, appMeta.description, themes);
+    relevancy = result.score;
+    intentThemeId = result.intentThemeId;
+    opportunity = Math.round(Math.sqrt(base.volume * base.chance) * Math.pow(relevancy / 100, 2));
+  }
+  return { volume: base.volume, diff: base.diff, chance: base.chance, opportunity, results: base.results, relevancy, rank: base.rank, intentThemeId };
 }
 
 // Same write persistIosSearch performs for iOS — apps[] here already has
@@ -147,8 +158,8 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
 
-    // Mirrors persistIosSearch's placement in fetchIosMetrics — re-writing the
-    // same day's data is a no-op via the upsert's onConflict key, not a duplicate.
+    // Mirrors persistIosSearch's placement in fetchIosMetricsBase — re-writing
+    // the same day's data is a no-op via the upsert's onConflict key, not a duplicate.
     await persistAndroidSearch(supabase, term, country, apps);
 
     const count = apps.length;
@@ -185,7 +196,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     let relevancy: number | null = null;
     let opportunity: number | null = null;
     let intentThemeId: string | null = null;
-    // AI provider down → leave both null (see comment in fetchIosMetrics).
+    // AI provider down → leave both null (see comment in scoreMetrics).
     if (withRelevancy && aiReachable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
@@ -289,7 +300,7 @@ export async function GET(request: NextRequest) {
     const withRelevancy = !fast && canUseRelevancy;
     // Gemini down → skip the LLM/embedding pass entirely and leave
     // relevancy/opportunity null instead of silently falling back to guessed
-    // scores (see fetchIosMetrics/fetchAndroidMetrics).
+    // scores (see scoreMetrics/fetchAndroidMetrics).
     aiReachable = withRelevancy ? await isGeminiReachable() : true;
 
     // Fetch app description + embed it once; shared across all keyword lookups.
@@ -313,16 +324,28 @@ export async function GET(request: NextRequest) {
           .order("sort_order", { ascending: true })).data ?? []) as IntentTheme[]
       : [];
 
-    // iOS: sequential to stay under Apple's per-IP rate limit.
-    // Android: parallel is fine (google-play-scraper has no such restriction).
+    // iOS: the search itself stays sequential to stay under Apple's per-IP
+    // rate limit, but relevancy scoring (Gemini) doesn't share that
+    // constraint — it runs as its own concurrent phase once every term's
+    // search has resolved, bounded by the Gemini pool in libs/gemini.ts
+    // rather than by this loop.
+    // Android: parallel is fine end-to-end (google-play-scraper has no such
+    // restriction).
     let entries: (readonly [string, Metrics | null])[];
     if (store === "ios") {
-      entries = [];
+      const baseEntries: [string, IosBase][] = [];
       for (const term of uncached) {
-        const result = await fetchIosMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase, themes);
-        if (result === "rate_limited") { rateLimited = true; entries.push([term, null] as const); }
-        else entries.push([term, result] as const);
+        const result = await fetchIosMetricsBase(term, country, appName, supabase);
+        if (result === "rate_limited") { rateLimited = true; continue; }
+        if (result === null) continue;
+        baseEntries.push([term, result]);
       }
+      entries = await Promise.all(
+        baseEntries.map(async ([term, base]) => {
+          const metrics = await scoreMetrics(term, appName, base, appMeta, withRelevancy, aiReachable, themes);
+          return [term, metrics] as const;
+        })
+      );
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
@@ -335,9 +358,10 @@ export async function GET(request: NextRequest) {
     freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
 
     // iOS already wrote its popularity snapshot (and rankings history) inside
-    // fetchIosMetrics, scoped to genuine fresh successes only — doing it again
-    // here unconditionally is what used to let a degraded 403 fallback poison
-    // the shared cache for every other app/workspace querying this term today.
+    // fetchIosMetricsBase, scoped to genuine fresh successes only — doing it
+    // again here unconditionally is what used to let a degraded 403 fallback
+    // poison the shared cache for every other app/workspace querying this
+    // term today.
     if (store === "android") {
       const today = new Date().toISOString().split("T")[0];
       await Promise.all(

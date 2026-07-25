@@ -8,17 +8,39 @@ function geminiHeaders(): Record<string, string> {
   return { "Content-Type": "application/json", "x-goog-api-key": GEMINI_API_KEY };
 }
 
-// Serializes all Gemini calls server-wide — carried over from the same
-// concurrency cap the self-hosted Ollama setup needed. Gemini enforces its
-// own per-minute quota rather than local CPU limits, but serializing still
-// smooths bursts (e.g. ai-suggestions' parallel calls) instead of firing
-// everything at once and risking a 429.
-let geminiChain: Promise<void> = Promise.resolve();
+// Bounds how many Gemini calls run at once, server-wide — was a strict
+// one-at-a-time chain, which made any caller scoring many keywords in one
+// request (Keyword Simulator, bulk keyword adds) pay the full sum of every
+// call's latency serially. Callers that already fire requests concurrently
+// (e.g. Android's Promise.all in app/api/keywords/metrics/route.ts) start
+// actually running in parallel instead of being silently re-serialized here.
+// 5 is a conservative starting point for paid-tier quota headroom, not a
+// measured ceiling — worth checking actual RPM in AI Studio before raising it.
+const GEMINI_CONCURRENCY = 5;
+let activeCount = 0;
+const waiters: (() => void)[] = [];
 
-function enqueueGeminiRequest<T>(fn: () => Promise<T>): Promise<T> {
-  const result: Promise<T> = geminiChain.then(() => fn());
-  geminiChain = result.then(() => undefined, () => undefined);
-  return result;
+function acquireSlot(): Promise<void> {
+  if (activeCount < GEMINI_CONCURRENCY) {
+    activeCount++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => waiters.push(resolve));
+}
+
+function releaseSlot(): void {
+  const next = waiters.shift();
+  if (next) next();
+  else activeCount--;
+}
+
+async function enqueueGeminiRequest<T>(fn: () => Promise<T>): Promise<T> {
+  await acquireSlot();
+  try {
+    return await fn();
+  } finally {
+    releaseSlot();
+  }
 }
 
 // No API key configured → never attempt the network call, so a fresh
