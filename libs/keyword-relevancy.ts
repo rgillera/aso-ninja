@@ -9,6 +9,7 @@ export type IntentTheme = { id: string; label: string };
 export type AppMeta = {
   description: string;
   category: string;
+  developer: string;
   embedding: number[] | null;
 };
 
@@ -184,13 +185,19 @@ export async function computeRelevancy(
   appEmbedding: number[] | null,
   appDescription: string | undefined,
   themes: IntentTheme[],
+  developerName?: string,
 ): Promise<RelevancyResult> {
   const appWords = wordTokens(appName);
   if (!wordTokens(keyword).length || !appWords.length) return { score: 0, intentThemeId: null };
 
   // Brand keywords aren't classified against the app's feature-intent themes
   // — there's no meaningful match, so they surface in the "Other" bucket.
-  if (isBrandKeyword(keyword, appName)) return { score: 100, intentThemeId: null };
+  // A keyword built from the developer/publisher name (e.g. "notion labs")
+  // is just as much a brand search as one built from the app name itself —
+  // the user wants that studio's app, not a generic feature match.
+  if (isBrandKeyword(keyword, appName) || (!!developerName && isBrandKeyword(keyword, developerName))) {
+    return { score: 100, intentThemeId: null };
+  }
 
   const hasDesc = !!appDescription && appDescription.length > 10;
 
@@ -267,14 +274,15 @@ export async function fetchIosAppMeta(appName: string, country: string, withEmbe
       ?? apps.find((a: any) => (a.trackName ?? "").toLowerCase().includes(name));
     const description = ((match?.description ?? "") as string).slice(0, 500);
     const category    = (match?.primaryGenreName ?? "") as string;
+    const developer   = ((match?.sellerName ?? match?.artistName ?? "") as string);
     const embText  = [appName, description].filter(Boolean).join(". ");
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
-    console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} category="${category}"`);
-    const meta = { description, category, embedding };
+    console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} category="${category}" developer="${developer}"`);
+    const meta = { description, category, developer, embedding };
     if (withEmbedding) appMetaCache.set(cacheKey, { meta, ts: Date.now() });
     return meta;
   } catch {
-    return { description: "", category: "", embedding: null };
+    return { description: "", category: "", developer: "", embedding: null };
   }
 }
 
@@ -296,14 +304,15 @@ export async function fetchAndroidAppMeta(appName: string, country: string, with
       ?? apps.find((a: any) => (a.title ?? "").toLowerCase().includes(name));
     const description = ((match?.summary ?? match?.description ?? "") as string).slice(0, 500);
     const category    = (match?.genre ?? "") as string;
+    const developer   = ((match?.developer ?? "") as string);
     const embText  = [appName, description].filter(Boolean).join(". ");
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
-    console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} category="${category}"`);
-    const meta = { description, category, embedding };
+    console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} category="${category}" developer="${developer}"`);
+    const meta = { description, category, developer, embedding };
     if (withEmbedding) appMetaCache.set(cacheKey, { meta, ts: Date.now() });
     return meta;
   } catch {
-    return { description: "", category: "", embedding: null };
+    return { description: "", category: "", developer: "", embedding: null };
   }
 }
 

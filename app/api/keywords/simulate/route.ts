@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
   // description) keeps the delta caused purely by the title/subtitle edit.
   // withEmbedding=false: skip the store-description embedding, since the
   // simulation needs an embedding of the HYPOTHETICAL text instead.
-  const { description } = resolvedStore === "android"
+  const { description, developer } = resolvedStore === "android"
     ? await fetchAndroidAppMeta(appName, normalizedCountry, false)
     : await fetchIosAppMeta(appName, normalizedCountry, false);
 
@@ -172,7 +172,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { score: relevancy, intentThemeId } = await computeRelevancy(
-          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes
+          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes, developer
         );
         const opportunity = Math.round(Math.sqrt(volume * chance) * Math.pow(relevancy / 100, 2));
         results[term] = { relevancy, opportunity, intentThemeId };
