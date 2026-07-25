@@ -19,6 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
+import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
@@ -133,6 +134,7 @@ type Props = {
   onStarSelected: (keywords: string[]) => void;
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
+  onCompetitorAdded?: (competitor: CompetitorApp) => void;
 };
 
 type ColumnDef = {
@@ -197,6 +199,7 @@ export function KeywordTable({
   onStarSelected,
   onRemoveSelected,
   onRemoveKeyword,
+  onCompetitorAdded,
 }: Props) {
   const planSlug = usePlanSlug();
   const relevancyLocked = !isPlanAtLeast(planSlug, "pro");
@@ -1000,6 +1003,7 @@ export function KeywordTable({
           store={store}
           country={country}
           onClose={() => setLiveSearchKeyword(null)}
+          onCompetitorAdded={onCompetitorAdded}
         />
       )}
 

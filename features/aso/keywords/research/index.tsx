@@ -482,6 +482,15 @@ export default function KeywordResearchPage() {
     persistRemoval([term]);
   }
 
+  // Live Search's "add as competitor" button saves directly via /api/competitors
+  // (it doesn't go through handleCompetitorsChange), so mirror the addition here
+  // to keep the Keyword Suggestions competitors section in sync without a reload.
+  function handleCompetitorAddedFromLiveSearch(competitor: CompetitorApp) {
+    setCompetitors((prev) =>
+      prev.some((c) => c.storeId === competitor.storeId) ? prev : [...prev, competitor]
+    );
+  }
+
   if (!activeApp) {
     return <NoAppSelected />;
   }
@@ -563,6 +572,7 @@ export default function KeywordResearchPage() {
           onStarSelected={handleStarSelected}
           onRemoveSelected={handleRemoveSelected}
           onRemoveKeyword={handleRemoveKeyword}
+          onCompetitorAdded={handleCompetitorAddedFromLiveSearch}
         />
       </div>
     </div>

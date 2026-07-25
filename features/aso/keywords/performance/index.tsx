@@ -440,6 +440,15 @@ export default function KeywordPerformancePage() {
     persistRemoval(terms);
   }
 
+  // Live Search's "add as competitor" button saves directly via /api/competitors
+  // (it doesn't go through handleCompetitorsChange), so mirror the addition here
+  // to keep this page's competitor list in sync without a reload.
+  function handleCompetitorAddedFromLiveSearch(competitor: CompetitorApp) {
+    setCompetitors((prev) =>
+      prev.some((c) => c.storeId === competitor.storeId) ? prev : [...prev, competitor]
+    );
+  }
+
   // Prev vs Latest performance: the two most recent real Volume/Rank snapshots
   // we have for each keyword, whatever dates those happen to be — snapshots
   // land irregularly, so comparing two user-picked calendar dates mostly
@@ -688,6 +697,7 @@ export default function KeywordPerformancePage() {
             setLiveSearchTerm(null);
             setSnapshotsRefreshKey((k) => k + 1);
           }}
+          onCompetitorAdded={handleCompetitorAddedFromLiveSearch}
         />
       )}
 

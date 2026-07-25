@@ -8,6 +8,7 @@ import { fetchLiveSearchResults } from "./liveSearch";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import type { CompetitorApp } from "./ManageCompetitorsModal";
 
 type AddStatus = "idle" | "adding" | "added";
 
@@ -20,6 +21,7 @@ type Props = {
   store: "ios" | "android";
   country: string;
   onClose: () => void;
+  onCompetitorAdded?: (competitor: CompetitorApp) => void;
 };
 
 function formatCount(n: number): string {
@@ -323,7 +325,7 @@ function PhoneFrame({
 
 // ── Main panel ────────────────────────────────────────────────────────────────
 
-export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
+export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitorAdded }: Props) {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const [apps, setApps]           = useState<AppSearchResult[]>([]);
@@ -352,6 +354,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
     setAddError(null);
     setAddingStoreId(storeId);
     try {
+      const competitor: CompetitorApp = { storeId, name: app.name, icon: app.icon, developer: app.developer };
       const res = await fetch("/api/competitors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -363,7 +366,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
           iconUrl:  activeApp.icon_url ?? undefined,
           store:    activeApp.store,
           country:  activeApp.country,
-          competitor: { storeId, name: app.name, icon: app.icon, developer: app.developer },
+          competitor,
         }),
       });
       if (!res.ok) {
@@ -372,6 +375,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
         return;
       }
       setAddedStoreIds((prev) => new Set(prev).add(storeId));
+      onCompetitorAdded?.(competitor);
     } catch {
       setAddError("Couldn't add this app as a competitor.");
     } finally {
@@ -398,6 +402,10 @@ export function LiveSearchPanel({ keyword, store, country, onClose }: Props) {
             <XMarkIcon className="size-5" />
           </button>
         </div>
+
+        <p className="px-6 py-2 border-b border-white/[0.07] shrink-0 text-[11px] text-gray-500">
+          Tip: hover an app icon below and click it to add that app as a competitor.
+        </p>
 
         {addError && (
           <div className="flex items-center gap-2 px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-[11px] shrink-0">
