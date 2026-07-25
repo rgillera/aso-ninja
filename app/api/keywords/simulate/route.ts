@@ -6,6 +6,8 @@ import { isGeminiReachable, embedText } from "@/libs/gemini";
 import {
   type IntentTheme,
   computeRelevancy,
+  getDescRelevanceScoresBatch,
+  isBrandKeyword,
   fetchIosAppMeta,
   fetchAndroidAppMeta,
   getCachedIosSearch,
@@ -134,35 +136,70 @@ export async function POST(request: NextRequest) {
         .order("sort_order", { ascending: true })).data ?? []) as IntentTheme[]
     : [];
 
-  const results: Record<string, SimulateResult> = {};
+  // One LLM call for every term's description-relevance score, instead of one
+  // call per term — the loop below only does per-term store-search lookups
+  // and embeddings, not per-term LLM completions. Brand terms are excluded:
+  // computeRelevancy short-circuits those to a fixed 100 without ever looking
+  // at descScore, so scoring them here would just be wasted prompt content.
+  const hasDesc = hypotheticalDescription.length > 10;
+  const scorableTerms = validated
+    .map((v) => v.term)
+    .filter((term) => !isBrandKeyword(term, hypotheticalTitle));
+  const descScores = hasDesc && scorableTerms.length
+    ? await getDescRelevanceScoresBatch(scorableTerms, hypotheticalDescription, themes)
+    : new Map();
 
-  for (const { term, volume, chance } of validated) {
-    let topTitles: string[] = [];
-    if (resolvedStore === "ios") {
-      let apps = await getCachedIosSearch(supabase, term, normalizedCountry);
-      if (!apps) {
-        const live = await searchIosLive(term, normalizedCountry);
-        apps = live === "rate_limited" || live === null ? null : live;
+  // Everything above resolves quickly; the per-term store-search lookups
+  // below are what actually takes time across up to MAX_TERMS keywords, so
+  // the response streams an NDJSON progress line after each one finishes —
+  // the client uses these to show "Simulating… N%" instead of a single opaque
+  // wait ending in one JSON blob.
+  const encoder = new TextEncoder();
+  const total = validated.length;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (obj: Record<string, unknown>) => controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+      const results: Record<string, SimulateResult> = {};
+      let done = 0;
+
+      for (const { term, volume, chance } of validated) {
+        let topTitles: string[] = [];
+        if (resolvedStore === "ios") {
+          let apps = await getCachedIosSearch(supabase, term, normalizedCountry);
+          if (!apps) {
+            const live = await searchIosLive(term, normalizedCountry);
+            apps = live === "rate_limited" || live === null ? null : live;
+          }
+          topTitles = (apps ?? []).slice(0, 10).map((a) => a.trackName);
+        } else {
+          try {
+            const gplay = await import("google-play-scraper");
+            const api = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const apps: any[] = await api.search({ term, country: normalizedCountry, num: 10 });
+            topTitles = apps.map((a) => a.title ?? "");
+          } catch {
+            topTitles = [];
+          }
+        }
+
+        const { score: relevancy, intentThemeId } = await computeRelevancy(
+          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes, descScores.get(term)
+        );
+        const opportunity = Math.round(Math.sqrt(volume * chance) * Math.pow(relevancy / 100, 2));
+        results[term] = { relevancy, opportunity, intentThemeId };
+
+        done++;
+        send({ type: "progress", done, total });
       }
-      topTitles = (apps ?? []).slice(0, 10).map((a) => a.trackName);
-    } else {
-      try {
-        const gplay = await import("google-play-scraper");
-        const api = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apps: any[] = await api.search({ term, country: normalizedCountry, num: 10 });
-        topTitles = apps.map((a) => a.title ?? "");
-      } catch {
-        topTitles = [];
-      }
-    }
 
-    const { score: relevancy, intentThemeId } = await computeRelevancy(
-      term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes
-    );
-    const opportunity = Math.round(Math.sqrt(volume * chance) * Math.pow(relevancy / 100, 2));
-    results[term] = { relevancy, opportunity, intentThemeId };
-  }
+      send({ type: "done", results });
+      controller.close();
+    },
+  });
 
-  return NextResponse.json({ results });
+  return new Response(stream, {
+    headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "X-Content-Type-Options": "nosniff" },
+  });
 }

@@ -41,6 +41,7 @@ export default function KeywordSimulator() {
   const [hypotheticalSubtitle, setHypotheticalSubtitle] = useState("");
 
   const [simulating, setSimulating] = useState(false);
+  const [simulateProgress, setSimulateProgress] = useState<number | null>(null);
   const [simulatedResults, setSimulatedResults] = useState<Record<string, SimulatedResult> | null>(null);
   const [relevancyLimitReached, setRelevancyLimitReached] = useState(false);
   const [aiDown, setAiDown] = useState(false);
@@ -111,13 +112,14 @@ export default function KeywordSimulator() {
   async function handleSimulate() {
     if (!hasChanges || simulating || !activeApp?.id) return;
     setSimulating(true);
+    setSimulateProgress(null);
     setError(null);
     setRelevancyLimitReached(false);
     setAiDown(false);
     try {
-      // Already-tracked keywords only, capped and prioritized by current
-      // opportunity so a "Simulate" click stays a few seconds, not minutes —
-      // Gemini calls are serialized server-side (~0.5-2s each).
+      // Already-tracked keywords only, capped so a "Simulate" click stays
+      // bounded, prioritized by current opportunity so the most decision-
+      // relevant keywords are the ones that make the cut.
       const terms = [...keywords]
         .sort((a, b) => (b.opportunity ?? 0) - (a.opportunity ?? 0))
         .slice(0, MAX_TERMS)
@@ -137,20 +139,52 @@ export default function KeywordSimulator() {
           terms,
         }),
       });
-      const data: {
-        results?: Record<string, SimulatedResult>;
-        _relevancyLimitReached?: boolean;
-        _aiDown?: boolean;
-        error?: string;
-      } = await res.json();
-      if (data.error) { setError(data.error); return; }
-      if (data._relevancyLimitReached) setRelevancyLimitReached(true);
-      if (data._aiDown) setAiDown(true);
-      setSimulatedResults(data.results ?? {});
+
+      // Error/early-exit responses (locked plan, pool exhausted, AI down,
+      // bad input) come back as a single JSON object. A successful run
+      // streams NDJSON progress lines instead, so the two are told apart by
+      // content-type rather than trying to parse one as the other.
+      if (!res.headers.get("content-type")?.includes("application/x-ndjson")) {
+        const data: {
+          results?: Record<string, SimulatedResult>;
+          _relevancyLimitReached?: boolean;
+          _aiDown?: boolean;
+          error?: string;
+        } = await res.json();
+        if (data.error) { setError(data.error); return; }
+        if (data._relevancyLimitReached) setRelevancyLimitReached(true);
+        if (data._aiDown) setAiDown(true);
+        setSimulatedResults(data.results ?? {});
+        return;
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) { setError("Something went wrong running the simulation. Try again."); return; }
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          const event = JSON.parse(line) as
+            | { type: "progress"; done: number; total: number }
+            | { type: "done"; results: Record<string, SimulatedResult> };
+          if (event.type === "progress") {
+            setSimulateProgress(event.total > 0 ? Math.round((event.done / event.total) * 100) : 100);
+          } else {
+            setSimulatedResults(event.results ?? {});
+          }
+        }
+      }
     } catch {
       setError("Something went wrong running the simulation. Try again.");
     } finally {
       setSimulating(false);
+      setSimulateProgress(null);
     }
   }
 
@@ -224,7 +258,7 @@ export default function KeywordSimulator() {
               disabled={!hasChanges || simulating || loadingKeywords || keywords.length === 0 || !activeApp.id}
               className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {simulating ? "Simulating…" : "Simulate"}
+              {simulating ? `Simulating…${simulateProgress !== null ? ` ${simulateProgress}%` : ""}` : "Simulate"}
             </button>
             {!activeApp.id ? (
               <p className="text-xs text-gray-600">
