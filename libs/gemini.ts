@@ -14,9 +14,11 @@ function geminiHeaders(): Record<string, string> {
 // call's latency serially. Callers that already fire requests concurrently
 // (e.g. Android's Promise.all in app/api/keywords/metrics/route.ts) start
 // actually running in parallel instead of being silently re-serialized here.
-// 5 is a conservative starting point for paid-tier quota headroom, not a
-// measured ceiling — worth checking actual RPM in AI Studio before raising it.
-const GEMINI_CONCURRENCY = 5;
+// 10 was chosen after empirically bursting 100 concurrent generateContent
+// calls against this project's actual key with zero 429s — see
+// fetchWithRetry below for what happens on the rare/future case that this
+// ceiling turns out to be wrong under sustained (not just burst) load.
+const GEMINI_CONCURRENCY = 10;
 let activeCount = 0;
 const waiters: (() => void)[] = [];
 
@@ -43,6 +45,23 @@ async function enqueueGeminiRequest<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+// Retries only on 429 (rate-limited) — other failures (400s, 5xx) are real
+// problems a retry won't fix, so those return immediately same as before.
+// Without this, a 429 from raising GEMINI_CONCURRENCY would silently fall
+// through to getDescRelevanceScore's embedding-only fallback (a weaker
+// signal) instead of just waiting a beat and getting the real LLM score —
+// this is what keeps that quality regression from happening quietly.
+const MAX_429_RETRIES = 3;
+
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const res = await fetch(url, init as any);
+    if (res.status !== 429 || attempt >= MAX_429_RETRIES) return res;
+    await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt));
+  }
+}
+
 // No API key configured → never attempt the network call, so a fresh
 // deployment without GEMINI_API_KEY set fails fast and consistently instead
 // of an unpredictable 401 per call site.
@@ -61,15 +80,14 @@ export async function isGeminiReachable(): Promise<boolean> {
 
 export async function generateText(prompt: string, temperature = 0): Promise<string | null> {
   try {
-    const res = await enqueueGeminiRequest(() => fetch(`${BASE_URL}/models/${GEMINI_LLM_MODEL}:generateContent`, {
+    const res = await enqueueGeminiRequest(() => fetchWithRetry(`${BASE_URL}/models/${GEMINI_LLM_MODEL}:generateContent`, {
       method: "POST",
       headers: geminiHeaders(),
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature },
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
+    }));
     if (!res.ok) return null;
     const data = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -82,15 +100,14 @@ export async function generateText(prompt: string, temperature = 0): Promise<str
 
 export async function embedText(text: string): Promise<number[] | null> {
   try {
-    const res = await enqueueGeminiRequest(() => fetch(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:embedContent`, {
+    const res = await enqueueGeminiRequest(() => fetchWithRetry(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:embedContent`, {
       method: "POST",
       headers: geminiHeaders(),
       body: JSON.stringify({
         model: `models/${GEMINI_EMBED_MODEL}`,
         content: { parts: [{ text }] },
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
+    }));
     if (!res.ok) return null;
     const data = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,7 +125,7 @@ export async function embedText(text: string): Promise<number[] | null> {
 export async function embedTexts(texts: string[]): Promise<(number[] | null)[]> {
   if (!texts.length) return [];
   try {
-    const res = await enqueueGeminiRequest(() => fetch(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:batchEmbedContents`, {
+    const res = await enqueueGeminiRequest(() => fetchWithRetry(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:batchEmbedContents`, {
       method: "POST",
       headers: geminiHeaders(),
       body: JSON.stringify({
@@ -117,8 +134,7 @@ export async function embedTexts(texts: string[]): Promise<(number[] | null)[]> 
           content: { parts: [{ text }] },
         })),
       }),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any));
+    }));
     if (!res.ok) return texts.map(() => null);
     const data = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
