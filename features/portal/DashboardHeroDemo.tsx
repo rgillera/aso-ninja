@@ -21,10 +21,12 @@ import {
   TagIcon,
   TableCellsIcon,
   RocketLaunchIcon,
+  BeakerIcon,
   AcademicCapIcon,
   ChatBubbleLeftRightIcon,
   CreditCardIcon,
   UserCircleIcon,
+  QrCodeIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { scorePill } from "@/features/onboarding/demo";
@@ -216,6 +218,7 @@ export function DashboardHeroDemo() {
               <SubNavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
               <SubNavRow icon={ListBulletIcon} label="Ranked Keywords" />
               <SubNavRow icon={TagIcon} label="Group by Intent" />
+              <SubNavRow icon={BeakerIcon} label="Keyword Simulator" />
             </div>
             <NavRow icon={StarIcon} label="Reviews & Ratings" chevronOpen={false} />
           </div>
@@ -228,6 +231,7 @@ export function DashboardHeroDemo() {
           <div className="mt-auto space-y-0.5 border-t border-white/[0.07] pt-3">
             <FooterRow icon={RocketLaunchIcon} label="Onboarding steps" />
             <FooterRow icon={AcademicCapIcon} label="Learning Center" />
+            <FooterRow icon={QrCodeIcon} label="Get mobile app" />
             <FooterRow icon={ChatBubbleLeftRightIcon} label="Chat with us 👋" />
             <FooterRow icon={CreditCardIcon} label="Manage Plan" badge="Enterprise" />
             <FooterRow icon={UserCircleIcon} label="Account settings" />
