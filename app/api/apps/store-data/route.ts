@@ -21,10 +21,13 @@ async function fetchIosAppPage(storeId: string, country: string): Promise<string
 // The public iTunes lookup API has no "subtitle" field at all — the marketing
 // subtitle shown under the app name only exists in the store page's embedded
 // JSON, tied to the exact title text. Apps without one set just won't match.
+// The hero card's field order isn't stable across apps: some put
+// isIOSBinaryMacOSCompatible/useAdsLocale between title and subtitle, others
+// put subtitle immediately after title — both are tolerated here.
 function extractIosSubtitle(html: string, trackName: string): string {
   try {
     const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}","isIOSBinaryMacOSCompatible":(?:true|false),"useAdsLocale":(?:true|false),"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
+    const re = new RegExp(`"title":"${escaped}",(?:"(?:isIOSBinaryMacOSCompatible|useAdsLocale)":(?:true|false),)*"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
     const m = html.match(re);
     return m ? JSON.parse(`"${m[1]}"`) : "";
   } catch { return ""; }
