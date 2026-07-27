@@ -13,6 +13,7 @@ export type AppMetadataResult = {
 
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
 import { fetchAndroidStoreData } from "@/libs/store/googleplay";
+import { extractIosSubtitle } from "@/libs/store/appstore";
 
 const DESC_PAGE = 20;
 
@@ -69,7 +70,7 @@ function extractBigrams(text: string): string[] {
 
 const EMPTY = { title: "", subtitle: "", description: "", titleKeywords: [], subtitleKeywords: [], descriptionKeywords: [], hasMoreDesc: false };
 
-async function scrapeAppStoreSubtitle(storeId: string, country: string): Promise<string> {
+async function scrapeAppStoreSubtitle(storeId: string, country: string, trackName: string): Promise<string> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res = await fetch(`https://apps.apple.com/${country}/app/id${storeId}`, {
@@ -78,9 +79,10 @@ async function scrapeAppStoreSubtitle(storeId: string, country: string): Promise
     } as any);
     if (!res.ok) return "";
     const html = await res.text();
-    // Subtitle appears in the embedded shoebox JSON as "subtitle":"..."
-    const m = html.match(/"subtitle"\s*:\s*"([^"\\]+)"/);
-    return m ? m[1] : "";
+    // The page embeds shoebox JSON for related/recommended apps too, each with
+    // their own "subtitle" field, so an unanchored match can pick up someone
+    // else's subtitle. Anchor to this app's own title first.
+    return extractIosSubtitle(html, trackName);
   } catch { return ""; }
 }
 
@@ -139,7 +141,7 @@ export async function GET(request: NextRequest) {
     const title       = (r.trackName ?? "") as string;
     // iTunes lookup doesn't reliably expose subtitle — scrape App Store page as fallback
     const itunesSubtitle = (r.subtitle ?? r.trackSubtitle ?? "") as string;
-    const subtitle    = itunesSubtitle || await scrapeAppStoreSubtitle(storeId, country);
+    const subtitle    = itunesSubtitle || await scrapeAppStoreSubtitle(storeId, country, title);
     const description = (r.description ?? "") as string;
 
     return NextResponse.json(buildResult(title, subtitle, description) satisfies AppMetadataResult);

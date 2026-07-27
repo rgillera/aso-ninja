@@ -80,7 +80,7 @@ export async function lookupAppStore(storeId: string): Promise<AppSearchResult |
 // The public iTunes lookup API has no reliable "subtitle" field — the marketing
 // subtitle shown under the app name only exists in the store page's embedded
 // JSON, tied to the exact title text. Apps without one set just won't match.
-function extractIosSubtitle(html: string, trackName: string): string {
+export function extractIosSubtitle(html: string, trackName: string): string {
   try {
     const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     // Apple doesn't guarantee key order in the embedded JSON around "title", so
