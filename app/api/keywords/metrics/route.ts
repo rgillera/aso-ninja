@@ -122,7 +122,7 @@ async function scoreMetrics(term: string, appName: string, base: IosBase, appMet
   let opportunity: number | null = null;
   let intentThemeId: string | null = null;
   if (withRelevancy && aiReachable) {
-    const result = await computeRelevancy(term, appName, base.topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
+    const result = await computeRelevancy(term, appName, appMeta.subtitle, base.topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
     relevancy = result.score;
     intentThemeId = result.intentThemeId;
     opportunity = Math.round(Math.sqrt(base.volume * base.chance) * Math.pow(relevancy / 100, 2));
@@ -200,7 +200,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     if (withRelevancy && aiReachable) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
-      const result = await computeRelevancy(term, appName, topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
+      const result = await computeRelevancy(term, appName, appMeta.subtitle, topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
       relevancy = result.score;
       intentThemeId = result.intentThemeId;
       const base = Math.sqrt(volume * chance);
@@ -311,7 +311,7 @@ export async function GET(request: NextRequest) {
       ? await (store === "android"
           ? fetchAndroidAppMeta(appName, country)
           : fetchIosAppMeta(appName, country))
-      : { description: "", category: "", developer: "", embedding: null };
+      : { description: "", subtitle: "", category: "", developer: "", embedding: null };
 
     // This app's intent theme list — classification piggybacks on the same
     // LLM call as relevancy, so an app with no themes generated yet just

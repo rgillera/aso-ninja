@@ -116,13 +116,16 @@ export async function POST(request: NextRequest) {
   // Real current description — this is what today's persisted relevancy was
   // computed from, so comparing against it (not a differently-sourced
   // description) keeps the delta caused purely by the title/subtitle edit.
+  // Title and subtitle are passed to computeRelevancy as their own fields
+  // below (not folded into this description string) so Current and Simulated
+  // stay computed the exact same way — only the hypothetical title/subtitle
+  // values differ between the two calls.
   // withEmbedding=false: skip the store-description embedding, since the
   // simulation needs an embedding of the HYPOTHETICAL text instead.
   const { description, developer } = resolvedStore === "android"
     ? await fetchAndroidAppMeta(appName, normalizedCountry, false)
     : await fetchIosAppMeta(appName, normalizedCountry, false);
 
-  const hypotheticalDescription = [hypotheticalSubtitle, description].filter(Boolean).join(". ");
   const embeddingText = [hypotheticalTitle, hypotheticalSubtitle, description].filter(Boolean).join(". ");
   const appEmbedding = embeddingText ? await embedText(embeddingText) : null;
 
@@ -172,7 +175,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { score: relevancy, intentThemeId } = await computeRelevancy(
-          term, hypotheticalTitle, topTitles, appEmbedding, hypotheticalDescription, themes, developer
+          term, hypotheticalTitle, hypotheticalSubtitle, topTitles, appEmbedding, description, themes, developer
         );
         const opportunity = Math.round(Math.sqrt(volume * chance) * Math.pow(relevancy / 100, 2));
         results[term] = { relevancy, opportunity, intentThemeId };

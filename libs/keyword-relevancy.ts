@@ -8,6 +8,7 @@ export type IntentTheme = { id: string; label: string };
 
 export type AppMeta = {
   description: string;
+  subtitle: string;
   category: string;
   developer: string;
   embedding: number[] | null;
@@ -65,15 +66,24 @@ async function embeddingDescScore(keyword: string, description: string): Promise
 
 type DescScoreResult = { score: number; intentThemeId: string | null };
 
-// Cache key includes the theme label set so a mid-flight regeneration of the
-// app's intent themes doesn't serve a stale classification from before it.
-function descScoreCacheKey(keyword: string, description: string, themes: IntentTheme[]): string {
-  return `${keyword}|||${description}|||${themes.map((t) => t.label).join(",")}`;
+// Cache key includes appName/appSubtitle (not just description) — this score
+// now depends on them too, and the simulator calls this repeatedly for the
+// same keyword/description with different hypothetical titles, which must
+// not collide on a stale cached score from a different title. Also includes
+// the theme label set so a mid-flight regeneration of the app's intent
+// themes doesn't serve a stale classification from before it.
+function descScoreCacheKey(keyword: string, appName: string, appSubtitle: string, description: string, themes: IntentTheme[]): string {
+  return `${keyword}|||${appName}|||${appSubtitle}|||${description}|||${themes.map((t) => t.label).join(",")}`;
 }
 
-export async function getDescRelevanceScore(keyword: string, description: string, themes: IntentTheme[]): Promise<DescScoreResult> {
-  const cacheKey = descScoreCacheKey(keyword, description, themes);
+export async function getDescRelevanceScore(
+  keyword: string, appName: string, appSubtitle: string, description: string, themes: IntentTheme[]
+): Promise<DescScoreResult> {
+  const cacheKey = descScoreCacheKey(keyword, appName, appSubtitle, description, themes);
   if (llmScoreCache.has(cacheKey)) return llmScoreCache.get(cacheKey)!;
+  // Fallback context for the embedding-only path (LLM unavailable/unparseable) —
+  // same fields the prompt below sees, so the fallback stays consistent with it.
+  const context = [appName, appSubtitle, description].filter(Boolean).join(". ");
   try {
     const intentSection = themes.length
       ? `\n\nAlso classify the keyword's search intent against this app's theme list: ${JSON.stringify(themes.map((t) => t.label))}. Pick the single best-matching theme label verbatim, or reply "Other" if none reasonably fits.
@@ -85,23 +95,25 @@ Line 2: the matching theme label (verbatim from the list) or "Other".`
 
     const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the App Store search bar. Score the probability (0-100) that they are specifically looking for THIS app.
 
+App name: "${appName}"
+App subtitle: "${appSubtitle || "(none)"}"
 App description: "${description}"
 Keyword: "${keyword}"
 
-Rules — apply in order, stop at first match:
+Rules — apply in order, stop at first match. The app name and subtitle are the strongest signal — a keyword that directly matches wording in the name or subtitle should score at least as high as one that only matches the description:
 1. If the keyword is another app's brand name or company name → score 0-10. The user wants that specific product, not this one.
 2. If the keyword describes a completely unrelated category (e.g. "baby tracker", "pet care", "ride sharing" for a nutrition app) → score 0-15.
 3. If the keyword is loosely related but this app is unlikely to satisfy the search intent → score 16-40.
 4. If the keyword is a secondary use case this app genuinely supports → score 41-60.
 5. If the keyword directly describes a core feature of this app → score 61-80.
-6. If the keyword is exactly what this app is built for → score 81-100.
+6. If the keyword is exactly what this app is built for, or closely matches its name/subtitle → score 81-100.
 
 Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).${intentSection}`;
     const raw = await generateText(prompt, 0);
-    if (!raw) return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
+    if (!raw) return { score: await embeddingDescScore(keyword, context), intentThemeId: null };
     const lines = raw.trim().split("\n").map((l) => l.trim()).filter(Boolean);
     const num = parseInt(lines[0]?.match(/\d+/)?.[0] ?? "", 10);
-    if (isNaN(num)) return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
+    if (isNaN(num)) return { score: await embeddingDescScore(keyword, context), intentThemeId: null };
     const score = Math.max(0, Math.min(100, num));
 
     let intentThemeId: string | null = null;
@@ -116,7 +128,7 @@ Critical: score USER INTENT, not category overlap. Two apps in the same category
     llmScoreCache.set(cacheKey, result);
     return result;
   } catch {
-    return { score: await embeddingDescScore(keyword, description), intentThemeId: null };
+    return { score: await embeddingDescScore(keyword, context), intentThemeId: null };
   }
 }
 
@@ -181,6 +193,7 @@ export function isBrandKeyword(keyword: string, appName: string): boolean {
 export async function computeRelevancy(
   keyword: string,
   appName: string,
+  appSubtitle: string | undefined,
   topTitles: string[],
   appEmbedding: number[] | null,
   appDescription: string | undefined,
@@ -199,15 +212,18 @@ export async function computeRelevancy(
     return { score: 100, intentThemeId: null };
   }
 
-  const hasDesc = !!appDescription && appDescription.length > 10;
+  // Name/subtitle are always considered (title carries the strongest real
+  // App Store relevancy signal); description just needs to clear a noise floor.
+  const hasContext = (!!appDescription && appDescription.length > 10) || !!appSubtitle?.trim();
 
-  // 1. Description relevance (70%) — LLM or embedding keyword-vs-description.
-  //    Most reliable signal: directly asks "is this keyword relevant to this app?"
-  //    Intent theme classification piggybacks on this same LLM call.
+  // 1. Name/subtitle/description relevance (70%) — LLM or embedding
+  //    keyword-vs-listing-text. Most reliable signal: directly asks "is this
+  //    keyword relevant to this app?" against everything a searcher actually
+  //    sees. Intent theme classification piggybacks on this same LLM call.
   let descScore = 0;
   let intentThemeId: string | null = null;
-  if (hasDesc) {
-    const result = await getDescRelevanceScore(keyword, appDescription!, themes);
+  if (hasContext) {
+    const result = await getDescRelevanceScore(keyword, appName, appSubtitle ?? "", appDescription ?? "", themes);
     descScore = result.score;
     intentThemeId = result.intentThemeId;
   }
@@ -235,18 +251,49 @@ export async function computeRelevancy(
     }
 
     semanticScore = Math.round(kwScore * 0.6 + marketScore * 0.4);
-  } else if (!hasDesc) {
+  } else if (!hasContext) {
     semanticScore = 50;
   }
 
-  const base = hasDesc
+  const base = hasContext
     ? Math.round(descScore * 0.7 + semanticScore * 0.3)
     : Math.round(semanticScore);
-  console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasDesc=${hasDesc} → ${base}`);
+  console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasContext=${hasContext} → ${base}`);
   return { score: base, intentThemeId };
 }
 
 // ── App metadata ──────────────────────────────────────────────────────────────
+
+const IOS_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+// The public iTunes API (search or lookup) has no "subtitle" field at all —
+// the marketing subtitle shown under the app name only exists in the store
+// page's embedded JSON, tied to the exact title text. Apps without one set
+// just won't match. Shared with app/api/apps/store-data/route.ts, which needs
+// the same extraction for the Keyword Simulator's "current subtitle" seed.
+// The hero card's field order isn't stable across apps: some put
+// isIOSBinaryMacOSCompatible/useAdsLocale between title and subtitle, others
+// put subtitle immediately after title — both are tolerated here.
+export function extractIosSubtitleFromHtml(html: string, trackName: string): string {
+  try {
+    const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const re = new RegExp(`"title":"${escaped}",(?:"(?:isIOSBinaryMacOSCompatible|useAdsLocale)":(?:true|false),)*"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
+    const m = html.match(re);
+    return m ? JSON.parse(`"${m[1]}"`) : "";
+  } catch { return ""; }
+}
+
+export async function fetchIosSubtitle(storeId: string, trackName: string, country: string): Promise<string> {
+  if (!storeId) return "";
+  try {
+    const res = await fetch(`https://apps.apple.com/${country.toLowerCase()}/app/id${storeId}`, {
+      headers: { "User-Agent": IOS_UA },
+      cache: "no-store",
+    });
+    const html = await res.text();
+    return extractIosSubtitleFromHtml(html, trackName);
+  } catch { return ""; }
+}
 
 // `withEmbedding=false` skips the Gemini embedding call for callers (e.g. the
 // keyword simulator) that will compute their own embedding from hypothetical
@@ -275,14 +322,15 @@ export async function fetchIosAppMeta(appName: string, country: string, withEmbe
     const description = ((match?.description ?? "") as string).slice(0, 500);
     const category    = (match?.primaryGenreName ?? "") as string;
     const developer   = ((match?.sellerName ?? match?.artistName ?? "") as string);
-    const embText  = [appName, description].filter(Boolean).join(". ");
+    const subtitle    = match?.trackId ? await fetchIosSubtitle(String(match.trackId), (match.trackName ?? appName) as string, country) : "";
+    const embText  = [appName, subtitle, description].filter(Boolean).join(". ");
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
-    console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} category="${category}" developer="${developer}"`);
-    const meta = { description, category, developer, embedding };
+    console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} subtitle="${subtitle}" category="${category}" developer="${developer}"`);
+    const meta = { description, subtitle, category, developer, embedding };
     if (withEmbedding) appMetaCache.set(cacheKey, { meta, ts: Date.now() });
     return meta;
   } catch {
-    return { description: "", category: "", developer: "", embedding: null };
+    return { description: "", subtitle: "", category: "", developer: "", embedding: null };
   }
 }
 
@@ -302,17 +350,31 @@ export async function fetchAndroidAppMeta(appName: string, country: string, with
       ?? apps.find((a: any) => (a.title ?? "").toLowerCase().trim().startsWith(name))
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ?? apps.find((a: any) => (a.title ?? "").toLowerCase().includes(name));
-    const description = ((match?.summary ?? match?.description ?? "") as string).slice(0, 500);
+    // search() only ever returns `summary` (the short description, i.e. the
+    // subtitle-equivalent shown under the app name) — never the full
+    // `description` field, that requires a details lookup. Fetch it via
+    // app() using the matched appId so description and subtitle are genuinely
+    // distinct fields here, same as the iOS path.
+    let description = ((match?.summary ?? "") as string).slice(0, 500);
+    let subtitle = (match?.summary ?? "") as string;
+    if (match?.appId) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const full: any = await api.app({ appId: match.appId, country: country.toLowerCase(), lang: "en" });
+        description = ((full?.description ?? match?.summary ?? "") as string).slice(0, 500);
+        subtitle = (full?.summary ?? match?.summary ?? "") as string;
+      } catch { /* keep the search-result summary for both fields */ }
+    }
     const category    = (match?.genre ?? "") as string;
     const developer   = ((match?.developer ?? "") as string);
-    const embText  = [appName, description].filter(Boolean).join(". ");
+    const embText  = [appName, subtitle, description].filter(Boolean).join(". ");
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
-    console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} category="${category}" developer="${developer}"`);
-    const meta = { description, category, developer, embedding };
+    console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} subtitle="${subtitle}" category="${category}" developer="${developer}"`);
+    const meta = { description, subtitle, category, developer, embedding };
     if (withEmbedding) appMetaCache.set(cacheKey, { meta, ts: Date.now() });
     return meta;
   } catch {
-    return { description: "", category: "", developer: "", embedding: null };
+    return { description: "", subtitle: "", category: "", developer: "", embedding: null };
   }
 }
 
