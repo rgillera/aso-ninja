@@ -7,7 +7,7 @@ export type Keyword = {
   rank: number | null;
   starred: boolean;
   loading?: boolean;
-  results?: number;
+  results?: number | null;
   relevancy?: number | null;
   aiDown?: boolean;
   frozen?: boolean;

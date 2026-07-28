@@ -6,6 +6,7 @@ import { syncAppDownloads } from "@/libs/store-connections/sync";
 type MetricsMap = Record<string, {
   volume: number; diff: number; chance: number;
   opportunity: number | null; relevancy: number | null; rank: number | null;
+  results?: number | null;
   intentThemeId?: string | null;
 }>;
 
@@ -146,6 +147,7 @@ export async function POST(request: NextRequest) {
             // than a term-by-term conditional spread.
             relevancy_scored: m.relevancy !== null && m.relevancy !== undefined,
             rank:        m.rank ?? null,
+            results:     m.results ?? null,
             // Undefined (metrics computed before intent classification existed,
             // e.g. fast-mode or old cache rows) must not stomp a previously
             // persisted/manually-assigned theme with null on upsert.

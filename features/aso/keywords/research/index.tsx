@@ -181,6 +181,7 @@ export default function KeywordResearchPage() {
             opportunity: s.opportunity,
             relevancy:   s.relevancy,
             rank:        s.rank,
+            results:     s.results,
             starred:     starred.has(s.term.toLowerCase()),
             loading:     false,
             frozen:      s.frozen,
@@ -268,7 +269,7 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${fastParams}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null } | true> & { _rateLimited?: boolean } = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null } | true> & { _rateLimited?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
 
       setKeywords((prev) =>
@@ -309,7 +310,7 @@ export default function KeywordResearchPage() {
 
     try {
       const res  = await fetch(`/api/keywords/metrics?${params}`);
-      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean; _relevancyLimitReached?: boolean } = await res.json();
+      const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean; _relevancyLimitReached?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
       if (data._relevancyLimitReached) setRelevancyLimitReached(true);
 
@@ -397,7 +398,7 @@ export default function KeywordResearchPage() {
 
       try {
         const res  = await fetch(`/api/keywords/metrics?${params}`);
-        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number; relevancy: number | null; rank: number | null }> & { _aiDown?: boolean } = await res.json();
+        const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null }> & { _aiDown?: boolean } = await res.json();
 
         setKeywords((prev) =>
           prev.map((k) => {

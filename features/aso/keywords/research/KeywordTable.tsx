@@ -526,7 +526,7 @@ export function KeywordTable({
         ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>#{row.rank}</span>
         : <span className="text-xs text-gray-600 italic">Unranked</span>;
       case "results":     return (
-        row.results !== undefined
+        row.results != null
           ? <span className="text-sm text-gray-300">{row.results.toLocaleString()}</span>
           : <span className="text-sm text-gray-600">—</span>
       );

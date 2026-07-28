@@ -20,6 +20,11 @@ export type SavedKeyword = {
   // keyword isn't ranked (no share attributed); always null when the app
   // isn't connected — see the top-level `downloadsConnection` field instead.
   estimatedDownloads: number | null;
+  // Number of apps returned for this term the last time it was computed;
+  // null for rows saved before this column existed (see the
+  // 20260728000001_keyword_metrics_results migration) — self-heals within
+  // CACHE_TTL_MS once app/api/keywords/metrics recomputes and re-saves it.
+  results: number | null;
   // Frozen when this keyword is beyond the workspace owner's current plan
   // limit (e.g. after a downgrade) — see reconcile_plan_limits in
   // supabase/migrations/20260713000001_plan_limit_reconciliation.sql.
@@ -95,7 +100,7 @@ export async function GET(request: NextRequest) {
       .order("added_at", { ascending: true }),
     supabase
       .from("keyword_metrics")
-      .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id")
+      .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, results")
       .eq("app_id", appId),
     supabase
       .from("app_store_connections")
@@ -115,7 +120,7 @@ export async function GET(request: NextRequest) {
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
 
   // Build metrics lookup by keyword_id
-  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number | null; relevancy: number | null; rank: number | null; intentThemeId: string | null }>();
+  const metricsMap = new Map<string, { volume: number; diff: number; chance: number; opportunity: number | null; relevancy: number | null; rank: number | null; intentThemeId: string | null; results: number | null }>();
   for (const m of metricsResult.data ?? []) {
     metricsMap.set(m.keyword_id, {
       volume:      m.volume,
@@ -130,6 +135,7 @@ export async function GET(request: NextRequest) {
       relevancy:   m.relevancy_scored ? m.relevancy   : null,
       rank:        m.rank ?? null,
       intentThemeId: m.intent_theme_id ?? null,
+      results:     m.results ?? null,
     });
   }
 
@@ -152,6 +158,7 @@ export async function GET(request: NextRequest) {
         relevancy:        m?.relevancy   ?? null,
         rank:             m?.rank        ?? null,
         intentThemeId:    m?.intentThemeId ?? null,
+        results:          m?.results     ?? null,
         hasCachedMetrics: !!m,
         frozen:           kw?.status === "frozen",
         estimatedDownloads: null, // filled in below once the full set's weights are known

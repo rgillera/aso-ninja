@@ -23,7 +23,7 @@ type Metrics = {
   diff: number;
   chance: number;
   opportunity: number | null;
-  results: number;
+  results: number | null;
   relevancy: number | null;
   rank: number | null;
   intentThemeId: string | null;
@@ -262,7 +262,7 @@ export async function GET(request: NextRequest) {
     const { data: rows } = await supabase
       .from("keyword_metrics")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select("volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, updated_at, keywords(term)" as any)
+      .select("volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, results, updated_at, keywords(term)" as any)
       .eq("app_id", appId);
 
     for (const row of (rows ?? []) as any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -284,7 +284,7 @@ export async function GET(request: NextRequest) {
       const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
       dbCache[term] = {
         volume: row.volume, diff: row.diff, chance: row.chance,
-        opportunity, results: 0,
+        opportunity, results: row.results ?? null,
         relevancy, rank: row.rank ?? null,
         intentThemeId: row.intent_theme_id ?? null,
       };
