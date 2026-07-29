@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, ChevronUpIcon, ClipboardDocumentIcon, InformationCircleIcon, LockClosedIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { dismissSuggestion } from "./dismissedSuggestions";
@@ -28,19 +28,17 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
   const locked = !isPlanAtLeast(planSlug, "pro");
   const [expanded, setExpanded] = useState(true);
   const [dismissed, setDismissed] = useState<string[]>(initialDismissed);
-  const [collapsedItems, setCollapsedItems] = useState<Set<string>>(new Set());
+  const [copiedTitle, setCopiedTitle] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   function handleDismiss(title: string) {
     setDismissed((prev) => dismissSuggestion(bundleId, store, title, prev));
   }
 
-  function toggleItem(title: string) {
-    setCollapsedItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(title)) next.delete(title); else next.add(title);
-      return next;
-    });
+  async function handleCopy(suggestion: Suggestion) {
+    await navigator.clipboard.writeText(`${suggestion.title}\n\n${suggestion.description}`);
+    setCopiedTitle(suggestion.title);
+    setTimeout(() => setCopiedTitle((current) => (current === suggestion.title ? null : current)), 1500);
   }
 
   if (locked) {
@@ -93,20 +91,24 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
       {expanded && (
         <ul className="divide-y divide-white/[0.06]">
           {pageItems.map((suggestion) => {
-            const itemCollapsed = collapsedItems.has(suggestion.title);
+            const copied = copiedTitle === suggestion.title;
             return (
               <li key={suggestion.title} className="group flex gap-3 px-5 py-4">
-                <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-400" />
                 <button
-                  onClick={() => toggleItem(suggestion.title)}
-                  className="flex-1 min-w-0 text-left"
-                  aria-label={itemCollapsed ? "Expand" : "Collapse"}
+                  onClick={() => handleCopy(suggestion)}
+                  title="Copy"
+                  className="mt-0.5 shrink-0 text-gray-600 transition-colors hover:text-white"
                 >
-                  <span className="text-sm font-medium text-white">{suggestion.title}</span>
-                  {!itemCollapsed && (
-                    <p className="mt-1 text-sm leading-6 text-gray-500">{suggestion.description}</p>
+                  {copied ? (
+                    <CheckIcon className="size-4 text-emerald-400" />
+                  ) : (
+                    <ClipboardDocumentIcon className="size-4" />
                   )}
                 </button>
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-white">{suggestion.title}</span>
+                  <p className="mt-1 text-sm leading-6 text-gray-500">{suggestion.description}</p>
+                </div>
                 <button
                   onClick={() => handleDismiss(suggestion.title)}
                   title="Dismiss"
