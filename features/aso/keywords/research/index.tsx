@@ -526,17 +526,17 @@ export default function KeywordResearchPage() {
           <span className="flex-1">
             You&apos;ve used up your plan&apos;s relevancy &amp; opportunity scoring pool. New keywords will still be
             tracked, just without those scores.{" "}
-            {planSlug === "pro" ? (
-              <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
-                Upgrade to Pro+ for a bigger pool
-              </Link>
-            ) : (
+            {isPlanAtLeast(planSlug, "pro_plus") ? (
               <a
                 href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
                 className="underline underline-offset-2 hover:no-underline"
               >
                 Contact us for a custom plan
               </a>
+            ) : (
+              <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
+                {planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool" : "Upgrade to Pro for a bigger pool"}
+              </Link>
             )}
           </span>
           <button onClick={() => setRelevancyLimitReached(false)} className="shrink-0 hover:text-indigo-200">
