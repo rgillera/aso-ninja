@@ -3,14 +3,14 @@ import { AppSearchDemo, KeywordTableDemo, RankChartDemo, PushNotificationDemo } 
 const STEPS = [
   {
     n: 1,
-    title: "Add your app",
-    description: "Search by name, bundle ID, or store URL (for iOS or Android) and start tracking it in seconds.",
+    title: "Start tracking in seconds",
+    description: "Search by name, bundle ID, or store URL for iOS or Android — no setup, no waiting.",
     visual: <AppSearchDemo />,
   },
   {
     n: 2,
-    title: "Add keywords to track",
-    description: "Every keyword you add is scored for Relevancy and Opportunity, so you always know which ones are worth chasing first.",
+    title: "Know which keywords are worth chasing",
+    description: "Every keyword you add is scored for Relevancy and Opportunity, so you can focus on the ones that will actually move the needle.",
     visual: <KeywordTableDemo />,
     // Wider content than the other two steps — stack it full-width instead
     // of squeezing it into half the row.
@@ -18,14 +18,14 @@ const STEPS = [
   },
   {
     n: 3,
-    title: "Monitor rankings over time",
-    description: "We check your rank daily and plot the history, so you can see whether your app is climbing, falling, or holding steady.",
+    title: "See exactly where you stand",
+    description: "We check your rank daily and plot the history, so you always know whether you're climbing, falling, or holding steady.",
     visual: <RankChartDemo />,
   },
   {
     n: 4,
-    title: "Get notified on your phone",
-    description: "Install the rankings monitor to your home screen and get a push notification the moment a keyword makes a big move — up or down.",
+    title: "Never miss a big move",
+    description: "Install the rankings monitor to your home screen and get a push notification the moment a keyword jumps — up or down.",
     visual: <PushNotificationDemo />,
   },
 ];
@@ -37,7 +37,7 @@ export default function PortalHowItWorks() {
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">How it works</p>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-            Four steps to your first insight
+            From setup to insight in minutes
           </h2>
           <p className="mt-6 text-lg text-gray-400">
             No spreadsheets, no guesswork. Here&rsquo;s what tracking a keyword actually looks like.
