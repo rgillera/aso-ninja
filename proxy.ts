@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 import { isMobileUserAgent } from "@/libs/user-agent";
 
-const PROTECTED = ["/dashboard", "/workspace", "/mobile"];
+const PROTECTED = ["/dashboard", "/workspace", "/mobile", "/admin"];
 const AUTH_PAGES = ["/login", "/signup"];
 
 // Plain startsWith would also match e.g. "/mobile-manifest.webmanifest"
