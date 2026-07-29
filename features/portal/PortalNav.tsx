@@ -8,6 +8,7 @@ const links = [
   { label: "Features", href: "/#features" },
   { label: "Pricing", href: "/#pricing" },
   { label: "Testimonials", href: "/#testimonials" },
+  { label: "Blog", href: "/blog" },
 ];
 
 export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolean }) {

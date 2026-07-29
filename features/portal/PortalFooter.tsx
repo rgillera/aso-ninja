@@ -13,6 +13,7 @@ const links = {
   Company: [
     { label: "About", href: "/about" },
     { label: "Our Story", href: "/our-story" },
+    { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
   ],
   Legal: [
