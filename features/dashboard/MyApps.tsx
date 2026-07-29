@@ -12,6 +12,10 @@ import {
   CheckCircleIcon,
   TrashIcon,
   XMarkIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
@@ -38,6 +42,8 @@ type AppGroup = {
   primary: App;
   entries: App[];
 };
+
+const PAGE_SIZE = 10;
 
 function groupApps(apps: App[]): AppGroup[] {
   const map = new Map<string, App[]>();
@@ -293,6 +299,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCountries, setSelectedCountries] = useState<Set<string>>(new Set());
   const [showCountries, setShowCountries] = useState(false);
+  const [page, setPage] = useState(0);
   const countriesRef = useRef<HTMLDivElement>(null);
 
   const allCountries = useMemo(() => {
@@ -317,6 +324,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
       if (next.has(code)) next.delete(code); else next.add(code);
       return next;
     });
+    setPage(0);
   }
 
   const filtered = useMemo(() => {
@@ -329,6 +337,15 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
   }, [apps, storeFilter, search, selectedCountries]);
 
   const hasFilters = storeFilter !== "all" || search || selectedCountries.size > 0;
+
+  const groups = useMemo(() => groupApps(filtered), [filtered]);
+  const totalPages = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+
+  useEffect(() => {
+    if (page > totalPages - 1) setPage(0);
+  }, [totalPages, page]);
+
+  const pageGroups = groups.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
     <>
@@ -355,19 +372,19 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
           {/* Store filter */}
           <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08]">
             <button
-              onClick={() => setStoreFilter("all")}
+              onClick={() => { setStoreFilter("all"); setPage(0); }}
               className={`rounded-md px-3 py-2 text-xs font-medium transition-colors ${storeFilter === "all" ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"}`}
             >
               All
             </button>
             <button
-              onClick={() => setStoreFilter("ios")}
+              onClick={() => { setStoreFilter("ios"); setPage(0); }}
               className={`rounded-md p-2 transition-colors ${storeFilter === "ios" ? "bg-white/10" : "opacity-50 hover:opacity-80"}`}
             >
               <IosIcon />
             </button>
             <button
-              onClick={() => setStoreFilter("android")}
+              onClick={() => { setStoreFilter("android"); setPage(0); }}
               className={`rounded-md p-2 transition-colors ${storeFilter === "android" ? "bg-white/10" : "opacity-50 hover:opacity-80"}`}
             >
               <AndroidIcon />
@@ -381,7 +398,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
               <input
                 autoFocus
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 onBlur={() => { if (!search) setShowSearch(false); }}
                 placeholder="Search apps…"
                 className="bg-transparent text-xs text-white placeholder-gray-600 outline-none w-36"
@@ -449,7 +466,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
           {/* Clear */}
           {hasFilters && (
             <button
-              onClick={() => { setStoreFilter("all"); setSearch(""); setShowSearch(false); setSelectedCountries(new Set()); }}
+              onClick={() => { setStoreFilter("all"); setSearch(""); setShowSearch(false); setSelectedCountries(new Set()); setPage(0); }}
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors px-2"
             >
               <span>×</span> Clear all
@@ -487,7 +504,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
           <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
             <div className="px-5 py-2.5 border-b border-white/[0.07]">
               <p className="text-[10px] font-semibold tracking-widest text-gray-600 uppercase">
-                Followed Apps · {groupApps(filtered).length}
+                Followed Apps · {groups.length}
               </p>
             </div>
 
@@ -495,7 +512,7 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
               <div className="px-5 py-10 text-center text-sm text-gray-600">No apps match your filters.</div>
             ) : (
               <div className="divide-y divide-white/[0.07]">
-                {groupApps(filtered).map((group) => (
+                {pageGroups.map((group) => (
                   <AppRow
                     key={group.key}
                     group={group}
@@ -504,6 +521,29 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
                     onRequestRemoveCountry={(group, entry) => setPendingCountryRemoval({ group, entry })}
                   />
                 ))}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.07] text-xs text-gray-500">
+                <span>
+                  {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, groups.length)} of {groups.length.toLocaleString()}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setPage(0)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                    <ChevronDoubleLeftIcon className="size-3.5" />
+                  </button>
+                  <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                    <ChevronLeftIcon className="size-3.5" />
+                  </button>
+                  <span className="px-2">{page + 1} / {totalPages}</span>
+                  <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                    <ChevronRightIcon className="size-3.5" />
+                  </button>
+                  <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                    <ChevronDoubleRightIcon className="size-3.5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
