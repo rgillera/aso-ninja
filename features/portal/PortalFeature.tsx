@@ -9,39 +9,39 @@ import {
 
 const features = [
   {
-    name: "Keyword Tracking",
+    name: "Never lose your ranking edge",
     description:
-      "Track unlimited keyword rankings across App Store and Google Play. Get daily snapshots and see rank changes over time so you know what's moving.",
+      "Unlimited keyword tracking across App Store and Google Play, with daily snapshots so you know the moment your rank moves — up or down.",
     icon: MagnifyingGlassIcon,
   },
   {
-    name: "Keyword Research",
+    name: "Find the keywords your competitors missed",
     description:
-      "Discover competitor apps, compare keyword overlap, and find opportunities your competition is already capitalizing on.",
+      "See which keywords competitor apps rank for, compare the overlap with yours, and go after the opportunities they haven't capitalized on yet.",
     icon: GlobeAltIcon,
   },
   {
-    name: "Metadata Editor",
+    name: "Turn more searches into installs",
     description:
-      "Edit your app title, subtitle, description, and keyword field per locale. Check keyword density, preview search results, and benchmark against your category before you save.",
+      "Fine-tune your title, subtitle, description, and keyword field per locale, then preview and benchmark against your category before you publish.",
     icon: DocumentTextIcon,
   },
   {
-    name: "Analytics",
+    name: "Know what's actually driving growth",
     description:
-      "Visualize ranking trends, keyword performance, and conversion metrics in one place. Filter by store, locale, and date range.",
+      "See ranking trends, keyword performance, and conversions side by side, filtered by store, locale, and date range, so you always know what's working.",
     icon: ChartBarIcon,
   },
   {
-    name: "Reviews & Ratings",
+    name: "Protect your rating before it slips",
     description:
-      "Monitor reviews synced daily from both stores. Filter by rating, locale, and version. Never miss a critical review again.",
+      "Catch reviews the moment they land, synced daily and filtered by rating, locale, and version, so nothing critical goes unanswered.",
     icon: StarIcon,
   },
   {
-    name: "Team Workspaces",
+    name: "Keep your whole team moving together",
     description:
-      "Invite your team into a shared workspace with one source of truth. Everyone sees the same data, no spreadsheets required.",
+      "Give everyone a shared workspace with one source of truth. Everyone sees the same data, no spreadsheets required.",
     icon: UsersIcon,
   },
 ];

@@ -15,9 +15,6 @@ const links = {
     { label: "Our Story", href: "/our-story" },
     { label: "Contact", href: "/contact" },
   ],
-  Others: [
-    { label: "App Landing\nPage Generator", href: "https://apppanda.io/" },
-  ],
   Legal: [
     { label: "Privacy", href: "/privacy" },
     { label: "Terms", href: "/terms" },
@@ -82,7 +79,7 @@ export default function PortalFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-4 lg:w-fit lg:gap-x-12">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:w-fit lg:gap-x-12">
             {Object.entries(links).map(([group, items]) => (
               <div key={group}>
                 <h4 className="text-sm font-semibold text-white">{group}</h4>
