@@ -5,10 +5,34 @@ import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
 import { getSortedBlogPosts } from "@/features/blog/posts";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
+
+const description =
+  "Keyword research, metadata tips, feature walkthroughs, and app growth strategies to help indie developers and small teams get more downloads.";
+
 export const metadata: Metadata = {
   title: "Blog",
+  description,
+  keywords: [
+    "ASO blog",
+    "app store optimization guides",
+    "keyword research",
+    "app metadata tips",
+    "app growth strategies",
+  ],
   alternates: {
     canonical: "/blog",
+  },
+  openGraph: {
+    type: "website",
+    url: "/blog",
+    title: "Blog | AppASO",
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog | AppASO",
+    description,
   },
 };
 
@@ -18,8 +42,28 @@ export default async function BlogIndexPage() {
   const isAuthenticated = !!user;
   const posts = getSortedBlogPosts();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "AppASO Blog",
+    description,
+    url: `${siteUrl}/blog`,
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.excerpt,
+      datePublished: post.date,
+      url: `${siteUrl}/blog/${post.slug}`,
+    })),
+  };
+
   return (
     <div className="bg-gray-900 min-h-screen">
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
@@ -27,12 +71,12 @@ export default async function BlogIndexPage() {
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Blog</p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-              ASO insights and{" "}
-              <span className="text-indigo-400">comparisons</span>
+              Guides to growing your{" "}
+              <span className="text-indigo-400">app</span>
             </h1>
             <p className="mt-6 text-lg text-gray-400">
-              Keyword research, metadata tips, and honest comparisons to help indie developers and small
-              teams grow their apps.
+              Keyword research, metadata tips, feature walkthroughs, and app growth strategies to help
+              indie developers and small teams get more downloads.
             </p>
           </div>
         </section>

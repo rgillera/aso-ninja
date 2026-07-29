@@ -1,7 +1,4 @@
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
-import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import AdminUsersPage from "@/features/admin/AdminUsersPage";
 import type { AdminUserRow } from "@/features/admin/types";
 
@@ -40,11 +37,6 @@ async function listAllAuthUsers(admin: ReturnType<typeof createAdminClient>): Pr
 }
 
 export default async function Page() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-  if (!isSuperAdminEmail(user.email)) notFound();
-
   const admin = createAdminClient();
 
   const [authUsers, { data: owners }, { data: apps }, { data: keywords }, { data: subscriptions }, { data: plans }] =

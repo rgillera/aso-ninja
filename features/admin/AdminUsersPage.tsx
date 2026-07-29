@@ -120,7 +120,7 @@ export default function AdminUsersPage({ users }: Props) {
   const pageUsers = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   return (
-    <div className="min-h-screen bg-[#0d0f14] p-6">
+    <div className="p-6">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-3 mb-6">
           <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] ring-1 ring-white/[0.08]">

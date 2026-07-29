@@ -12,6 +12,7 @@ export type BlogPost = {
   date: string;
   readTime: string;
   category: string;
+  keywords: string[];
   content: BlogBlock[];
 };
 
@@ -21,14 +22,25 @@ export const BLOG_POSTS: BlogPost[] = [
     title:
       "AppASO vs AppTweak, MobileAction, AppRadar, AppFollow, Sensor Tower & Astro: Which ASO Tool Fits Your Team?",
     excerpt:
-      "A side-by-side look at how AppASO compares to the biggest names in App Store Optimization, and why unlimited keyword tracking and built-in long tail research make it the better fit for indie developers and small teams.",
+      "A sourced, numbers-based comparison of AppASO against AppTweak, MobileAction, AppRadar, AppFollow, Sensor Tower, and Astro — real pricing, real limits, and where each tool actually wins.",
     date: "2026-07-29",
-    readTime: "9 min read",
+    readTime: "10 min read",
     category: "Comparisons",
+    keywords: [
+      "ASO tool comparison",
+      "AppTweak alternative",
+      "MobileAction alternative",
+      "AppRadar alternative",
+      "AppFollow alternative",
+      "Sensor Tower alternative",
+      "Astro alternative",
+      "best ASO tool for indie developers",
+      "app store optimization tools",
+    ],
     content: [
       {
         type: "paragraph",
-        text: "App Store Optimization has no shortage of tooling. AppTweak, MobileAction, AppRadar, AppFollow, Sensor Tower, and Astro have all built real platforms, each with its own strengths, and each aimed primarily at agencies and larger marketing teams with the budget and headcount to match. If you're an indie developer or a small app team, though, the calculus is different: you need real keyword data and metadata tooling without a tracking cap forcing you to ration which keywords matter, and without a price tag built for a client roster instead of one or two apps. That's the gap AppASO was built to close.",
+        text: "App Store Optimization has no shortage of tooling, and most of it is genuinely good. AppTweak, MobileAction, AppRadar, AppFollow, and Sensor Tower are established platforms with real data behind them, Astro has built a loyal following among solo iOS developers, and each has a real strength worth acknowledging. But most of them are priced and packaged for agencies and larger marketing teams. Below is what each one actually costs and includes as of mid-2026, and how that stacks up against AppASO for an indie developer or small team running ASO on both iOS and Android.",
       },
       {
         type: "heading",
@@ -36,56 +48,56 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "table",
-        headers: ["Tool", "Known for", "Keyword tracking", "Long tail research", "Best for"],
+        headers: ["Tool", "Known for", "Starting price", "Keyword tracking", "Best for"],
         rows: [
           [
             "AppTweak",
-            "Enterprise ASO & market intelligence suite",
-            "Capped by plan tier",
-            "Limited, higher-tier add-on",
+            "Deep historical & market intelligence data",
+            "€83/mo (Essential)",
+            "500 keywords, up to 3,000 on the €499/mo Scale plan",
             "Agencies & enterprise marketing teams",
           ],
           [
             "MobileAction",
-            "App intelligence & competitor tracking",
-            "Capped by plan tier",
-            "Limited",
-            "Agencies & app intelligence teams",
+            "ASO Intelligence + Apple Search Ads tooling",
+            "$69/mo (ASO Basic)",
+            "Tiered — jumps to $239/mo for ASO Pro",
+            "Agencies running ASO and paid UA together",
           ],
           [
             "AppRadar",
-            "ASO platform with managed agency services",
-            "Capped by plan tier",
-            "Limited add-on",
-            "Teams that want a managed-service layer",
+            "AI-driven ASO with automated review replies",
+            "€58/mo (Essentials)",
+            "Access to a 30M+ keyword database, scaling with plan",
+            "Teams wanting AI automation & bulk publishing",
           ],
           [
             "AppFollow",
-            "Review management & ASO tracking",
-            "Capped by plan tier",
-            "Limited",
-            "Support & review-focused teams",
+            "Review & rating management with ASO tracking",
+            "Free (20 keywords) / $99/mo Premium",
+            "20 free; ASO packages start at 200 keywords",
+            "Review-first teams",
           ],
           [
             "Sensor Tower",
-            "Market intelligence & analytics at scale",
-            "Enterprise-tier, capped",
-            "Limited/enterprise add-on",
+            "Investor-grade market intelligence",
+            "No public pricing — sales-led, ~$25k–$40k+/yr reported",
+            "Unlimited tracking is an enterprise-only add-on",
             "Large publishers & investors",
           ],
           [
             "Astro",
-            "ASO & growth analytics",
-            "Capped by plan tier",
-            "Limited",
-            "Teams wanting broader growth analytics",
+            "Native Mac app for iOS-only keyword tracking",
+            "~$99/yr flat (~$9/mo)",
+            "Unlimited keywords & apps, flat fee, iOS only",
+            "Solo developers who only ship on iOS",
           ],
           [
             "AppASO",
-            "ASO workspace built for indie & small teams",
-            "Unlimited, on every plan",
-            "Built in as a dedicated tool",
-            "Indie developers & small app teams",
+            "iOS & Android ASO workspace for indie teams",
+            "Free (20 keywords) / $14.40/mo unlimited",
+            "Unlimited from the Basic plan, both platforms",
+            "Indie developers & small teams on iOS and Android",
           ],
         ],
       },
@@ -95,7 +107,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppTweak is one of the most established names in ASO, with a broad suite covering keyword tracking, creative analytics, and market intelligence. It's a strong pick if you're running ASO across a large portfolio of apps with a dedicated team to operate it. That scale is also reflected in how the platform is priced and packaged — it's built around agency and enterprise workflows, which makes it a heavier commitment than a solo developer or small team typically needs for day-to-day keyword and metadata work.",
+        text: "AppTweak's real strength is depth: the Essential plan (€83/mo) tracks 500 keywords with 6 months of historical data, and it scales up through Grow (€249/mo, 1,500 keywords, 12 months) to Scale (€499/mo, 3,000 keywords, 24 months). That's genuinely useful market intelligence if you're running ASO across a large portfolio and want years of trend data to lean on. It's also a much bigger commitment than most solo developers or small teams need — AppASO's Basic plan tracks unlimited keywords across unlimited apps for $14.40/mo, a fraction of AppTweak's cheapest tier, though without AppTweak's multi-year historical archive.",
       },
       {
         type: "heading",
@@ -103,7 +115,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "MobileAction leans heavily into competitive intelligence — seeing what other apps are doing with their keywords, ads, and store listings. That's genuinely useful for competitive research, but the core workflow of tracking your own keywords and iterating on your own metadata is only part of a much larger, enterprise-oriented platform. Smaller teams often end up paying for a lot of surface area they don't touch.",
+        text: "MobileAction's ASO Intelligence plans start at $69/mo (Basic) and jump to $239/mo (Pro), backed by a genuinely large dataset — reportedly 90M+ ad creatives, 6M+ keywords, and 5M+ tracked apps — plus Apple Search Ads campaign management bundled in. That combination is a real advantage if you're running ASO and paid UA together. If you only need keyword tracking and metadata tooling, AppASO's Pro plan ($80.40/mo) still undercuts MobileAction's Pro tier while adding AI keyword suggestions, competitor tracking, and metadata benchmarking — you just won't get MobileAction's Apple Search Ads intelligence layered in.",
       },
       {
         type: "heading",
@@ -111,7 +123,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppRadar pairs its ASO tooling with managed agency services, which is appealing if you'd rather hand off optimization work entirely. If you want to stay hands-on with your own keyword research and metadata decisions, though, you're paying in part for a service layer you may not use, and self-serve keyword tracking still comes with the plan-based limits common across this category.",
+        text: "AppRadar starts at €58/mo (Essentials) and scales to €141/mo (Growth) and €250/mo (Scale), with a real edge in automation: GPT-4-powered AI review replies and the ability to push metadata updates across every storefront at once, backed by a 30M+ keyword database. That bulk multi-country publishing workflow is something AppASO doesn't offer. But for a team managing one or two apps rather than a multi-market portfolio, AppASO's Basic plan ($14.40/mo) covers unlimited keyword tracking for a fraction of even AppRadar's entry tier.",
       },
       {
         type: "heading",
@@ -119,7 +131,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppFollow's strongest suit is review and rating management — collecting, triaging, and responding to user feedback across stores. Its ASO tracking exists alongside that, but keyword research and long tail discovery are secondary to the review workflow. If reviews are your main problem, it's a solid fit; if keyword visibility and metadata iteration are the priority, it's not built around that first.",
+        text: "AppFollow's free plan tracks 20 keywords across 2 apps and 2 countries with 20 review replies a month — close to AppASO's free plan on keyword count, though AppASO's free plan covers metadata optimization too. Where AppFollow genuinely pulls ahead is review management: sentiment analysis, automated triage, and direct-reply tooling that's more mature than what most ASO-first tools offer. Its Premium plans start at $99/mo, and a real ASO package (beyond the free 20 keywords) starts at 200 tracked keywords. If reviews are your primary pain point, AppFollow specializes there in a way AppASO doesn't yet match; if keyword tracking and metadata are the priority, AppASO's unlimited tracking from $14.40/mo is the cheaper way to get there.",
       },
       {
         type: "heading",
@@ -127,7 +139,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Sensor Tower is best known for market-wide intelligence — download estimates, revenue estimates, and industry benchmarking used heavily by investors and large publishers. It's less a day-to-day keyword and metadata workspace for a single app team and more a research platform, priced and packaged accordingly.",
+        text: "Sensor Tower doesn't publish pricing — it's sold through annual contracts and sales calls, with small teams reportedly paying $25,000–$40,000 a year and enterprise deals reaching six figures. In exchange you get its real strength: investor-grade download and revenue estimates and market-wide competitive intelligence used for M&A and investment decisions — data most teams simply don't need for day-to-day ASO. Notably, even Sensor Tower gates unlimited keyword tracking behind its enterprise tier. AppASO isn't trying to compete on macro market intelligence; it's built for the much more common job of tracking your own keywords and iterating your own listing, at a self-serve price you can see before you sign up.",
       },
       {
         type: "heading",
@@ -135,7 +147,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Astro covers ASO alongside broader growth and analytics tracking, which is useful if you want optimization data sitting next to wider growth metrics in one place. That breadth means keyword tracking and long tail research are one slice of a bigger tool rather than the central focus, and plan tiers still gate how many keywords you can actively track.",
+        text: "Astro is the closest thing to AppASO on price: a flat ~$99/year (about $9/month) for unlimited keywords across unlimited apps, no per-keyword or per-app fees. It's a genuinely well-built, indie-friendly tool — and its real limitation is scope. Astro is a native Mac app built specifically for Apple's App Store; there's no Google Play tracking, no Android support, and no built-in metadata optimization workspace or competitor keyword discovery. If you only ship on iOS and want the cheapest possible flat-fee keyword tracker, Astro is worth a serious look. If you're on both iOS and Android — or want keyword research, metadata tooling, and competitor tracking in the same workspace — that's where AppASO's $14.40/mo Basic plan picks up where Astro's scope ends.",
       },
       {
         type: "heading",
@@ -144,10 +156,10 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: "bullets",
         items: [
-          "Unlimited keyword tracking on every plan — no cap that forces you to ration which keywords you monitor, even as your workspace grows",
-          "Long tail keyword research built in — turn a handful of seed terms into dozens of realistic, lower-competition keyword variants without a separate tool or add-on",
-          "Affordable, indie-first pricing — free to start, with paid plans priced for a solo developer or small team, not an agency retainer",
-          "One workspace — keyword research, metadata optimization, competitor tracking, and reviews together, instead of stitching together several subscriptions to cover the same ground",
+          "Unlimited keyword tracking from $14.40/mo (Basic plan) — the lowest all-in entry price on this list besides Astro, and unlike Astro, it covers Android as well as iOS",
+          "A genuinely free plan to start on — 20 tracked keywords and metadata optimization for one app, no credit card required",
+          "One workspace for keyword research, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
+          "Transparent, published self-serve pricing — no sales calls or annual contracts required just to find out what it costs, unlike Sensor Tower",
         ],
       },
       {
@@ -156,12 +168,12 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "If you're running ASO across a large portfolio with a dedicated team, or you need market-wide competitive intelligence for investment or agency reporting, AppTweak, MobileAction, or Sensor Tower are built for that scale. If you want managed services layered on top of your ASO work, AppRadar fits. If reviews are your core problem, AppFollow is worth a look. But if you're an indie developer or small team who wants full keyword visibility — every keyword tracked, not just the top few your plan allows — plus real long tail research and metadata tooling, without paying agency prices for it, that's exactly the gap AppASO fills.",
+        text: "If you need investor-grade market intelligence or you're running ASO across a large multi-app portfolio with a dedicated team, AppTweak, MobileAction, or Sensor Tower's depth of historical and competitive data is real, and you'll pay enterprise or agency prices for it. If AI-automated review replies and bulk multi-storefront publishing matter most, AppRadar fits. If reviews are your single biggest problem, AppFollow's sentiment tooling is the most mature option here. If you're a solo developer who only ships on iOS and wants the cheapest possible flat-fee keyword tracker, Astro is genuinely worth using. But if you're an indie developer or small team shipping on iOS and Android who wants unlimited keyword tracking, metadata tooling, and competitor tracking in one workspace, without an enterprise price tag, a sales call, or a Mac-only tool — that's exactly where AppASO fits.",
       },
       {
         type: "cta",
         heading: "Try AppASO free",
-        body: "Track unlimited keywords, research long tail opportunities, and optimize your metadata — free to start, no credit card required.",
+        body: "Track 20 keywords and optimize your metadata for free, or unlock unlimited keyword tracking from $14.40/mo. No credit card required.",
         label: "Create free account",
         href: "/signup",
       },
