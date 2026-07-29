@@ -77,7 +77,7 @@ export default function KeywordResearchPage() {
       })
       .catch(() => setCompetitors([]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id, activeApp?.bundle_id]);
+  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country]);
 
   async function handleCompetitorsChange(updated: CompetitorApp[]) {
     const previous = competitors;
@@ -131,8 +131,15 @@ export default function KeywordResearchPage() {
   // saved, even though it did.
   const loadedAppId = useRef<string | undefined>(undefined);
   useEffect(() => {
-    const key = activeApp?.id ?? activeApp?.bundle_id;
-    if (!key || loadedAppId.current === key) return;
+    const appKey = activeApp?.id ?? activeApp?.bundle_id;
+    if (!appKey) return;
+    // Keyed on store+country too, not just id/bundle_id: a previewed (not yet
+    // followed) app keeps the same undefined id and bundle_id when only the
+    // country changes, so without this the effect would treat "same app,
+    // different country" as no change at all and leave the previous
+    // country's keywords sitting in state instead of reloading.
+    const key = activeApp?.id ?? `${activeApp?.bundle_id}:${activeApp?.store}:${activeApp?.country}`;
+    if (loadedAppId.current === key) return;
     loadedAppId.current = key;
     setKeywords([]);
     setDownloadsConnection(undefined);
@@ -198,7 +205,7 @@ export default function KeywordResearchPage() {
       })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeApp?.id, activeApp?.bundle_id]);
+  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country]);
 
   async function handleAddKeywords(newKeywords: string[]) {
     // Deduplicate against all tracked keywords including those still loading —
