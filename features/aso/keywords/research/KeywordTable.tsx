@@ -14,11 +14,13 @@ import {
   ArrowsUpDownIcon,
   SparklesIcon,
   ClockIcon,
+  ArrowTrendingUpIcon,
   LockClosedIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
+import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
@@ -236,6 +238,7 @@ export function KeywordTable({
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
   const [liveSearchKeyword, setLiveSearchKeyword] = useState<string | null>(null);
+  const [volumeHistoryKeyword, setVolumeHistoryKeyword] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
 
@@ -495,7 +498,16 @@ export function KeywordTable({
 
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
-      case "volume":      return <VolumeBar value={row.volume} />;
+      case "volume":      return (
+        <button
+          onClick={() => setVolumeHistoryKeyword(row.keyword)}
+          title="View volume history"
+          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+        >
+          <VolumeBar value={row.volume} />
+          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+        </button>
+      );
       case "diff":        return (
         <span className={`text-sm ${row.diff > 60 ? "text-red-400" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>
           {row.diff}
@@ -1015,6 +1027,15 @@ export function KeywordTable({
           count={pendingBulkAdd.length}
           onCancel={() => setPendingBulkAdd(null)}
           onConfirm={confirmBulkAdd}
+        />
+      )}
+
+      {volumeHistoryKeyword && (
+        <VolumeHistoryPanel
+          term={volumeHistoryKeyword}
+          store={store}
+          country={country}
+          onClose={() => setVolumeHistoryKeyword(null)}
         />
       )}
     </div>
