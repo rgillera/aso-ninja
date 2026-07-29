@@ -2,30 +2,32 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowTrendingUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { usePlanSlug } from "./PlanContext";
 
 function dismissKey(workspaceId: string) {
-  return `aso_trial_banner_dismissed_${workspaceId}`;
+  return `aso_upgrade_banner_dismissed_${workspaceId}`;
 }
 
-export function TrialBanner({ workspaceId, trialDays }: { workspaceId: string; trialDays: number }) {
+export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
+  const planSlug = usePlanSlug();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(dismissKey(workspaceId)) === "1") setDismissed(true);
   }, [workspaceId]);
 
-  if (dismissed) return null;
+  if (dismissed || planSlug !== "free") return null;
 
   return (
     <div className="mx-6 mt-6 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 ring-1 ring-indigo-500/20 px-5 py-4">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
-        <SparklesIcon className="size-5 text-indigo-400" />
+        <ArrowTrendingUpIcon className="size-5 text-indigo-400" />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white">Try Pro free for {trialDays} days</p>
-        <p className="text-xs text-gray-400">Unlock more apps, keywords, and ranking monitoring — no charge until your trial ends.</p>
+        <p className="text-sm font-semibold text-white">Don&apos;t leave downloads on the table</p>
+        <p className="text-xs text-gray-400">Track unlimited keywords, monitor your rankings around the clock, and outrank the competition.</p>
       </div>
 
       <Link

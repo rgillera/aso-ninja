@@ -28,14 +28,20 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import type { Keyword, DownloadsConnection } from "./types";
 
-function LockedCell({ title = "Relevancy and Opportunity require the Pro plan" }: { title?: string }) {
+// Same per-tier colors as nameColor() in features/subscription/SubscriptionPage.tsx.
+const LOCKED_CELL_COLORS: Record<"Basic" | "Pro", string> = {
+  Basic: "bg-emerald-500/10 text-emerald-500",
+  Pro: "bg-violet-500/10 text-violet-400",
+};
+
+function LockedCell({ plan = "Basic", title }: { plan?: "Basic" | "Pro"; title?: string }) {
   return (
     <span
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400"
-      title={title}
+      className={`inline-flex items-center gap-1 shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold ${LOCKED_CELL_COLORS[plan]}`}
+      title={title ?? `Relevancy and Opportunity require the ${plan} plan`}
     >
       <LockClosedIcon className="size-2.5" />
-      Pro
+      {plan}
     </span>
   );
 }
@@ -202,11 +208,8 @@ export function KeywordTable({
   onCompetitorAdded,
 }: Props) {
   const planSlug = usePlanSlug();
-  const relevancyLocked = !isPlanAtLeast(planSlug, "pro");
-  // Same tier as Relevancy/Opportunity — aliased rather than reusing
-  // relevancyLocked directly so the two features can diverge later without
-  // a rename.
-  const downloadsLocked = relevancyLocked;
+  const relevancyLocked = !isPlanAtLeast(planSlug, "basic");
+  const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -532,7 +535,7 @@ export function KeywordTable({
       );
       case "estimatedDownloads": return (
         downloadsLocked
-          ? <LockedCell title="Est. Downloads requires the Pro plan" />
+          ? <LockedCell plan="Pro" title="Est. Downloads requires the Pro plan" />
           : !downloadsConnection?.connected
           ? <ConnectDownloadsCell bundleHasCredential={downloadsConnection?.bundleHasCredential} />
           : downloadsConnection.pending

@@ -213,7 +213,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
           <p className="text-sm text-gray-300">
-            Need more apps, seats, or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span>
+            Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span>
           </p>
           <a
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}

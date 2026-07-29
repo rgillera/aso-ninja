@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   // Keyword Simulator itself is a Pro+-and-up feature (distinct from the
-  // relevancy pool check below, which is Pro-and-up) — checked first so a
+  // relevancy pool check below, which is Basic-and-up) — checked first so a
   // Pro (not Pro+) workspace gets a clear "needs Pro+" message instead of
   // silently falling through to the relevancy-pool response shape.
   const planState = await getWorkspacePlanState(workspaceId);
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
   // against. Blocking simulate once the pool is already exhausted is the
   // correct read of "count against the same pool" without inventing new
   // schema or risking a permanent double-spend on already-scored keywords.
-  const hasRelevancyAccess = isPlanAtLeast(planSlug, "pro");
+  const hasRelevancyAccess = isPlanAtLeast(planSlug, "basic");
   const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : null;
   const relevancyScoredCount = planState && !("error" in planState) ? planState.usage.relevancy_scored_count : 0;
   const relevancyPoolExhausted = hasRelevancyAccess && relevancyLimit !== null && relevancyScoredCount >= relevancyLimit;

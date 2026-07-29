@@ -9,7 +9,7 @@ export type PendingCancellation = { currentPeriodEnd: string | null } | null;
 export async function getWorkspacePlanState(
   workspaceId: string
 ): Promise<
-  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation; hasUsedTrial: boolean }
+  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation }
   | { error: string }
 > {
   const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function getWorkspacePlanState(
       user
         ? supabase
             .from("subscriptions")
-            .select("cancel_at_period_end, current_period_end, has_used_trial")
+            .select("cancel_at_period_end, current_period_end")
             .eq("user_id", user.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
@@ -39,7 +39,6 @@ export async function getWorkspacePlanState(
     pendingCancellation: subscription?.cancel_at_period_end
       ? { currentPeriodEnd: subscription.current_period_end }
       : null,
-    hasUsedTrial: subscription?.has_used_trial ?? false,
   };
 }
 

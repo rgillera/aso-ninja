@@ -37,7 +37,6 @@ type Props = {
   workspaceId: string;
   usage?: WorkspaceUsage;
   pendingCancellation?: { currentPeriodEnd: string | null } | null;
-  hasUsedTrial?: boolean;
 };
 
 type Billing = "monthly" | "yearly";
@@ -91,7 +90,6 @@ export default function SubscriptionPage({
   workspaceId,
   usage,
   pendingCancellation,
-  hasUsedTrial,
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
@@ -239,7 +237,6 @@ export default function SubscriptionPage({
                   isCurrent={isCurrent}
                   isDowngrade={isDowngrade}
                   billing={billing}
-                  trialDays={hasUsedTrial ? undefined : plan.trialDays}
                   initialScheduledFor={
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }
@@ -254,7 +251,7 @@ export default function SubscriptionPage({
             {currentPlanId === "enterprise" ? (
               <>You&apos;re on <span className="text-indigo-400 font-medium">Enterprise</span>.</>
             ) : (
-              <>Need more apps, seats, or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span></>
+              <>Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span></>
             )}
           </p>
           <a

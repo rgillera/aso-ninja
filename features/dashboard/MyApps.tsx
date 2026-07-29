@@ -15,7 +15,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
-import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
 import type { App } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
@@ -457,11 +456,9 @@ export default function MyApps({ apps, workspaceId, connectedAppIds }: Props) {
             </button>
           )}
 
-          {/* Mobile app QR + Add app — right side; hidden on mobile, where "Add App"
-              is redundant with the always-visible top search bar and a QR prompt
-              to get the mobile app is pointless if you're already on one */}
+          {/* Add app — right side; hidden on mobile, where it's redundant with
+              the always-visible top search bar */}
           <div className="ml-auto hidden items-center gap-2 sm:flex">
-            <MobileAppQrButton />
             <button
               onClick={focusGlobalSearch}
               className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 text-xs font-medium text-gray-300 hover:text-white hover:bg-[#22252f] transition-colors"

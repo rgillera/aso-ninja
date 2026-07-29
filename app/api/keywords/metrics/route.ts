@@ -241,16 +241,16 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Relevancy/opportunity are Pro-and-up features — anything below that plan
-  // never triggers the Gemini embedding/LLM pass, and never sees a value even
-  // if one was cached from before a downgrade. Pro and Pro+ both have a
-  // lifetime relevancy pool (relevancy_limit) instead of being unlimited —
-  // once a workspace's pooled relevancy_scored_count reaches it, no further
-  // keywords get scored (already-scored ones keep showing). Only Enterprise
-  // has relevancy_limit = null (unlimited).
+  // Relevancy/opportunity are Basic-and-up features — anything below that
+  // plan never triggers the Gemini embedding/LLM pass, and never sees a
+  // value even if one was cached from before a downgrade. Basic, Pro, and
+  // Pro+ each have a lifetime relevancy pool (relevancy_limit) instead of
+  // being unlimited — once a workspace's pooled relevancy_scored_count
+  // reaches it, no further keywords get scored (already-scored ones keep
+  // showing). Only Enterprise has relevancy_limit = null (unlimited).
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const hasRelevancyAccess = isPlanAtLeast(planSlug, "pro");
+  const hasRelevancyAccess = isPlanAtLeast(planSlug, "basic");
   const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : null;
   const relevancyScoredCount = planState && !("error" in planState) ? planState.usage.relevancy_scored_count : 0;
   const relevancyPoolExhausted = hasRelevancyAccess && relevancyLimit !== null && relevancyScoredCount >= relevancyLimit;
