@@ -17,11 +17,12 @@ export const PLANS: Plan[] = [
     name: "Free Plan",
     priceMonthlyCents: 0,
     priceYearlyCents: 0,
-    description: "20 keywords, keyword research, and metadata optimization for 1 app — free forever.",
+    description: "20 keywords, keyword research, and metadata optimization across unlimited apps — free forever.",
     badge: "Always free",
     features: [
       "1 workspace",
-      "1 app & 1 competitor",
+      "Unlimited apps (iOS & Android)",
+      "1 competitor per app",
       "20 keywords",
       "Metadata optimization",
       "Keyword research",
@@ -39,7 +40,6 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Free plan, plus:",
-      "Unlimited apps (iOS & Android)",
       "Unlimited keywords",
       "Relevancy & opportunity scoring (up to 100 keywords)",
       "Keyword translations",

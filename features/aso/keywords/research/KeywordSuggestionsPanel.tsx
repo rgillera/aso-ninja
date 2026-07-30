@@ -41,6 +41,7 @@ export function KeywordSuggestionsPanel({
 }: Props) {
   const planSlug = usePlanSlug();
   const aiLocked = !isPlanAtLeast(planSlug, "pro");
+  const analyzeAllLocked = !isPlanAtLeast(planSlug, "basic");
   const [open,       setOpen]       = useState(true);
   const [activeTab,  setActiveTab]  = useState<string>(SUGGESTION_TABS[0].label);
 
@@ -101,14 +102,14 @@ export function KeywordSuggestionsPanel({
 
           {/* Always-mounted tabs (preserve state across switches) */}
           <div className={activeTab === "Metadata" ? "" : "hidden"}>
-            <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} analyzeAllLocked={aiLocked} />
+            <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} analyzeAllLocked={analyzeAllLocked} />
           </div>
           <div className={activeTab === "Competitors" ? "" : "hidden"}>
             <KeywordSuggestionCompetitors
               {...tabProps}
               competitors={competitors}
               translateToggle={translateToggle}
-              analyzeAllLocked={aiLocked}
+              analyzeAllLocked={analyzeAllLocked}
             />
           </div>
           <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>

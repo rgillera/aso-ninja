@@ -157,7 +157,7 @@ export const BLOG_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Unlimited keyword tracking from $12/mo (Basic plan) — the lowest all-in entry price on this list besides Astro, and unlike Astro, it covers Android as well as iOS",
-          "A genuinely free plan to start on — 20 tracked keywords and metadata optimization for one app, no credit card required",
+          "A genuinely free plan to start on — 20 tracked keywords and metadata optimization across unlimited apps, no credit card required",
           "One workspace for keyword research, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
           "Transparent, published self-serve pricing — no sales calls or annual contracts required just to find out what it costs, unlike Sensor Tower",
         ],
