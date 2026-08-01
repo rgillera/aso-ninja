@@ -43,7 +43,7 @@ function extractIosScreenshots(html: string): string[] {
 function extractIosSubtitle(html: string, trackName: string): string {
   try {
     const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}","isIOSBinaryMacOSCompatible":(?:true|false),"useAdsLocale":(?:true|false),"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
+    const re = new RegExp(`"title":"${escaped}","subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
     const m = html.match(re);
     return m ? JSON.parse(`"${m[1]}"`) : "";
   } catch { return ""; }

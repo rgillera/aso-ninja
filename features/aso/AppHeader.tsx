@@ -6,9 +6,13 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { InformationCircleIcon, DevicePhoneMobileIcon, PlusIcon, CheckIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import { countryFlag } from "@/libs/countries";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { useAllApps } from "@/features/dashboard/AllAppsContext";
+import { useSelectApp } from "@/features/dashboard/SelectAppContext";
 import { followAppAction, deleteAppAction } from "@/features/app/actions";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { CountrySwitcher } from "@/features/aso/CountrySwitcher";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
+import type { App } from "@/libs/contracts";
 
 type Props = {
   app: ActiveApp | null;
@@ -196,7 +200,53 @@ function SettingsLinkButton({ app }: { app: ActiveApp }) {
   );
 }
 
+// Shown instead of the plain country label when the app is followed in more
+// than one country — switches which country's data the rest of the page
+// (report, keywords, reviews, ...) is scoped to.
+function HeaderCountrySwitcher({ app, siblings }: { app: ActiveApp; siblings: App[] }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const selectApp = useSelectApp();
+
+  function handleSelect(target: App) {
+    // App-scoped routes (Report, Settings, ...) are keyed by app id in the
+    // URL itself, so switch by navigating to the same sub-page for the
+    // sibling. App-agnostic pages (Keywords, Reviews, ...) read the active
+    // app from context/cookie instead — update that in place, no navigation.
+    if (pathname.startsWith("/dashboard/apps/")) {
+      const subpage = pathname.split("/")[4] ?? "report";
+      router.push(`/dashboard/apps/${target.id}/${subpage}`);
+    } else {
+      selectApp({
+        name: target.name,
+        iconUrl: target.icon_url,
+        store: target.store,
+        bundleId: target.bundle_id,
+        storeId: target.store_id,
+        country: target.country ?? "US",
+        href: `/dashboard/apps/${target.id}/report`,
+        trackedId: target.id,
+      });
+    }
+  }
+
+  return (
+    <CountrySwitcher
+      currentId={app.id}
+      currentCountry={app.country ?? ""}
+      siblings={siblings}
+      onSelect={handleSelect}
+    />
+  );
+}
+
 export function AppHeader({ app, title }: Props) {
+  const allApps = useAllApps();
+  const workspaceId = useWorkspaceId();
+  const siblings = app?.id && app.bundle_id
+    ? allApps.filter((a) => a.workspace_id === workspaceId && a.bundle_id === app.bundle_id && a.store === app.store)
+    : [];
+
   return (
     <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
       <div className="flex items-center gap-3">
@@ -211,7 +261,7 @@ export function AppHeader({ app, title }: Props) {
             )}
             <div>
               <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
-              <p className="text-xs text-gray-500 leading-tight flex items-center gap-1">
+              <div className="text-xs text-gray-500 leading-tight flex items-center gap-1">
                 {app.store === "ios" ? (
                   <img src="/app-store.svg" alt="" className="size-3" />
                 ) : (
@@ -219,11 +269,15 @@ export function AppHeader({ app, title }: Props) {
                 )}
                 {app.store === "ios" ? "App Store" : "Google Play"}
                 {app.country && (
-                  <span className="ml-1.5">
-                    &middot; {countryFlag(app.country)} {app.country.toUpperCase()}
-                  </span>
+                  siblings.length > 1
+                    ? <HeaderCountrySwitcher app={app} siblings={siblings} />
+                    : (
+                      <span className="ml-1.5">
+                        &middot; {countryFlag(app.country)} {app.country.toUpperCase()}
+                      </span>
+                    )
                 )}
-              </p>
+              </div>
             </div>
             <FollowButton app={app} />
             <StoreLinkButton app={app} />

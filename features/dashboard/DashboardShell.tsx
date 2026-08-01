@@ -11,6 +11,7 @@ import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { SelectAppProvider } from "./SelectAppContext";
+import { AllAppsProvider } from "./AllAppsContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
 import { OnboardingWelcomeModal } from "@/features/onboarding/OnboardingWelcomeModal";
 import { saveRecentEntry, loadRecent } from "./recentApps";
@@ -420,6 +421,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <PlanProvider value={planSlug}>
     <ActiveAppProvider value={displayApp}>
     <SelectAppProvider value={selectApp}>
+    <AllAppsProvider value={allApps}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
       <div className="flex h-screen bg-[#111318] overflow-hidden" onClickCapture={handleNavClickCapture}>
         <DashboardSidebar
@@ -476,6 +478,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         workspaceId={activeWorkspaceId ?? ""}
       />
     </NavigationGuardProvider>
+    </AllAppsProvider>
     </SelectAppProvider>
     </ActiveAppProvider>
     </PlanProvider>

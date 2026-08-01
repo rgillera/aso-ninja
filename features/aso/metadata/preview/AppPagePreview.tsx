@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DevicePhoneMobileIcon,
   SunIcon,
@@ -12,8 +13,9 @@ import AppVisualPreview from "@/features/aso/metadata/preview/AppVisualPreview";
 import SearchPreviewModal from "@/features/aso/metadata/preview/SearchPreviewModal";
 import CompareVersionsModal from "@/features/aso/metadata/preview/CompareVersionsModal";
 import type { App, Workspace, StoreData } from "@/libs/contracts";
-import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
+import { countryFlag } from "@/libs/countries";
 import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
+import { CountrySwitcher } from "@/features/aso/CountrySwitcher";
 
 type Tab = "text" | "visual";
 
@@ -24,9 +26,12 @@ type Props = {
   storeData: StoreData;
 };
 
-export default function AppPagePreview({ app, storeData }: Props) {
+export default function AppPagePreview({ app, allApps, storeData }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("text");
   const [dark, setDark] = useState(true);
+
+  const siblings = allApps.filter((a) => a.bundle_id === app.bundle_id && a.store === app.store);
 
   // Local, unsaved overrides for trying out new creatives against the live preview
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
@@ -119,22 +124,27 @@ export default function AppPagePreview({ app, storeData }: Props) {
               )}
               <div>
                 <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
-                <p className="text-xs text-gray-500 leading-tight">
+                <div className="text-xs text-gray-500 leading-tight flex items-center gap-1">
                   {app.store === "ios" ? "App Store" : "Google Play"}
-                  {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
-                </p>
+                  {app.country && (
+                    siblings.length > 1
+                      ? (
+                        <CountrySwitcher
+                          currentId={app.id}
+                          currentCountry={app.country}
+                          siblings={siblings}
+                          onSelect={(target) => router.push(`/dashboard/apps/${target.id}/preview`)}
+                        />
+                      )
+                      : <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>
+                  )}
+                </div>
               </div>
               <FollowButton app={app} />
               <StoreLinkButton app={app} />
             </div>
 
             <div className="flex items-center gap-2">
-              {app.country && (
-                <span className="flex items-center gap-1.5 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-3.5 text-xs text-gray-300">
-                  {countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country}
-                </span>
-              )}
-
               <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-1.5">
                 <button onClick={() => setDark(false)} className={`rounded-md p-2 transition-colors ${!dark ? "bg-white/10 text-white" : "text-gray-500"}`}>
                   <SunIcon className="size-4" />

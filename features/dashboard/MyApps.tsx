@@ -13,7 +13,7 @@ import {
   CheckCircleIcon,
   TrashIcon,
   XMarkIcon,
-  HashtagIcon,
+  ArrowTrendingUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDoubleLeftIcon,
@@ -188,20 +188,22 @@ function AppRow({
   const selectApp = useSelectApp();
   const router = useRouter();
 
-  function goToKeywords(e: React.MouseEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    selectApp({
-      name: primary.name,
-      iconUrl: primary.icon_url,
-      store: primary.store,
-      bundleId: primary.bundle_id,
-      storeId: primary.store_id,
-      country: primary.country ?? "US",
-      href: `/dashboard/apps/${primary.id}/report`,
-      trackedId: primary.id,
-    });
-    router.push("/dashboard/keywords/research");
+  function goToKeywordsPage(path: string) {
+    return (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      selectApp({
+        name: primary.name,
+        iconUrl: primary.icon_url,
+        store: primary.store,
+        bundleId: primary.bundle_id,
+        storeId: primary.store_id,
+        country: primary.country ?? "US",
+        href: `/dashboard/apps/${primary.id}/report`,
+        trackedId: primary.id,
+      });
+      router.push(path);
+    };
   }
 
   return (
@@ -247,6 +249,24 @@ function AppRow({
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
       </Link>
 
+      {/* Keyword shortcuts */}
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={goToKeywordsPage("/dashboard/keywords/research")}
+          className="p-1.5 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+          title="Go to Keyword Research"
+        >
+          <MagnifyingGlassIcon className="size-4" />
+        </button>
+        <button
+          onClick={goToKeywordsPage("/dashboard/keywords/performance")}
+          className="p-1.5 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors"
+          title="Go to Keyword Performance"
+        >
+          <ArrowTrendingUpIcon className="size-4" />
+        </button>
+      </div>
+
       {/* Country badges + remove button */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1.5">
@@ -278,14 +298,6 @@ function AppRow({
             ) : null
           )}
         </div>
-
-        <button
-          onClick={goToKeywords}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
-          title="Go to Keyword Research"
-        >
-          <HashtagIcon className="size-4" />
-        </button>
 
         <button
           onClick={() => onRequestDelete(group)}
