@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   PlusIcon,
   DevicePhoneMobileIcon,
@@ -12,6 +13,7 @@ import {
   CheckCircleIcon,
   TrashIcon,
   XMarkIcon,
+  HashtagIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronDoubleLeftIcon,
@@ -19,6 +21,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { deleteAppAction } from "@/features/app/actions";
 import { removeRecentEntry } from "@/features/dashboard/recentApps";
+import { useSelectApp } from "@/features/dashboard/SelectAppContext";
 import type { App } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 
@@ -182,6 +185,24 @@ function AppRow({
   onRequestRemoveCountry: (group: AppGroup, entry: App) => void;
 }) {
   const { primary, entries } = group;
+  const selectApp = useSelectApp();
+  const router = useRouter();
+
+  function goToKeywords(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    selectApp({
+      name: primary.name,
+      iconUrl: primary.icon_url,
+      store: primary.store,
+      bundleId: primary.bundle_id,
+      storeId: primary.store_id,
+      country: primary.country ?? "US",
+      href: `/dashboard/apps/${primary.id}/report`,
+      trackedId: primary.id,
+    });
+    router.push("/dashboard/keywords/research");
+  }
 
   return (
     <div className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors group">
@@ -257,6 +278,14 @@ function AppRow({
             ) : null
           )}
         </div>
+
+        <button
+          onClick={goToKeywords}
+          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-gray-600 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all"
+          title="Go to Keyword Research"
+        >
+          <HashtagIcon className="size-4" />
+        </button>
 
         <button
           onClick={() => onRequestDelete(group)}
