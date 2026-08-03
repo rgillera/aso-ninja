@@ -254,7 +254,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
   }
 
   return (
-    <div ref={wrapRef} className="relative border-b border-white/[0.07]">
+    <div ref={wrapRef} data-tour="app-search" className="relative border-b border-white/[0.07]">
       {/* Search bar */}
       <div className="flex items-center gap-3 px-5 py-3">
         <MagnifyingGlassIcon className="size-5 text-gray-500 shrink-0" />

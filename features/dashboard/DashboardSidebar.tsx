@@ -215,7 +215,7 @@ export default function DashboardSidebar({
       }`}
     >
       {/* Workspace switcher */}
-      <div className="relative p-4 border-b border-white/[0.07]" ref={ref}>
+      <div className="relative p-4 border-b border-white/[0.07]" ref={ref} data-tour="workspace-switcher">
         <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">
           <button
             onClick={() => setOpen(!open)}
@@ -330,6 +330,7 @@ export default function DashboardSidebar({
             {/* Report — top-level link */}
             <a
               href={reportHref()}
+              data-tour="nav-reports"
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 isOnReport
                   ? "bg-white/10 text-white"
@@ -399,6 +400,7 @@ export default function DashboardSidebar({
             }`}>
               <a
                 href="/dashboard/keywords/research"
+                data-tour="nav-keywords"
                 className="flex flex-1 items-center gap-3 px-3 py-2"
               >
                 <MagnifyingGlassIcon className="size-4 shrink-0" />
@@ -523,10 +525,11 @@ export default function DashboardSidebar({
           className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
         >
           <RocketLaunchIcon className="size-4 shrink-0" />
-          Onboarding steps
+          Take the tour
         </button>
         <a
           href="/dashboard/learn"
+          data-tour="learning-center"
           className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
             currentPath.startsWith("/dashboard/learn")
               ? "bg-white/10 text-white"

@@ -9,10 +9,8 @@ import {
 } from "recharts";
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
 
-// Shared static/illustrative visuals for "how it works" walkthroughs — the
-// in-app onboarding modal (features/onboarding/OnboardingWelcomeModal.tsx)
-// and the public portal's "How it works" section both render these exact
-// blocks. Everything here is fixed sample data, not a live API call.
+// Shared static/illustrative visuals for the public portal's "How it works"
+// section. Everything here is fixed sample data, not a live API call.
 
 const EXAMPLE_KEYWORDS = [
   { keyword: "instagram",       volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },

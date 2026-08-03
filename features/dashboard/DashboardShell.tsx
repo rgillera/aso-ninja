@@ -13,7 +13,7 @@ import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { SelectAppProvider } from "./SelectAppContext";
 import { AllAppsProvider } from "./AllAppsContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
-import { OnboardingWelcomeModal } from "@/features/onboarding/OnboardingWelcomeModal";
+import { ProductTour } from "@/features/onboarding/ProductTour";
 import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
@@ -143,6 +143,16 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  // The product tour opens/closes the off-canvas drawer itself when a step's
+  // target lives in the sidebar and the viewport is below the lg breakpoint.
+  useEffect(() => {
+    function onTourSidebar(e: Event) {
+      setMobileNavOpen((e as CustomEvent<{ open: boolean }>).detail.open);
+    }
+    window.addEventListener("aso:tour-sidebar", onTourSidebar);
+    return () => window.removeEventListener("aso:tour-sidebar", onTourSidebar);
+  }, []);
 
   function handleNavClickCapture(e: React.MouseEvent) {
     if (!guardMessage) return;
@@ -473,7 +483,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           onConfirm={() => { window.location.href = pendingHref; }}
         />
       )}
-      <OnboardingWelcomeModal
+      <ProductTour
         hasApp={activeWorkspaceApps.length > 0}
         workspaceId={activeWorkspaceId ?? ""}
       />
