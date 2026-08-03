@@ -34,8 +34,8 @@ export const PLANS: Plan[] = [
   {
     id: "basic",
     name: "Basic",
-    priceMonthlyCents: 1440,
-    priceYearlyCents: 14400,
+    priceMonthlyCents: 1680,
+    priceYearlyCents: 16800,
     description: "Unlimited keywords, keyword & ranking monitoring, and metadata optimization across unlimited apps.",
     badge: null,
     features: [

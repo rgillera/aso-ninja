@@ -107,7 +107,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppTweak's real strength is depth: the Essential plan (€83/mo) tracks 500 keywords with 6 months of historical data, and it scales up through Grow (€249/mo, 1,500 keywords, 12 months) to Scale (€499/mo, 3,000 keywords, 24 months). That's genuinely useful market intelligence if you're running ASO across a large portfolio and want years of trend data to lean on. It's also a much bigger commitment than most solo developers or small teams need — AppASO's Basic plan tracks unlimited keywords across unlimited apps for $12/mo, a fraction of AppTweak's cheapest tier, though without AppTweak's multi-year historical archive.",
+        text: "AppTweak's real strength is depth: the Essential plan (€83/mo) tracks 500 keywords with 6 months of historical data, and it scales up through Grow (€249/mo, 1,500 keywords, 12 months) to Scale (€499/mo, 3,000 keywords, 24 months). That's genuinely useful market intelligence if you're running ASO across a large portfolio and want years of trend data to lean on. It's also a much bigger commitment than most solo developers or small teams need — AppASO's Basic plan tracks unlimited keywords across unlimited apps for $14/mo, a fraction of AppTweak's cheapest tier, though without AppTweak's multi-year historical archive.",
       },
       {
         type: "heading",
@@ -123,7 +123,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppRadar starts at €58/mo (Essentials) and scales to €141/mo (Growth) and €250/mo (Scale), with a real edge in automation: GPT-4-powered AI review replies and the ability to push metadata updates across every storefront at once, backed by a 30M+ keyword database. That bulk multi-country publishing workflow is something AppASO doesn't offer. But for a team managing one or two apps rather than a multi-market portfolio, AppASO's Basic plan ($12/mo) covers unlimited keyword tracking for a fraction of even AppRadar's entry tier.",
+        text: "AppRadar starts at €58/mo (Essentials) and scales to €141/mo (Growth) and €250/mo (Scale), with a real edge in automation: GPT-4-powered AI review replies and the ability to push metadata updates across every storefront at once, backed by a 30M+ keyword database. That bulk multi-country publishing workflow is something AppASO doesn't offer. But for a team managing one or two apps rather than a multi-market portfolio, AppASO's Basic plan ($14/mo) covers unlimited keyword tracking for a fraction of even AppRadar's entry tier.",
       },
       {
         type: "heading",
