@@ -12,6 +12,14 @@ import { createClient } from "@/libs/supabase/server";
 // this was the last reference, a DB trigger (trg_delete_orphaned_keywords)
 // deletes the now-unreferenced keyword row so it stops counting against the
 // plan's keyword limit.
+//
+// keyword_metrics is also deleted here explicitly (not left to cascade):
+// it's keyed on (app_id, keyword_id) and is pure cache, so it survives an
+// unlink whenever the shared `keywords` row is still referenced by another
+// app in the workspace. Left in place, re-adding the same keyword to this
+// app would read that stale row back out of the 7-day metrics cache
+// (app/api/keywords/metrics/route.ts) instead of recomputing — and each
+// re-add refreshes updated_at, extending the staleness indefinitely.
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
     appId?: string; terms?: string[];
@@ -54,6 +62,12 @@ export async function POST(request: NextRequest) {
 
   await supabase
     .from("app_keywords")
+    .delete()
+    .eq("app_id", appId)
+    .in("keyword_id", keywordIds);
+
+  await supabase
+    .from("keyword_metrics")
     .delete()
     .eq("app_id", appId)
     .in("keyword_id", keywordIds);

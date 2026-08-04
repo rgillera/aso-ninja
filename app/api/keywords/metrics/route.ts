@@ -183,18 +183,22 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     // Plain search() results never carry ratings/reviews (only score/scoreText) —
     // those fields only come back from the full app-detail lookup, so fetch it
     // for just the top 5 rather than paying that cost for every result.
+    // A failed detail lookup (transient error, rate limit) isn't the same
+    // signal as "0 ratings" — null so it's excluded from the average instead
+    // of dragging diff down for reasons unrelated to actual competition.
     const top5RatingCounts = await Promise.all(
       top5.map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         try {
           const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
           return full?.ratings ?? full?.reviews ?? 0;
         } catch {
-          return 0;
+          return null;
         }
       })
     );
-    const avgRatings = top5RatingCounts.length > 0
-      ? top5RatingCounts.reduce((s: number, n: number) => s + n, 0) / top5RatingCounts.length
+    const resolvedRatingCounts = top5RatingCounts.filter((n): n is number => n !== null);
+    const avgRatings = resolvedRatingCounts.length > 0
+      ? resolvedRatingCounts.reduce((s: number, n: number) => s + n, 0) / resolvedRatingCounts.length
       : 0;
     const diff = avgRatings < 10
       ? 0
