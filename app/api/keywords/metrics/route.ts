@@ -180,9 +180,21 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     // Use rating *count* (install signal), not star rating — same approach as iOS.
     // Star ratings cluster at 4.0–4.5 for virtually all apps, giving every keyword
     // a diff of 87–97 regardless of actual competition.
-    const avgRatings = top5.length > 0
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ? top5.reduce((s: number, r: any) => s + (r.ratings ?? r.reviews ?? 0), 0) / top5.length
+    // Plain search() results never carry ratings/reviews (only score/scoreText) —
+    // those fields only come back from the full app-detail lookup, so fetch it
+    // for just the top 5 rather than paying that cost for every result.
+    const top5RatingCounts = await Promise.all(
+      top5.map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        try {
+          const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+          return full?.ratings ?? full?.reviews ?? 0;
+        } catch {
+          return 0;
+        }
+      })
+    );
+    const avgRatings = top5RatingCounts.length > 0
+      ? top5RatingCounts.reduce((s: number, n: number) => s + n, 0) / top5RatingCounts.length
       : 0;
     const diff = avgRatings < 10
       ? 0

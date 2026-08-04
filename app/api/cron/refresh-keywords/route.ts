@@ -241,8 +241,23 @@ export async function GET(req: Request) {
         const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
 
         const top5 = apps.slice(0, 5);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const avgRatings = top5.length > 0 ? top5.reduce((s: number, r: any) => s + (r.ratings ?? r.reviews ?? 0), 0) / top5.length : 0;
+        // Plain search() results never carry ratings/reviews (only score/scoreText) —
+        // those fields only come back from the full app-detail lookup, so fetch it
+        // for just the top 5 rather than paying that cost for every result.
+        // See app/api/keywords/metrics/route.ts for the matching fix.
+        const top5RatingCounts = await Promise.all(
+          top5.map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            try {
+              const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+              return full?.ratings ?? full?.reviews ?? 0;
+            } catch {
+              return 0;
+            }
+          })
+        );
+        const avgRatings = top5RatingCounts.length > 0
+          ? top5RatingCounts.reduce((s: number, n: number) => s + n, 0) / top5RatingCounts.length
+          : 0;
         const diff = avgRatings < 10
           ? 0
           : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
