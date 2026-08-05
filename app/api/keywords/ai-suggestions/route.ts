@@ -118,10 +118,10 @@ export async function GET(request: NextRequest) {
   if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
-    generateKeywords(appName, description, "discovery", 10),
-    generateKeywords(appName, description, "generic",   10),
-    generateKeywords(appName, description, "branded",   10),
-    generateKeywords(appName, description, "relevancy", 10),
+    generateKeywords(appName, description, "discovery", 30),
+    generateKeywords(appName, description, "generic",   30),
+    generateKeywords(appName, description, "branded",   30),
+    generateKeywords(appName, description, "relevancy", 30),
   ]);
 
   const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =

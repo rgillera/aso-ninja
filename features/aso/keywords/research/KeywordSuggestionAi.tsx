@@ -80,7 +80,7 @@ function AISuggestionsSection({
   translations?: Record<string, string>;
   translating?: boolean;
 }) {
-  const STEP = 10;
+  const STEP = 20;
   const [visibleCount, setVisibleCount] = useState(AI_PAGE);
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
