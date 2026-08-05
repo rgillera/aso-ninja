@@ -9,6 +9,7 @@ export type AppMetadataResult = {
   subtitleKeywords: MetadataKeyword[];
   descriptionKeywords: MetadataKeyword[];
   hasMoreDesc: boolean;
+  descTotal: number;
 };
 
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
@@ -68,7 +69,7 @@ function extractBigrams(text: string): string[] {
 }
 
 
-const EMPTY = { title: "", subtitle: "", description: "", titleKeywords: [], subtitleKeywords: [], descriptionKeywords: [], hasMoreDesc: false };
+const EMPTY = { title: "", subtitle: "", description: "", titleKeywords: [], subtitleKeywords: [], descriptionKeywords: [], hasMoreDesc: false, descTotal: 0 };
 
 async function scrapeAppStoreSubtitle(storeId: string, country: string, trackName: string): Promise<string> {
   try {
@@ -116,6 +117,7 @@ export async function GET(request: NextRequest) {
       subtitleKeywords:    toKeywords(subtitleTerms),
       descriptionKeywords: toKeywords(descPage),
       hasMoreDesc,
+      descTotal: allDescTerms.length,
     };
   };
 

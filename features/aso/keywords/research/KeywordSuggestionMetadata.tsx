@@ -74,6 +74,7 @@ function MetadataSection({
   placeholder,
   onLoadMore,
   loadingMore,
+  loadMoreCount,
   translations,
   translating,
   analyzeAllLocked,
@@ -87,6 +88,7 @@ function MetadataSection({
   placeholder?: React.ReactNode;
   onLoadMore?: () => void;
   loadingMore?: boolean;
+  loadMoreCount?: number;
   translations?: Record<string, string>;
   translating?: boolean;
   analyzeAllLocked?: boolean;
@@ -140,7 +142,7 @@ function MetadataSection({
                 disabled={loadingMore}
                 className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
               >
-                {loadingMore ? "Loading…" : "Load more"}
+                {loadingMore ? "Loading…" : `Show more (${loadMoreCount ?? 20} more)`}
               </button>
             )}
           </>
@@ -155,6 +157,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
   const [loading, setLoading]           = useState(false);
   const [descKeywords, setDescKeywords] = useState<MetadataKeyword[]>([]);
   const [hasMoreDesc, setHasMoreDesc]   = useState(false);
+  const [descTotal, setDescTotal]       = useState(0);
   const [descOffset, setDescOffset]     = useState(0);
   const [loadingMore, setLoadingMore]   = useState(false);
   const [translations, setTranslations] = useState<Record<string, string>>({});
@@ -170,6 +173,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
       setDescKeywords((prev) => [...prev, ...d.descriptionKeywords]);
     }
     setHasMoreDesc(d.hasMoreDesc);
+    setDescTotal(d.descTotal);
     setDescOffset(offset);
   };
 
@@ -179,6 +183,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
     setData(null);
     setDescKeywords([]);
     setHasMoreDesc(false);
+    setDescTotal(0);
     setDescOffset(0);
     fetchMetadata(activeApp.store_id, activeApp.store ?? "ios", activeApp.country ?? "us", 0, false)
       .catch(() => {})
@@ -260,6 +265,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         analyzeAllLocked={analyzeAllLocked}
         onLoadMore={hasMoreDesc ? handleLoadMore : undefined}
         loadingMore={loadingMore}
+        loadMoreCount={Math.min(20, Math.max(0, descTotal - descKeywords.length))}
         translating={translateToggle && translating}
         translations={translateToggle ? translations : undefined}
       />
