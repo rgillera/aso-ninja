@@ -61,12 +61,14 @@ function isSignificantRankChange(previousRank: number | null, rank: number | nul
 // keyword_rankings_history.position from up to 7 days down to ~1 day.
 async function refreshKeywordMetrics(
   supabase: AdminClient, term: string, store: string, country: string, names: string[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ids: any[],
   changes: SignificantChange[]
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows } = await (supabase as any)
     .from("keyword_metrics")
-    .select("app_id, keyword_id, diff, rank, apps!inner(name, store, country), keywords!inner(term, status)")
+    .select("app_id, keyword_id, diff, rank, apps!inner(name, store, country, store_id), keywords!inner(term, status)")
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.store", store)
@@ -76,7 +78,7 @@ async function refreshKeywordMetrics(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updates = (rows as any[]).map((row) => {
-    const rankIdx = findRankIdx(names, row.apps.name);
+    const rankIdx = findRankIdx(names, row.apps.name, ids, row.apps.store_id);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(row.diff ?? 0, rank);
 
@@ -221,7 +223,7 @@ export async function GET(req: Request) {
           );
         }
 
-        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName), changes);
+        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
         refreshed++;
       } else if (store === "android") {
         const gplay = await import("google-play-scraper");
@@ -283,7 +285,7 @@ export async function GET(req: Request) {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""), changes);
+        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
         refreshed++;
       }
     } catch {

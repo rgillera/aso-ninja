@@ -65,7 +65,7 @@ type IosBase = {
   rank: number | null; topTitles: string[];
 };
 
-async function fetchIosMetricsBase(term: string, country: string, appName: string, supabase: SupabaseClient): Promise<IosBase | null | "rate_limited"> {
+async function fetchIosMetricsBase(term: string, country: string, appName: string, storeId: string, supabase: SupabaseClient): Promise<IosBase | null | "rate_limited"> {
   try {
     let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
 
@@ -101,7 +101,7 @@ async function fetchIosMetricsBase(term: string, country: string, appName: strin
     // so re-writing the same day's data here is a no-op, not a duplicate.
     await persistIosSearch(supabase, term, country, apps, volume, diff);
 
-    const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName);
+    const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(diff, rank);
     const topTitles = apps.slice(0, 10).map((r) => r.trackName);
@@ -150,7 +150,7 @@ async function persistAndroidSearch(
   );
 }
 
-async function fetchAndroidMetrics(term: string, country: string, appName: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null> {
+async function fetchAndroidMetrics(term: string, country: string, appName: string, storeId: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -205,7 +205,7 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
       : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName);
+    const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName, apps.map((r: any) => r.appId), storeId);
     const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(diff, rank);
 
@@ -241,6 +241,11 @@ export async function GET(request: NextRequest) {
   const store      = searchParams.get("store") ?? "ios";
   const appName    = searchParams.get("appName") ?? "";
   const appId      = searchParams.get("appId") ?? "";
+  // The store's own id for this app (apps.store_id — Apple's trackId, or the
+  // Play package name) — matched against search results by id, not name, so
+  // a store listing rename doesn't desync rank from the real search results.
+  // See libs/keyword-rank-match.ts.
+  const storeId    = searchParams.get("storeId") ?? "";
   const workspaceId = searchParams.get("workspaceId") ?? "";
   // fast=1 skips the LLM/embedding relevancy pass (the slow part of adding a
   // keyword) — relevancy/opportunity come back null and get back-filled by a
@@ -351,7 +356,7 @@ export async function GET(request: NextRequest) {
     if (store === "ios") {
       const baseEntries: [string, IosBase][] = [];
       for (const term of uncached) {
-        const result = await fetchIosMetricsBase(term, country, appName, supabase);
+        const result = await fetchIosMetricsBase(term, country, appName, storeId, supabase);
         if (result === "rate_limited") { rateLimited = true; continue; }
         if (result === null) continue;
         baseEntries.push([term, result]);
@@ -365,7 +370,7 @@ export async function GET(request: NextRequest) {
     } else {
       entries = await Promise.all(
         uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, appMeta, withRelevancy, aiReachable, supabase, themes);
+          const metrics = await fetchAndroidMetrics(term, country, appName, storeId, appMeta, withRelevancy, aiReachable, supabase, themes);
           return [term, metrics] as const;
         })
       );

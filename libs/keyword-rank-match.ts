@@ -12,7 +12,8 @@ function normalizeForRankMatch(name: string): string {
 //   1. Exact lowercase trim (fast path)
 //   2. Punctuation-normalized (handles dash/colon variants)
 //   3. Starts-with either direction (handles stored short name vs full title in results)
-export function findRankIdx(resultNames: string[], appName: string): number {
+// Fallback only — see findRankIdx below for why this isn't the primary match.
+function findRankIdxByName(resultNames: string[], appName: string): number {
   if (!appName) return -1;
   const name     = appName.toLowerCase().trim();
   const nameNorm = normalizeForRankMatch(appName);
@@ -30,6 +31,33 @@ export function findRankIdx(resultNames: string[], appName: string): number {
     if (!nNorm) return false;
     return nNorm.startsWith(nameNorm) || nameNorm.startsWith(nNorm);
   });
+}
+
+// Finds our app's position in a list of search results. Prefers matching by
+// the store's own stable id (apps.store_id — Apple's trackId, or the Play
+// package name) over matching by name: a store listing rename desyncs
+// `apps.name` from what search results actually return until this app
+// itself is next refetched, which used to silently zero out
+// keyword_metrics.rank for a renamed app even though it was still genuinely
+// ranked (keyword_rankings_history, which is keyed by app_id, kept showing
+// the real rank the whole time — see Keyword Performance vs Keyword Research
+// disagreeing on the same keyword).
+//
+// resultIds/appId are optional: a result set with no id field, or an app
+// with no store_id captured yet, falls back to the old name-matching
+// behavior. Once appId is provided it's treated as authoritative — not
+// finding it in resultIds means genuinely unranked, not a cue to fall back
+// to a possibly-coincidental name match.
+export function findRankIdx(
+  resultNames: string[],
+  appName: string,
+  resultIds?: (string | number | null | undefined)[],
+  appId?: string | null
+): number {
+  if (appId && resultIds) {
+    return resultIds.findIndex((id) => id != null && String(id) === String(appId));
+  }
+  return findRankIdxByName(resultNames, appName);
 }
 
 // rank=1 -> 95, rank=10 -> 90, rank=50 -> 50, rank=100+ -> no boost over raw difficulty.

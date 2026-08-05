@@ -269,6 +269,7 @@ export default function KeywordResearchPage() {
       store,
       country: country ?? "us",
       appName: activeApp?.name ?? "",
+      storeId: activeApp?.store_id ?? "",
       fast: "1",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
       ...(workspaceId ? { workspaceId } : {}),
@@ -311,6 +312,7 @@ export default function KeywordResearchPage() {
       store,
       country,
       appName: activeApp?.name ?? "",
+      storeId: activeApp?.store_id ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
       ...(workspaceId ? { workspaceId } : {}),
     });
@@ -399,6 +401,7 @@ export default function KeywordResearchPage() {
         store,
         country,
         appName: activeApp?.name ?? "",
+        storeId: activeApp?.store_id ?? "",
         ...(activeApp?.id ? { appId: activeApp.id } : {}),
         ...(workspaceId ? { workspaceId } : {}),
       });

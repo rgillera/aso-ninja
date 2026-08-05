@@ -291,6 +291,7 @@ export default function KeywordCombinationPage() {
       store,
       country,
       appName: activeApp?.name ?? "",
+      storeId: activeApp?.store_id ?? "",
       ...(activeApp?.id ? { appId: activeApp.id } : {}),
       ...(workspaceId ? { workspaceId } : {}),
     };

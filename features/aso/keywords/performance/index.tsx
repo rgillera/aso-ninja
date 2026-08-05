@@ -279,6 +279,7 @@ export default function KeywordPerformancePage() {
       store,
       country,
       appName: activeApp?.name ?? "",
+      storeId: activeApp?.store_id ?? "",
       // Performance only ever reads volume/rank — skip the slow LLM relevancy
       // pass entirely rather than computing values nothing here displays.
       fast: "1",

@@ -106,6 +106,7 @@ export default function KeywordIntentPage() {
         store,
         country,
         appName: activeApp?.name ?? "",
+        storeId: activeApp?.store_id ?? "",
         appId,
         forceIntent: "1",
         ...(workspaceId ? { workspaceId } : {}),
