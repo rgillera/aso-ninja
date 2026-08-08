@@ -33,13 +33,21 @@ export type TrackedApp = { id: string; name: string; icon: string };
 // found" marker when it's absent from the results — without this, a keyword
 // genuinely outside the search window leaves no row at all, indistinguishable
 // from "never checked", and would retry forever.
+//
+// fullDetail (optional, Android only): asks the server for real rating
+// counts instead of always-0. google-play-scraper's search() only returns
+// that field in "full detail" mode, which costs one extra Play Store request
+// per result (up to 20 here) — fine for a one-off, user-facing lookup like
+// LiveSearchPanel, too expensive to default on for bulk background rank
+// checks (which only need `position` anyway).
 export async function fetchLiveSearchResults(
   keyword: string,
   store: "ios" | "android",
   country: string,
-  trackedApp?: TrackedApp
+  trackedApp?: TrackedApp,
+  fullDetail = false
 ): Promise<AppSearchResult[]> {
-  return enqueue(() => fetchLiveSearchResultsInner(keyword, store, country, trackedApp));
+  return enqueue(() => fetchLiveSearchResultsInner(keyword, store, country, trackedApp, fullDetail));
 }
 
 async function fetchLiveSearchResultsInner(
@@ -47,6 +55,7 @@ async function fetchLiveSearchResultsInner(
   store: "ios" | "android",
   country: string,
   trackedApp?: TrackedApp,
+  fullDetail = false,
   attempt = 0
 ): Promise<AppSearchResult[]> {
   if (store === "ios") {
@@ -57,7 +66,7 @@ async function fetchLiveSearchResultsInner(
       // tripped — back off several seconds and double it on a second try.
       if ((res.status === 403 || res.status === 429) && attempt < 2) {
         await new Promise((r) => setTimeout(r, 12000 * (attempt + 1)));
-        return fetchLiveSearchResultsInner(keyword, store, country, trackedApp, attempt + 1);
+        return fetchLiveSearchResultsInner(keyword, store, country, trackedApp, fullDetail, attempt + 1);
       }
       throw new Error(`itunes search failed: ${res.status}`);
     }
@@ -89,7 +98,8 @@ async function fetchLiveSearchResultsInner(
   const trackedQuery = trackedApp
     ? `&trackedId=${encodeURIComponent(trackedApp.id)}&trackedName=${encodeURIComponent(trackedApp.name)}&trackedIcon=${encodeURIComponent(trackedApp.icon)}`
     : "";
-  const res = await fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}${trackedQuery}`);
+  const detailQuery = fullDetail ? "&detail=full" : "";
+  const res = await fetch(`/api/keywords/search?term=${encodeURIComponent(keyword)}&store=${store}&country=${country}${trackedQuery}${detailQuery}`);
   if (!res.ok) throw new Error(`search route failed: ${res.status}`);
   const data = await res.json();
   return data.apps ?? [];

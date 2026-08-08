@@ -70,6 +70,15 @@ export async function GET(request: NextRequest) {
   const trackedId   = searchParams.get("trackedId") ?? undefined;
   const trackedName = searchParams.get("trackedName") ?? "";
   const trackedIcon = searchParams.get("trackedIcon") ?? "";
+  // google-play-scraper's lightweight search() (Android's default path below)
+  // doesn't return rating COUNT at all — only per-app app() detail lookups do,
+  // at the cost of one extra Play Store request per result. Bulk/background
+  // callers (rank-tracking loops that only need `position`) leave this off to
+  // avoid multiplying their real request rate 20x and risking a scrape rate-
+  // limit; the manual LiveSearchPanel lookup (one keyword at a time, user is
+  // already waiting on a loading state) opts in via `detail=full` since it
+  // displays the count.
+  const fullDetail  = searchParams.get("detail") === "full";
 
   if (!term) return NextResponse.json({ apps: [] });
 
@@ -138,11 +147,26 @@ export async function GET(request: NextRequest) {
       developer:      (a.developer ?? "") as string,
       icon:           (a.icon ?? "") as string,
       rating:         (a.score ?? 0) as number,
-      ratingCount:    (a.ratings ?? 0) as number,
+      ratingCount:    0, // lightweight search() doesn't return this — filled in below when fullDetail is requested
       price:          a.free ? "Free" : `$${(a.price as number).toFixed(2)}`,
       inAppPurchases: !!(a.IAPRange),
       screenshotUrls: [],
     }));
+
+    // Enrich with real rating counts on request (LiveSearchPanel's manual
+    // lookup only — see fullDetail comment above). Fetched per-app rather
+    // than via google-play-scraper's own `fullDetail` option: that option
+    // wraps every app() call in a single Promise.all, so one delisted/flaky
+    // app would fail the whole search and blank out the modal. allSettled
+    // keeps a lookup failure scoped to that one row's count (stays 0).
+    if (fullDetail && apps.length) {
+      const details = await Promise.allSettled(
+        results.map((a) => api.app({ appId: a.appId, country }))
+      );
+      details.forEach((d, i) => {
+        if (d.status === "fulfilled") apps[i].ratingCount = (d.value.ratings ?? 0) as number;
+      });
+    }
 
     const today = new Date().toISOString().split("T")[0];
     const rows = apps.map((app) => ({

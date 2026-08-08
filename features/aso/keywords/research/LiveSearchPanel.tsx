@@ -341,7 +341,10 @@ export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitor
     setError(null);
     setAddedStoreIds(new Set());
     setAddError(null);
-    fetchLiveSearchResults(keyword, store, country)
+    // fullDetail: true — this is a one-off, user-facing lookup (not a bulk
+    // background rank check), so it's worth the extra per-app Play Store
+    // requests to get real Android rating counts instead of always-0.
+    fetchLiveSearchResults(keyword, store, country, undefined, true)
       .then((apps) => { setApps(apps); setLoading(false); })
       .catch(() => { setError("unavailable"); setLoading(false); });
   }, [keyword, store, country]);
