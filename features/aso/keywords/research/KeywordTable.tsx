@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
   ChevronDownIcon,
@@ -38,13 +39,14 @@ const LOCKED_CELL_COLORS: Record<"Basic" | "Pro", string> = {
 
 function LockedCell({ plan = "Basic", title }: { plan?: "Basic" | "Pro"; title?: string }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold ${LOCKED_CELL_COLORS[plan]}`}
-      title={title ?? `Relevancy and Opportunity require the ${plan} plan`}
+    <Link
+      href="/dashboard/subscription"
+      className={`inline-flex items-center gap-1 shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold transition-opacity hover:opacity-75 ${LOCKED_CELL_COLORS[plan]}`}
+      title={title ?? `Relevancy and Opportunity require the ${plan} plan — click to upgrade`}
     >
       <LockClosedIcon className="size-2.5" />
       {plan}
-    </span>
+    </Link>
   );
 }
 
@@ -55,13 +57,14 @@ function LockedCell({ plan = "Basic", title }: { plan?: "Basic" | "Pro"; title?:
 // state below.
 function PoolLimitCell() {
   return (
-    <span
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
-      title="Your plan's relevancy & opportunity scoring pool is used up. Upgrade for a bigger pool."
+    <Link
+      href="/dashboard/subscription"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 transition-opacity hover:opacity-75"
+      title="Your plan's relevancy & opportunity scoring pool is used up — click to upgrade for a bigger pool"
     >
       <LockClosedIcon className="size-2.5" />
       Limit
-    </span>
+    </Link>
   );
 }
 
@@ -118,13 +121,14 @@ function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; o
 
 function PausedBadge() {
   return (
-    <span
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
-      title="This keyword is over your plan's limit — rank and volume stopped updating. Upgrade to resume tracking."
+    <Link
+      href="/dashboard/subscription"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 transition-opacity hover:opacity-75"
+      title="This keyword is over your plan's limit — rank and volume stopped updating. Click to upgrade and resume tracking."
     >
       <LockClosedIcon className="size-2.5" />
       Paused
-    </span>
+    </Link>
   );
 }
 

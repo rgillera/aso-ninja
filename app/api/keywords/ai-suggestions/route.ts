@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { generateText } from "@/libs/gemini";
+import { createClient } from "@/libs/supabase/server";
 
 export type AISuggestionsResult = {
   discovery:  { term: string; volume: number }[];
@@ -102,20 +103,38 @@ function deduplicateAcross(...sections: string[][]): string[][] {
 
 const EMPTY: AISuggestionsResult = { discovery: [], generic: [], branded: [], relevancy: [] };
 
-// GET /api/keywords/ai-suggestions?appName=...&country=us&workspaceId=...
+// GET /api/keywords/ai-suggestions?appName=...&country=us&workspaceId=...&onboarding=1
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const appName     = searchParams.get("appName")     ?? "";
   const description = searchParams.get("description") ?? "";
   const workspaceId = searchParams.get("workspaceId") ?? "";
+  const onboarding  = searchParams.get("onboarding") === "1";
 
   if (!appName) return NextResponse.json(EMPTY);
 
   // AI Suggestions is a Pro feature — anything below that plan never
-  // triggers the Gemini LLM pass.
+  // triggers the Gemini LLM pass...
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json(EMPTY);
+  let allowed = isPlanAtLeast(planSlug, "pro");
+
+  // ...except the locked first-run wizard (OnboardingWizard.tsx), which gets
+  // one free taste of it regardless of plan — the point there is activation,
+  // not gating. Restricted to a workspace with zero apps so this can't be
+  // replayed as a standing bypass of the paywall after onboarding is done:
+  // once the wizard's own keyword save creates the first app, this stops
+  // qualifying on every later call, `onboarding=1` or not.
+  if (!allowed && onboarding && workspaceId) {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("apps")
+      .select("id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId);
+    allowed = count === 0;
+  }
+
+  if (!allowed) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
     generateKeywords(appName, description, "discovery", 30),

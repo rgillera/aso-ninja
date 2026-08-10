@@ -1,4 +1,5 @@
 export type OnboardingState = {
+  /** True once the first-run wizard is done or dismissed. */
   seen: boolean;
 };
 
