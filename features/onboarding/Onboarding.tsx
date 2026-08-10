@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { loadOnboarding, saveOnboarding } from "./onboarding-checklist";
 import { OnboardingWizard } from "./OnboardingWizard";
 
@@ -16,7 +16,13 @@ export function Onboarding({ hasApp, workspaceId }: Props) {
   const [show, setShow] = useState(false);
 
   // Decide once, the first time this workspace loads, whether to show it.
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) on purpose: it commits before the browser
+  // paints, so a brand-new workspace never gets a visible frame of the page
+  // underneath (My Apps) before the wizard locks in. Deferred to an effect at
+  // all (rather than a lazy useState initializer) because localStorage isn't
+  // available during SSR — reading it during render would still produce a
+  // hydration mismatch even though this runs before paint.
+  useLayoutEffect(() => {
     if (!workspaceId) return;
     const stored = loadOnboarding(workspaceId);
     if (stored?.seen) return;
@@ -26,9 +32,6 @@ export function Onboarding({ hasApp, workspaceId }: Props) {
       saveOnboarding(workspaceId, { seen: true });
       return;
     }
-    // Deferred to an effect (rather than a lazy useState initializer) on
-    // purpose: localStorage isn't available during SSR, so reading it during
-    // render would produce a hydration mismatch between server and client.
     /* eslint-disable-next-line react-hooks/set-state-in-effect */
     setShow(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps

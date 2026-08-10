@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   MagnifyingGlassIcon,
@@ -9,9 +9,11 @@ import {
   XMarkIcon,
   DevicePhoneMobileIcon,
   ArrowLeftIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 import { searchStoreApps } from "@/features/dashboard/searchAction";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import type { AppSearchResult } from "@/libs/contracts";
 import type { AISuggestionsResult } from "@/app/api/keywords/ai-suggestions/route";
 
@@ -39,11 +41,11 @@ type SelectedApp = {
 // suggestions into a paywall error. Capped well under it instead.
 const MAX_SUGGESTIONS = 12;
 
-// Search results always land here in English-speaking store metadata for a
-// brand-new user with no saved preference yet — a full country picker would
-// be one more decision on a screen whose only job is "get to your first
-// keyword." The real Keywords Research page lets them add more countries later.
-const COUNTRY = "US";
+// Default before the user picks otherwise — a locked screen with no skip
+// means a US-only search could strand someone whose app simply isn't listed
+// in that storefront, so unlike most of this screen's other simplifications,
+// this one gets a real (if compact) picker rather than staying hardcoded.
+const DEFAULT_COUNTRY = "US";
 
 // Matches the lifetime DashboardShell uses for the same cookies.
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
@@ -98,6 +100,9 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
   const [results, setResults] = useState<AppSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [iosDown, setIosDown] = useState(false);
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countryQuery, setCountryQuery] = useState("");
 
   const [selected, setSelected] = useState<SelectedApp | null>(null);
   const [appId, setAppId] = useState<string | undefined>(undefined);
@@ -110,6 +115,9 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const keywordInputRef = useRef<HTMLInputElement>(null);
+  const countryRef = useRef<HTMLDivElement>(null);
+
+  const allCountries = useMemo(() => Object.keys(COUNTRY_MAP).sort(), []);
 
   useEffect(() => {
     searchInputRef.current?.focus();
@@ -119,7 +127,22 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     if (step === "keywords") keywordInputRef.current?.focus();
   }, [step]);
 
+  // Close the country dropdown on an outside click — same pattern as the
+  // real dashboard search's own country picker.
+  useEffect(() => {
+    if (!countryOpen) return;
+    function onClick(e: MouseEvent) {
+      if (countryRef.current && !countryRef.current.contains(e.target as Node)) {
+        setCountryOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [countryOpen]);
+
   // Debounced store search — same 350ms cadence as the real dashboard search.
+  // Re-runs on a country change too, so switching storefronts mid-search
+  // refreshes results instead of leaving stale ones from the old country.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim()) {
@@ -132,7 +155,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     }
     setSearching(true);
     debounceRef.current = setTimeout(() => {
-      searchStoreApps(query, COUNTRY)
+      searchStoreApps(query, country)
         .then(({ results: r, iosUnavailable }) => {
           setResults(r);
           setIosDown(iosUnavailable);
@@ -142,7 +165,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [query, country]);
 
   // Fetches AI keyword suggestions the moment an app is picked. Gets a
   // paywall bypass (`onboarding=1`) from the API route itself — see that
@@ -171,7 +194,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
       store: r.store,
       bundleId: r.bundleId,
       storeId: r.storeId,
-      country: COUNTRY,
+      country,
     });
     setStep("keywords");
   }
@@ -313,6 +336,55 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                 placeholder="Search for your app…"
                 className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
               />
+            </div>
+
+            {/* Country — search results are storefront-specific, so switching
+                this actually matters (not just cosmetic) when an app isn't
+                listed under the default store. */}
+            <div className="relative mt-2" ref={countryRef}>
+              <button
+                onClick={() => { setCountryOpen((v) => !v); setCountryQuery(""); }}
+                className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-300 hover:text-white transition-colors"
+              >
+                <span className="text-sm leading-none">{countryFlag(country)}</span>
+                <span>{COUNTRY_MAP[country] ?? country}</span>
+                <ChevronDownIcon className={`size-3 shrink-0 text-gray-500 transition-transform ${countryOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {countryOpen && (
+                <div className="absolute top-full left-0 mt-1.5 z-10 w-56 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+                  <div className="px-2 pt-2 pb-1">
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Search country…"
+                      value={countryQuery}
+                      onChange={(e) => setCountryQuery(e.target.value)}
+                      className="w-full rounded-md bg-white/[0.06] px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none"
+                    />
+                  </div>
+                  <div className="max-h-52 overflow-y-auto py-1">
+                    {allCountries
+                      .filter((code) => {
+                        const q = countryQuery.toLowerCase();
+                        return !q || (COUNTRY_MAP[code] ?? code).toLowerCase().includes(q) || code.toLowerCase().includes(q);
+                      })
+                      .map((code) => (
+                        <button
+                          key={code}
+                          onClick={() => { setCountry(code); setCountryOpen(false); setCountryQuery(""); }}
+                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] transition-colors ${
+                            country === code ? "text-white" : "text-gray-400"
+                          }`}
+                        >
+                          <span className="text-base leading-none">{countryFlag(code)}</span>
+                          <span className="flex-1 truncate">{COUNTRY_MAP[code] ?? code}</span>
+                          <span className="text-xs text-gray-600">{code}</span>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-3 max-h-72 overflow-y-auto -mx-2">
