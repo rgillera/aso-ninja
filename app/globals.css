@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
+/*
+ * `body`'s background is the only thing painted before/behind every actual
+ * page container (DashboardShell, the onboarding overlay, portal pages,
+ * etc.) -- all of which hardcode the product's real dark palette directly
+ * (bg-[#111318] and friends) rather than these variables; nothing else in
+ * the app reads --background/--foreground or the bg-background/
+ * text-foreground Tailwind classes they map to. Left at create-next-app's
+ * defaults (white in light mode, #0a0a0a in dark mode), any sliver of raw
+ * body showing through -- overscroll bounce, a safe-area inset, the frame
+ * before a page's own dark container has painted -- reads as a jarring
+ * mismatched seam instead of just more of the app's background. #111318 is
+ * the same tone DashboardShell and most page-level containers already use
+ * as their own outermost layer, so a stray sliver of it disappears instead
+ * of standing out. No prefers-color-scheme split: the product doesn't have
+ * a light theme anywhere else, so following the OS's light-mode preference
+ * here would only reintroduce the exact mismatch this is fixing.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #111318;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -16,13 +33,6 @@
 @keyframes notif-in {
   0% { opacity: 0; transform: translateY(-36px) scale(0.94); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
