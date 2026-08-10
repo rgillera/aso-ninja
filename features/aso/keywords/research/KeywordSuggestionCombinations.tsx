@@ -144,9 +144,16 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
     });
   };
 
+  const handleReset = () => {
+    setWords(Array(WORD_COUNT).fill(""));
+    setCombos(null);
+  };
+
   const updateWord = (i: number, value: string) => {
     setWords((prev) => prev.map((w, idx) => (idx === i ? value : w)));
   };
+
+  const hasInput = filled.length > 0 || combos !== null;
 
   return (
     <div className="px-4 py-3">
@@ -173,6 +180,14 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
           <ArrowsRightLeftIcon className="size-3.5" />
           Shuffle
         </button>
+        {hasInput && (
+          <button
+            onClick={handleReset}
+            className="shrink-0 text-xs text-gray-500 transition-colors hover:text-gray-300"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       {combos !== null && (
