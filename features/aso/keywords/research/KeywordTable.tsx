@@ -31,18 +31,17 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import type { Keyword, DownloadsConnection } from "./types";
 
-// Same per-tier colors as nameColor() in features/subscription/SubscriptionPage.tsx.
-const LOCKED_CELL_COLORS: Record<"Basic" | "Pro", string> = {
-  Basic: "bg-emerald-500/10 text-emerald-500",
-  Pro: "bg-violet-500/10 text-violet-400",
-};
-
-function LockedCell({ plan = "Basic", title }: { plan?: "Basic" | "Pro"; title?: string }) {
+// Every plan (Free included) now gets some relevancy/opportunity pool, so
+// the only thing left gated behind a hard plan-tier lock is Est. Downloads
+// (Pro and up) — same emerald/violet tier coloring as nameColor() in
+// features/subscription/SubscriptionPage.tsx, just down to the one variant
+// still in use.
+function LockedCell({ plan, title }: { plan: "Pro"; title: string }) {
   return (
     <Link
       href="/dashboard/subscription"
-      className={`inline-flex items-center gap-1 shrink-0 rounded-full px-1.5 py-px text-[10px] font-semibold transition-opacity hover:opacity-75 ${LOCKED_CELL_COLORS[plan]}`}
-      title={title ?? `Relevancy and Opportunity require the ${plan} plan — click to upgrade`}
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 transition-opacity hover:opacity-75"
+      title={title}
     >
       <LockClosedIcon className="size-2.5" />
       {plan}
@@ -51,10 +50,10 @@ function LockedCell({ plan = "Basic", title }: { plan?: "Basic" | "Pro"; title?:
 }
 
 // Distinct from LockedCell (below-Pro tier gate, red): this keyword is on a
-// plan with relevancy/opportunity access, but scored after the plan's pool
-// (relevancy_limit) was already used up for this billing period — it will
-// never resolve, so it must not look like the ClockIcon "still computing"
-// state below.
+// plan with relevancy/opportunity access, but scored after the plan's
+// lifetime pool (relevancy_limit) was already used up — it will never
+// resolve, so it must not look like the ClockIcon "still computing" state
+// below.
 function PoolLimitCell() {
   return (
     <Link
@@ -214,7 +213,6 @@ export function KeywordTable({
   onCompetitorAdded,
 }: Props) {
   const planSlug = usePlanSlug();
-  const relevancyLocked = !isPlanAtLeast(planSlug, "basic");
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
@@ -523,9 +521,7 @@ export function KeywordTable({
         </span>
       );
       case "opportunity": return (
-        relevancyLocked
-          ? <LockedCell />
-          : row.aiDown && row.opportunity == null
+        row.aiDown && row.opportunity == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.opportunity === null
           ? <PoolLimitCell />
@@ -561,9 +557,7 @@ export function KeywordTable({
           : <span className="text-sm text-gray-600">—</span>
       );
       case "relevancy":   return (
-        relevancyLocked
-          ? <LockedCell />
-          : row.aiDown && row.relevancy == null
+        row.aiDown && row.relevancy == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
           : row.relevancy === null
           ? <PoolLimitCell />
@@ -615,8 +609,7 @@ export function KeywordTable({
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
 
-        {/* Relevancy filter — Pro and up only, since the underlying values are locked */}
-        {!relevancyLocked && (
+        {/* Relevancy filter — every plan has some relevancy pool now, so this is never locked */}
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "relevancy" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
@@ -625,7 +618,6 @@ export function KeywordTable({
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
           <ChevronDownIcon className="size-3 text-gray-600" />
         </button>
-        )}
 
         {/* All / checked / starred segment */}
         <div className="flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] p-0.5">

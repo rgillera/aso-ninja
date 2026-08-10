@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { isGeminiReachable } from "@/libs/gemini";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import {
@@ -262,18 +261,18 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // Relevancy/opportunity are Basic-and-up features — anything below that
-  // plan never triggers the Gemini embedding/LLM pass, and never sees a
-  // value even if one was cached from before a downgrade. Basic, Pro, and
-  // Pro+ each have a lifetime relevancy pool (relevancy_limit) instead of
-  // being unlimited — once a workspace's pooled relevancy_scored_count
-  // reaches it, no further keywords get scored (already-scored ones keep
-  // showing). Only Enterprise has relevancy_limit = null (unlimited).
+  // Every plan (Free included) gets a relevancy/opportunity pool now, so
+  // access is purely a function of that pool rather than a tier check —
+  // Free/Basic/Pro/Pro+ each have a lifetime relevancy pool (relevancy_limit)
+  // instead of being unlimited; once a workspace's pooled
+  // relevancy_scored_count reaches it, no further keywords get scored
+  // (already-scored ones keep showing). Only Enterprise has
+  // relevancy_limit = null (unlimited). A missing/errored plan state (no
+  // workspace yet) has no pool to draw from, so it stays locked out.
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
-  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const hasRelevancyAccess = isPlanAtLeast(planSlug, "basic");
-  const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : null;
+  const relevancyLimit = planState && !("error" in planState) ? planState.usage.relevancy_limit : 0;
   const relevancyScoredCount = planState && !("error" in planState) ? planState.usage.relevancy_scored_count : 0;
+  const hasRelevancyAccess = !!planState && !("error" in planState) && (relevancyLimit === null || relevancyLimit > 0);
   const relevancyPoolExhausted = hasRelevancyAccess && relevancyLimit !== null && relevancyScoredCount >= relevancyLimit;
   const canUseRelevancy = hasRelevancyAccess && !relevancyPoolExhausted;
 
@@ -291,8 +290,8 @@ export async function GET(request: NextRequest) {
       if (!term || !terms.includes(term)) continue;
       if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
-      // A row saved while the workspace was below Pro (or from a fast-mode
-      // add) never actually got scored — `relevancy_scored` is the
+      // A row saved before this workspace had any relevancy pool at all (or
+      // from a fast-mode add) never actually got scored — `relevancy_scored` is the
       // authoritative marker for that (the `relevancy` column itself can't
       // be trusted: it's `not null default 0`, so a never-scored row is
       // indistinguishable from a genuine 0 score). If this workspace has
@@ -317,18 +316,31 @@ export async function GET(request: NextRequest) {
   let freshMetrics: Record<string, Metrics> = {};
   let rateLimited = false;
   let aiReachable = true;
+  // canUseRelevancy above only says the pool had *some* room left when this
+  // request started, not how many of *these* uncached terms fit in it — a
+  // single request (e.g. onboarding backfilling a dozen keywords in one
+  // shot) can easily carry more uncached terms than the remaining budget.
+  // Scoring all of them anyway would just have enforce_relevancy_limit()
+  // silently claw the excess back to unscored on save, leaving the client
+  // showing more scored keywords than the plan's pool actually allows until
+  // the next reload. relevancyBudgetExceeded flags that case so the response
+  // below reports it the same way an already-exhausted pool does.
+  let relevancyBudgetExceeded = false;
   if (uncached.length) {
     const withRelevancy = !fast && canUseRelevancy;
+    const relevancyBudget = relevancyLimit === null ? Infinity : Math.max(0, relevancyLimit - relevancyScoredCount);
+    if (withRelevancy && uncached.length > relevancyBudget) relevancyBudgetExceeded = true;
+
     // Gemini down → skip the LLM/embedding pass entirely and leave
     // relevancy/opportunity null instead of silently falling back to guessed
     // scores (see scoreMetrics/fetchAndroidMetrics).
-    aiReachable = withRelevancy ? await isGeminiReachable() : true;
+    aiReachable = withRelevancy && relevancyBudget > 0 ? await isGeminiReachable() : true;
 
     // Fetch app description + embed it once; shared across all keyword lookups.
     // Skipped entirely when relevancy won't be computed (fast mode, the
-    // workspace isn't Pro, or Gemini is unreachable) since it's only ever
-    // used for that pass.
-    const appMeta: AppMeta = withRelevancy && aiReachable && appName
+    // workspace has no pool budget left, or Gemini is unreachable) since it's
+    // only ever used for that pass.
+    const appMeta: AppMeta = withRelevancy && relevancyBudget > 0 && aiReachable && appName
       ? await (store === "android"
           ? fetchAndroidAppMeta(appName, country)
           : fetchIosAppMeta(appName, country))
@@ -337,7 +349,7 @@ export async function GET(request: NextRequest) {
     // This app's intent theme list — classification piggybacks on the same
     // LLM call as relevancy, so an app with no themes generated yet just
     // gets intentThemeId: null back (see getDescRelevanceScore).
-    const themes: IntentTheme[] = withRelevancy && aiReachable && appId
+    const themes: IntentTheme[] = withRelevancy && relevancyBudget > 0 && aiReachable && appId
       ? ((await supabase
           .from("app_intent_themes")
           .select("id, label")
@@ -361,16 +373,20 @@ export async function GET(request: NextRequest) {
         if (result === null) continue;
         baseEntries.push([term, result]);
       }
+      // Budget is spent in order, so a batch that only partly fits still
+      // scores as many of its terms as the pool has room for.
       entries = await Promise.all(
-        baseEntries.map(async ([term, base]) => {
-          const metrics = await scoreMetrics(term, appName, base, appMeta, withRelevancy, aiReachable, themes);
+        baseEntries.map(async ([term, base], idx) => {
+          const scoreThisTerm = withRelevancy && idx < relevancyBudget;
+          const metrics = await scoreMetrics(term, appName, base, appMeta, scoreThisTerm, aiReachable, themes);
           return [term, metrics] as const;
         })
       );
     } else {
       entries = await Promise.all(
-        uncached.map(async (term) => {
-          const metrics = await fetchAndroidMetrics(term, country, appName, storeId, appMeta, withRelevancy, aiReachable, supabase, themes);
+        uncached.map(async (term, idx) => {
+          const scoreThisTerm = withRelevancy && idx < relevancyBudget;
+          const metrics = await fetchAndroidMetrics(term, country, appName, storeId, appMeta, scoreThisTerm, aiReachable, supabase, themes);
           return [term, metrics] as const;
         })
       );
@@ -399,12 +415,12 @@ export async function GET(request: NextRequest) {
   }
 
   const merged = { ...dbCache, ...freshMetrics };
-  // Strip relevancy/opportunity for anything below Pro — including values
-  // read back from the 7-day DB cache, in case the workspace downgraded since
-  // they were computed. This is a tier check only — a Pro/Pro+ workspace that
-  // has simply exhausted its relevancy pool still gets to see keywords it
-  // already paid to have scored; the pool only blocks scoring *new* ones
-  // (see `withRelevancy` above).
+  // Strip relevancy/opportunity for a workspace with no pool at all —
+  // including values read back from the 7-day DB cache, in case the plan
+  // state couldn't be resolved. A workspace that has simply exhausted its
+  // relevancy pool still gets to see keywords it already paid to have
+  // scored; the pool only blocks scoring *new* ones (see `withRelevancy`
+  // above).
   if (!hasRelevancyAccess) {
     for (const m of Object.values(merged)) { m.relevancy = null; m.opportunity = null; }
   }
@@ -413,6 +429,6 @@ export async function GET(request: NextRequest) {
     ...merged,
     ...(rateLimited ? { _rateLimited: true } : {}),
     ...(!aiReachable ? { _aiDown: true } : {}),
-    ...(relevancyPoolExhausted ? { _relevancyLimitReached: true } : {}),
+    ...(relevancyPoolExhausted || relevancyBudgetExceeded ? { _relevancyLimitReached: true } : {}),
   });
 }

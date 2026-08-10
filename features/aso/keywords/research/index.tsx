@@ -35,7 +35,6 @@ export default function KeywordResearchPage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
-  const canUseRelevancy = isPlanAtLeast(planSlug, "basic");
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
@@ -170,12 +169,12 @@ export default function KeywordResearchPage() {
 
         const withMetrics    = saved.filter((s) =>  s.hasCachedMetrics);
         const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
-        // Rows saved while the workspace was below Basic+ (or added in fast
-        // mode) have relevancy permanently null. If the plan now allows it,
-        // backfill just those two columns instead of leaving them stuck.
-        const needsRelevancy = canUseRelevancy
-          ? withMetrics.filter((s) => s.relevancy === null).map((s) => s.term)
-          : [];
+        // Rows added in fast mode, or saved before this workspace's relevancy
+        // pool existed, have relevancy permanently null — backfill just those
+        // two columns instead of leaving them stuck. Every plan has some pool
+        // now, so there's no tier to skip this for; the metrics endpoint is
+        // the one that actually knows whether the pool is exhausted.
+        const needsRelevancy = withMetrics.filter((s) => s.relevancy === null).map((s) => s.term);
 
         // Set cached keywords immediately — these are complete, no loading state
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
@@ -545,7 +544,9 @@ export default function KeywordResearchPage() {
               </a>
             ) : (
               <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
-                {planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool" : "Upgrade to Pro for a bigger pool"}
+                {planSlug === "free" ? "Upgrade to Basic for a bigger pool"
+                  : planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool"
+                  : "Upgrade to Pro for a bigger pool"}
               </Link>
             )}
           </span>

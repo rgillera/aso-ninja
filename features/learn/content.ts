@@ -204,7 +204,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Use Live Search when you want to sanity-check how a term actually performs in the store today",
         ],
         goodToKnow: [
-          "Relevancy, Opportunity, and keyword translations require Basic; AI Suggestions require Pro",
+          "Relevancy and Opportunity are scored for up to 10 keywords on Free; Basic and up get a much bigger scoring pool plus keyword translations; AI Suggestions require Pro",
           "Adding keywords is subject to your workspace's tracked-app and keyword limits",
         ],
       },

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   XMarkIcon,
   ClipboardDocumentIcon,
@@ -10,9 +11,12 @@ import {
   TrashIcon,
   PlusCircleIcon,
   TagIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { ThemeMenuButton } from "@/features/aso/keywords/intent/ThemeMenuButton";
 import type { IntentTheme } from "@/features/aso/keywords/intent/types";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 type Props = {
   count: number;
@@ -31,6 +35,8 @@ type Props = {
 
 export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onExport, onDelete, onAdd, groupByIntent }: Props) {
   const [copied, setCopied] = useState(false);
+  const planSlug = usePlanSlug();
+  const exportLocked = !isPlanAtLeast(planSlug, "basic");
 
   if (count === 0) return null;
 
@@ -87,13 +93,23 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
         </button>
       )}
       {onExport && (
-        <button
-          onClick={onExport}
-          title="Export to Google Sheets (CSV)"
-          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
-        >
-          <TableCellsIcon className="size-4" />
-        </button>
+        exportLocked ? (
+          <Link
+            href="/dashboard/subscription"
+            title="Upgrade to Basic to export to CSV"
+            className="flex items-center justify-center size-8 rounded-full text-gray-600 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
+          >
+            <LockClosedIcon className="size-4" />
+          </Link>
+        ) : (
+          <button
+            onClick={onExport}
+            title="Export to Google Sheets (CSV)"
+            className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
+          >
+            <TableCellsIcon className="size-4" />
+          </button>
+        )
       )}
       {onDelete && (
         <button

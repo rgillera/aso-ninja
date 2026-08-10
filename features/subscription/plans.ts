@@ -24,6 +24,7 @@ export const PLANS: Plan[] = [
       "Unlimited apps (iOS & Android)",
       "1 competitor per app",
       "20 keywords",
+      "Relevancy & opportunity scoring (up to 10 keywords)",
       "Metadata optimization",
       "Keyword research",
       "Keyword & ranking monitoring",

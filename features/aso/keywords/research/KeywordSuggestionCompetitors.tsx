@@ -16,7 +16,6 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   translateToggle?: boolean;
-  analyzeAllLocked?: boolean;
 };
 
 function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
@@ -72,7 +71,7 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTran
 }
 
 function KeywordSection({
-  label, keywords, trackedSet, onAdd, onRemove, onAddAll, translations, translating, analyzeAllLocked,
+  label, keywords, trackedSet, onAdd, onRemove, onAddAll, translations, translating,
 }: {
   label: string;
   keywords: CompetitorKeyword[] | null;
@@ -82,7 +81,6 @@ function KeywordSection({
   onAddAll?: (terms: string[]) => void;
   translations?: Record<string, string>;
   translating?: boolean;
-  analyzeAllLocked?: boolean;
 }) {
   const PAGE = 20;
   const STEP = 20;
@@ -99,7 +97,6 @@ function KeywordSection({
           {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
         </div>
         <AnalyzeAllButton
-          locked={analyzeAllLocked}
           onClick={() => {
             const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
             if (!untracked.length) return;
@@ -146,7 +143,7 @@ function KeywordSection({
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, analyzeAllLocked,
+  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle,
 }: Props) {
   const [data,    setData]    = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -235,7 +232,6 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
-        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -246,7 +242,6 @@ export function KeywordSuggestionCompetitors({
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
-        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />

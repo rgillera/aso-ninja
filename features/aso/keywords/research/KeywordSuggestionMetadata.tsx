@@ -14,7 +14,6 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   translateToggle?: boolean;
-  analyzeAllLocked?: boolean;
 };
 
 function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTranslation }: {
@@ -77,7 +76,6 @@ function MetadataSection({
   loadMoreCount,
   translations,
   translating,
-  analyzeAllLocked,
 }: {
   label: string;
   keywords: MetadataKeyword[] | null;
@@ -91,7 +89,6 @@ function MetadataSection({
   loadMoreCount?: number;
   translations?: Record<string, string>;
   translating?: boolean;
-  analyzeAllLocked?: boolean;
 }) {
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
   const total   = keywords?.length ?? 0;
@@ -104,7 +101,6 @@ function MetadataSection({
           {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
         </div>
         <AnalyzeAllButton
-          locked={analyzeAllLocked}
           onClick={() => {
             const untracked = keywords?.filter((k) => !trackedSet.has(k.term)).map((k) => k.term) ?? [];
             if (!untracked.length) return;
@@ -152,7 +148,7 @@ function MetadataSection({
   );
 }
 
-export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, analyzeAllLocked }: Props) {
+export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
   const [data, setData]                 = useState<AppMetadataResult | null>(null);
   const [loading, setLoading]           = useState(false);
   const [descKeywords, setDescKeywords] = useState<MetadataKeyword[]>([]);
@@ -241,7 +237,6 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
-        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -252,7 +247,6 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
         onAddAll={onAddKeywords}
-        analyzeAllLocked={analyzeAllLocked}
         translations={translateToggle ? translations : undefined}
         translating={translateToggle && translating}
       />
@@ -262,7 +256,6 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onAddAll={onAddKeywords}
-        analyzeAllLocked={analyzeAllLocked}
         onLoadMore={hasMoreDesc ? handleLoadMore : undefined}
         loadingMore={loadingMore}
         loadMoreCount={Math.min(20, Math.max(0, descTotal - descKeywords.length))}
