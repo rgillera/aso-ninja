@@ -8,11 +8,12 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { TranslateToggle } from "./ui";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
-import { KeywordSuggestionMetadata }    from "./KeywordSuggestionMetadata";
-import { KeywordSuggestionAi }          from "./KeywordSuggestionAi";
-import { KeywordSuggestionCompetitors } from "./KeywordSuggestionCompetitors";
-import { CompetitorsBar }               from "@/features/aso/keywords/performance/CompetitorsBar";
-import type { CompetitorApp }           from "./ManageCompetitorsModal";
+import { KeywordSuggestionMetadata }     from "./KeywordSuggestionMetadata";
+import { KeywordSuggestionAi }           from "./KeywordSuggestionAi";
+import { KeywordSuggestionCompetitors }  from "./KeywordSuggestionCompetitors";
+import { KeywordSuggestionCombinations } from "./KeywordSuggestionCombinations";
+import { CompetitorsBar }                from "@/features/aso/keywords/performance/CompetitorsBar";
+import type { CompetitorApp }            from "./ManageCompetitorsModal";
 
 type Props = {
   onAddKeyword: (keyword: string) => void;
@@ -112,6 +113,9 @@ export function KeywordSuggestionsPanel({
           </div>
           <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>
             <KeywordSuggestionAi {...tabProps} translateToggle={translateToggle} />
+          </div>
+          <div className={activeTab === "Combinations" ? "" : "hidden"}>
+            <KeywordSuggestionCombinations {...tabProps} />
           </div>
         </>
       )}
