@@ -41,6 +41,14 @@ type SelectedApp = {
 // suggestions into a paywall error. Capped well under it instead.
 const MAX_SUGGESTIONS = 12;
 
+// Most onboarding drop-off happens on this step: picking keywords cold,
+// before a user has seen any product value, is an active-choice ask.
+// Flipping the default — auto-adding the top suggestions the instant they
+// load — turns "add a keyword" into "review what we picked for you," a much
+// smaller ask. It also gives the tap-then-remove case (see
+// handleRemoveKeyword) a buffer before a prune-down can land back at zero.
+const AUTO_ADD_COUNT = 3;
+
 // Default before the user picks otherwise — a locked screen with no skip
 // means a US-only search could strand someone whose app simply isn't listed
 // in that storefront, so unlike most of this screen's other simplifications,
@@ -183,8 +191,14 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     });
     fetch(`/api/keywords/ai-suggestions?${params}`)
       .then((r) => r.json())
-      .then((data: AISuggestionsResult) => setSuggestions(flattenSuggestions(data)))
+      .then((data: AISuggestionsResult) => {
+        const flat = flattenSuggestions(data);
+        setSuggestions(flat);
+        // Opt-out default: pre-add the top few instead of waiting for a tap.
+        if (flat.length) saveTerms(flat.slice(0, AUTO_ADD_COUNT));
+      })
       .catch(() => setSuggestions([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected?.name, selected?.country, workspaceId]);
 
   function handlePickApp(r: AppSearchResult) {
@@ -442,7 +456,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             </div>
 
             <p className="mt-4 text-sm text-gray-400">
-              Keyword research is the heart of ASO. The terms you track here drive your rankings and reports, so add one to get started.
+              Keyword research is the heart of ASO. We&apos;ve added a few AI-suggested keywords below to get you started. Remove any that don&apos;t fit, or add your own.
             </p>
 
             {addError && (
