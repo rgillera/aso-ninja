@@ -39,15 +39,11 @@ async function listAllAuthUsers(admin: ReturnType<typeof createAdminClient>): Pr
 export default async function Page() {
   const admin = createAdminClient();
 
-  const [authUsers, { data: owners }, { data: apps }, { data: keywords }, { data: subscriptions }, { data: plans }] =
-    await Promise.all([
-      listAllAuthUsers(admin),
-      admin.from("workspace_members").select("user_id, workspace_id").eq("role", "owner"),
-      admin.from("apps").select("workspace_id"),
-      admin.from("keywords").select("workspace_id"),
-      admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
-      admin.from("plans").select("id, slug, name"),
-    ]);
+  const [authUsers, { data: owners, error: ownersErr }] = await Promise.all([
+    listAllAuthUsers(admin),
+    admin.from("workspace_members").select("user_id, workspace_id").eq("role", "owner"),
+  ]);
+  if (ownersErr) throw ownersErr;
 
   // Apps/keywords are workspace-scoped; roll them up per user via the
   // workspace(s) they own (mirrors get_workspace_usage's ownership model).
@@ -57,6 +53,30 @@ export default async function Page() {
     list.push(row.workspace_id);
     ownedWorkspacesByUser.set(row.user_id, list);
   }
+  const ownedWorkspaceIds = [...new Set((owners ?? []).map((row) => row.workspace_id))];
+
+  // Apps/keywords scoped to owned workspaces rather than a bare
+  // `select("workspace_id")`: an unfiltered scan of `keywords` (which grows
+  // much faster than `apps`) risks a statement timeout that fails only this
+  // one query — and since none of these results used to check `.error`,
+  // that failure silently rendered as "0 keywords" for every user instead
+  // of surfacing anywhere.
+  const noRows = { data: [], error: null } as const;
+  const [
+    { data: apps, error: appsErr },
+    { data: keywords, error: keywordsErr },
+    { data: subscriptions, error: subsErr },
+    { data: plans, error: plansErr },
+  ] = await Promise.all([
+    ownedWorkspaceIds.length === 0 ? noRows : admin.from("apps").select("workspace_id").in("workspace_id", ownedWorkspaceIds),
+    ownedWorkspaceIds.length === 0 ? noRows : admin.from("keywords").select("workspace_id").in("workspace_id", ownedWorkspaceIds),
+    admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
+    admin.from("plans").select("id, slug, name"),
+  ]);
+  if (appsErr) throw appsErr;
+  if (keywordsErr) throw keywordsErr;
+  if (subsErr) throw subsErr;
+  if (plansErr) throw plansErr;
 
   const appCountByWorkspace = new Map<string, number>();
   for (const a of apps ?? []) {
