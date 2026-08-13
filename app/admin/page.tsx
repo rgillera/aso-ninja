@@ -36,6 +36,41 @@ async function listAllAuthUsers(admin: ReturnType<typeof createAdminClient>): Pr
   return all;
 }
 
+// PostgREST caps any single response at `max_rows` (1000 — see
+// supabase/config.toml), silently truncating rather than erroring. `apps`
+// stays well under that, but `keywords` passed it as usage grew, which
+// quietly zeroed out the Keywords column for whichever workspaces didn't
+// make it into the first 1000 rows returned — no error, just a partial
+// result. Page through with `.range()` (mirrors listAllAuthUsers above)
+// so this can never silently truncate again as either table keeps growing.
+async function fetchAllWorkspaceIds(
+  admin: ReturnType<typeof createAdminClient>,
+  table: "apps" | "keywords",
+  workspaceIds: string[]
+): Promise<string[]> {
+  if (workspaceIds.length === 0) return [];
+
+  const pageSize = 1000;
+  const all: string[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await admin
+      .from(table)
+      .select("workspace_id")
+      .in("workspace_id", workspaceIds)
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+
+    for (const row of data ?? []) all.push(row.workspace_id);
+
+    if (!data || data.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return all;
+}
+
 export default async function Page() {
   const admin = createAdminClient();
 
@@ -55,48 +90,28 @@ export default async function Page() {
   }
   const ownedWorkspaceIds = [...new Set((owners ?? []).map((row) => row.workspace_id))];
 
-  // Apps/keywords scoped to owned workspaces rather than a bare
-  // `select("workspace_id")`: an unfiltered scan of `keywords` (which grows
-  // much faster than `apps`) risks a statement timeout that fails only this
-  // one query — and since none of these results used to check `.error`,
-  // that failure silently rendered as "0 keywords" for every user instead
-  // of surfacing anywhere.
-  const noRows = { data: [], error: null } as const;
-  const [
-    { data: apps, error: appsErr },
-    { data: keywords, error: keywordsErr },
-    { data: subscriptions, error: subsErr },
-    { data: plans, error: plansErr },
-  ] = await Promise.all([
-    ownedWorkspaceIds.length === 0 ? noRows : admin.from("apps").select("workspace_id").in("workspace_id", ownedWorkspaceIds),
-    ownedWorkspaceIds.length === 0 ? noRows : admin.from("keywords").select("workspace_id").in("workspace_id", ownedWorkspaceIds),
-    admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
-    admin.from("plans").select("id, slug, name"),
-  ]);
-  if (appsErr) throw appsErr;
-  if (keywordsErr) throw keywordsErr;
+  // Apps/keywords scoped to owned workspaces and paginated (see
+  // fetchAllWorkspaceIds) rather than a bare `select("workspace_id")`,
+  // which silently truncated at PostgREST's 1000-row cap once `keywords`
+  // grew past it.
+  const [appWorkspaceIds, keywordWorkspaceIds, { data: subscriptions, error: subsErr }, { data: plans, error: plansErr }] =
+    await Promise.all([
+      fetchAllWorkspaceIds(admin, "apps", ownedWorkspaceIds),
+      fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
+      admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
+      admin.from("plans").select("id, slug, name"),
+    ]);
   if (subsErr) throw subsErr;
   if (plansErr) throw plansErr;
 
-  // TEMP DEBUG — diagnosing the "keywords always 0" admin bug live in prod.
-  // Remove once root-caused; check Vercel Runtime Logs for "[admin-debug]".
-  console.log("[admin-debug]", JSON.stringify({
-    ownedWorkspaceCount: ownedWorkspaceIds.length,
-    ownedWorkspaceIds,
-    appsCount: apps?.length ?? 0,
-    keywordsCount: keywords?.length ?? 0,
-    appsSample: (apps ?? []).slice(0, 10),
-    keywordsSample: (keywords ?? []).slice(0, 10),
-  }));
-
   const appCountByWorkspace = new Map<string, number>();
-  for (const a of apps ?? []) {
-    appCountByWorkspace.set(a.workspace_id, (appCountByWorkspace.get(a.workspace_id) ?? 0) + 1);
+  for (const workspaceId of appWorkspaceIds) {
+    appCountByWorkspace.set(workspaceId, (appCountByWorkspace.get(workspaceId) ?? 0) + 1);
   }
 
   const keywordCountByWorkspace = new Map<string, number>();
-  for (const k of keywords ?? []) {
-    keywordCountByWorkspace.set(k.workspace_id, (keywordCountByWorkspace.get(k.workspace_id) ?? 0) + 1);
+  for (const workspaceId of keywordWorkspaceIds) {
+    keywordCountByWorkspace.set(workspaceId, (keywordCountByWorkspace.get(workspaceId) ?? 0) + 1);
   }
 
   const planById = new Map((plans ?? []).map((p) => [p.id, p]));
