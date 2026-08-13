@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -34,7 +35,25 @@ export default function KeywordResearchPage() {
   const activeApp   = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
+  const router      = useRouter();
+  const searchParams = useSearchParams();
   const translateLocked = !isPlanAtLeast(planSlug, "basic");
+  // OnboardingWizard's handleFinish sends first-timers here with
+  // ?tip=opportunity so we can point out the Opportunity column once, right
+  // as they land. Captured via a lazy initializer (not the searchParams
+  // value itself) so KeywordTable's own dismiss logic — clicking the X,
+  // sorting by it, clicking elsewhere — isn't fighting a prop that keeps
+  // resetting on every render. The effect below strips the param from the
+  // URL so a refresh doesn't show it again.
+  const [highlightOpportunity] = useState(() => searchParams.get("tip") === "opportunity");
+  useEffect(() => {
+    if (searchParams.get("tip") !== "opportunity") return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("tip");
+    const qs = params.toString();
+    router.replace(qs ? `/dashboard/keywords/research?${qs}` : "/dashboard/keywords/research", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
@@ -585,6 +604,7 @@ export default function KeywordResearchPage() {
           onRemoveSelected={handleRemoveSelected}
           onRemoveKeyword={handleRemoveKeyword}
           onCompetitorAdded={handleCompetitorAddedFromLiveSearch}
+          highlightOpportunity={highlightOpportunity}
         />
       </div>
     </div>

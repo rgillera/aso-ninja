@@ -146,6 +146,8 @@ type Props = {
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
   onCompetitorAdded?: (competitor: CompetitorApp) => void;
+  /** True for the one page load right after onboarding hands off here — see the Opportunity coach mark below. */
+  highlightOpportunity?: boolean;
 };
 
 type ColumnDef = {
@@ -211,6 +213,7 @@ export function KeywordTable({
   onRemoveSelected,
   onRemoveKeyword,
   onCompetitorAdded,
+  highlightOpportunity = false,
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
@@ -256,6 +259,61 @@ export function KeywordTable({
   const colPickerRef = useRef<HTMLDivElement>(null);
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
+
+  // A two-step coach mark that runs once right after onboarding — see the
+  // `highlightOpportunity` prop for how it's triggered. Step 1 points at the
+  // add-keyword box; closing that (however — see advanceTour) rolls straight
+  // into step 2, which points at the Opportunity column, so a first-timer
+  // sees "here's where you add keywords" before "here's how to find the best
+  // one" rather than the other way round. Local state (not read straight
+  // from the prop) so the tour keeps advancing/closing correctly even though
+  // the prop itself never flips back to false.
+  const [tourStep, setTourStep] = useState<"opportunity" | "addKeyword" | null>(
+    highlightOpportunity ? "addKeyword" : null
+  );
+  const opportunityThRef = useRef<HTMLTableCellElement>(null);
+  const addKeywordBoxRef = useRef<HTMLDivElement>(null);
+  const tourTipRef = useRef<HTMLDivElement>(null);
+  const [tourTipPos, setTourTipPos] = useState<{ top: number; left: number } | null>(null);
+
+  // "Closing" a step (X, outside click, or completing its instruction) means
+  // move on to the next one, not just disappear — that's what makes this a
+  // tutorial rather than two unrelated one-off tips.
+  function advanceTour() {
+    setTourStep((step) => (step === "addKeyword" ? "opportunity" : null));
+  }
+
+  useEffect(() => {
+    if (!tourStep) return;
+    function position() {
+      const el = tourStep === "opportunity" ? opportunityThRef.current : addKeywordBoxRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      // Clamp so the 256px-wide bubble can't run off a narrow viewport even
+      // though the element it's pointing at sits further right.
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - 272));
+      setTourTipPos({ top: r.bottom + 8, left });
+    }
+    position();
+    window.addEventListener("resize", position);
+    return () => window.removeEventListener("resize", position);
+  }, [tourStep]);
+
+  useEffect(() => {
+    if (!tourStep) return;
+    function onMouseDown(e: MouseEvent) {
+      const target = e.target as Node;
+      // Clicking the thing being pointed at (the header to sort it, or the
+      // input box to type in it) is handled by that element's own
+      // onClick/onChange, not treated as an "outside" dismiss here.
+      if (tourTipRef.current?.contains(target)) return;
+      if (tourStep === "opportunity" && opportunityThRef.current?.contains(target)) return;
+      if (tourStep === "addKeyword" && addKeywordBoxRef.current?.contains(target)) return;
+      advanceTour();
+    }
+    document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [tourStep]);
 
   useEffect(() => {
     if (!colPickerOpen) return;
@@ -735,10 +793,20 @@ export function KeywordTable({
 
       {/* Add keyword input + Edit columns */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
-        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
+        <div
+          ref={addKeywordBoxRef}
+          className={`flex-1 flex items-center rounded-lg bg-[#0d0f14] px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
+            tourStep === "addKeyword" ? "ring-2 ring-indigo-400/70 bg-indigo-500/5" : "ring-1 ring-white/[0.08]"
+          }`}
+        >
           <input
             value={keywordInput}
-            onChange={(e) => setKeywordInput(e.target.value)}
+            onChange={(e) => {
+              setKeywordInput(e.target.value);
+              // Typing here is the whole point of this step — treat it as
+              // "got it" and close the tour instead of waiting for a click.
+              if (tourStep === "addKeyword") advanceTour();
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Enter comma-separated keywords to add…"
             className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
@@ -844,6 +912,47 @@ export function KeywordTable({
         )}
       </div>
 
+      {/* Two-step coach mark — see highlightOpportunity prop and tourStep above */}
+      {tourStep && tourTipPos && createPortal(
+        <div
+          ref={tourTipRef}
+          style={{ position: "fixed", top: tourTipPos.top, left: tourTipPos.left, zIndex: 9999 }}
+          className="w-64 rounded-xl bg-[#1a1d24] ring-1 ring-indigo-400/40 shadow-2xl p-3.5"
+        >
+          <div className="flex items-start gap-2.5">
+            {tourStep === "opportunity"
+              ? <ArrowsUpDownIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />
+              : <PlusIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-gray-200 leading-relaxed">
+                {tourStep === "opportunity"
+                  ? <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
+                  : <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then hit Add.</>}
+              </p>
+              <div className="mt-2.5 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-gray-600 tabular-nums">
+                  {tourStep === "addKeyword" ? "1" : "2"} of 2
+                </span>
+                <button
+                  onClick={advanceTour}
+                  className="rounded-md bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"
+                >
+                  {tourStep === "addKeyword" ? "Next" : "Got it"}
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setTourStep(null)}
+              title="Skip"
+              className="shrink-0 text-gray-500 hover:text-white transition-colors"
+            >
+              <XMarkIcon className="size-3.5" />
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -873,11 +982,21 @@ export function KeywordTable({
               {visibleColDefs.map((col) => (
                 <th
                   key={col.key}
-                  className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap"
+                  ref={col.key === "opportunity" ? opportunityThRef : undefined}
+                  className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap ${
+                    col.key === "opportunity" && tourStep === "opportunity"
+                      ? "rounded-t-lg ring-2 ring-inset ring-indigo-400/70 bg-indigo-500/10"
+                      : ""
+                  }`}
                 >
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => handleSort(col.key)}
+                      onClick={() => {
+                        handleSort(col.key);
+                        // Sorting by Opportunity is the instruction itself —
+                        // treat it as "got it" and move on to step 2.
+                        if (col.key === "opportunity" && tourStep === "opportunity") advanceTour();
+                      }}
                       className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === col.key ? "text-gray-300" : ""}`}
                     >
                       {col.tableLabel ?? col.label}
