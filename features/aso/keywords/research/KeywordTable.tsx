@@ -912,7 +912,11 @@ export function KeywordTable({
         )}
       </div>
 
-      {/* Two-step coach mark — see highlightOpportunity prop and tourStep above */}
+      {/* Two-step coach mark — see highlightOpportunity prop and tourStep above.
+          Deliberately no X/skip button: the whole point of step 1 is to march
+          the user into step 2 (the Opportunity column), so the only way
+          forward is Next/Got it (or completing the step's own instruction,
+          or clicking away — both of which also just call advanceTour). */}
       {tourStep && tourTipPos && createPortal(
         <div
           ref={tourTipRef}
@@ -927,7 +931,7 @@ export function KeywordTable({
               <p className="text-xs text-gray-200 leading-relaxed">
                 {tourStep === "opportunity"
                   ? <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
-                  : <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then hit Add.</>}
+                  : <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then press Enter or hit Add.</>}
               </p>
               <div className="mt-2.5 flex items-center justify-between">
                 <span className="text-[10px] font-medium text-gray-600 tabular-nums">
@@ -941,13 +945,6 @@ export function KeywordTable({
                 </button>
               </div>
             </div>
-            <button
-              onClick={() => setTourStep(null)}
-              title="Skip"
-              className="shrink-0 text-gray-500 hover:text-white transition-colors"
-            >
-              <XMarkIcon className="size-3.5" />
-            </button>
           </div>
         </div>,
         document.body
