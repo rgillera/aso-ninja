@@ -78,6 +78,17 @@ export default async function Page() {
   if (subsErr) throw subsErr;
   if (plansErr) throw plansErr;
 
+  // TEMP DEBUG — diagnosing the "keywords always 0" admin bug live in prod.
+  // Remove once root-caused; check Vercel Runtime Logs for "[admin-debug]".
+  console.log("[admin-debug]", JSON.stringify({
+    ownedWorkspaceCount: ownedWorkspaceIds.length,
+    ownedWorkspaceIds,
+    appsCount: apps?.length ?? 0,
+    keywordsCount: keywords?.length ?? 0,
+    appsSample: (apps ?? []).slice(0, 10),
+    keywordsSample: (keywords ?? []).slice(0, 10),
+  }));
+
   const appCountByWorkspace = new Map<string, number>();
   for (const a of apps ?? []) {
     appCountByWorkspace.set(a.workspace_id, (appCountByWorkspace.get(a.workspace_id) ?? 0) + 1);
