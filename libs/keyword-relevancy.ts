@@ -93,13 +93,15 @@ Line 1: the integer score.
 Line 2: the matching theme label (verbatim from the list) or "Other".`
       : `\n\nReply with ONLY a single integer. No explanation, no punctuation, just the number.`;
 
+    const collisionSection = collisionNote(findSubstringCollisions(keyword, context));
+
     const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the App Store search bar. Score the probability (0-100) that they are specifically looking for THIS app.
 
 App name: "${appName}"
 App subtitle: "${appSubtitle || "(none)"}"
 App description: "${description}"
 Keyword: "${keyword}"
-
+${collisionSection}
 Rules — apply in order, stop at first match. The app name and subtitle are the strongest signal — a keyword that directly matches wording in the name or subtitle should score at least as high as one that only matches the description:
 1. If the keyword is another app's brand name or company name → score 0-10. The user wants that specific product, not this one.
 2. If the keyword describes a completely unrelated category (e.g. "baby tracker", "pet care", "ride sharing" for a nutrition app) → score 0-15.
@@ -150,6 +152,42 @@ export function wordTokens(str: string): string[] {
   // separator — a pure-Japanese keyword would otherwise tokenize to nothing
   // and get force-scored as irrelevant. Split on non-letter/number instead.
   return str.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2);
+}
+
+export type SubstringCollision = { word: string; hosts: string[] };
+
+// Tokens in `keyword` that never occur as their own standalone word anywhere
+// in `listingText`, but do occur as a fragment inside a longer, different
+// word there (e.g. "dog" inside "dogmen"). A keyword's tokens superficially
+// "appearing" in the listing this way is a recurring false-positive signal —
+// the LLM/embedding scorers below see the raw text and can credit the
+// fragment as if the word itself were used. Generic on purpose: it flags
+// any keyword/listing pair with this shape, not a fixed list of terms.
+export function findSubstringCollisions(keyword: string, listingText: string): SubstringCollision[] {
+  const kwWords = wordTokens(keyword);
+  if (!kwWords.length) return [];
+  const listingWords = wordTokens(listingText);
+  const listingWordSet = new Set(listingWords);
+
+  const collisions: SubstringCollision[] = [];
+  for (const w of kwWords) {
+    if (listingWordSet.has(w)) continue; // appears as its own word somewhere — genuine, not a collision
+    const hosts = Array.from(new Set(listingWords.filter((lw) => lw !== w && lw.includes(w))));
+    if (hosts.length) collisions.push({ word: w, hosts });
+  }
+  return collisions;
+}
+
+// Renders findSubstringCollisions() into a prompt note, or "" when there's
+// nothing to flag. Phrased as "don't use the fragment alone as evidence" —
+// not "score it low" — so it stays harmless for real stem/plural relations
+// (e.g. "crane" only ever appearing as "cranes") where the words' actual
+// meaning still legitimately matches; it only corrects the cases where the
+// overlap is purely textual, like "dog" inside "dogmen".
+function collisionNote(collisions: SubstringCollision[]): string {
+  if (!collisions.length) return "";
+  const parts = collisions.map((c) => `"${c.word}" only appears inside ${c.hosts.map((h) => `"${h}"`).join("/")}, never on its own`);
+  return `\n\nNote: in this app's listing, ${parts.join("; ")}. Don't count that fragment alone as evidence of relevance — judge those word(s) on their actual real-world meaning.\n`;
 }
 
 // Returns true when the keyword is a brand/name term for this app.
