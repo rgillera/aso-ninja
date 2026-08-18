@@ -122,21 +122,20 @@ export function GrowthServicesGlobe() {
             style={{ top: "4%", right: "4%" }}
           >
             <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-400" />
-            <div className="p-2 sm:p-4">
-              <p className="mb-1 text-[8px] font-semibold tracking-wider text-gray-400 uppercase sm:mb-2 sm:text-[10px]">
+            <div className="p-1.5 sm:p-4">
+              <p className="mb-0.5 text-[7px] font-semibold tracking-wider text-gray-400 uppercase sm:mb-2 sm:text-[10px]">
                 Why it works
               </p>
-              <ul className="space-y-1 sm:space-y-1.5">
-                {popupPoints.map((point, i) => (
+              {/* All points show at every size, sized down enough on narrow
+                  screens to still stay clear of the pin label below. */}
+              <ul className="space-y-0.5 sm:space-y-1.5">
+                {popupPoints.map((point) => (
                   <li
                     key={point}
-                    // First 3 always show; the rest only once there's room
-                    // to grow, so the card stays compact on narrow screens
-                    // instead of growing tall enough to overlap the pin label.
-                    className={`items-center gap-1.5 text-[10px] leading-tight font-semibold text-gray-900 sm:flex sm:text-sm ${i < 3 ? "flex" : "hidden"}`}
+                    className="flex items-center gap-1 text-[9px] leading-none font-semibold text-gray-900 sm:gap-1.5 sm:text-sm"
                   >
-                    <span className="flex size-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:size-4">
-                      <CheckIcon className="size-2 text-emerald-600 sm:size-2.5" aria-hidden="true" />
+                    <span className="flex size-3 shrink-0 items-center justify-center rounded-full bg-emerald-100 sm:size-4">
+                      <CheckIcon className="size-1.5 text-emerald-600 sm:size-2.5" aria-hidden="true" />
                     </span>
                     {point}
                   </li>
