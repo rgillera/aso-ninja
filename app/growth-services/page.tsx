@@ -4,7 +4,6 @@ import {
   MagnifyingGlassIcon,
   BeakerIcon,
   FunnelIcon,
-  BanknotesIcon,
   MegaphoneIcon,
   RocketLaunchIcon,
   UserGroupIcon,
@@ -42,22 +41,22 @@ const services = [
     icon: BeakerIcon,
   },
   {
-    name: "Funnel optimization",
+    name: "Funnel & monetization optimization",
     description:
-      "From store listing to first session, we find where users drop off and fix the leaks between install and activation.",
+      "From store listing to first payment, we find where users and revenue drop off, fixing the leaks between install and activation, and tuning pricing, paywall placement, and subscriptions.",
     icon: FunnelIcon,
   },
   {
-    name: "Monetization optimization",
-    description:
-      "Pricing, paywall placement, and subscription tuning to grow revenue per user without hurting conversion.",
-    icon: BanknotesIcon,
-  },
-  {
-    name: "Meta & ASA campaign management",
+    name: "Meta & ASA Management",
     description:
       "Paid user acquisition on Meta and Apple Search Ads, built and managed end to end against your actual CPI and LTV targets.",
     icon: MegaphoneIcon,
+  },
+  {
+    name: "Influencer Management",
+    description:
+      "Creator sourcing, outreach, and campaign management to turn influencer partnerships into installs, built around your app's audience and budget.",
+    icon: UserGroupIcon,
   },
   {
     name: "Strategy & scaling support",
