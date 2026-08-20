@@ -63,9 +63,14 @@ function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTransla
   );
 }
 
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
+
 function MetadataSection({
   label,
   keywords,
+  rawText,
   trackedSet,
   onAdd,
   onRemove,
@@ -79,6 +84,7 @@ function MetadataSection({
 }: {
   label: string;
   keywords: MetadataKeyword[] | null;
+  rawText?: string;
   trackedSet: Set<string>;
   onAdd: (term: string) => void;
   onRemove?: (term: string) => void;
@@ -116,7 +122,13 @@ function MetadataSection({
             ))}
           </div>
         ) : keywords.length === 0 ? (
-          <p className="text-xs text-gray-600">No keywords found.</p>
+          rawText?.trim() ? (
+            <p className="text-xs text-gray-600">
+              Every word in <span className="text-gray-400">&ldquo;{truncate(rawText, 140)}&rdquo;</span> is too common to track as a keyword.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-600">No keywords found.</p>
+          )
         ) : (
           <>
             <div className="flex flex-wrap gap-1.5">
@@ -233,6 +245,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
       <MetadataSection
         label="Title Keywords"
         keywords={loading ? null : (data?.titleKeywords ?? [])}
+        rawText={data?.title}
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
@@ -243,6 +256,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
       <MetadataSection
         label={subtitleLabel}
         keywords={loading ? null : (data?.subtitleKeywords ?? [])}
+        rawText={data?.subtitle}
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
@@ -253,6 +267,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
       <MetadataSection
         label="Description Keywords"
         keywords={loading ? null : descKeywords}
+        rawText={data?.description}
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onAddAll={onAddKeywords}
