@@ -1,13 +1,18 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
+import { TrophyIcon } from "@heroicons/react/24/outline";
 import { updateProfileAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
+import type { CertificationRecord } from "@/features/certification/actions";
+import { CertificateDownload } from "@/features/certification/CertificateDownload";
 import type { Profile } from "@/libs/contracts";
 
 type Props = {
   email: string;
   profile: Profile | null;
+  certification?: CertificationRecord | null;
 };
 
 function Alert({ state }: { state: { error?: string; success?: string } | null }) {
@@ -23,8 +28,9 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
   );
 }
 
-export default function AccountPage({ email, profile }: Props) {
+export default function AccountPage({ email, profile, certification }: Props) {
   const [state, formAction, pending] = useActionState(updateProfileAction, null);
+  const holderName = profile?.full_name?.trim() || email.split("@")[0] || "";
 
   return (
     <main className="h-full overflow-y-auto">
@@ -82,6 +88,39 @@ export default function AccountPage({ email, profile }: Props) {
                 </button>
               </div>
             </form>
+          </section>
+
+          <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
+            <h2 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
+              <TrophyIcon className="size-4 text-indigo-400" />
+              ASO Certification
+            </h2>
+            {certification ? (
+              <>
+                <p className="text-sm text-gray-400 mb-5">
+                  Certified on{" "}
+                  {new Date(certification.issuedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}.
+                  Download your certificate anytime.
+                </p>
+                <CertificateDownload
+                  holderName={holderName}
+                  certificateId={certification.certificateId}
+                  issuedAt={certification.issuedAt}
+                />
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-400 mb-5">
+                  You haven&apos;t earned your ASO Certification yet.
+                </p>
+                <Link
+                  href="/dashboard/certification"
+                  className="inline-block rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+                >
+                  Take the exam
+                </Link>
+              </>
+            )}
           </section>
 
           <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">

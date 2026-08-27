@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
-import AccountPage from "@/features/account/AccountPage";
+import CertificationHome from "@/features/certification/CertificationHome";
 import { getMyLatestCertificationAction } from "@/features/certification/actions";
-import type { Profile } from "@/libs/contracts";
 
 export default async function Page() {
   const supabase = await createClient();
@@ -13,15 +12,11 @@ export default async function Page() {
   if (!user) redirect("/login");
 
   const [{ data: profile }, certification] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).single(),
     getMyLatestCertificationAction(),
   ]);
 
-  return (
-    <AccountPage
-      email={user.email ?? ""}
-      profile={profile as Profile | null}
-      certification={certification}
-    />
-  );
+  const holderName = profile?.full_name?.trim() || user.email?.split("@")[0] || "";
+
+  return <CertificationHome holderName={holderName} certification={certification} />;
 }

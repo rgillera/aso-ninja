@@ -22,7 +22,7 @@ import {
   TableCellsIcon,
   RocketLaunchIcon,
   BeakerIcon,
-  AcademicCapIcon,
+  TrophyIcon,
   ChatBubbleLeftRightIcon,
   CreditCardIcon,
   UserCircleIcon,
@@ -230,7 +230,7 @@ export function DashboardHeroDemo() {
 
           <div className="mt-auto space-y-0.5 border-t border-white/[0.07] pt-3">
             <FooterRow icon={RocketLaunchIcon} label="Onboarding steps" />
-            <FooterRow icon={AcademicCapIcon} label="Learning Center" />
+            <FooterRow icon={TrophyIcon} label="Learn & Get Certified" />
             <FooterRow icon={QrCodeIcon} label="Get mobile app" />
             <FooterRow icon={ChatBubbleLeftRightIcon} label="Chat with us 👋" />
             <FooterRow icon={CreditCardIcon} label="Manage Plan" badge="Enterprise" />
