@@ -1,41 +1,32 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ChevronLeftIcon, ChevronRightIcon,
   ChevronDoubleLeftIcon, ChevronDoubleRightIcon,
-  MagnifyingGlassIcon, StarIcon, CheckCircleIcon, XMarkIcon,
+  MagnifyingGlassIcon, StarIcon,
   ClipboardIcon, ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import type { ChartApp } from "./types";
-import type { MarketStatusMap } from "@/app/api/market/status/route";
-import { Dropdown, DropdownOption } from "./Dropdown";
 import { StoreIcon } from "./StoreIcon";
 
 type SortKey = "price" | "rating" | "updated";
-type StatusFilter = "all" | "connected" | "unconnected";
 
 type Props = {
   apps: ChartApp[];
   loading: boolean;
   country: string;
-  connected: MarketStatusMap;
-  onToggleConnected: (storeId: string, store: "ios" | "android") => void;
 };
 
 const PAGE_SIZE = 100;
 
-const STATUS_LABEL: Record<StatusFilter, string> = {
-  all: "All statuses",
-  connected: "Connected",
-  unconnected: "Unconnected",
-};
-
-// Routed through a server redirect that looks up the developer's privacy
-// policy (scraped from the store page for iOS, a real field on Play for
-// Android) and forwards there — useful for the growth team vetting an app
-// before outreach. Falls back to the store listing if no privacy link is found.
-function privacyRedirectHref(app: ChartApp, country: string): string {
+// iOS apps link straight to their App Store listing. Android apps still go
+// through a server redirect that looks up the developer's privacy policy (a
+// real, structured field on Play's app() response) and forwards there —
+// useful for the growth team vetting an app before outreach — falling back
+// to the store listing if no privacy link is found.
+function appHref(app: ChartApp, country: string): string {
+  if (app.store === "ios") return app.url;
   // "major"/"other" are the filter's sentinels for merging a curated set of
   // markets' charts together — apps carry no per-country origin, so the
   // redirect (which needs one real ccTLD to build the storefront URL) falls
@@ -57,25 +48,18 @@ function formatUpdated(ts: number | null): string {
   return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-export function ExplorerTable({ apps, loading, country, connected, onToggleConnected }: Props) {
+export function ExplorerTable({ apps, loading, country }: Props) {
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return apps.filter((a) => {
-      if (q && !a.name.toLowerCase().includes(q) && !a.developer.toLowerCase().includes(q)) return false;
-      const isConnected = !!connected[a.storeId];
-      if (statusFilter === "connected" && !isConnected) return false;
-      if (statusFilter === "unconnected" && isConnected) return false;
-      return true;
-    });
-  }, [apps, query, statusFilter, connected]);
+    if (!q) return apps;
+    return apps.filter((a) => a.name.toLowerCase().includes(q) || a.developer.toLowerCase().includes(q));
+  }, [apps, query]);
 
   const sorted = useMemo(() => {
     if (sortKey === null) return filtered;
@@ -91,60 +75,16 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  // Selection is keyed by storeId. "Select all" only covers the current
-  // page — selections on other pages are preserved when paging back and
-  // forth, but the header checkbox reflects and toggles this page alone.
-  const pageIds = useMemo(() => pageRows.map((a) => a.storeId), [pageRows]);
-  const selectedCount = selected.size;
-  const pageAllSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
-  const pageSomeSelected = pageIds.some((id) => selected.has(id)) && !pageAllSelected;
-
-  const headerCheckboxRef = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    if (headerCheckboxRef.current) headerCheckboxRef.current.indeterminate = pageSomeSelected;
-  }, [pageSomeSelected]);
-
   function toggleSort(key: SortKey) {
     if (sortKey === key) setSortAsc((v) => !v);
     else { setSortKey(key); setSortAsc(true); }
     setPage(0);
   }
 
-  function toggleSelectAll() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (pageAllSelected) pageIds.forEach((id) => next.delete(id));
-      else pageIds.forEach((id) => next.add(id));
-      return next;
-    });
-  }
-
-  function toggleSelectRow(storeId: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(storeId)) next.delete(storeId); else next.add(storeId);
-      return next;
-    });
-  }
-
-  function clearSelection() {
-    setSelected(new Set());
-  }
-
   function copyAppName(storeId: string, name: string) {
     navigator.clipboard.writeText(name);
     setCopiedId(storeId);
     setTimeout(() => setCopiedId((prev) => (prev === storeId ? null : prev)), 1500);
-  }
-
-  // Reuses the single-app toggle callback for every selected app whose
-  // current state differs from the target, rather than requiring a bulk API.
-  function bulkSetConnected(target: boolean) {
-    for (const app of sorted) {
-      if (selected.has(app.storeId) && !!connected[app.storeId] !== target) {
-        onToggleConnected(app.storeId, app.store);
-      }
-    }
   }
 
   const SortTh = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
@@ -170,90 +110,34 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
           />
         </div>
 
-        <Dropdown label={STATUS_LABEL[statusFilter]} active={statusFilter !== "all"}>
-          <div className="flex flex-col gap-0.5">
-            {(Object.keys(STATUS_LABEL) as StatusFilter[]).map((s) => (
-              <DropdownOption key={s} label={STATUS_LABEL[s]} active={statusFilter === s} onClick={() => { setStatusFilter(s); setPage(0); }} />
-            ))}
-          </div>
-        </Dropdown>
-
         <span className="ml-auto text-xs text-gray-600">
           {loading ? "Loading…" : `${sorted.length.toLocaleString()} app${sorted.length !== 1 ? "s" : ""}`}
         </span>
       </div>
 
-      {/* Bulk selection actions */}
-      {selectedCount > 0 && (
-        <div className="px-4 py-2 border-b border-white/[0.07] flex items-center gap-3 bg-emerald-500/[0.04]">
-          <span className="text-xs text-gray-300">{selectedCount.toLocaleString()} selected</span>
-          <button
-            onClick={() => bulkSetConnected(true)}
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 transition-colors"
-          >
-            <CheckCircleIcon className="size-3.5" />
-            Connect selected
-          </button>
-          <button
-            onClick={() => bulkSetConnected(false)}
-            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium bg-white/[0.05] text-gray-400 hover:bg-white/[0.08] hover:text-gray-200 transition-colors"
-          >
-            Unconnect selected
-          </button>
-          <button
-            onClick={clearSelection}
-            className="ml-auto inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            <XMarkIcon className="size-3.5" />
-            Clear
-          </button>
-        </div>
-      )}
-
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] border-collapse">
+        <table className="w-full min-w-[720px] border-collapse">
           <thead>
             <tr className="border-b border-white/[0.07]">
-              <th className="px-3 py-2.5 w-8">
-                <input
-                  ref={headerCheckboxRef}
-                  type="checkbox"
-                  checked={pageAllSelected}
-                  onChange={toggleSelectAll}
-                  disabled={pageIds.length === 0}
-                  className="size-3.5 rounded border-white/20 bg-transparent accent-emerald-500 cursor-pointer disabled:cursor-default"
-                  aria-label="Select all on this page"
-                />
-              </th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">App</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Category</th>
               <SortTh col="price" label="Price" />
               <SortTh col="rating" label="Rating" />
               <SortTh col="updated" label="Last Updated" />
-              <th className="px-3 py-2.5 text-right text-xs font-medium text-gray-500">Status</th>
             </tr>
           </thead>
           <tbody>
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-white/[0.04]">
-                    <td colSpan={7} className="px-3 py-3.5">
+                    <td colSpan={5} className="px-3 py-3.5">
                       <div className="h-4 rounded bg-white/[0.04] animate-pulse" />
                     </td>
                   </tr>
                 ))
               : pageRows.map((app) => (
-                  <tr key={app.storeId} className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${selected.has(app.storeId) ? "bg-emerald-500/[0.03]" : ""}`}>
-                    <td className="px-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(app.storeId)}
-                        onChange={() => toggleSelectRow(app.storeId)}
-                        className="size-3.5 rounded border-white/20 bg-transparent accent-emerald-500 cursor-pointer"
-                        aria-label={`Select ${app.name}`}
-                      />
-                    </td>
+                  <tr key={app.storeId} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <button
@@ -269,12 +153,12 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                           )}
                         </button>
                         <a
-                          href={privacyRedirectHref(app, country)}
+                          href={appHref(app, country)}
                           target="_blank"
                           rel="noreferrer"
                           onClick={() => copyAppName(app.storeId, app.name)}
                           className="flex items-center gap-3 min-w-0 group"
-                          title="Open developer's privacy policy and copy app name"
+                          title={app.store === "ios" ? "Open App Store listing and copy app name" : "Open developer's privacy policy and copy app name"}
                         >
                           <div className="relative shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -306,19 +190,6 @@ export function ExplorerTable({ apps, loading, country, connected, onToggleConne
                       )}
                     </td>
                     <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">{formatUpdated(app.lastUpdatedAt)}</td>
-                    <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => onToggleConnected(app.storeId, app.store)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                          connected[app.storeId]
-                            ? "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25"
-                            : "bg-white/[0.05] text-gray-500 hover:bg-white/[0.08] hover:text-gray-300"
-                        }`}
-                      >
-                        {connected[app.storeId] && <CheckCircleIcon className="size-3.5" />}
-                        {connected[app.storeId] ? "Connected" : "Unconnected"}
-                      </button>
-                    </td>
                   </tr>
                 ))}
           </tbody>

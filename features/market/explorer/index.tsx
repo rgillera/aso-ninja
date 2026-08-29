@@ -2,25 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { InformationCircleIcon, ExclamationTriangleIcon, MagnifyingGlassCircleIcon } from "@heroicons/react/24/outline";
-import { useWorkspaceId, useWorkspaceName } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
-import { createClient } from "@/libs/supabase/client";
 import { ExplorerFilters } from "./ExplorerFilters";
 import { ExplorerTable } from "./ExplorerTable";
 import { DEFAULT_FILTERS, MAJOR_MARKET_COUNTRIES, OTHER_MARKET_COUNTRIES, type Filters, type ChartApp } from "./types";
 import type { MarketExplorerResult } from "@/app/api/market/explorer/route";
-import type { MarketStatusMap } from "@/app/api/market/status/route";
 
 export default function AppExplorerPage() {
-  const workspaceId = useWorkspaceId();
-  const workspaceName = useWorkspaceName();
   const planSlug = usePlanSlug();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [apps, setApps] = useState<ChartApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [connected, setConnected] = useState<MarketStatusMap>({});
 
   useEffect(() => {
     // Locked view below ignores loading/apps/error entirely, so skip the fetch outright.
@@ -99,79 +93,6 @@ export default function AppExplorerPage() {
     return () => controller.abort();
   }, [filters.store, filters.country, filters.device, filters.chart, filters.category, planSlug]);
 
-  // Growth team's connected/unconnected status is stored per workspace, keyed
-  // by store ID — shared across everyone in the workspace via Postgres (not
-  // per-browser). Refetched on focus too, so switching back to this tab picks
-  // up a teammate's changes without a full reload. Fetches the whole
-  // workspace's statuses rather than filtering by the current chart's
-  // storeIds — the "major" country filter alone can merge ~1000 apps, and
-  // passing that many ids as a query string hit the server's URL-length
-  // limit (414), which silently emptied this every time.
-  useEffect(() => {
-    if (!workspaceId) return;
-    const params = new URLSearchParams({ workspaceId });
-
-    function refresh() {
-      fetch(`/api/market/status?${params}`)
-        .then((r) => r.json())
-        .then((data: { statuses?: MarketStatusMap }) => setConnected(data.statuses ?? {}))
-        .catch(() => {});
-    }
-
-    refresh();
-    window.addEventListener("focus", refresh);
-    return () => window.removeEventListener("focus", refresh);
-  }, [workspaceId]);
-
-  // Live updates on top of the focus-refetch above (kept as a fallback in case
-  // the websocket drops while backgrounded) — a teammate's toggle shows up
-  // immediately instead of waiting for a tab switch. Realtime's
-  // postgres_changes still enforces market_app_status's existing RLS policy
-  // per subscriber, so this can't leak another workspace's rows.
-  useEffect(() => {
-    if (!workspaceId || planSlug !== "enterprise") return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`market_app_status:${workspaceId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "market_app_status", filter: `workspace_id=eq.${workspaceId}` },
-        (payload) => {
-          const row = payload.new as { store_id?: string; connected?: boolean } | null;
-          if (!row?.store_id) return;
-          setConnected((prev) => ({ ...prev, [row.store_id!]: !!row.connected }));
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [workspaceId, planSlug]);
-
-  function toggleConnected(storeId: string, store: "ios" | "android") {
-    if (!workspaceId) return;
-    const next = !connected[storeId];
-    setConnected((prev) => ({ ...prev, [storeId]: next }));
-    fetch("/api/market/status", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceId, storeId, store, connected: next }),
-      // The UI flips optimistically the instant this fires — without
-      // keepalive, refreshing (or navigating away) right after a click
-      // aborts this request mid-flight along with the page unload, so the
-      // write never reaches the database even though the button already
-      // showed "Connected". keepalive lets the browser finish it independently
-      // of the page's lifecycle (well under its ~64KB body limit here).
-      keepalive: true,
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed to save connection status");
-      })
-      .catch(() => {
-        setConnected((prev) => ({ ...prev, [storeId]: !next }));
-        setError("Couldn't save connection status. Please try again.");
-      });
-  }
-
   if (planSlug !== "enterprise") {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
@@ -198,11 +119,6 @@ export default function AppExplorerPage() {
       <div className="flex items-center gap-2 px-6 pt-6">
         <h1 className="text-xl font-semibold text-white">App Explorer</h1>
         <InformationCircleIcon className="size-4 text-gray-600" title="Ranked from Apple's and Google's public top-charts feeds (capped at 100 and 200 apps respectively — neither store exposes more). No download or revenue figures: neither store discloses those for apps you don't own." />
-        {workspaceName && (
-          <span className="ml-1 text-xs text-gray-500">
-            Connected status for <span className="text-gray-400">{workspaceName}</span>
-          </span>
-        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -214,7 +130,7 @@ export default function AppExplorerPage() {
             <p className="text-sm font-medium text-gray-400">{error}</p>
           </div>
         ) : (
-          <ExplorerTable apps={apps} loading={loading} country={filters.country} connected={connected} onToggleConnected={toggleConnected} />
+          <ExplorerTable apps={apps} loading={loading} country={filters.country} />
         )}
       </div>
     </div>

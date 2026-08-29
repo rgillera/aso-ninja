@@ -42,6 +42,13 @@ export default function PortalFooter() {
             <p className="mt-4 text-sm text-gray-500 max-w-xs">
               App Store Optimization intelligence for modern app teams.
             </p>
+            <p className="mt-4 text-sm text-gray-600">
+              Fitlefy LLC
+              <br />
+              1309 Coffeen Avenue STE 1200
+              <br />
+              Sheridan, Wyoming 82801
+            </p>
             <div className="mt-4 flex items-center gap-4">
               <a
                 href="https://www.linkedin.com/company/app-aso/"
