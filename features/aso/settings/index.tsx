@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ExclamationTriangleIcon, CheckCircleIcon, ArrowPathIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, CheckCircleIcon, ArrowPathIcon, ArrowTrendingUpIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -499,53 +499,64 @@ export default function AppConnectionSettings({ app }: Props) {
         )}
 
         {app.store === "ios" && (
-        <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden scroll-mt-6">
-          <div className="px-5 py-4 border-b border-white/[0.07]">
-            <h2 className="text-sm font-semibold text-white">Apple Search Ads</h2>
-            <p className="mt-1 text-xs text-gray-500">
-              Connect your Apple Search Ads account to power Bid Suggestions and Active Bids. One
-              connection covers every app it runs campaigns for, not just this one, so connecting or
-              disconnecting here applies workspace-wide.
-            </p>
-          </div>
+          !asaLoading && asaLocked ? (
+            // Same treatment as the App Store Connect lock panel above —
+            // no header card around it, FeatureLocked draws its own.
+            <div id="apple-search-ads" className="scroll-mt-6">
+              <FeatureLocked
+                title="Connecting Apple Search Ads requires Pro"
+                description="Connect your Apple Search Ads account to power Bid Suggestions and Active Bids. One connection covers every app it runs campaigns for, not just this one, so connecting or disconnecting here applies workspace-wide."
+                minPlan="pro"
+                icon={BanknotesIcon}
+                benefits={[
+                  "See every campaign, ad group, and keyword you're actively bidding on",
+                  "Bid Suggestions prioritized using your real spend, impressions, and installs data",
+                  "One connection covers every app running Apple Search Ads campaigns",
+                ]}
+              />
+            </div>
+          ) : (
+            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden scroll-mt-6">
+              <div className="px-5 py-4 border-b border-white/[0.07]">
+                <h2 className="text-sm font-semibold text-white">Apple Search Ads</h2>
+                <p className="mt-1 text-xs text-gray-500">
+                  Connect your Apple Search Ads account to power Bid Suggestions and Active Bids. One
+                  connection covers every app it runs campaigns for, not just this one, so connecting or
+                  disconnecting here applies workspace-wide.
+                </p>
+              </div>
 
-          <div className="p-5">
-            {asaLoading ? (
-              <div className="h-20 flex items-center justify-center">
-                <span className="size-4 rounded-full border-2 border-gray-600 border-t-gray-300 animate-spin" />
-              </div>
-            ) : asaLocked ? (
-              <p className="text-sm text-gray-500">
-                Your current plan doesn&apos;t support connecting Apple Search Ads.{" "}
-                <a href="/dashboard/subscription" className="text-indigo-400 hover:text-indigo-300 transition-colors">
-                  Upgrade to Pro to connect.
-                </a>
-              </p>
-            ) : asaConnection?.connected ? (
-              <div className="space-y-4">
-                <StatusBadge connection={asaConnection} />
-                {asaConnection.displayLabel && (
-                  <p className="text-xs text-gray-500">{asaConnection.displayLabel}</p>
-                )}
-                {asaConnection.status === "error" && asaConnection.lastError && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
-                    <ExclamationTriangleIcon className="size-4 shrink-0" />
-                    {asaConnection.lastError}
+              <div className="p-5">
+                {asaLoading ? (
+                  <div className="h-20 flex items-center justify-center">
+                    <span className="size-4 rounded-full border-2 border-gray-600 border-t-gray-300 animate-spin" />
                   </div>
+                ) : asaConnection?.connected ? (
+                  <div className="space-y-4">
+                    <StatusBadge connection={asaConnection} />
+                    {asaConnection.displayLabel && (
+                      <p className="text-xs text-gray-500">{asaConnection.displayLabel}</p>
+                    )}
+                    {asaConnection.status === "error" && asaConnection.lastError && (
+                      <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+                        <ExclamationTriangleIcon className="size-4 shrink-0" />
+                        {asaConnection.lastError}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleAsaDisconnect}
+                      disabled={asaDisconnecting}
+                      className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 transition-colors"
+                    >
+                      {asaDisconnecting ? "Disconnecting…" : "Disconnect"}
+                    </button>
+                  </div>
+                ) : (
+                  <ConnectAsaForm workspaceId={app.workspace_id} onConnected={setAsaConnection} />
                 )}
-                <button
-                  onClick={handleAsaDisconnect}
-                  disabled={asaDisconnecting}
-                  className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 transition-colors"
-                >
-                  {asaDisconnecting ? "Disconnecting…" : "Disconnect"}
-                </button>
               </div>
-            ) : (
-              <ConnectAsaForm workspaceId={app.workspace_id} onConnected={setAsaConnection} />
-            )}
-          </div>
-        </div>
+            </div>
+          )
         )}
       </div>
     </div>
