@@ -5,6 +5,15 @@ import type { AppSearchResult, StoreData } from "@/libs/contracts";
 // "which one do I pick" comparison anymore.
 export const MAX_COMPARE_APPS = 4;
 
+// Real store-enforced hard caps. iOS: 30 chars for both the app name and the
+// subtitle. Android: title dropped from 50 to 30 chars industry-wide; the
+// "subtitle" field here is actually Play's short description (`summary`),
+// capped at 80. Shared by CompareTable's length rows and AiInsights' prompt.
+export const FIELD_LIMITS: Record<"ios" | "android", { name: number; subtitle: number }> = {
+  ios: { name: 30, subtitle: 30 },
+  android: { name: 30, subtitle: 80 },
+};
+
 export type CompareApp = AppSearchResult & {
   storeData: StoreData | null;
   loading: boolean;

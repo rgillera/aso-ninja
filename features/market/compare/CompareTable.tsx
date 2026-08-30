@@ -9,7 +9,7 @@ import { StoreIcon } from "@/features/market/explorer/StoreIcon";
 import { computeKeywordDensity } from "@/features/aso/metadata/preview/KeywordDensity";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import type { CompareApp } from "./types";
-import { compareKey, storeUrl } from "./types";
+import { compareKey, storeUrl, FIELD_LIMITS } from "./types";
 
 type Props = {
   apps: CompareApp[];
@@ -38,14 +38,6 @@ const DENSITY_TERMS_PER_CHIP = 6;
 // An app that hasn't shipped an update in 3+ months reads as possibly
 // abandoned/deprioritized — a real ASO signal when sizing up a competitor.
 const STALE_DAYS_THRESHOLD = 90;
-// Real store-enforced hard caps. iOS: 30 chars for both the app name and the
-// subtitle. Android: title dropped from 50 to 30 chars industry-wide; the
-// "subtitle" field here is actually Play's short description (`summary`),
-// capped at 80.
-const FIELD_LIMITS: Record<"ios" | "android", { name: number; subtitle: number }> = {
-  ios: { name: 30, subtitle: 30 },
-  android: { name: 30, subtitle: 80 },
-};
 
 function formatRatingCount(n: number | null | undefined): string {
   if (n === null || n === undefined) return "";

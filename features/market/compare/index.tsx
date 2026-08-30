@@ -7,6 +7,7 @@ import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { AppSearchResult } from "@/libs/contracts";
 import type { MarketCompareResult } from "@/app/api/market/compare/route";
+import { AiInsights } from "./AiInsights";
 import { AppPicker } from "./AppPicker";
 import { CompareTable } from "./CompareTable";
 import { CountryDropdown } from "./CountryDropdown";
@@ -120,6 +121,7 @@ export default function CompareAppsPage() {
             <div className="mt-4">
               <CompareTable apps={apps} country={country} onRemove={removeApp} />
             </div>
+            {apps.length >= 2 && <AiInsights apps={apps} />}
           </>
         )}
       </div>
