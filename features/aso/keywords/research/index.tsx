@@ -14,7 +14,7 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
-import type { Keyword, DownloadsConnection } from "./types";
+import { TOUR_STEPS, type TourStep, type Keyword, type DownloadsConnection } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 
@@ -38,22 +38,40 @@ export default function KeywordResearchPage() {
   const router      = useRouter();
   const searchParams = useSearchParams();
   const translateLocked = !isPlanAtLeast(planSlug, "free");
-  // OnboardingWizard's handleFinish sends first-timers here with
-  // ?tip=opportunity so we can point out the Opportunity column once, right
-  // as they land. Captured via a lazy initializer (not the searchParams
-  // value itself) so KeywordTable's own dismiss logic — clicking the X,
-  // sorting by it, clicking elsewhere — isn't fighting a prop that keeps
+  // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
+  // so we can walk them across the page once, right as they land: Keyword
+  // Suggestions section → Keyword Table section → how to add a keyword →
+  // the Volume column → the Opportunity column (TOUR_STEPS, in that order).
+  // Captured via a lazy initializer (not the searchParams value itself) so
+  // each step's own dismiss logic — clicking its X, completing its
+  // instruction, clicking elsewhere — isn't fighting a prop that keeps
   // resetting on every render. The effect below strips the param from the
-  // URL so a refresh doesn't show it again.
-  const [highlightOpportunity] = useState(() => searchParams.get("tip") === "opportunity");
+  // URL so a refresh doesn't replay it. State (not the prop) lives here
+  // rather than inside either child because the tour has to hand off
+  // between two sibling components (KeywordSuggestionsPanel, KeywordTable)
+  // as it advances.
+  const [tourStep, setTourStep] = useState<TourStep | null>(() =>
+    searchParams.get("tip") === "tour" ? TOUR_STEPS[0] : null
+  );
   useEffect(() => {
-    if (searchParams.get("tip") !== "opportunity") return;
+    if (searchParams.get("tip") !== "tour") return;
     const params = new URLSearchParams(searchParams);
     params.delete("tip");
     const qs = params.toString();
     router.replace(qs ? `/dashboard/keywords/research?${qs}` : "/dashboard/keywords/research", { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // "Closing" a step (its own X, an outside click, or completing its
+  // instruction) means move on to the next one, not just disappear — that's
+  // what makes this a tutorial rather than five unrelated one-off tips.
+  function advanceTour() {
+    setTourStep((step) => {
+      if (!step) return null;
+      const next = TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1];
+      return next ?? null;
+    });
+  }
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
@@ -587,6 +605,8 @@ export default function KeywordResearchPage() {
           translateToggle={translateToggle && !translateLocked}
           translateLocked={translateLocked}
           onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+          tourStep={tourStep}
+          onAdvanceTour={advanceTour}
         />
 
         <KeywordTable
@@ -604,7 +624,8 @@ export default function KeywordResearchPage() {
           onRemoveSelected={handleRemoveSelected}
           onRemoveKeyword={handleRemoveKeyword}
           onCompetitorAdded={handleCompetitorAddedFromLiveSearch}
-          highlightOpportunity={highlightOpportunity}
+          tourStep={tourStep}
+          onAdvanceTour={advanceTour}
         />
       </div>
     </div>

@@ -27,3 +27,13 @@ export type Keyword = {
 export type DownloadsConnection = { connected: boolean; pending: boolean; bundleHasCredential?: boolean };
 
 export type RankPill = typeof import("./constants").RANK_PILLS[number];
+
+// The 5-step coach mark that walks a first-timer across this page right
+// after onboarding hands off here — see the `tourStep` prop on
+// KeywordSuggestionsPanel and KeywordTable, and handleFinish in
+// OnboardingWizard.tsx for how it's kicked off. Centralized (rather than
+// each component keeping its own list) so the "N of 5" label a step shows
+// agrees no matter which component is rendering it, and so adding/reordering
+// a step only means editing this one array.
+export const TOUR_STEPS = ["suggestions", "table", "addKeyword", "volume", "opportunity"] as const;
+export type TourStep = typeof TOUR_STEPS[number];

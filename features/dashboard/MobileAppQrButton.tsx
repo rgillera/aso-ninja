@@ -60,7 +60,7 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
         <button
           type="button"
           onClick={handleClick}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
         >
           <QrCodeIcon className="size-4 shrink-0" />
           Get mobile app

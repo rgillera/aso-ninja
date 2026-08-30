@@ -65,6 +65,8 @@ export const PLANS: Plan[] = [
       "Metadata timeline & version history",
       "Metadata benchmark vs. category",
       "Reviews & ratings tracking",
+      "ASA Intelligence",
+      "Market Intelligence",
     ],
   },
   {

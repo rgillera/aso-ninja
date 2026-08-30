@@ -6,8 +6,10 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { ConnectAsaForm } from "@/features/asa/active-bids/ConnectAsaForm";
 import type { App } from "@/libs/contracts";
 import type { ConnectionStatus } from "@/libs/store-connections/types";
+import type { AsaConnectionStatus } from "@/libs/asa-connections/types";
 
 type Props = { app: App };
 
@@ -300,11 +302,16 @@ export default function AppConnectionSettings({ app }: Props) {
   // every load regardless, so nothing gated is exposed by leaving this
   // reachable.
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
+  const asaLocked = !isPlanAtLeast(planSlug, "pro");
   const [connection, setConnection] = useState<ConnectionStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  const [asaConnection, setAsaConnection] = useState<AsaConnectionStatus | null>(null);
+  const [asaLoading, setAsaLoading] = useState(true);
+  const [asaDisconnecting, setAsaDisconnecting] = useState(false);
 
   // No synchronous setState call at the top of this function — `loading`
   // already starts true (see useState above), and refreshes triggered by
@@ -320,6 +327,30 @@ export default function AppConnectionSettings({ app }: Props) {
   }, [app.id]);
 
   useEffect(() => { loadStatus(); }, [loadStatus]);
+
+  // Belt-and-suspenders alongside next/link's own hash-scroll (which the
+  // "Connect it in Settings" link on Active Bids relies on): retries for a
+  // couple seconds instead of a single one-shot attempt, since this card
+  // sits behind two nested scroll containers (DashboardShell's shell plus
+  // this page's own overflow-y-auto). Also re-runs when the App Store
+  // Connect card above finishes loading (loading/downloadsLocked settle) —
+  // that card's own loading→connected/form swap changes its height, which
+  // would otherwise shift this element out from under an earlier scroll.
+  useEffect(() => {
+    if (window.location.hash !== "#apple-search-ads") return;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const tryScroll = () => {
+      const el = document.getElementById("apple-search-ads");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+      if (attempts++ < 20) timer = setTimeout(tryScroll, 100);
+    };
+    tryScroll();
+    return () => clearTimeout(timer);
+  }, [loading, asaLoading]);
 
   async function handleSync() {
     setSyncing(true);
@@ -346,11 +377,41 @@ export default function AppConnectionSettings({ app }: Props) {
     }
   }
 
+  // Apple Search Ads is a single workspace-wide connection (not per-app —
+  // see ConnectAsaForm's own note), but iOS is the only store it applies to,
+  // so this card only renders for iOS apps below. Surfacing it here too,
+  // alongside the per-app store connection, saves a trip to a separate
+  // settings page for the common case of setting it up right after
+  // connecting the app itself.
+  const loadAsaStatus = useCallback(() => {
+    return fetch(`/api/asa/connect?workspaceId=${app.workspace_id}`)
+      .then((res) => res.json())
+      .then((data: AsaConnectionStatus) => setAsaConnection(data))
+      .catch(() => setAsaConnection({ connected: false }))
+      .finally(() => setAsaLoading(false));
+  }, [app.workspace_id]);
+
+  useEffect(() => {
+    if (app.store !== "ios") return;
+    loadAsaStatus();
+  }, [app.store, loadAsaStatus]);
+
+  async function handleAsaDisconnect() {
+    if (!confirm("Disconnect Apple Search Ads? This applies to every app in the workspace, not just this one.")) return;
+    setAsaDisconnecting(true);
+    try {
+      await fetch(`/api/asa/connect?workspaceId=${app.workspace_id}`, { method: "DELETE" });
+      await loadAsaStatus();
+    } finally {
+      setAsaDisconnecting(false);
+    }
+  }
+
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
       <AppHeader app={app} title="Settings" />
 
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto scroll-smooth p-6">
         {!loading && !connection?.connected && downloadsLocked ? (
           // Rendered on its own, not nested inside the card below —
           // FeatureLocked already has its own bordered card styling, so
@@ -432,6 +493,56 @@ export default function AppConnectionSettings({ app }: Props) {
               <IosConnectForm appId={app.id} onConnected={loadStatus} />
             ) : (
               <AndroidConnectForm appId={app.id} onConnected={loadStatus} />
+            )}
+          </div>
+        </div>
+        )}
+
+        {app.store === "ios" && (
+        <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden scroll-mt-6">
+          <div className="px-5 py-4 border-b border-white/[0.07]">
+            <h2 className="text-sm font-semibold text-white">Apple Search Ads</h2>
+            <p className="mt-1 text-xs text-gray-500">
+              Connect your Apple Search Ads account to power Bid Suggestions and Active Bids. One
+              connection covers every app it runs campaigns for, not just this one, so connecting or
+              disconnecting here applies workspace-wide.
+            </p>
+          </div>
+
+          <div className="p-5">
+            {asaLoading ? (
+              <div className="h-20 flex items-center justify-center">
+                <span className="size-4 rounded-full border-2 border-gray-600 border-t-gray-300 animate-spin" />
+              </div>
+            ) : asaLocked ? (
+              <p className="text-sm text-gray-500">
+                Your current plan doesn&apos;t support connecting Apple Search Ads.{" "}
+                <a href="/dashboard/subscription" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+                  Upgrade to Pro to connect.
+                </a>
+              </p>
+            ) : asaConnection?.connected ? (
+              <div className="space-y-4">
+                <StatusBadge connection={asaConnection} />
+                {asaConnection.displayLabel && (
+                  <p className="text-xs text-gray-500">{asaConnection.displayLabel}</p>
+                )}
+                {asaConnection.status === "error" && asaConnection.lastError && (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+                    <ExclamationTriangleIcon className="size-4 shrink-0" />
+                    {asaConnection.lastError}
+                  </div>
+                )}
+                <button
+                  onClick={handleAsaDisconnect}
+                  disabled={asaDisconnecting}
+                  className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 transition-colors"
+                >
+                  {asaDisconnecting ? "Disconnecting…" : "Disconnect"}
+                </button>
+              </div>
+            ) : (
+              <ConnectAsaForm workspaceId={app.workspace_id} onConnected={setAsaConnection} />
             )}
           </div>
         </div>

@@ -38,10 +38,12 @@ const ASO_INTELLIGENCE_PREFIXES = [
   "/dashboard/reviews",
 ];
 const MARKET_INTELLIGENCE_PREFIXES = ["/dashboard/market"];
+const ASA_INTELLIGENCE_PREFIXES = ["/dashboard/asa"];
 
 function requiredAccessFor(pathname: string): WorkspaceAccess | undefined {
   if (ASO_INTELLIGENCE_PREFIXES.some((p) => pathname.startsWith(p))) return "aso_intelligence";
   if (MARKET_INTELLIGENCE_PREFIXES.some((p) => pathname.startsWith(p))) return "market_intelligence";
+  if (ASA_INTELLIGENCE_PREFIXES.some((p) => pathname.startsWith(p))) return "asa_intelligence";
   return undefined;
 }
 

@@ -21,6 +21,9 @@ import {
   TagIcon,
   MagnifyingGlassCircleIcon,
   ScaleIcon,
+  BanknotesIcon,
+  LightBulbIcon,
+  AdjustmentsHorizontalIcon,
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
@@ -81,6 +84,17 @@ const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIc
   { label: "Compare Apps",   href: "/dashboard/market/compare",    icon: ScaleIcon,                 minPlan: "pro" },
 ];
 
+// Bid Suggestions works with zero setup (just tracked keywords), so it stays
+// a standalone top-level link. The other three all read from a connected
+// Apple Search Ads account, so they're grouped under a collapsible "Campaign
+// Data" parent — same convention as Keywords/Metadata below (a category
+// collapses once it holds 3+ related items).
+const asaAccountLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
+  { label: "Active Bids",     href: "/dashboard/asa/active-bids",    icon: ChartBarIcon,              minPlan: "pro" },
+  { label: "Spend Insights",  href: "/dashboard/asa/spend-insights", icon: LightBulbIcon,             minPlan: "pro" },
+  { label: "Efficiency",      href: "/dashboard/asa/efficiency",     icon: AdjustmentsHorizontalIcon, minPlan: "pro" },
+];
+
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "pro" },
   { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "pro" },
@@ -131,6 +145,7 @@ export default function DashboardSidebar({
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
+  const hasAsaIntelligence = access.includes("asa_intelligence");
   const isOnPreviewRoute = currentPath === "/dashboard/preview";
   const isOnReport =
     currentPath.startsWith("/dashboard/report") ||
@@ -150,6 +165,9 @@ export default function DashboardSidebar({
   );
   const [reviewsOpen, setReviewsOpen] = useState(
     currentPath.startsWith("/dashboard/reviews")
+  );
+  const [asaAccountOpen, setAsaAccountOpen] = useState(
+    asaAccountLinks.some((l) => currentPath.startsWith(l.href))
   );
 
   useEffect(() => {
@@ -216,11 +234,11 @@ export default function DashboardSidebar({
       }`}
     >
       {/* Workspace switcher */}
-      <div className="relative p-4 border-b border-white/[0.07]" ref={ref}>
+      <div className="relative p-3 border-b border-white/[0.07]" ref={ref}>
         <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">
           <button
             onClick={() => setOpen(!open)}
-            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-2 text-sm font-medium text-white"
+            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 text-sm font-medium text-white"
           >
             <div className="flex size-6 shrink-0 items-center justify-center rounded bg-indigo-500 text-xs font-bold text-white">
               {active ? workspaceInitial(active.name) : "W"}
@@ -309,10 +327,10 @@ export default function DashboardSidebar({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-2.5 space-y-0.5">
         <a
           href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
             currentPath === "/dashboard"
               ? "bg-white/10 text-white"
               : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -323,15 +341,15 @@ export default function DashboardSidebar({
         </a>
 
         {hasAsoIntelligence && (
-        <div className="pt-4">
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
+        <div className="pt-3">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
             ASO Intelligence
           </p>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {/* Report — top-level link */}
             <a
               href={reportHref()}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                 isOnReport
                   ? "bg-white/10 text-white"
                   : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -347,7 +365,7 @@ export default function DashboardSidebar({
             }`}>
               <a
                 href={metaHref(metadataLinks[0])}
-                className="flex flex-1 items-center gap-3 px-3 py-2"
+                className="flex flex-1 items-center gap-3 px-3 py-1.5"
               >
                 <RectangleStackIcon className="size-4 shrink-0" />
                 Metadata
@@ -355,7 +373,7 @@ export default function DashboardSidebar({
               <button
                 type="button"
                 onClick={() => setMetaOpen((v) => !v)}
-                className="pr-3 py-2"
+                className="pr-3 py-1.5"
               >
                 <ChevronDownIcon
                   className={`size-3.5 text-gray-500 transition-transform duration-150 ${metaOpen ? "rotate-180" : ""}`}
@@ -375,7 +393,7 @@ export default function DashboardSidebar({
                     <a
                       key={link.fallback}
                       href={href}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                      className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                         isActive
                           ? "text-white bg-white/10"
                           : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -400,7 +418,7 @@ export default function DashboardSidebar({
             }`}>
               <a
                 href="/dashboard/keywords/research"
-                className="flex flex-1 items-center gap-3 px-3 py-2"
+                className="flex flex-1 items-center gap-3 px-3 py-1.5"
               >
                 <MagnifyingGlassIcon className="size-4 shrink-0" />
                 Keywords
@@ -408,7 +426,7 @@ export default function DashboardSidebar({
               <button
                 type="button"
                 onClick={() => setKeywordsOpen((v) => !v)}
-                className="pr-3 py-2"
+                className="pr-3 py-1.5"
               >
                 <ChevronDownIcon
                   className={`size-3.5 text-gray-500 transition-transform duration-150 ${keywordsOpen ? "rotate-180" : ""}`}
@@ -422,7 +440,7 @@ export default function DashboardSidebar({
                   <a
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
                         ? "text-white bg-white/10"
                         : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -446,7 +464,7 @@ export default function DashboardSidebar({
             }`}>
               <a
                 href="/dashboard/reviews/ratings"
-                className="flex flex-1 items-center gap-3 px-3 py-2"
+                className="flex flex-1 items-center gap-3 px-3 py-1.5"
               >
                 <StarIcon className="size-4 shrink-0" />
                 Reviews &amp; Ratings
@@ -454,7 +472,7 @@ export default function DashboardSidebar({
               <button
                 type="button"
                 onClick={() => setReviewsOpen((v) => !v)}
-                className="pr-3 py-2"
+                className="pr-3 py-1.5"
               >
                 <ChevronDownIcon
                   className={`size-3.5 text-gray-500 transition-transform duration-150 ${reviewsOpen ? "rotate-180" : ""}`}
@@ -468,7 +486,7 @@ export default function DashboardSidebar({
                   <a
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
                         ? "text-white bg-white/10"
                         : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -487,19 +505,87 @@ export default function DashboardSidebar({
         </div>
         )}
 
+        {hasAsaIntelligence && (
+        <div className="pt-3">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
+            ASA Intelligence
+          </p>
+          <div className="space-y-0.5">
+            <a
+              href="/dashboard/asa/bids"
+              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                currentPath.startsWith("/dashboard/asa/bids")
+                  ? "bg-white/10 text-white"
+                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <BanknotesIcon className="size-4 shrink-0" />
+              <span className="flex-1">Bid Suggestions</span>
+              {!isPlanAtLeast(planSlug, "pro") && <PlanLockBadge minPlan="pro" />}
+            </a>
+
+            {/* Campaign Data — collapsible: Active Bids, Spend Insights, Efficiency all read from a connected Apple Search Ads account */}
+            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
+              asaAccountLinks.some((l) => currentPath.startsWith(l.href))
+                ? "bg-white/10 text-white"
+                : "text-gray-400 hover:bg-white/5 hover:text-white"
+            }`}>
+              <a
+                href="/dashboard/asa/active-bids"
+                className="flex flex-1 items-center gap-3 px-3 py-1.5"
+              >
+                <ChartBarIcon className="size-4 shrink-0" />
+                Campaign Data
+              </a>
+              <button
+                type="button"
+                onClick={() => setAsaAccountOpen((v) => !v)}
+                className="pr-3 py-1.5"
+              >
+                <ChevronDownIcon
+                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${asaAccountOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+            </div>
+
+            {asaAccountOpen && (
+              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+                {asaAccountLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                      currentPath.startsWith(link.href)
+                        ? "text-white bg-white/10"
+                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    }`}
+                  >
+                    <link.icon className="size-4 shrink-0" />
+                    <span className="flex-1 whitespace-nowrap">{link.label}</span>
+                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                      <PlanLockBadge minPlan={link.minPlan} />
+                    )}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        )}
+
         {hasMarketIntelligence && (
-        <div className="pt-4">
-          <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-600">
+        <div className="pt-3">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
             Market Intelligence
           </p>
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {marketLinks.map((link) => {
               const isActive = currentPath.startsWith(link.href);
               return (
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-white/10 text-white"
                       : "text-gray-400 hover:bg-white/5 hover:text-white"
@@ -507,6 +593,9 @@ export default function DashboardSidebar({
                 >
                   <link.icon className="size-4 shrink-0" />
                   <span className="flex-1">{link.label}</span>
+                  {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                    <PlanLockBadge minPlan={link.minPlan} />
+                  )}
                 </a>
               );
             })}
@@ -517,10 +606,10 @@ export default function DashboardSidebar({
       </nav>
 
       {/* Account footer */}
-      <div className="border-t border-white/[0.07] p-3 space-y-0.5">
+      <div className="border-t border-white/[0.07] p-2.5 space-y-0.5">
         <a
           href="/dashboard/certification"
-          className={`flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+          className={`flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors ${
             currentPath.startsWith("/dashboard/certification")
               ? "bg-white/10 text-white"
               : "text-gray-500 hover:bg-white/5 hover:text-white"
@@ -533,7 +622,7 @@ export default function DashboardSidebar({
         <button
           type="button"
           onClick={() => window.Tawk_API?.maximize?.()}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
         >
           <ChatBubbleLeftRightIcon className="size-4 shrink-0" />
           Chat with us 👋
@@ -541,7 +630,7 @@ export default function DashboardSidebar({
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
           >
             <CreditCardIcon className="size-4 shrink-0" />
             <span className="flex-1">Manage Plan</span>
@@ -552,7 +641,7 @@ export default function DashboardSidebar({
         ) : (
           <div
             title="Only the workspace owner can manage the plan"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-600 cursor-not-allowed"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-600 cursor-not-allowed"
           >
             <CreditCardIcon className="size-4 shrink-0" />
             <span className="flex-1">Manage Plan</span>
@@ -563,7 +652,7 @@ export default function DashboardSidebar({
         )}
         <a
           href="/dashboard/settings/account"
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-2 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
         >
           <UserCircleIcon className="size-4 shrink-0" />
           Account settings

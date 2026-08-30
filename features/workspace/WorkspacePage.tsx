@@ -8,11 +8,17 @@ import {
   deleteWorkspaceAction,
 } from "./actions";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
-import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
+import type { Workspace, WorkspaceAccess, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
 type MemberWithProfile = WorkspaceMember & {
   profiles: { full_name: string | null } | null;
   email?: string;
+};
+
+const ACCESS_LABELS: Record<WorkspaceAccess, string> = {
+  aso_intelligence: "ASO Intelligence",
+  market_intelligence: "Market Intelligence",
+  asa_intelligence: "ASA Intelligence",
 };
 
 type Props = {
@@ -162,9 +168,7 @@ export default function WorkspacePage({
                         </p>
                         <p className="mt-0.5 text-xs text-gray-500">
                           {m.access.length > 0
-                            ? m.access
-                                .map((a) => (a === "aso_intelligence" ? "ASO Intelligence" : "Market Intelligence"))
-                                .join(" · ")
+                            ? m.access.map((a) => ACCESS_LABELS[a]).join(" · ")
                             : "No features enabled"}
                         </p>
                       </div>
@@ -237,6 +241,16 @@ export default function WorkspacePage({
                         className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                       />
                       Market Intelligence
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                      <input
+                        type="checkbox"
+                        name="access"
+                        value="asa_intelligence"
+                        defaultChecked
+                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                      />
+                      ASA Intelligence
                     </label>
                   </div>
                 </form>

@@ -1,6 +1,6 @@
 export type WorkspaceRole = "owner" | "admin" | "member";
 
-export type WorkspaceAccess = "aso_intelligence" | "market_intelligence";
+export type WorkspaceAccess = "aso_intelligence" | "market_intelligence" | "asa_intelligence";
 
 export type Workspace = {
   id: string;

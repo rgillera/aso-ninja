@@ -29,7 +29,8 @@ import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
-import type { Keyword, DownloadsConnection } from "./types";
+import { TourTooltip } from "./TourTooltip";
+import { TOUR_STEPS, type TourStep, type Keyword, type DownloadsConnection } from "./types";
 
 // Every plan (Free included) now gets some relevancy/opportunity pool, so
 // the only thing left gated behind a hard plan-tier lock is Est. Downloads
@@ -146,8 +147,9 @@ type Props = {
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
   onCompetitorAdded?: (competitor: CompetitorApp) => void;
-  /** True for the one page load right after onboarding hands off here — see the Opportunity coach mark below. */
-  highlightOpportunity?: boolean;
+  /** Steps 2–5 of the page's 5-step onboarding coach mark — see TOUR_STEPS in ./types. */
+  tourStep?: TourStep | null;
+  onAdvanceTour?: () => void;
 };
 
 type ColumnDef = {
@@ -213,7 +215,8 @@ export function KeywordTable({
   onRemoveSelected,
   onRemoveKeyword,
   onCompetitorAdded,
-  highlightOpportunity = false,
+  tourStep = null,
+  onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
@@ -260,60 +263,15 @@ export function KeywordTable({
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
 
-  // A two-step coach mark that runs once right after onboarding — see the
-  // `highlightOpportunity` prop for how it's triggered. Step 1 points at the
-  // add-keyword box; closing that (however — see advanceTour) rolls straight
-  // into step 2, which points at the Opportunity column, so a first-timer
-  // sees "here's where you add keywords" before "here's how to find the best
-  // one" rather than the other way round. Local state (not read straight
-  // from the prop) so the tour keeps advancing/closing correctly even though
-  // the prop itself never flips back to false.
-  const [tourStep, setTourStep] = useState<"opportunity" | "addKeyword" | null>(
-    highlightOpportunity ? "addKeyword" : null
-  );
+  // Steps 2–5 of the page's 5-step coach mark (see TOUR_STEPS in ./types and
+  // the `tourStep`/`onAdvanceTour` props above) — step 1 (Keyword
+  // Suggestions) lives in the sibling KeywordSuggestionsPanel, which is why
+  // the step state itself is owned by the parent page instead of here. Each
+  // ref below is a target the TourTooltip instances further down point at.
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const volumeThRef = useRef<HTMLTableCellElement>(null);
   const opportunityThRef = useRef<HTMLTableCellElement>(null);
   const addKeywordBoxRef = useRef<HTMLDivElement>(null);
-  const tourTipRef = useRef<HTMLDivElement>(null);
-  const [tourTipPos, setTourTipPos] = useState<{ top: number; left: number } | null>(null);
-
-  // "Closing" a step (X, outside click, or completing its instruction) means
-  // move on to the next one, not just disappear — that's what makes this a
-  // tutorial rather than two unrelated one-off tips.
-  function advanceTour() {
-    setTourStep((step) => (step === "addKeyword" ? "opportunity" : null));
-  }
-
-  useEffect(() => {
-    if (!tourStep) return;
-    function position() {
-      const el = tourStep === "opportunity" ? opportunityThRef.current : addKeywordBoxRef.current;
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      // Clamp so the 256px-wide bubble can't run off a narrow viewport even
-      // though the element it's pointing at sits further right.
-      const left = Math.max(8, Math.min(r.left, window.innerWidth - 272));
-      setTourTipPos({ top: r.bottom + 8, left });
-    }
-    position();
-    window.addEventListener("resize", position);
-    return () => window.removeEventListener("resize", position);
-  }, [tourStep]);
-
-  useEffect(() => {
-    if (!tourStep) return;
-    function onMouseDown(e: MouseEvent) {
-      const target = e.target as Node;
-      // Clicking the thing being pointed at (the header to sort it, or the
-      // input box to type in it) is handled by that element's own
-      // onClick/onChange, not treated as an "outside" dismiss here.
-      if (tourTipRef.current?.contains(target)) return;
-      if (tourStep === "opportunity" && opportunityThRef.current?.contains(target)) return;
-      if (tourStep === "addKeyword" && addKeywordBoxRef.current?.contains(target)) return;
-      advanceTour();
-    }
-    document.addEventListener("mousedown", onMouseDown);
-    return () => document.removeEventListener("mousedown", onMouseDown);
-  }, [tourStep]);
 
   useEffect(() => {
     if (!colPickerOpen) return;
@@ -636,7 +594,26 @@ export function KeywordTable({
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div
+      ref={tableContainerRef}
+      className={`mx-6 mb-6 rounded-xl bg-[#1a1d24] overflow-hidden transition-all ${
+        tourStep === "table" ? "ring-2 ring-indigo-400/70" : "ring-1 ring-white/[0.07]"
+      }`}
+    >
+      <TourTooltip
+        targetRef={tableContainerRef}
+        active={tourStep === "table"}
+        step={TOUR_STEPS.indexOf("table") + 1}
+        total={TOUR_STEPS.length}
+        icon={<TableCellsIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        message={
+          <>This is your <span className="font-semibold text-white">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more.</>
+        }
+        buttonLabel="Next"
+        onAdvance={onAdvanceTour}
+        anchor="top"
+      />
+
       {/* Filter toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] flex-wrap gap-y-2">
         {/* Keyword search */}
@@ -804,8 +781,8 @@ export function KeywordTable({
             onChange={(e) => {
               setKeywordInput(e.target.value);
               // Typing here is the whole point of this step — treat it as
-              // "got it" and close the tour instead of waiting for a click.
-              if (tourStep === "addKeyword") advanceTour();
+              // "got it" and advance the tour instead of waiting for a click.
+              if (tourStep === "addKeyword") onAdvanceTour();
             }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Enter comma-separated keywords to add…"
@@ -912,43 +889,53 @@ export function KeywordTable({
         )}
       </div>
 
-      {/* Two-step coach mark — see highlightOpportunity prop and tourStep above.
-          Deliberately no X/skip button: the whole point of step 1 is to march
-          the user into step 2 (the Opportunity column), so the only way
-          forward is Next/Got it (or completing the step's own instruction,
-          or clicking away — both of which also just call advanceTour). */}
-      {tourStep && tourTipPos && createPortal(
-        <div
-          ref={tourTipRef}
-          style={{ position: "fixed", top: tourTipPos.top, left: tourTipPos.left, zIndex: 9999 }}
-          className="w-64 rounded-xl bg-[#1a1d24] ring-1 ring-indigo-400/40 shadow-2xl p-3.5"
-        >
-          <div className="flex items-start gap-2.5">
-            {tourStep === "opportunity"
-              ? <ArrowsUpDownIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />
-              : <PlusIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-gray-200 leading-relaxed">
-                {tourStep === "opportunity"
-                  ? <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
-                  : <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then press Enter or hit Add.</>}
-              </p>
-              <div className="mt-2.5 flex items-center justify-between">
-                <span className="text-[10px] font-medium text-gray-600 tabular-nums">
-                  {tourStep === "addKeyword" ? "1" : "2"} of 2
-                </span>
-                <button
-                  onClick={advanceTour}
-                  className="rounded-md bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"
-                >
-                  {tourStep === "addKeyword" ? "Next" : "Got it"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {/* Step 3 of the coach mark — points at the add-keyword box above.
+          Deliberately advances on typing (see the input's onChange), not
+          just Next/outside-click — see TourTooltip for the shared dismiss
+          logic every step here uses. */}
+      <TourTooltip
+        targetRef={addKeywordBoxRef}
+        active={tourStep === "addKeyword"}
+        step={TOUR_STEPS.indexOf("addKeyword") + 1}
+        total={TOUR_STEPS.length}
+        icon={<PlusIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        message={
+          <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then press Enter or hit Add.</>
+        }
+        buttonLabel="Next"
+        onAdvance={onAdvanceTour}
+      />
+
+      {/* Step 4 — points at the Volume column header below. Sorting by it is
+          the instruction itself, so that click also advances (see the
+          column header's onClick further down). */}
+      <TourTooltip
+        targetRef={volumeThRef}
+        active={tourStep === "volume"}
+        step={TOUR_STEPS.indexOf("volume") + 1}
+        total={TOUR_STEPS.length}
+        icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        message={
+          <>This is a keyword&apos;s <span className="font-semibold text-white">Volume</span> — how many people are searching for it. Sort this column to find the most-searched keywords.</>
+        }
+        buttonLabel="Next"
+        onAdvance={onAdvanceTour}
+      />
+
+      {/* Step 5 — points at the Opportunity column header below. Sorting by
+          it is the instruction itself, same as Volume above. */}
+      <TourTooltip
+        targetRef={opportunityThRef}
+        active={tourStep === "opportunity"}
+        step={TOUR_STEPS.indexOf("opportunity") + 1}
+        total={TOUR_STEPS.length}
+        icon={<ArrowsUpDownIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        message={
+          <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
+        }
+        buttonLabel="Got it"
+        onAdvance={onAdvanceTour}
+      />
 
       {/* Table */}
       <div className="overflow-x-auto">
@@ -976,12 +963,18 @@ export function KeywordTable({
                   <SortIcon colKey="keyword" />
                 </button>
               </th>
-              {visibleColDefs.map((col) => (
+              {visibleColDefs.map((col) => {
+                const tourTargetRef =
+                  col.key === "volume" ? volumeThRef :
+                  col.key === "opportunity" ? opportunityThRef :
+                  undefined;
+                const isTourTarget = (col.key === "volume" && tourStep === "volume") || (col.key === "opportunity" && tourStep === "opportunity");
+                return (
                 <th
                   key={col.key}
-                  ref={col.key === "opportunity" ? opportunityThRef : undefined}
+                  ref={tourTargetRef}
                   className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap ${
-                    col.key === "opportunity" && tourStep === "opportunity"
+                    isTourTarget
                       ? "rounded-t-lg ring-2 ring-inset ring-indigo-400/70 bg-indigo-500/10"
                       : ""
                   }`}
@@ -990,9 +983,10 @@ export function KeywordTable({
                     <button
                       onClick={() => {
                         handleSort(col.key);
-                        // Sorting by Opportunity is the instruction itself —
-                        // treat it as "got it" and move on to step 2.
-                        if (col.key === "opportunity" && tourStep === "opportunity") advanceTour();
+                        // Sorting by Volume/Opportunity is that step's
+                        // instruction itself — treat it as "got it" and
+                        // advance the tour.
+                        if (isTourTarget) onAdvanceTour();
                       }}
                       className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === col.key ? "text-gray-300" : ""}`}
                     >
@@ -1002,7 +996,8 @@ export function KeywordTable({
                     <ColumnTooltip text={col.tooltip} />
                   </div>
                 </th>
-              ))}
+                );
+              })}
               <th className="w-4 pr-4" />
             </tr>
           </thead>

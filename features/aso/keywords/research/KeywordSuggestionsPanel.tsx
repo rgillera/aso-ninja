@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { useRef, useState } from "react";
+import { ChevronDownIcon, ChevronUpIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import { SUGGESTION_TABS } from "./constants";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { TranslateToggle } from "./ui";
+import { TourTooltip } from "./TourTooltip";
+import { TOUR_STEPS, type TourStep } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata }     from "./KeywordSuggestionMetadata";
@@ -26,6 +28,9 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
+  /** Step 1 of the page's 5-step onboarding coach mark — see TOUR_STEPS in ./types. */
+  tourStep?: TourStep | null;
+  onAdvanceTour?: () => void;
 };
 
 export function KeywordSuggestionsPanel({
@@ -39,16 +44,37 @@ export function KeywordSuggestionsPanel({
   translateToggle,
   translateLocked = false,
   onTranslateToggle,
+  tourStep = null,
+  onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
   const aiLocked = !isPlanAtLeast(planSlug, "pro");
   const [open,       setOpen]       = useState(true);
   const [activeTab,  setActiveTab]  = useState<string>(SUGGESTION_TABS[0].label);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const tabProps = { activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword };
 
   return (
-    <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div
+      ref={panelRef}
+      className={`mx-6 mt-4 mb-4 rounded-xl bg-[#1a1d24] overflow-hidden transition-all ${
+        tourStep === "suggestions" ? "ring-2 ring-indigo-400/70" : "ring-1 ring-white/[0.07]"
+      }`}
+    >
+      <TourTooltip
+        targetRef={panelRef}
+        active={tourStep === "suggestions"}
+        step={TOUR_STEPS.indexOf("suggestions") + 1}
+        total={TOUR_STEPS.length}
+        icon={<SparklesIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        message={
+          <>This is your <span className="font-semibold text-white">Keyword Suggestions</span> panel. Browse the Metadata, Competitors, AI Suggestions, and Combinations tabs to find keyword ideas for your app.</>
+        }
+        buttonLabel="Next"
+        onAdvance={onAdvanceTour}
+        anchor="top"
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
         <span className="text-sm font-semibold text-white">Keyword Suggestions</span>
