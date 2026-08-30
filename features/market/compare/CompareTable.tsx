@@ -8,16 +8,13 @@ import {
 import { StoreIcon } from "@/features/market/explorer/StoreIcon";
 import { computeKeywordDensity } from "@/features/aso/metadata/preview/KeywordDensity";
 import { daysSince } from "@/libs/store/benchmark-utils";
-import { TrackCompetitorButton, type MyApp } from "./TrackCompetitorButton";
 import type { CompareApp } from "./types";
 import { compareKey, storeUrl } from "./types";
 
 type Props = {
   apps: CompareApp[];
   country: string;
-  myApps: MyApp[];
   onRemove: (key: string) => void;
-  onTrack: (app: CompareApp, targetAppId: string) => Promise<{ ok: boolean; error?: string }>;
 };
 
 const STORE_LABEL: Record<"ios" | "android", string> = { ios: "App Store", android: "Google Play" };
@@ -121,7 +118,7 @@ function MetricRow({ label, cells, bestSet, wrap = false }: { label: string; cel
 
 type LightboxState = { key: string; index: number } | null;
 
-export function CompareTable({ apps, country, myApps, onRemove, onTrack }: Props) {
+export function CompareTable({ apps, country, onRemove }: Props) {
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [expandedDensity, setExpandedDensity] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState>(null);
@@ -197,16 +194,13 @@ export function CompareTable({ apps, country, myApps, onRemove, onTrack }: Props
                           <p className="text-xs text-gray-600 truncate">{app.developer}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <TrackCompetitorButton app={app} myApps={myApps} onTrack={onTrack} />
-                        <button
-                          onClick={() => onRemove(key)}
-                          className="rounded p-1 text-gray-600 hover:bg-white/[0.08] hover:text-white transition-colors"
-                          aria-label={`Remove ${app.name}`}
-                        >
-                          <XMarkIcon className="size-3.5" />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => onRemove(key)}
+                        className="shrink-0 rounded p-1 text-gray-600 hover:bg-white/[0.08] hover:text-white transition-colors"
+                        aria-label={`Remove ${app.name}`}
+                      >
+                        <XMarkIcon className="size-3.5" />
+                      </button>
                     </div>
                   </th>
                 );

@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { InformationCircleIcon, ScaleIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
-import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
-import { useAllApps } from "@/features/dashboard/AllAppsContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { AppSearchResult } from "@/libs/contracts";
@@ -18,14 +16,6 @@ const DEFAULT_COUNTRY = "US";
 
 export default function CompareAppsPage() {
   const planSlug = usePlanSlug();
-  const workspaceId = useWorkspaceId();
-  const allApps = useAllApps();
-  const myApps = useMemo(
-    () => allApps
-      .filter((a) => a.workspace_id === workspaceId)
-      .map((a) => ({ id: a.id, name: a.name, icon_url: a.icon_url, store: a.store })),
-    [allApps, workspaceId]
-  );
   const [country, setCountry] = useState(DEFAULT_COUNTRY);
   const [apps, setApps] = useState<CompareApp[]>([]);
 
@@ -59,27 +49,6 @@ export default function CompareAppsPage() {
 
   function removeApp(key: string) {
     setApps((prev) => prev.filter((a) => compareKey(a.store, a.storeId) !== key));
-  }
-
-  async function trackCompetitor(app: CompareApp, targetAppId: string): Promise<{ ok: boolean; error?: string }> {
-    try {
-      const res = await fetch("/api/competitors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workspaceId,
-          appId: targetAppId,
-          competitor: { storeId: app.storeId, name: app.name, icon: app.iconUrl, developer: app.developer },
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        return { ok: false, error: data.error ?? "Couldn't add competitor." };
-      }
-      return { ok: true };
-    } catch {
-      return { ok: false, error: "Couldn't add competitor." };
-    }
   }
 
   // Metadata (rating, screenshots, subtitle...) is storefront-specific, so
@@ -149,7 +118,7 @@ export default function CompareAppsPage() {
               <p className="px-6 mt-4 text-xs text-gray-600">Add one more app to compare.</p>
             )}
             <div className="mt-4">
-              <CompareTable apps={apps} country={country} myApps={myApps} onRemove={removeApp} onTrack={trackCompetitor} />
+              <CompareTable apps={apps} country={country} onRemove={removeApp} />
             </div>
           </>
         )}
