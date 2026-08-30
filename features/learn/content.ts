@@ -204,7 +204,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Use Live Search when you want to sanity-check how a term actually performs in the store today",
         ],
         goodToKnow: [
-          "Relevancy and Opportunity are scored for up to 10 keywords on Free; Basic and up get a much bigger scoring pool plus keyword translations; AI Suggestions require Pro",
+          "Relevancy and Opportunity are scored for up to 10 keywords on Free; Basic and up get a much bigger scoring pool; AI Suggestions require Pro",
           "Adding keywords is subject to your workspace's tracked-app and keyword limits",
         ],
       },
@@ -212,7 +212,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-combinations",
         label: "Long Tail Keywords",
         icon: PuzzlePieceIcon,
-        minPlan: "pro_plus",
+        minPlan: "pro",
         description:
           "Long Tail Keywords helps you find keyword phrases you'd never think to type yourself. It's for expanding a small list of seed ideas into many realistic, rankable variants fast.",
         benefits: [
@@ -227,7 +227,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         ],
         goodToKnow: [
           "Keyword groups are saved locally in your browser per app, not synced across devices",
-          "Requires Pro+",
+          "Requires Pro",
         ],
       },
       {
@@ -272,7 +272,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-intent",
         label: "Group by Intent",
         icon: TagIcon,
-        minPlan: "pro_plus",
+        minPlan: "pro",
         description:
           "Group by Intent clusters your tracked keywords into the actual use cases people search for, so you can build ASA campaigns around intent instead of a flat keyword list.",
         benefits: [
@@ -290,7 +290,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         goodToKnow: [
           "Regenerating reclassifies every tracked keyword and confirms first — any keyword sitting in a generated theme that doesn't recur moves back to \"Other\"",
           "Custom (manually added) intents and their keywords are never touched by a regenerate",
-          "Requires Pro+",
+          "Requires Pro",
         ],
       },
     ],

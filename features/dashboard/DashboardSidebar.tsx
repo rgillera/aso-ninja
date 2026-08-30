@@ -68,15 +68,15 @@ const metadataLinks: { label: string; appPath: string; fallback: string; preview
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro_plus" },
+  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
+  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro" },
   { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
-  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro_plus" },
   { label: "Keyword Simulator",    href: "/dashboard/keywords/simulator",    icon: BeakerIcon,                 minPlan: "pro_plus" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon, minPlan: "enterprise" },
+  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon, minPlan: "pro" },
 ];
 
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [

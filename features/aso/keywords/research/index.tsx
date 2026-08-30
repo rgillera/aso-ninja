@@ -37,7 +37,7 @@ export default function KeywordResearchPage() {
   const planSlug    = usePlanSlug();
   const router      = useRouter();
   const searchParams = useSearchParams();
-  const translateLocked = !isPlanAtLeast(planSlug, "basic");
+  const translateLocked = !isPlanAtLeast(planSlug, "free");
   // OnboardingWizard's handleFinish sends first-timers here with
   // ?tip=opportunity so we can point out the Opportunity column once, right
   // as they land. Captured via a lazy initializer (not the searchParams

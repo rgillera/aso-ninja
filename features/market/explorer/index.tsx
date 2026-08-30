@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { InformationCircleIcon, ExclamationTriangleIcon, MagnifyingGlassCircleIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { ExplorerFilters } from "./ExplorerFilters";
 import { ExplorerTable } from "./ExplorerTable";
 import { DEFAULT_FILTERS, MAJOR_MARKET_COUNTRIES, OTHER_MARKET_COUNTRIES, type Filters, type ChartApp } from "./types";
@@ -18,7 +19,7 @@ export default function AppExplorerPage() {
 
   useEffect(() => {
     // Locked view below ignores loading/apps/error entirely, so skip the fetch outright.
-    if (planSlug !== "enterprise") return;
+    if (!isPlanAtLeast(planSlug, "pro")) return;
     setLoading(true);
     setError(null);
 
@@ -93,17 +94,17 @@ export default function AppExplorerPage() {
     return () => controller.abort();
   }, [filters.store, filters.country, filters.device, filters.chart, filters.category, planSlug]);
 
-  if (planSlug !== "enterprise") {
+  if (!isPlanAtLeast(planSlug, "pro")) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
         <div className="flex items-center gap-2 px-6 pt-6">
           <h1 className="text-xl font-semibold text-white">App Explorer</h1>
         </div>
         <FeatureLocked
-          minPlan="enterprise"
+          minPlan="pro"
           icon={MagnifyingGlassCircleIcon}
-          title="Market Intelligence is an Enterprise feature"
-          description="App Explorer and the rest of Market Intelligence are available on the Enterprise plan."
+          title="App Explorer is a Pro feature"
+          description="Upgrade to Pro or above to browse live App Store and Google Play charts."
           benefits={[
             "Browse live Top Free, Paid, and Grossing charts for iOS and Android",
             "Spot newly trending and newly discovered apps in your category",

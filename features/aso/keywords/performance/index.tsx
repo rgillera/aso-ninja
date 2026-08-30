@@ -50,7 +50,7 @@ export default function KeywordPerformancePage() {
   const workspaceId = useWorkspaceId();
   const planSlug    = usePlanSlug();
   const isLocked    = !isPlanAtLeast(planSlug, "free");
-  const translateLocked = !isPlanAtLeast(planSlug, "basic");
+  const translateLocked = !isPlanAtLeast(planSlug, "free");
   const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters,     setFilters]     = useState<Filters>(DEFAULT_FILTERS);
