@@ -20,6 +20,7 @@ import {
   ListBulletIcon,
   TagIcon,
   MagnifyingGlassCircleIcon,
+  ScaleIcon,
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
@@ -77,6 +78,7 @@ const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassI
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon, minPlan: "pro" },
+  { label: "Compare Apps",   href: "/dashboard/market/compare",    icon: ScaleIcon,                 minPlan: "pro" },
 ];
 
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
