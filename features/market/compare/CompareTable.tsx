@@ -3,17 +3,21 @@
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowTopRightOnSquareIcon, ChevronLeftIcon, ChevronRightIcon,
-  StarIcon, XMarkIcon,
+  ExclamationTriangleIcon, CheckCircleIcon, StarIcon, XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { StoreIcon } from "@/features/market/explorer/StoreIcon";
 import { computeKeywordDensity } from "@/features/aso/metadata/preview/KeywordDensity";
+import { daysSince } from "@/libs/store/benchmark-utils";
+import { TrackCompetitorButton, type MyApp } from "./TrackCompetitorButton";
 import type { CompareApp } from "./types";
 import { compareKey, storeUrl } from "./types";
 
 type Props = {
   apps: CompareApp[];
   country: string;
+  myApps: MyApp[];
   onRemove: (key: string) => void;
+  onTrack: (app: CompareApp, targetAppId: string) => Promise<{ ok: boolean; error?: string }>;
 };
 
 const STORE_LABEL: Record<"ios" | "android", string> = { ios: "App Store", android: "Google Play" };
@@ -34,6 +38,17 @@ const DENSITY_PREVIEW_COUNT = 4;
 // can hold 50+ tied terms, which read fine in the full-width DensityTable
 // but blow out a single chip here. Cap what's joined into one chip's text.
 const DENSITY_TERMS_PER_CHIP = 6;
+// An app that hasn't shipped an update in 3+ months reads as possibly
+// abandoned/deprioritized — a real ASO signal when sizing up a competitor.
+const STALE_DAYS_THRESHOLD = 90;
+// Real store-enforced hard caps. iOS: 30 chars for both the app name and the
+// subtitle. Android: title dropped from 50 to 30 chars industry-wide; the
+// "subtitle" field here is actually Play's short description (`summary`),
+// capped at 80.
+const FIELD_LIMITS: Record<"ios" | "android", { name: number; subtitle: number }> = {
+  ios: { name: 30, subtitle: 30 },
+  android: { name: 30, subtitle: 80 },
+};
 
 function formatRatingCount(n: number | null | undefined): string {
   if (n === null || n === undefined) return "";
@@ -45,6 +60,34 @@ function formatRatingCount(n: number | null | undefined): string {
 function formatUpdated(ts: number | undefined): string {
   if (!ts) return "—";
   return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDaysAgo(days: number): string {
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days} days ago`;
+  if (days < 365) { const months = Math.round(days / 30); return `${months} month${months !== 1 ? "s" : ""} ago`; }
+  const years = Math.round(days / 365);
+  return `${years} year${years !== 1 ? "s" : ""} ago`;
+}
+
+// Shared by Title length / Subtitle length — "maxed" (≥90% of the store's
+// hard cap) is flagged positively: using the full field is the ASO-correct
+// move (more room for keywords), unlike every other "higher is better" row
+// this table highlights via bestIndices/emerald text.
+function FieldLengthCell({ length, limit }: { length: number; limit: number }) {
+  const maxed = limit > 0 && length / limit >= 0.9;
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {length}/{limit} chars
+      {maxed && (
+        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-medium text-emerald-400">
+          <CheckCircleIcon className="size-2.5" />
+          Maxed
+        </span>
+      )}
+    </span>
+  );
 }
 
 // Flags the highest value in a row (e.g. rating, screenshot count) so it's
@@ -78,7 +121,7 @@ function MetricRow({ label, cells, bestSet, wrap = false }: { label: string; cel
 
 type LightboxState = { key: string; index: number } | null;
 
-export function CompareTable({ apps, country, onRemove }: Props) {
+export function CompareTable({ apps, country, myApps, onRemove, onTrack }: Props) {
   const [expandedDescriptions, setExpandedDescriptions] = useState<Set<string>>(new Set());
   const [expandedDensity, setExpandedDensity] = useState<Set<string>>(new Set());
   const [lightbox, setLightbox] = useState<LightboxState>(null);
@@ -154,13 +197,16 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                           <p className="text-xs text-gray-600 truncate">{app.developer}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => onRemove(key)}
-                        className="shrink-0 rounded p-1 text-gray-600 hover:bg-white/[0.08] hover:text-white transition-colors"
-                        aria-label={`Remove ${app.name}`}
-                      >
-                        <XMarkIcon className="size-3.5" />
-                      </button>
+                      <div className="flex items-center gap-0.5 shrink-0">
+                        <TrackCompetitorButton app={app} myApps={myApps} onTrack={onTrack} />
+                        <button
+                          onClick={() => onRemove(key)}
+                          className="rounded p-1 text-gray-600 hover:bg-white/[0.08] hover:text-white transition-colors"
+                          aria-label={`Remove ${app.name}`}
+                        >
+                          <XMarkIcon className="size-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </th>
                 );
@@ -238,7 +284,34 @@ export function CompareTable({ apps, country, onRemove }: Props) {
             <MetricRow
               label="Last updated"
               bestSet={bestUpdated}
-              cells={apps.map((a) => cellFor(a, (d) => formatUpdated(d.lastUpdatedAt)))}
+              cells={apps.map((a) => cellFor(a, (d) => {
+                const days = daysSince(d.lastUpdatedAt);
+                if (days === undefined) return "—";
+                const stale = days >= STALE_DAYS_THRESHOLD;
+                return (
+                  <span className="inline-flex items-center gap-1.5" title={formatUpdated(d.lastUpdatedAt)}>
+                    {formatDaysAgo(days)}
+                    {stale && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-medium text-amber-400">
+                        <ExclamationTriangleIcon className="size-2.5" />
+                        Stale
+                      </span>
+                    )}
+                  </span>
+                );
+              }))}
+            />
+            <MetricRow
+              label="Title length"
+              cells={apps.map((a) => (
+                <FieldLengthCell key={compareKey(a.store, a.storeId)} length={a.name.length} limit={FIELD_LIMITS[a.store].name} />
+              ))}
+            />
+            <MetricRow
+              label="Subtitle length"
+              cells={apps.map((a) => cellFor(a, (d) => (
+                d.subtitle ? <FieldLengthCell length={d.subtitle.length} limit={FIELD_LIMITS[a.store].subtitle} /> : "—"
+              )))}
             />
             <MetricRow
               label="Subtitle"
