@@ -21,16 +21,18 @@ type Props = {
    * box. "top" sits just inside its top edge instead — for a step whose
    * target is a whole section (the Suggestions panel, the Table container)
    * that can run taller than the viewport, where anchoring off the bottom
-   * edge would push the bubble below the fold.
+   * edge would push the bubble below the fold. "right" sits just outside
+   * its right edge — for the sidebar, a full-height strip down the left
+   * side of the screen where "above"/"below" don't make sense at all.
    */
-  anchor?: "top" | "bottom";
+  anchor?: "top" | "bottom" | "right";
 };
 
-// The floating bubble shared by every step of the Keyword Research page's
-// 5-step coach mark (see TOUR_STEPS in ./types) — KeywordSuggestionsPanel
-// and KeywordTable each mount one of these per step they own so the
-// position-tracking, outside-click-to-advance, and bubble chrome only has
-// to be written once.
+// The floating bubble shared by every step of the onboarding coach mark that
+// runs across Keywords Research and the sidebar right after the onboarding
+// wizard hands off (see TOUR_STEPS in ./tour) — each step's owning component
+// mounts one of these so the position-tracking, outside-click-to-advance,
+// and bubble chrome only has to be written once.
 export function TourTooltip({ targetRef, active, step, total, icon, message, buttonLabel, onAdvance, ignoreRefs = [], anchor = "bottom" }: Props) {
   const tipRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -41,6 +43,13 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
       const el = targetRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
+      if (anchor === "right") {
+        // Clamp so the bubble still lands on-screen even if the sidebar
+        // somehow spans nearly the full viewport width.
+        const left = Math.max(8, Math.min(r.right + 12, window.innerWidth - 272));
+        setPos({ top: Math.max(8, r.top + 8), left });
+        return;
+      }
       // Clamp so the 256px-wide bubble can't run off a narrow viewport even
       // though the element it's pointing at sits further right.
       const left = Math.max(8, Math.min(r.left, window.innerWidth - 272));
@@ -55,7 +64,7 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
   // its computed position would run past the bottom of the viewport. Needed
   // because the first pass above doesn't know the bubble's own height yet —
   // matters most for `anchor="bottom"` on a target near the bottom of the
-  // screen, and as a safety net if `anchor="top"`'s target starts low too.
+  // screen, and as a safety net for the other anchors too.
   useEffect(() => {
     if (!active || !pos || !tipRef.current) return;
     const h = tipRef.current.getBoundingClientRect().height;

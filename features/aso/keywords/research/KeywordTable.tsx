@@ -29,8 +29,9 @@ import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
-import { TourTooltip } from "./TourTooltip";
-import { TOUR_STEPS, type TourStep, type Keyword, type DownloadsConnection } from "./types";
+import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
+import type { Keyword, DownloadsConnection } from "./types";
 
 // Every plan (Free included) now gets some relevancy/opportunity pool, so
 // the only thing left gated behind a hard plan-tier lock is Est. Downloads
@@ -147,7 +148,7 @@ type Props = {
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
   onCompetitorAdded?: (competitor: CompetitorApp) => void;
-  /** Steps 2–5 of the page's 5-step onboarding coach mark — see TOUR_STEPS in ./types. */
+  /** Steps 2–4 of the 5-step onboarding coach mark (step 5, the sidebar, lives outside this page) — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };
@@ -263,13 +264,14 @@ export function KeywordTable({
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
 
-  // Steps 2–5 of the page's 5-step coach mark (see TOUR_STEPS in ./types and
-  // the `tourStep`/`onAdvanceTour` props above) — step 1 (Keyword
-  // Suggestions) lives in the sibling KeywordSuggestionsPanel, which is why
-  // the step state itself is owned by the parent page instead of here. Each
-  // ref below is a target the TourTooltip instances further down point at.
+  // Steps 2–4 of the 5-step coach mark (see TOUR_STEPS in
+  // @/features/onboarding/tour and the `tourStep`/`onAdvanceTour` props
+  // above) — step 1 (Keyword Suggestions) lives in the sibling
+  // KeywordSuggestionsPanel and step 5 (the sidebar) lives outside this page
+  // entirely, which is why the step state itself is owned by the parent
+  // page instead of here. Each ref below is a target the TourTooltip
+  // instances further down point at.
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const volumeThRef = useRef<HTMLTableCellElement>(null);
   const opportunityThRef = useRef<HTMLTableCellElement>(null);
   const addKeywordBoxRef = useRef<HTMLDivElement>(null);
 
@@ -906,24 +908,9 @@ export function KeywordTable({
         onAdvance={onAdvanceTour}
       />
 
-      {/* Step 4 — points at the Volume column header below. Sorting by it is
-          the instruction itself, so that click also advances (see the
+      {/* Step 4 — points at the Opportunity column header below. Sorting by
+          it is the instruction itself, so that click also advances (see the
           column header's onClick further down). */}
-      <TourTooltip
-        targetRef={volumeThRef}
-        active={tourStep === "volume"}
-        step={TOUR_STEPS.indexOf("volume") + 1}
-        total={TOUR_STEPS.length}
-        icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
-        message={
-          <>This is a keyword&apos;s <span className="font-semibold text-white">Volume</span> — how many people are searching for it. Sort this column to find the most-searched keywords.</>
-        }
-        buttonLabel="Next"
-        onAdvance={onAdvanceTour}
-      />
-
-      {/* Step 5 — points at the Opportunity column header below. Sorting by
-          it is the instruction itself, same as Volume above. */}
       <TourTooltip
         targetRef={opportunityThRef}
         active={tourStep === "opportunity"}
@@ -933,7 +920,7 @@ export function KeywordTable({
         message={
           <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
         }
-        buttonLabel="Got it"
+        buttonLabel="Next"
         onAdvance={onAdvanceTour}
       />
 
@@ -963,18 +950,12 @@ export function KeywordTable({
                   <SortIcon colKey="keyword" />
                 </button>
               </th>
-              {visibleColDefs.map((col) => {
-                const tourTargetRef =
-                  col.key === "volume" ? volumeThRef :
-                  col.key === "opportunity" ? opportunityThRef :
-                  undefined;
-                const isTourTarget = (col.key === "volume" && tourStep === "volume") || (col.key === "opportunity" && tourStep === "opportunity");
-                return (
+              {visibleColDefs.map((col) => (
                 <th
                   key={col.key}
-                  ref={tourTargetRef}
+                  ref={col.key === "opportunity" ? opportunityThRef : undefined}
                   className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap ${
-                    isTourTarget
+                    col.key === "opportunity" && tourStep === "opportunity"
                       ? "rounded-t-lg ring-2 ring-inset ring-indigo-400/70 bg-indigo-500/10"
                       : ""
                   }`}
@@ -983,10 +964,9 @@ export function KeywordTable({
                     <button
                       onClick={() => {
                         handleSort(col.key);
-                        // Sorting by Volume/Opportunity is that step's
-                        // instruction itself — treat it as "got it" and
-                        // advance the tour.
-                        if (isTourTarget) onAdvanceTour();
+                        // Sorting by Opportunity is that step's instruction
+                        // itself — treat it as "got it" and advance the tour.
+                        if (col.key === "opportunity" && tourStep === "opportunity") onAdvanceTour();
                       }}
                       className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === col.key ? "text-gray-300" : ""}`}
                     >
@@ -996,8 +976,7 @@ export function KeywordTable({
                     <ColumnTooltip text={col.tooltip} />
                   </div>
                 </th>
-                );
-              })}
+              ))}
               <th className="w-4 pr-4" />
             </tr>
           </thead>

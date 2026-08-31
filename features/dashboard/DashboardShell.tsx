@@ -10,6 +10,7 @@ import { PlanProvider } from "./PlanContext";
 import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
+import { SidebarTourProvider } from "./SidebarTourContext";
 import { SelectAppProvider } from "./SelectAppContext";
 import { AllAppsProvider } from "./AllAppsContext";
 import { LeaveConfirmDialog } from "./LeaveConfirmDialog";
@@ -138,6 +139,14 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // first instead of silently losing the in-progress add.
   const [guardMessage, setGuardMessage] = useState<string | null>(null);
   const [pendingHref,  setPendingHref]  = useState<string | null>(null);
+
+  // Last step of Keywords Research's onboarding coach mark points at the
+  // sidebar — see SidebarTourContext for why this lives here rather than on
+  // the page itself.
+  const [sidebarTour, setSidebarTour] = useState<{ active: boolean; onAdvance: () => void }>({
+    active: false,
+    onAdvance: () => {},
+  });
 
   // Off-canvas sidebar toggle for mobile/tablet (< lg) — always closed on desktop,
   // where DashboardSidebar forces itself open via its own lg: classes regardless.
@@ -425,6 +434,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <SelectAppProvider value={selectApp}>
     <AllAppsProvider value={allApps}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
+    <SidebarTourProvider value={{ ...sidebarTour, setSidebarTour }}>
       <div className="flex h-screen bg-[#111318] overflow-hidden" onClickCapture={handleNavClickCapture}>
         <DashboardSidebar
           currentPath={pathname}
@@ -479,6 +489,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         hasApp={activeWorkspaceApps.length > 0}
         workspaceId={activeWorkspaceId ?? ""}
       />
+    </SidebarTourProvider>
     </NavigationGuardProvider>
     </AllAppsProvider>
     </SelectAppProvider>

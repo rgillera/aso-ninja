@@ -14,7 +14,9 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
-import { TOUR_STEPS, type TourStep, type Keyword, type DownloadsConnection } from "./types";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
+import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
+import type { Keyword, DownloadsConnection } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 
@@ -41,15 +43,17 @@ export default function KeywordResearchPage() {
   // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
   // so we can walk them across the page once, right as they land: Keyword
   // Suggestions section → Keyword Table section → how to add a keyword →
-  // the Volume column → the Opportunity column (TOUR_STEPS, in that order).
-  // Captured via a lazy initializer (not the searchParams value itself) so
-  // each step's own dismiss logic — clicking its X, completing its
-  // instruction, clicking elsewhere — isn't fighting a prop that keeps
+  // the Opportunity column → the sidebar (TOUR_STEPS, in that order — no
+  // dedicated step for Volume, see the comment on TOUR_STEPS for why).
+  // Captured via a lazy initializer (not the searchParams value
+  // itself) so each step's own dismiss logic — clicking its X, completing
+  // its instruction, clicking elsewhere — isn't fighting a prop that keeps
   // resetting on every render. The effect below strips the param from the
   // URL so a refresh doesn't replay it. State (not the prop) lives here
-  // rather than inside either child because the tour has to hand off
-  // between two sibling components (KeywordSuggestionsPanel, KeywordTable)
-  // as it advances.
+  // rather than inside any child because the tour has to hand off between
+  // three components: KeywordSuggestionsPanel and KeywordTable (this page's
+  // own children, reached via props) and DashboardSidebar (a sibling of
+  // this page under DashboardShell, reached via SidebarTourContext instead).
   const [tourStep, setTourStep] = useState<TourStep | null>(() =>
     searchParams.get("tip") === "tour" ? TOUR_STEPS[0] : null
   );
@@ -72,6 +76,16 @@ export default function KeywordResearchPage() {
       return next ?? null;
     });
   }
+
+  // Hands the tour's last step off to DashboardSidebar, which isn't a child
+  // of this page — see SidebarTourContext. Cleared on unmount/step-change so
+  // navigating away mid-tour (or finishing it) doesn't leave the sidebar
+  // stuck highlighted, mirroring the setGuardMessage(null) cleanup below.
+  const { setSidebarTour } = useSidebarTour();
+  useEffect(() => {
+    setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
+    return () => setSidebarTour({ active: false, onAdvance: () => {} });
+  }, [tourStep, setSidebarTour]);
   const [keywords,     setKeywords]     = useState<Keyword[]>([]);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);

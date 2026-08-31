@@ -6,8 +6,8 @@ import { SUGGESTION_TABS } from "./constants";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { TranslateToggle } from "./ui";
-import { TourTooltip } from "./TourTooltip";
-import { TOUR_STEPS, type TourStep } from "./types";
+import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata }     from "./KeywordSuggestionMetadata";
@@ -28,7 +28,7 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
-  /** Step 1 of the page's 5-step onboarding coach mark — see TOUR_STEPS in ./types. */
+  /** Step 1 of the 5-step onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };

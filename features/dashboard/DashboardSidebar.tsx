@@ -31,10 +31,14 @@ import {
   LockClosedIcon,
   BeakerIcon,
   TrophyIcon,
+  MapIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
+import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS } from "@/features/onboarding/tour";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
@@ -190,6 +194,8 @@ export default function DashboardSidebar({
     return activeWorkspaceId ? `${link.fallback}?ws=${activeWorkspaceId}` : link.fallback;
   }
   const ref = useRef<HTMLDivElement>(null);
+  const { active: tourActive, onAdvance: onAdvanceTour } = useSidebarTour();
+  const navRef = useRef<HTMLElement>(null);
 
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
@@ -327,7 +333,36 @@ export default function DashboardSidebar({
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto p-2.5 space-y-0.5">
+      <nav
+        ref={navRef}
+        className={`flex-1 overflow-y-auto p-2.5 space-y-0.5 transition-all ${
+          tourActive ? "ring-2 ring-inset ring-indigo-400/70 rounded-lg" : ""
+        }`}
+      >
+        <TourTooltip
+          targetRef={navRef}
+          active={tourActive}
+          step={TOUR_STEPS.indexOf("sidebar") + 1}
+          total={TOUR_STEPS.length}
+          icon={<MapIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+          message={
+            <>
+              That&apos;s the walkthrough! Explore other tools here in the sidebar, like Metadata, Reports, and Market Intelligence, or{" "}
+              <a
+                href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
+                target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
+                rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
+                className="font-semibold text-indigo-400 underline underline-offset-2 hover:text-indigo-300 hover:no-underline"
+              >
+                book a demo
+              </a>{" "}
+              with our team anytime.
+            </>
+          }
+          buttonLabel="Got it"
+          onAdvance={onAdvanceTour}
+          anchor="right"
+        />
         <a
           href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
           className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
