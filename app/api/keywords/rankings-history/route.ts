@@ -117,7 +117,20 @@ export async function GET(request: NextRequest) {
     d.setDate(d.getDate() - i);
     dayKeys.push(dateKey(d));
   }
-  const dailyValues = fillForward(dayKeys.map((k) => byDay.get(k) ?? null));
+  // Seed the window with the latest value from *before* it, same as the
+  // weekly chart already effectively does by spanning 13 weeks — otherwise
+  // a keyword whose last real check predates this 7-day window has no
+  // in-window anchor to forward-fill from and renders empty here while the
+  // weekly chart (which does reach back far enough) still shows a bar for
+  // the same current week, which reads as a contradiction.
+  let carryIn: number | null = null;
+  for (const row of raw) {
+    if (row.recorded_on >= dayKeys[0]) break;
+    carryIn = row.position;
+  }
+  const dailyRaw = dayKeys.map((k) => byDay.get(k) ?? null);
+  if (dailyRaw[0] == null) dailyRaw[0] = carryIn;
+  const dailyValues = fillForward(dailyRaw);
   const daily: DailyRankEntry[] = dayKeys.map((k, i) => ({ recorded_on: k, position: dailyValues[i] }));
 
   // Weekly bars — median position per calendar week over the last 3 months.
