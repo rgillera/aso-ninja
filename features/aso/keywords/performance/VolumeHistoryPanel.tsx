@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
-import { XMarkIcon, ChartBarIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon, ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { VolumeHistoryEntry } from "@/app/api/keywords/volume-history/route";
+import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
 type Props = {
   term: string;
@@ -15,24 +19,81 @@ type Props = {
   onClose: () => void;
 };
 
-function formatDate(iso: string): string {
+function formatMonth(iso: string): string {
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
 export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
+  const workspaceId = useWorkspaceId();
+  const planSlug     = usePlanSlug();
   const [rows, setRows]       = useState<VolumeHistoryEntry[]>([]);
+  const [locked, setLocked]   = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Pro+ gets a full year, everyone else gets the same 6-month window — Pro
+  // sees it in full, Free/Basic only get the current month's bar; the past
+  // months are omitted entirely behind an upgrade prompt.
+  const currentIndex = rows.length - 1;
+  const windowLabel = isPlanAtLeast(planSlug, "pro_plus") ? "Last 12 months"
+    : locked ? `This month · past ${currentIndex} month${currentIndex === 1 ? "" : "s"} locked`
+    : "Last 6 months";
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams({ term, store, country });
+    const params = new URLSearchParams({ term, store, country, workspaceId });
     fetch(`/api/keywords/volume-history?${params}`)
       .then((r) => r.json())
-      .then((d) => setRows(d.rows ?? []))
-      .catch(() => setRows([]))
+      .then((d) => {
+        setRows(d.rows ?? []);
+        setLocked(!!d.locked);
+      })
+      .catch(() => {
+        setRows([]);
+        setLocked(false);
+      })
       .finally(() => setLoading(false));
-  }, [term, store, country]);
+  }, [term, store, country, workspaceId]);
+
+  // Past months draw no bar at all when locked — only the current month
+  // (always the last bucket) renders, under the lock overlay's empty space.
+  function barShape(props: unknown) {
+    const { x, y, width, height, index } = props as { x: number; y: number; width: number; height: number; index: number };
+    if (locked && index !== currentIndex) return <></>;
+    return <rect x={x} y={y} width={width} height={Math.max(height, 0)} rx={3} fill="#818cf8" />;
+  }
+
+  function axisTick(props: unknown) {
+    const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
+    const isCurrent = index === currentIndex;
+    return (
+      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
+        {formatMonth(payload.value)}
+      </text>
+    );
+  }
+
+  // Never reveal a locked month's real score through the tooltip, even
+  // though there's no bar there to hover.
+  function tooltipContent(props: unknown) {
+    const { active, payload } = props as { active?: boolean; payload?: { payload: VolumeHistoryEntry }[] };
+    if (!active || !payload || !payload.length) return null;
+    const entry = payload[0].payload;
+    const index = rows.findIndex((r) => r.month === entry.month);
+    const isLockedBar = locked && index !== currentIndex;
+    return (
+      <div className="rounded-lg border border-white/10 bg-[#1a1d24] px-3 py-2 text-xs">
+        <p className="text-gray-400">{formatMonth(entry.recorded_on)}</p>
+        {isLockedBar ? (
+          <p className="mt-0.5 flex items-center gap-1 text-violet-400">
+            <LockClosedIcon className="size-3" /> Upgrade to see this
+          </p>
+        ) : (
+          <p className="mt-0.5 text-gray-200">Avg. Volume: <span className="font-semibold">{entry.score}</span></p>
+        )}
+      </div>
+    );
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -62,46 +123,51 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
                 Volume snapshots accumulate automatically each time this keyword is checked.
               </p>
             </div>
-          ) : rows.length === 1 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <p className="text-3xl font-semibold text-white">{rows[0].score}</p>
-              <p className="mt-1 text-xs text-gray-600">Only snapshot so far — {formatDate(rows[0].recorded_on)}</p>
-              <p className="mt-3 text-xs text-gray-600 max-w-xs">A trend will appear once more snapshots accumulate.</p>
-            </div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                <XAxis
-                  dataKey="recorded_on"
-                  tickFormatter={formatDate}
-                  tick={{ fill: "#6b7280", fontSize: 11 }}
-                  axisLine={{ stroke: "#ffffff1a" }}
-                  tickLine={false}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fill: "#6b7280", fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={32}
-                />
-                <Tooltip
-                  labelFormatter={(d) => formatDate(String(d))}
-                  formatter={(value) => [value, "Volume"]}
-                  contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
-                  labelStyle={{ color: "#9ca3af" }}
-                />
-                <Line
-                  type="stepAfter"
-                  dataKey="score"
-                  name="Volume"
-                  stroke="#818cf8"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "#818cf8", strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <>
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                    <XAxis
+                      dataKey="recorded_on"
+                      tick={axisTick}
+                      axisLine={{ stroke: "#ffffff1a" }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fill: "#6b7280", fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={32}
+                    />
+                    <Tooltip content={tooltipContent} cursor={{ fill: "#ffffff08" }} />
+                    <Bar dataKey="score" name="Avg. Volume" shape={barShape} isAnimationActive={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+
+                {locked && rows.length > 1 && (
+                  <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(currentIndex / rows.length) * 100}%` }}>
+                    <LockClosedIcon className="size-5 text-violet-400" />
+                    <p className="text-sm font-semibold text-white">{currentIndex} month{currentIndex === 1 ? "" : "s"} locked</p>
+                    <p className="text-xs text-gray-400 max-w-[16rem]">
+                      Upgrade to Pro to see this keyword&apos;s volume trend beyond this month.
+                    </p>
+                    <Link
+                      href="/dashboard/subscription"
+                      className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors underline underline-offset-2"
+                    >
+                      Upgrade to Pro
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 text-[10px] text-gray-600">
+                {windowLabel} · monthly average
+              </div>
+            </>
           )}
         </div>
       </div>
