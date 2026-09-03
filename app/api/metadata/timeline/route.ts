@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { fetchIosStoreData } from "@/libs/store/appstore";
 import { fetchAndroidStoreData } from "@/libs/store/googleplay";
-import { recordMetadataSnapshot, fetchMetadataSnapshots, type MetadataSnapshotRow } from "@/libs/store/metadata-snapshots";
+import { recordMetadataSnapshot, fetchMetadataSnapshots, type MetadataListingKey, type MetadataSnapshotRow } from "@/libs/store/metadata-snapshots";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { UpdateEvent, FieldUpdate, ScreenshotItem } from "@/features/aso/metadata/timeline/types";
@@ -104,17 +104,20 @@ export async function GET(request: NextRequest) {
       : null;
 
   const supabase = await createClient();
+  // Identifies the real listing, not this workspace's `apps` row — history
+  // recorded via any workspace tracking the same app is shared here.
+  const listing: MetadataListingKey = { appId, store, storeId, bundleId, country };
 
   if (storeData) {
     try {
-      await recordMetadataSnapshot(supabase, appId, storeData);
+      await recordMetadataSnapshot(supabase, listing, storeData);
     } catch {
       // Best-effort — history accretes over repeat visits, a failed write here
       // shouldn't block the rest of the dashboard from loading.
     }
   }
 
-  const snapshots = from && to ? await fetchMetadataSnapshots(supabase, appId, from, to) : [];
+  const snapshots = from && to ? await fetchMetadataSnapshots(supabase, listing, from, to) : [];
 
   const events: UpdateEvent[] = [];
   for (let i = 1; i < snapshots.length; i++) {

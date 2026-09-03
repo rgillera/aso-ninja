@@ -57,7 +57,13 @@ export async function GET(req: Request) {
           : null;
 
       if (storeData) {
-        await recordMetadataSnapshot(supabase, app.id, storeData);
+        await recordMetadataSnapshot(supabase, {
+          appId: app.id,
+          store: app.store,
+          storeId: app.store_id,
+          bundleId: app.bundle_id,
+          country: app.country ?? "US",
+        }, storeData);
         recorded++;
       } else {
         failed++;

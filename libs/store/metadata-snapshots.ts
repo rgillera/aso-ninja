@@ -16,15 +16,29 @@ export type MetadataSnapshotRow = {
   language_count: number | null;
 };
 
+// Identifies the real store listing a snapshot belongs to — NOT a
+// particular workspace's `apps` row. Two different workspaces following the
+// same real app resolve to the same key here and therefore share the same
+// history (see 20260903000002_share_metadata_snapshots_by_listing.sql).
+// `appId`, when passed, is recorded only as a "last recorded via"
+// breadcrumb — it plays no part in identifying or deduplicating the row.
+export type MetadataListingKey = {
+  appId?: string | null;
+  store: "ios" | "android";
+  storeId: string | null;
+  bundleId: string | null;
+  country: string;
+};
+
 // Best-effort: the App Store/Play Store never expose listing history, only a
 // live snapshot, so this is the only way this app ever accumulates history —
-// one row per app per day, recorded whenever the Timeline dashboard is viewed
-// (same convention as rating_snapshots / keyword_rankings_history). Callers
-// should swallow errors here rather than fail the request over a snapshot
-// write.
+// one row per real listing per day, recorded whenever any workspace tracking
+// it views its Timeline dashboard (same convention as rating_snapshots /
+// keyword_rankings_history). Callers should swallow errors here rather than
+// fail the request over a snapshot write.
 export async function recordMetadataSnapshot(
   supabase: SupabaseClient,
-  appId: string,
+  listing: MetadataListingKey,
   storeData: StoreData
 ): Promise<void> {
   if (!storeData) return;
@@ -33,7 +47,11 @@ export async function recordMetadataSnapshot(
     .from("metadata_snapshots")
     .upsert(
       {
-        app_id: appId,
+        app_id: listing.appId ?? null,
+        store: listing.store,
+        store_id: listing.storeId ?? "",
+        bundle_id: listing.bundleId ?? "",
+        country: listing.country,
         recorded_on: recordedOn,
         version: storeData.version ?? null,
         title: storeData.name ?? null,
@@ -45,20 +63,23 @@ export async function recordMetadataSnapshot(
         age_rating: storeData.contentAdvisoryRating,
         language_count: storeData.languageCount ?? null,
       },
-      { onConflict: "app_id,recorded_on" }
+      { onConflict: "store,country,store_id,bundle_id,recorded_on" }
     );
 }
 
 export async function fetchMetadataSnapshots(
   supabase: SupabaseClient,
-  appId: string,
+  listing: MetadataListingKey,
   from: string,
   to: string
 ): Promise<MetadataSnapshotRow[]> {
   const { data } = await supabase
     .from("metadata_snapshots")
     .select("recorded_on, version, title, subtitle, description, screenshot_urls, has_preview_video, category, age_rating, language_count")
-    .eq("app_id", appId)
+    .eq("store", listing.store)
+    .eq("country", listing.country)
+    .eq("store_id", listing.storeId ?? "")
+    .eq("bundle_id", listing.bundleId ?? "")
     .gte("recorded_on", from)
     .lte("recorded_on", to)
     .order("recorded_on", { ascending: true });
