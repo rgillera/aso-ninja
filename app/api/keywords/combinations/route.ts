@@ -94,7 +94,10 @@ export async function GET(request: NextRequest) {
   const appName     = searchParams.get("appName") ?? "";
   const appSubtitle = searchParams.get("appSubtitle") ?? "";
 
-  const seeds = [...new Set(seedsParam.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean))];
+  // Each seed arrives percent-encoded (see the client's encodeURIComponent
+  // before joining) so a literal comma inside a seed survives as %2C instead
+  // of being mistaken for the between-seeds delimiter.
+  const seeds = [...new Set(seedsParam.split(",").map((s) => decodeURIComponent(s.trim()).toLowerCase()).filter(Boolean))];
   if (!seeds.length) return NextResponse.json(EMPTY);
 
   const supabase = await createClient();

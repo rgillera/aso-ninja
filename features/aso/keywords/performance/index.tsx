@@ -275,7 +275,11 @@ export default function KeywordPerformancePage() {
     ]);
 
     const params  = new URLSearchParams({
-      terms: newTerms.join(","),
+      // Percent-encode each term before joining — a keyword containing a
+      // literal comma would otherwise be indistinguishable from the
+      // between-terms delimiter and get split in two server-side (see the
+      // matching decode in /api/keywords/metrics).
+      terms: newTerms.map(encodeURIComponent).join(","),
       store,
       country,
       appName: activeApp?.name ?? "",
@@ -454,8 +458,12 @@ export default function KeywordPerformancePage() {
   // we have for each keyword, whatever dates those happen to be — snapshots
   // land irregularly, so comparing two user-picked calendar dates mostly
   // returns gaps. Refetched whenever the tracked-keyword set changes.
+  // Each term is percent-encoded before joining — one containing a literal
+  // comma would otherwise be indistinguishable from the between-terms
+  // delimiter and get split in two server-side (see the matching decode in
+  // /api/keywords/performance-snapshots and /api/keywords/visibility-history).
   const trackedTerms = useMemo(
-    () => keywords.filter((k) => !k.loading).map((k) => k.term).sort().join(","),
+    () => keywords.filter((k) => !k.loading).map((k) => k.term).sort().map(encodeURIComponent).join(","),
     [keywords]
   );
 

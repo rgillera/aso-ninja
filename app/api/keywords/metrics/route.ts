@@ -256,7 +256,11 @@ export async function GET(request: NextRequest) {
   // for their cache to expire naturally.
   const forceIntent = searchParams.get("forceIntent") === "1";
 
-  const terms = termsParam.split(",").map((t) => t.trim()).filter(Boolean);
+  // Each term arrives percent-encoded (see newKeywords.map(encodeURIComponent)
+  // on the client) so a literal comma inside a keyword — e.g. "10,000
+  // airports" — survives as %2C instead of being mistaken for the
+  // between-terms delimiter and splitting the keyword in two.
+  const terms = termsParam.split(",").map((t) => decodeURIComponent(t.trim())).filter(Boolean);
   if (!terms.length) return NextResponse.json({});
 
   const supabase = await createClient();

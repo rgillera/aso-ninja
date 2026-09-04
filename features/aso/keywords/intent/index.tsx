@@ -102,7 +102,11 @@ export default function KeywordIntentPage() {
     for (let i = 0; i < terms.length; i += CLASSIFY_BATCH_SIZE) {
       const batch = terms.slice(i, i + CLASSIFY_BATCH_SIZE);
       const params = new URLSearchParams({
-        terms: batch.join(","),
+        // Percent-encode each term before joining — a keyword containing a
+        // literal comma would otherwise be indistinguishable from the
+        // between-terms delimiter and get split in two server-side (see the
+        // matching decode in /api/keywords/metrics).
+        terms: batch.map(encodeURIComponent).join(","),
         store,
         country,
         appName: activeApp?.name ?? "",

@@ -23,7 +23,10 @@ export async function GET(request: NextRequest) {
   const to         = searchParams.get("to") ?? "";
   const ourAppId   = searchParams.get("storeId") ?? "";
 
-  const terms = [...new Set(termsParam.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean))];
+  // Each term arrives percent-encoded (mirrors /api/keywords/metrics) so a
+  // literal comma inside a keyword survives as %2C instead of being mistaken
+  // for the between-terms delimiter.
+  const terms = [...new Set(termsParam.split(",").map((t) => decodeURIComponent(t.trim()).toLowerCase()).filter(Boolean))];
   if (!terms.length || !from || !to) return NextResponse.json({});
 
   const supabase = await createClient();

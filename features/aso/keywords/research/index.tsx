@@ -315,7 +315,12 @@ export default function KeywordResearchPage() {
     // relevancy pass so basic numbers show up immediately. Relevancy/
     // opportunity arrive null and get back-filled by phase 2 below.
     const fastParams = new URLSearchParams({
-      terms: newKeywords.join(","),
+      // Percent-encode each term before joining — a keyword that itself
+      // contains a comma (e.g. "10,000 airports") would otherwise be
+      // indistinguishable from the between-terms delimiter and get split in
+      // two server-side, so it never matches any key in the response and its
+      // relevancy cell is stuck showing the "still computing" clock forever.
+      terms: newKeywords.map(encodeURIComponent).join(","),
       store,
       country: country ?? "us",
       appName: activeApp?.name ?? "",
@@ -358,7 +363,8 @@ export default function KeywordResearchPage() {
 
   async function finishAddingKeywords(newKeywords: string[], store: "ios" | "android", country: string) {
     const params = new URLSearchParams({
-      terms: newKeywords.join(","),
+      // See the matching comment on the phase-1 fast fetch above.
+      terms: newKeywords.map(encodeURIComponent).join(","),
       store,
       country,
       appName: activeApp?.name ?? "",
@@ -447,7 +453,8 @@ export default function KeywordResearchPage() {
     for (let i = 0; i < terms.length; i += RELEVANCY_BACKFILL_BATCH_SIZE) {
       const batch = terms.slice(i, i + RELEVANCY_BACKFILL_BATCH_SIZE);
       const params = new URLSearchParams({
-        terms: batch.join(","),
+        // See the matching comment on the phase-1 fast fetch above.
+        terms: batch.map(encodeURIComponent).join(","),
         store,
         country,
         appName: activeApp?.name ?? "",

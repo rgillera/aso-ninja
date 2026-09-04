@@ -44,7 +44,10 @@ export async function GET(request: NextRequest) {
     (searchParams.get("competitorIds") ?? "").split(",").map((s) => s.trim()).filter(Boolean)
   )];
 
-  const terms = [...new Set(termsParam.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean))];
+  // Each term arrives percent-encoded (see the client's encodeURIComponent
+  // before joining) so a literal comma inside a keyword survives as %2C
+  // instead of being mistaken for the between-terms delimiter.
+  const terms = [...new Set(termsParam.split(",").map((t) => decodeURIComponent(t.trim()).toLowerCase()).filter(Boolean))];
   if (!terms.length) return NextResponse.json({});
 
   // rankAt() below only ever looks up ourAppId and competitorIds — every other

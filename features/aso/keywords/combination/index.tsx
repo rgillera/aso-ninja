@@ -233,7 +233,11 @@ export default function KeywordCombinationPage() {
     const country = activeApp?.country ?? "us";
     try {
       const params = new URLSearchParams({
-        seeds: fresh.join(","),
+        // Percent-encode each seed before joining — one containing a literal
+        // comma would otherwise be indistinguishable from the between-seeds
+        // delimiter and get split in two server-side (see the matching
+        // decode in /api/keywords/combinations).
+        seeds: fresh.map(encodeURIComponent).join(","),
         country,
         appName: activeApp?.name ?? "",
         appSubtitle,
@@ -287,7 +291,9 @@ export default function KeywordCombinationPage() {
     const country = activeApp?.country ?? "us";
 
     const baseParams = {
-      terms:   fresh.join(","),
+      // Percent-encode each term before joining — see the matching comment
+      // on the /api/keywords/combinations seeds param above.
+      terms:   fresh.map(encodeURIComponent).join(","),
       store,
       country,
       appName: activeApp?.name ?? "",
