@@ -35,28 +35,28 @@ const AUTO_RETRY_INTERVAL_MS = 2 * 60 * 1000;
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
 }
 
 export default function KeywordPerformancePage() {
-  const activeApp   = useActiveApp();
+  const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "free");
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "free");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
-  const [keywords,    setKeywords]    = useState<PerformanceKeyword[]>([]);
+  const [keywords, setKeywords] = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
-  const [filters,     setFilters]     = useState<Filters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [translateToggle, setTranslateToggle] = useState(false);
-  const [snapshots,        setSnapshots]        = useState<Record<string, TermSnapshot>>({});
-  const [snapshotsLoading, setSnapshotsLoading]  = useState(false);
+  const [snapshots, setSnapshots] = useState<Record<string, TermSnapshot>>({});
+  const [snapshotsLoading, setSnapshotsLoading] = useState(false);
   // Distinct from snapshotsLoading: stays false until the very first fetch
   // resolves, so the "stuck"/unranked count below doesn't treat the empty
   // initial snapshots state as every keyword having failed to rank.
@@ -71,8 +71,8 @@ export default function KeywordPerformancePage() {
     return () => clearTimeout(t);
   }, [snapshotsLoading]);
   const [tab, setTab] = useState<"chart" | "table">("table");
-  const [visibility,        setVisibility]        = useState<VisibilityHistoryResult>({});
-  const [visibilityLoading, setVisibilityLoading]  = useState(false);
+  const [visibility, setVisibility] = useState<VisibilityHistoryResult>({});
+  const [visibilityLoading, setVisibilityLoading] = useState(false);
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
   const [rankHistory, setRankHistory] = useState<{ term: string; storeId: string } | null>(null);
@@ -121,7 +121,7 @@ export default function KeywordPerformancePage() {
     setCompetitors(updated);
 
     const additions = updated.filter((u) => !previous.some((p) => p.storeId === u.storeId));
-    const removals  = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
+    const removals = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
 
     for (const removed of removals) {
       if (!competitorsAppId.current) continue;
@@ -138,13 +138,13 @@ export default function KeywordPerformancePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workspaceId,
-          appId:    competitorsAppId.current,
+          appId: competitorsAppId.current,
           bundleId: activeApp?.bundle_id,
-          storeId:  activeApp?.store_id,
-          appName:  activeApp?.name,
-          iconUrl:  activeApp?.icon_url ?? undefined,
-          store:    activeApp?.store,
-          country:  activeApp?.country,
+          storeId: activeApp?.store_id,
+          appName: activeApp?.name,
+          iconUrl: activeApp?.icon_url ?? undefined,
+          store: activeApp?.store,
+          country: activeApp?.country,
           competitor: added,
         }),
       }).catch(() => null);
@@ -197,7 +197,7 @@ export default function KeywordPerformancePage() {
           seen.add(key);
           return true;
         });
-        const withMetrics  = saved.filter((s) =>  s.hasCachedMetrics);
+        const withMetrics = saved.filter((s) => s.hasCachedMetrics);
         const needsMetrics = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
 
         // Set cached keywords immediately — these are complete, no loading state.
@@ -209,9 +209,9 @@ export default function KeywordPerformancePage() {
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
           withMetrics.map((s) => ({
-            term:    s.term,
-            volume:  s.volume,
-            rank:    s.rank,
+            term: s.term,
+            volume: s.volume,
+            rank: s.rank,
             starred: starred.has(s.term.toLowerCase()),
             loading: false,
             estimatedDownloads: s.estimatedDownloads,
@@ -233,7 +233,7 @@ export default function KeywordPerformancePage() {
     if (!fresh.length) return;
     newTerms = fresh;
 
-    const store   = activeApp?.store ?? "ios";
+    const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
     if (!silent) setPendingAdds((n) => n + 1);
@@ -248,13 +248,13 @@ export default function KeywordPerformancePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          terms:    newTerms,
+          terms: newTerms,
           workspaceId,
-          appId:    activeApp?.id,
+          appId: activeApp?.id,
           bundleId: activeApp?.bundle_id,
-          storeId:  activeApp?.store_id,
-          appName:  activeApp?.name,
-          iconUrl:  activeApp?.icon_url ?? undefined,
+          storeId: activeApp?.store_id,
+          appName: activeApp?.name,
+          iconUrl: activeApp?.icon_url ?? undefined,
           store,
           country,
         }),
@@ -274,7 +274,7 @@ export default function KeywordPerformancePage() {
       ...prev,
     ]);
 
-    const params  = new URLSearchParams({
+    const params = new URLSearchParams({
       // Percent-encode each term before joining — a keyword containing a
       // literal comma would otherwise be indistinguishable from the
       // between-terms delimiter and get split in two server-side (see the
@@ -291,7 +291,7 @@ export default function KeywordPerformancePage() {
     });
 
     try {
-      const res  = await fetch(`/api/keywords/metrics?${params}`);
+      const res = await fetch(`/api/keywords/metrics?${params}`);
       const data: Record<string, { volume: number; rank: number | null }> = await res.json();
 
       setKeywords((prev) =>
@@ -310,11 +310,11 @@ export default function KeywordPerformancePage() {
             terms: newTerms,
             workspaceId,
             metrics: data,
-            appId:    activeApp?.id,
+            appId: activeApp?.id,
             bundleId: activeApp?.bundle_id,
-            storeId:  activeApp?.store_id,
-            appName:  activeApp?.name,
-            iconUrl:  activeApp?.icon_url ?? undefined,
+            storeId: activeApp?.store_id,
+            appName: activeApp?.name,
+            iconUrl: activeApp?.icon_url ?? undefined,
             store,
             country,
           }),
@@ -476,8 +476,8 @@ export default function KeywordPerformancePage() {
     const t = setTimeout(() => {
       setSnapshotsLoading(true);
       const params = new URLSearchParams({
-        terms:   trackedTerms,
-        store:   activeApp.store ?? "ios",
+        terms: trackedTerms,
+        store: activeApp.store ?? "ios",
         country: activeApp.country ?? "us",
         storeId: activeApp.store_id ?? "",
         competitorIds: competitors.map((c) => c.storeId).join(","),
@@ -537,8 +537,8 @@ export default function KeywordPerformancePage() {
   useEffect(() => {
     const key = activeApp?.id ?? activeApp?.bundle_id;
     if (!key || isLocked) return;
-    const appId   = activeApp?.id ?? "";
-    const store   = activeApp?.store;
+    const appId = activeApp?.id ?? "";
+    const store = activeApp?.store;
     const country = activeApp?.country;
     const interval = setInterval(() => attemptAutoRetry(appId, store, country), AUTO_RETRY_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -563,15 +563,15 @@ export default function KeywordPerformancePage() {
       setVisibilityLoading(true);
       const today = new Date();
       const from30 = new Date(today); from30.setDate(today.getDate() - 29);
-      const toIso   = today.toISOString().split("T")[0];
+      const toIso = today.toISOString().split("T")[0];
       const fromIso = from30.toISOString().split("T")[0];
       const params = new URLSearchParams({
-        terms:  trackedTerms,
+        terms: trackedTerms,
         appIds: chartApps.map((a) => a.id).join(","),
-        store:  activeApp.store ?? "ios",
+        store: activeApp.store ?? "ios",
         country: activeApp.country ?? "us",
         from: fromIso,
-        to:   toIso,
+        to: toIso,
       });
       fetch(`/api/keywords/visibility-history?${params}`)
         .then((r) => r.json())
@@ -602,7 +602,7 @@ export default function KeywordPerformancePage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Monitor Performance" />
         <FeatureLocked
           minPlan="free"
@@ -620,11 +620,11 @@ export default function KeywordPerformancePage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
 
       {saveError && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
@@ -640,7 +640,7 @@ export default function KeywordPerformancePage() {
               key={id}
               onClick={() => setTab(id)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+                tab === id ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
               }`}
             >
               {label}
@@ -650,10 +650,10 @@ export default function KeywordPerformancePage() {
 
         {tab === "chart" ? (
           <div className="px-6 pt-4 pb-6">
-            <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07]">
+            <div className="rounded-xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 light:shadow-black/10">
               <div className="flex items-center justify-between px-5 pt-4 pb-1">
                 <div>
-                  <p className="text-sm font-semibold text-white">Visibility Score</p>
+                  <p className="text-sm font-semibold text-white light:text-gray-900">Visibility Score</p>
                   <p className="text-xs text-gray-500 mt-0.5">Last 30 days</p>
                 </div>
                 {visibilityLoading && <div className="size-3 rounded-full border-2 border-gray-600 border-t-indigo-400 animate-spin" />}

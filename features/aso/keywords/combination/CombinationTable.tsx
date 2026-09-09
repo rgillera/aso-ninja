@@ -41,17 +41,17 @@ function formatNum(n: number): string {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700 light:text-gray-300" />;
   return dir === "asc"
-    ? <ChevronUpIcon className="size-3 text-indigo-400" />
-    : <ChevronDownIcon className="size-3 text-indigo-400" />;
+    ? <ChevronUpIcon className="size-3 text-indigo-400 light:text-indigo-600" />
+    : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
 }
 
 function groupAggregates(group: CombinationGroup) {
   const combinations = group.children.length;
-  const avgVol       = combinations ? Math.round(group.children.reduce((s, c) => s + c.volume, 0)     / combinations) : 0;
-  const avgDiff      = combinations ? Math.round(group.children.reduce((s, c) => s + (c.difficulty ?? 0), 0) / combinations) : 0;
-  const avgChance    = combinations ? Math.round(group.children.reduce((s, c) => s + (c.chance ?? 0),     0) / combinations) : 0;
+  const avgVol = combinations ? Math.round(group.children.reduce((s, c) => s + c.volume, 0) / combinations) : 0;
+  const avgDiff = combinations ? Math.round(group.children.reduce((s, c) => s + (c.difficulty ?? 0), 0) / combinations) : 0;
+  const avgChance = combinations ? Math.round(group.children.reduce((s, c) => s + (c.chance ?? 0), 0) / combinations) : 0;
   return { combinations, avgVol, avgDiff, avgChance };
 }
 
@@ -60,12 +60,12 @@ export function CombinationTable({
   translateToggle, translateLocked = false, onTranslateToggle, intentThemes, onAddTermsToIntent,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
-  const [selected,  setSelected]  = useState<Set<string>>(new Set());
-  const [sortKey,   setSortKey]   = useState<SortKey | null>(null);
-  const [sortDir,   setSortDir]   = useState<"asc" | "desc">("desc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [showAllSeeds, setShowAllSeeds] = useState(false);
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [translating, setTranslating]   = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   const SEED_PREVIEW_COUNT = 10;
   const visibleSeeds = showAllSeeds ? availableSeeds : availableSeeds.slice(0, SEED_PREVIEW_COUNT);
@@ -138,16 +138,16 @@ export function CombinationTable({
   }) : groups;
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       {/* Add seed keywords */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
-        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
+        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
           <input
             value={seedInput}
             onChange={(e) => setSeedInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Add keywords separated with a comma e.g: games,…"
-            className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+            className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
           />
         </div>
         <button
@@ -164,7 +164,7 @@ export function CombinationTable({
       </div>
 
       {availableSeeds.length > 0 && (
-        <div className="px-4 py-3 border-b border-white/[0.07]">
+        <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="flex items-center mb-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">From Keyword Research</span>
           </div>
@@ -173,7 +173,7 @@ export function CombinationTable({
               <button
                 key={term}
                 onClick={() => onAddSeeds([term])}
-                className="flex items-center gap-1 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-300 hover:ring-indigo-500/50 hover:text-white px-2.5 py-1 text-xs transition-all"
+                className="flex items-center gap-1 rounded-md bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900 px-2.5 py-1 text-xs transition-all"
               >
                 <PlusIcon className="size-3 text-gray-500 shrink-0" />
                 {term}
@@ -182,7 +182,7 @@ export function CombinationTable({
             {availableSeeds.length > SEED_PREVIEW_COUNT && (
               <button
                 onClick={() => setShowAllSeeds((v) => !v)}
-                className="flex items-center rounded-md px-2.5 py-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                className="flex items-center rounded-md px-2.5 py-1 text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors"
               >
                 {showAllSeeds ? "Show less" : `+${availableSeeds.length - SEED_PREVIEW_COUNT} more`}
               </button>
@@ -195,37 +195,37 @@ export function CombinationTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-white/[0.07]">
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <th className="w-10 px-4 py-3 text-left" />
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "keyword" ? "text-gray-300" : ""}`}>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
+                <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "keyword" ? "text-gray-300 light:text-gray-700" : ""}`}>
                   Keywords <SortIcon active={sortKey === "keyword"} dir={sortDir} />
                 </button>
               </th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("combinations")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "combinations" ? "text-gray-300" : ""}`}>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
+                <button onClick={() => handleSort("combinations")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "combinations" ? "text-gray-300 light:text-gray-700" : ""}`}>
                   Combinations <SortIcon active={sortKey === "combinations"} dir={sortDir} />
                 </button>
               </th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "volume" ? "text-gray-300" : ""}`}>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
+                <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "volume" ? "text-gray-300 light:text-gray-700" : ""}`}>
                   Avg.Vol. <SortIcon active={sortKey === "volume"} dir={sortDir} />
                 </button>
               </th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("difficulty")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "difficulty" ? "text-gray-300" : ""}`}>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
+                <button onClick={() => handleSort("difficulty")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "difficulty" ? "text-gray-300 light:text-gray-700" : ""}`}>
                   Avg.Difficulty <SortIcon active={sortKey === "difficulty"} dir={sortDir} />
                 </button>
               </th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-                <button onClick={() => handleSort("chance")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "chance" ? "text-gray-300" : ""}`}>
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
+                <button onClick={() => handleSort("chance")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "chance" ? "text-gray-300 light:text-gray-700" : ""}`}>
                   Avg.Chance <SortIcon active={sortKey === "chance"} dir={sortDir} />
                 </button>
               </th>
               <th className="w-24 pr-4" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
             {sortedGroups.map((group) => {
               const agg = groupAggregates(group);
               const terms = group.children.map((c) => c.term);
@@ -235,7 +235,7 @@ export function CombinationTable({
               return (
                 <Fragment key={group.seed}>
                   <tr
-                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                    className="hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group cursor-pointer"
                     onClick={() => onToggleExpand(group.seed)}
                   >
                     <td className="px-4 py-3.5" onClick={(e) => e.stopPropagation()}>
@@ -244,7 +244,7 @@ export function CombinationTable({
                         checked={groupChecked}
                         onChange={() => toggleGroupSelect(group)}
                         disabled={!terms.length}
-                        className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                        className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                       />
                     </td>
                     <td className="px-4 py-3.5">
@@ -252,44 +252,44 @@ export function CombinationTable({
                         {group.expanded
                           ? <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />
                           : <ChevronRightIcon className="size-3.5 text-gray-500 shrink-0" />}
-                        <span className="text-sm font-medium text-white">{group.seed}</span>
+                        <span className="text-sm font-medium text-white light:text-gray-900">{group.seed}</span>
                         {translationFor(group.seed) && (
                           <span className="text-[10px] text-gray-500">(en) {translationFor(group.seed)}</span>
                         )}
                         {pendingCount > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-indigo-400 light:text-indigo-600">
                             <div className="size-2.5 rounded-full border border-indigo-400 border-t-transparent animate-spin" />
                             Adding {pendingCount}…
                           </span>
                         )}
                         {pendingCount === 0 && allTracked && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-300 ring-1 ring-indigo-500/20">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-300 light:text-indigo-600 ring-1 ring-indigo-500/20">
                             <CheckIcon className="size-3" />
                             All added
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-sm text-gray-300">
-                      {group.loading ? <div className="h-3 w-6 rounded bg-white/[0.06] animate-pulse" /> : agg.combinations}
+                    <td className="px-4 py-3.5 text-sm text-gray-300 light:text-gray-700">
+                      {group.loading ? <div className="h-3 w-6 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : agg.combinations}
                     </td>
                     <td className="px-4 py-3.5">
-                      {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] animate-pulse" /> : <VolumeBar value={agg.avgVol} />}
+                      {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : <VolumeBar value={agg.avgVol} />}
                     </td>
                     <td className="px-4 py-3.5 tabular-nums">
                       {group.loading
-                        ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
-                        : <span className={`text-sm ${agg.avgDiff > 60 ? "text-red-400" : agg.avgDiff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>{agg.avgDiff}</span>}
+                        ? <div className="h-3 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+                        : <span className={`text-sm ${agg.avgDiff > 60 ? "text-red-400 light:text-red-600" : agg.avgDiff > 40 ? "text-yellow-400" : "text-emerald-400 light:text-emerald-700"}`}>{agg.avgDiff}</span>}
                     </td>
                     <td className="px-4 py-3.5 tabular-nums">
                       {group.loading
-                        ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
-                        : <span className={`text-sm ${agg.avgChance > 15 ? "text-emerald-400" : "text-gray-400"}`}>{agg.avgChance}</span>}
+                        ? <div className="h-3 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+                        : <span className={`text-sm ${agg.avgChance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600"}`}>{agg.avgChance}</span>}
                     </td>
                     <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onRemoveGroup(group.seed)}
-                        className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
+                        className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <XMarkIcon className="size-3" />
                       </button>
@@ -300,43 +300,43 @@ export function CombinationTable({
                     const tracked = trackedSet.has(child.term.toLowerCase());
                     const pending = pendingSet.has(child.term.toLowerCase());
                     return (
-                      <tr key={child.term} className="hover:bg-white/[0.02] transition-colors group bg-white/[0.01]">
+                      <tr key={child.term} className="hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group bg-white/[0.01]">
                         <td className="px-4 py-3">
                           <input
                             type="checkbox"
                             checked={tracked || selected.has(child.term)}
                             onChange={() => toggleChild(child.term)}
                             disabled={tracked || pending}
-                            className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 disabled:opacity-40"
+                            className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 disabled:opacity-40"
                           />
                         </td>
                         <td className="px-4 py-3 pl-9">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-sm text-gray-300">{child.term}</span>
+                            <span className="text-sm text-gray-300 light:text-gray-700">{child.term}</span>
                             {translationFor(child.term) && (
                               <span className="text-[10px] text-gray-500">(en) {translationFor(child.term)}</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">—</td>
+                        <td className="px-4 py-3 text-sm text-gray-600 light:text-gray-400">—</td>
                         <td className="px-4 py-3">
-                          {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" /> : <VolumeBar value={child.volume} />}
+                          {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : <VolumeBar value={child.volume} />}
                         </td>
                         <td className="px-4 py-3 tabular-nums">
                           {group.loading
-                            ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
-                            : (() => { const d = child.difficulty ?? 0; return <span className={`text-sm ${d > 60 ? "text-red-400" : d > 40 ? "text-yellow-400" : "text-emerald-400"}`}>{d}</span>; })()}
+                            ? <div className="h-3 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+                            : (() => { const d = child.difficulty ?? 0; return <span className={`text-sm ${d > 60 ? "text-red-400 light:text-red-600" : d > 40 ? "text-yellow-400" : "text-emerald-400 light:text-emerald-700"}`}>{d}</span>; })()}
                         </td>
                         <td className="px-4 py-3 tabular-nums">
                           {group.loading
-                            ? <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
-                            : (() => { const c = child.chance ?? 0; return <span className={`text-sm ${c > 15 ? "text-emerald-400" : "text-gray-400"}`}>{c}</span>; })()}
+                            ? <div className="h-3 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+                            : (() => { const c = child.chance ?? 0; return <span className={`text-sm ${c > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600"}`}>{c}</span>; })()}
                         </td>
                         <td className="pr-4 py-3">
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => onLiveSearch(child.term)}
-                              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                             >
                               <MagnifyingGlassIcon className="size-3" />
                             </button>
@@ -345,10 +345,10 @@ export function CombinationTable({
                               disabled={tracked || pending}
                               className={`flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
                                 tracked
-                                  ? "bg-indigo-500/20 ring-indigo-500/40 text-indigo-300"
+                                  ? "bg-indigo-500/20 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
                                   : pending
-                                  ? "bg-white/[0.04] ring-white/[0.08] text-gray-600 cursor-wait"
-                                  : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"
+                                  ? "bg-white/[0.04] light:bg-black/[0.04] ring-white/[0.08] light:ring-black/[0.08] text-gray-600 light:text-gray-400 cursor-wait"
+                                  : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
                               }`}
                             >
                               {tracked
@@ -370,9 +370,9 @@ export function CombinationTable({
 
         {groups.length === 0 && (
           <div className="py-16 text-center">
-            <MagnifyingGlassIcon className="size-8 text-gray-700 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-400">No keywords added yet</p>
-            <p className="mt-1 text-xs text-gray-600">Add a seed keyword above to generate long tail combinations.</p>
+            <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">No keywords added yet</p>
+            <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Add a seed keyword above to generate long tail combinations.</p>
           </div>
         )}
       </div>

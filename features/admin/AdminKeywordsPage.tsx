@@ -65,7 +65,7 @@ export default function AdminKeywordsPage() {
     <div className="p-6">
       <div className="mx-auto max-w-4xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] ring-1 ring-white/[0.08]">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06]">
             <TagIcon className="size-4.5 text-gray-300" />
           </div>
           <div>
@@ -74,7 +74,7 @@ export default function AdminKeywordsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-2.5 mb-5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] px-3 py-2.5 mb-5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
@@ -85,7 +85,7 @@ export default function AdminKeywordsPage() {
           />
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#1a1d24] overflow-hidden shadow-lg shadow-black/20">
           {tooShort ? (
             <div className="px-5 py-10 text-center text-sm text-gray-600">Type at least 2 characters to search.</div>
           ) : isStale || searchPending ? (

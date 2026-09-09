@@ -36,23 +36,23 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
 
   return (
     <div className="px-6 pt-4">
-      <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all max-w-md">
+      <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all max-w-md">
         <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={atLimit ? `Remove an app to add another (max ${MAX_COMPARE_APPS})` : "Search for an app to compare"}
           disabled={atLimit}
-          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 light:placeholder-gray-400 outline-none disabled:cursor-not-allowed"
         />
       </div>
 
       {query.trim() && !atLimit && (
-        <div className="mt-2 max-w-md rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+        <div className="mt-2 max-w-md rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
           {searching ? (
             <div className="p-2 space-y-1.5">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-12 rounded-lg bg-white/[0.04] animate-pulse" />
+                <div key={i} className="h-12 rounded-lg bg-white/[0.04] light:bg-black/[0.04] animate-pulse" />
               ))}
             </div>
           ) : results.length > 0 ? (
@@ -66,18 +66,18 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
                     onClick={() => !added && onAdd(app)}
                     disabled={added}
                     className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${
-                      added ? "bg-indigo-500/10 cursor-default" : "hover:bg-white/[0.05]"
+                      added ? "bg-indigo-500/10 cursor-default" : "hover:bg-white/[0.05] light:hover:bg-black/[0.04]"
                     }`}
                   >
                     <div className="relative shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={app.iconUrl} alt="" className="size-8 rounded-lg bg-white/[0.05]" />
-                      <span className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-[#1a1d24] ring-1 ring-white/10">
-                        <StoreIcon store={app.store} className="size-2 text-gray-300" />
+                      <img src={app.iconUrl} alt="" className="size-8 rounded-lg bg-white/[0.05] light:bg-black/[0.04]" />
+                      <span className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+                        <StoreIcon store={app.store} className="size-2 text-gray-300 light:text-gray-700" />
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-white truncate">{app.name}</p>
+                      <p className="text-xs font-medium text-white light:text-gray-900 truncate">{app.name}</p>
                       <p className="text-[10px] text-gray-500 truncate">{app.developer}</p>
                     </div>
                     <span className={`shrink-0 flex size-5 items-center justify-center rounded-full ${added ? "bg-indigo-500 text-white" : "text-gray-500"}`}>
@@ -88,7 +88,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
               })}
             </div>
           ) : (
-            <p className="text-sm text-gray-600 text-center py-5">No results for &quot;{query}&quot;</p>
+            <p className="text-sm text-gray-600 light:text-gray-400 text-center py-5">No results for &quot;{query}&quot;</p>
           )}
         </div>
       )}

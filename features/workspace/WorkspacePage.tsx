@@ -8,7 +8,8 @@ import {
   deleteWorkspaceAction,
 } from "./actions";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
-import type { Workspace, WorkspaceAccess, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
+import { PLAN_BADGE } from "@/features/subscription/planTiers";
+import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
 type MemberWithProfile = WorkspaceMember & {
   profiles: { full_name: string | null } | null;
@@ -28,6 +29,7 @@ type Props = {
   currentUserRole: WorkspaceRole;
   allWorkspaces: Workspace[];
   canInviteMembers: boolean;
+  planSlug: PlanSlug;
 };
 
 function Alert({ state }: { state: { error?: string; success?: string } | null }) {
@@ -35,7 +37,7 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
   return (
     <div className={`rounded-lg px-4 py-3 text-sm ring-1 ${
       state.error
-        ? "bg-red-500/10 text-red-400 ring-red-500/20"
+        ? "bg-red-500/10 text-red-400 light:text-red-600 ring-red-500/20"
         : "bg-green-500/10 text-green-400 ring-green-500/20"
     }`}>
       {state.error ? <PlanLimitMessage message={state.error} /> : state.success}
@@ -44,8 +46,8 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
 }
 
 function inputClass(error?: boolean) {
-  return `w-full rounded-lg bg-[#0d0f14] border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-    error ? "border-red-500/50" : "border-white/[0.07]"
+  return `w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border px-4 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+    error ? "border-red-500/50" : "border-white/[0.07] light:border-black/[0.08]"
   }`;
 }
 
@@ -56,9 +58,11 @@ export default function WorkspacePage({
   currentUserRole,
   allWorkspaces,
   canInviteMembers,
+  planSlug,
 }: Props) {
   const isOwner = currentUserRole === "owner";
   const isOnlyWorkspace = allWorkspaces.length <= 1;
+  const planBadge = PLAN_BADGE[planSlug];
 
   const [generalState, generalAction, generalPending] = useActionState(updateWorkspaceAction, null);
   const [inviteState, inviteAction, invitePending] = useActionState(inviteMemberAction, null);
@@ -80,24 +84,24 @@ export default function WorkspacePage({
           <div className="mb-8">
             <a
               href="/dashboard"
-              className="text-sm text-gray-500 hover:text-white transition-colors"
+              className="text-sm text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
             >
               ← Back to dashboard
             </a>
-            <h1 className="mt-4 text-2xl font-semibold text-white">Workspace Settings</h1>
-            <p className="mt-1 text-sm text-gray-400">{workspace.name}</p>
+            <h1 className="mt-4 text-2xl font-semibold text-white light:text-gray-900">Workspace Settings</h1>
+            <p className="mt-1 text-sm text-gray-400 light:text-gray-600">{workspace.name}</p>
           </div>
 
           <div className="space-y-8">
             {/* General */}
-            <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
-              <h2 className="text-base font-semibold text-white mb-5">General</h2>
+            <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+              <h2 className="text-base font-semibold text-white light:text-gray-900 mb-5">General</h2>
               <form action={generalAction} className="space-y-4">
                 <input type="hidden" name="id" value={workspace.id} />
                 <Alert state={generalState} />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  <label className="block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
                     Workspace name
                   </label>
                   <input
@@ -110,16 +114,16 @@ export default function WorkspacePage({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                  <label className="block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
                     Slug
                   </label>
-                  <div className="flex items-center rounded-lg bg-[#0d0f14] border border-white/[0.07] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-                    <span className="pl-4 pr-1 text-sm text-gray-600 shrink-0">asoninja.com/</span>
+                  <div className="flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
+                    <span className="pl-4 pr-1 text-sm text-gray-600 light:text-gray-400 shrink-0">asoninja.com/</span>
                     <input
                       name="slug"
                       defaultValue={workspace.slug}
                       required
-                      className="flex-1 bg-transparent py-2.5 pr-4 text-sm text-white placeholder-gray-600 focus:outline-none"
+                      className="flex-1 bg-transparent py-2.5 pr-4 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none"
                       placeholder="acme"
                     />
                   </div>
@@ -137,29 +141,54 @@ export default function WorkspacePage({
               </form>
             </section>
 
+            {/* Plan */}
+            <section id="plan" className="scroll-mt-4 rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base font-semibold text-white light:text-gray-900">Plan</h2>
+                  <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
+                    {isOwner ? "Manage billing and see what's included." : "Only the workspace owner can manage billing."}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${planBadge.className}`}>
+                    {planBadge.label}
+                  </span>
+                  {isOwner && (
+                    <a
+                      href="/dashboard/subscription"
+                      className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+                    >
+                      Manage Plan
+                    </a>
+                  )}
+                </div>
+              </div>
+            </section>
+
             {/* Members */}
-            <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
+            <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-base font-semibold text-white">Members</h2>
+                <h2 className="text-base font-semibold text-white light:text-gray-900">Members</h2>
                 <span className="text-xs text-gray-500">{localMembers.length} member{localMembers.length !== 1 ? "s" : ""}</span>
               </div>
 
-              <ul className="divide-y divide-white/[0.07]">
+              <ul className="divide-y divide-white/[0.07] light:divide-black/[0.08]">
                 {localMembers.map((m) => (
                   <li key={m.user_id} className={`flex items-center justify-between py-3 ${m.status === "frozen" ? "opacity-60" : ""}`}>
                     <div className="flex items-center gap-3">
-                      <div className="flex size-8 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-semibold text-indigo-300">
+                      <div className="flex size-8 items-center justify-center rounded-full bg-indigo-500/20 text-xs font-semibold text-indigo-300 light:text-indigo-600">
                         {(m.profiles?.full_name ?? m.email ?? "?").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-white flex items-center gap-1.5">
+                        <p className="text-sm font-medium text-white light:text-gray-900 flex items-center gap-1.5">
                           {m.profiles?.full_name ?? m.email ?? "Unknown"}
                           {m.user_id === currentUserId && (
                             <span className="ml-2 text-xs text-gray-500">(you)</span>
                           )}
                           {m.status === "frozen" && (
                             <span
-                              className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 shrink-0"
+                              className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 shrink-0"
                               title="This member is over your plan's limit. Upgrade to restore their access."
                             >
                               Paused
@@ -175,14 +204,14 @@ export default function WorkspacePage({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="rounded-md bg-[#0d0f14] border border-white/[0.07] px-2.5 py-1 text-xs text-gray-400 capitalize">
+                      <span className="rounded-md bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1 text-xs text-gray-400 light:text-gray-600 capitalize">
                         {m.role}
                       </span>
 
                       {isOwner && m.user_id !== currentUserId && (
                         <button
                           onClick={() => handleRemove(m)}
-                          className="text-xs text-gray-600 hover:text-red-400 transition-colors"
+                          className="text-xs text-gray-600 light:text-gray-400 hover:text-red-400 light:hover:text-red-600 transition-colors"
                         >
                           Remove
                         </button>
@@ -194,15 +223,15 @@ export default function WorkspacePage({
 
               {/* Invite */}
               {isOwner && !canInviteMembers && (
-                <p className="mt-5 border-t border-white/[0.07] pt-5 text-sm text-gray-500">
+                <p className="mt-5 border-t border-white/[0.07] light:border-black/[0.08] pt-5 text-sm text-gray-500">
                   Your current plan doesn't support adding members.{" "}
-                  <a href="/dashboard/subscription" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+                  <a href="/dashboard/subscription" className="text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors">
                     Upgrade to invite teammates.
                   </a>
                 </p>
               )}
               {isOwner && canInviteMembers && (
-                <form action={inviteAction} className="mt-5 space-y-3 border-t border-white/[0.07] pt-5">
+                <form action={inviteAction} className="mt-5 space-y-3 border-t border-white/[0.07] light:border-black/[0.08] pt-5">
                   <input type="hidden" name="workspace_id" value={workspace.id} />
                   <Alert state={inviteState} />
                   <div className="flex gap-3">
@@ -211,7 +240,7 @@ export default function WorkspacePage({
                       type="email"
                       required
                       placeholder=""
-                      className="flex-1 rounded-lg bg-[#0d0f14] border border-white/[0.07] px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                      className="flex-1 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-4 py-2 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                     />
                     <button
                       type="submit"
@@ -222,33 +251,33 @@ export default function WorkspacePage({
                     </button>
                   </div>
                   <div className="flex gap-5">
-                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <label className="flex items-center gap-2 text-sm text-gray-300 light:text-gray-700">
                       <input
                         type="checkbox"
                         name="access"
                         value="aso_intelligence"
                         defaultChecked
-                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        className="rounded border-white/[0.07] light:border-black/[0.08] bg-[#0d0f14] light:bg-gray-50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                       />
                       ASO Intelligence
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <label className="flex items-center gap-2 text-sm text-gray-300 light:text-gray-700">
                       <input
                         type="checkbox"
                         name="access"
                         value="market_intelligence"
                         defaultChecked
-                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        className="rounded border-white/[0.07] light:border-black/[0.08] bg-[#0d0f14] light:bg-gray-50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                       />
                       Market Intelligence
                     </label>
-                    <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <label className="flex items-center gap-2 text-sm text-gray-300 light:text-gray-700">
                       <input
                         type="checkbox"
                         name="access"
                         value="asa_intelligence"
                         defaultChecked
-                        className="rounded border-white/[0.07] bg-[#0d0f14] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        className="rounded border-white/[0.07] light:border-black/[0.08] bg-[#0d0f14] light:bg-gray-50 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                       />
                       ASA Intelligence
                     </label>
@@ -260,8 +289,8 @@ export default function WorkspacePage({
             {/* Danger zone */}
             {isOwner && !isOnlyWorkspace && (
               <section className="rounded-2xl ring-1 ring-red-500/20 p-6">
-                <h2 className="text-base font-semibold text-red-400 mb-2">Danger Zone</h2>
-                <p className="text-sm text-gray-400 mb-5">
+                <h2 className="text-base font-semibold text-red-400 light:text-red-600 mb-2">Danger Zone</h2>
+                <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
                   Deleting this workspace permanently removes all apps, keywords, and data. This cannot be undone.
                 </p>
                 <button
@@ -270,7 +299,7 @@ export default function WorkspacePage({
                       startTransition(() => deleteWorkspaceAction(workspace.id));
                     }
                   }}
-                  className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors"
+                  className="rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-400 light:text-red-600 hover:bg-red-500/10 transition-colors"
                 >
                   Delete workspace
                 </button>

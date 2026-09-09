@@ -14,13 +14,13 @@ export function ColumnTooltip({ text }: { text: string }) {
       }}
       onMouseLeave={() => setPos(null)}
     >
-      <span className="flex items-center justify-center size-3.5 rounded-full border border-gray-600 text-[8px] font-bold text-gray-500 hover:border-gray-400 hover:text-gray-300 cursor-default transition-colors leading-none select-none">
+      <span className="flex items-center justify-center size-3.5 rounded-full border border-gray-600 text-[8px] font-bold text-gray-500 hover:border-gray-400 hover:text-gray-300 light:hover:text-gray-700 cursor-default transition-colors leading-none select-none">
         ?
       </span>
       {pos && createPortal(
         <div
           style={{ position: "fixed", left: pos.x, top: pos.y - 8, transform: "translate(-50%, -100%)", zIndex: 99999 }}
-          className="w-52 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.12] px-3 py-2.5 text-xs text-gray-300 leading-relaxed shadow-2xl pointer-events-none"
+          className="w-52 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 leading-relaxed shadow-2xl pointer-events-none"
         >
           {text}
         </div>,

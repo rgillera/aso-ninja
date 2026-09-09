@@ -26,9 +26,9 @@ function formatMonth(iso: string): string {
 
 export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
   const workspaceId = useWorkspaceId();
-  const planSlug     = usePlanSlug();
-  const [rows, setRows]       = useState<VolumeHistoryEntry[]>([]);
-  const [locked, setLocked]   = useState(false);
+  const planSlug = usePlanSlug();
+  const [rows, setRows] = useState<VolumeHistoryEntry[]>([]);
+  const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Pro+ gets a full year, everyone else gets the same 6-month window — Pro
@@ -82,14 +82,14 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     const index = rows.findIndex((r) => r.month === entry.month);
     const isLockedBar = locked && index !== currentIndex;
     return (
-      <div className="rounded-lg border border-white/10 bg-[#1a1d24] px-3 py-2 text-xs">
-        <p className="text-gray-400">{formatMonth(entry.recorded_on)}</p>
+      <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
+        <p className="text-gray-400 light:text-gray-600">{formatMonth(entry.recorded_on)}</p>
         {isLockedBar ? (
-          <p className="mt-0.5 flex items-center gap-1 text-violet-400">
+          <p className="mt-0.5 flex items-center gap-1 text-violet-400 light:text-violet-700">
             <LockClosedIcon className="size-3" /> Upgrade to see this
           </p>
         ) : (
-          <p className="mt-0.5 text-gray-200">Avg. Volume: <span className="font-semibold">{entry.score}</span></p>
+          <p className="mt-0.5 text-gray-200 light:text-gray-800">Avg. Volume: <span className="font-semibold">{entry.score}</span></p>
         )}
       </div>
     );
@@ -99,13 +99,13 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-2xl bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
-          <h2 className="text-sm font-medium text-gray-300">
+      <div className="relative z-10 w-full max-w-2xl bg-[#141417] light:bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
+          <h2 className="text-sm font-medium text-gray-300 light:text-gray-700">
             Volume history for{" "}
-            <span className="font-bold text-white">{term}</span>
+            <span className="font-bold text-white light:text-gray-900">{term}</span>
           </h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-600 light:text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors">
             <XMarkIcon className="size-5" />
           </button>
         </div>
@@ -117,9 +117,9 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
             </div>
           ) : rows.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-              <p className="text-sm font-medium text-gray-400">No history yet for this keyword</p>
-              <p className="mt-1 text-xs text-gray-600 max-w-xs">
+              <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet for this keyword</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 Volume snapshots accumulate automatically each time this keyword is checked.
               </p>
             </div>
@@ -149,14 +149,14 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
 
                 {locked && rows.length > 1 && (
                   <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(currentIndex / rows.length) * 100}%` }}>
-                    <LockClosedIcon className="size-5 text-violet-400" />
-                    <p className="text-sm font-semibold text-white">{currentIndex} month{currentIndex === 1 ? "" : "s"} locked</p>
-                    <p className="text-xs text-gray-400 max-w-[16rem]">
+                    <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
+                    <p className="text-sm font-semibold text-white light:text-gray-900">{currentIndex} month{currentIndex === 1 ? "" : "s"} locked</p>
+                    <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
                       Upgrade to Pro to see this keyword&apos;s volume trend beyond this month.
                     </p>
                     <Link
                       href="/dashboard/subscription"
-                      className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors underline underline-offset-2"
+                      className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
                     >
                       Upgrade to Pro
                     </Link>
@@ -164,7 +164,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
                 )}
               </div>
 
-              <div className="mt-3 text-[10px] text-gray-600">
+              <div className="mt-3 text-[10px] text-gray-600 light:text-gray-400">
                 {windowLabel} · monthly average
               </div>
             </>

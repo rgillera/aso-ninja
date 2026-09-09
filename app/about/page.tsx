@@ -61,7 +61,7 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
               {values.map((value) => (
-                <div key={value.name} className="rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8">
+                <div key={value.name} className="rounded-2xl bg-gray-800/50 p-8">
                   <value.icon className="size-8 text-indigo-400" aria-hidden="true" />
                   <h3 className="mt-4 text-lg font-semibold text-white">{value.name}</h3>
                   <p className="mt-2 text-sm text-gray-400 leading-relaxed">{value.description}</p>

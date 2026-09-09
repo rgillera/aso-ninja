@@ -67,22 +67,22 @@ const PAGE_SIZE = 25;
 
 // Fixed-width columns (px), matching their Tailwind col widths below —
 // used to compute how much room is left for the Keyword column to grow into.
-const CHECKBOX_COL_W = 40;    // w-10
-const VOLUME_COL_W = 208;     // w-52
-const DOWNLOADS_COL_W = 144;  // w-36
-const RANK_GROUP_W = 288;     // w-40 + w-32
-const ACTIONS_COL_W = 80;     // w-20
-const KEYWORD_MIN_W = 320;    // w-80
+const CHECKBOX_COL_W = 40; // w-10
+const VOLUME_COL_W = 208; // w-52
+const DOWNLOADS_COL_W = 144; // w-36
+const RANK_GROUP_W = 288; // w-40 + w-32
+const ACTIONS_COL_W = 80; // w-20
+const KEYWORD_MIN_W = 320; // w-80
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 type SortKey = "keyword" | "volume" | "rank" | "change" | `rank:${string}` | `change:${string}`;
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700 light:text-gray-300" />;
   return dir === "asc"
-    ? <ChevronUpIcon className="size-3 text-indigo-400" />
-    : <ChevronDownIcon className="size-3 text-indigo-400" />;
+    ? <ChevronUpIcon className="size-3 text-indigo-400 light:text-indigo-600" />
+    : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
 }
 
 // Unranked/unknown sort to the bottom regardless of direction — there's no
@@ -92,11 +92,11 @@ function rankSortValue(v: RankValue | null | undefined): number {
 }
 
 function GrowthCell({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-gray-600">-</span>;
+  if (value === null) return <span className="text-xs text-gray-600 light:text-gray-400">-</span>;
   if (value === 0) return <span className="text-xs text-gray-500">0</span>;
   const up = value > 0;
   return (
-    <span className={`text-xs font-medium ${up ? "text-emerald-400" : "text-red-400"}`}>
+    <span className={`text-xs font-medium ${up ? "text-emerald-400 light:text-emerald-700" : "text-red-400 light:text-red-600"}`}>
       {up ? "▲" : "▼"}{Math.abs(value)}
     </span>
   );
@@ -106,24 +106,24 @@ function RankCell({ value, date, onClick }: { value: TermSnapshot["rankPrev"] | 
   const label = formatRank(value);
   const muted = label === "Unranked";
   return (
-    <button onClick={onClick} title="View rank history" className="flex flex-col items-start rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors text-left">
-      <span className={`inline-flex items-center gap-1 text-sm tabular-nums ${muted ? "text-gray-600" : "text-gray-300"}`}>
+    <button onClick={onClick} title="View rank history" className="flex flex-col items-start rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors text-left">
+      <span className={`inline-flex items-center gap-1 text-sm tabular-nums ${muted ? "text-gray-600 light:text-gray-400" : "text-gray-300 light:text-gray-700"}`}>
         {label}
-        <ArrowTrendingUpIcon className="size-3 text-gray-600 shrink-0" />
+        <ArrowTrendingUpIcon className="size-3 text-gray-600 light:text-gray-400 shrink-0" />
       </span>
-      {date && <p className="text-[10px] text-gray-600">{formatSnapshotDate(date)}</p>}
+      {date && <p className="text-[10px] text-gray-600 light:text-gray-400">{formatSnapshotDate(date)}</p>}
     </button>
   );
 }
 
 function VolumeCell({ value, growth, onClick }: { value: number | null | undefined; growth: number | null; onClick: () => void }) {
-  if (value == null) return <span className="text-sm text-gray-600">-</span>;
+  if (value == null) return <span className="text-sm text-gray-600 light:text-gray-400">-</span>;
   return (
-    <button onClick={onClick} className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors" title="View volume history">
+    <button onClick={onClick} className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors" title="View volume history">
       <VolumeBar value={value} />
       {growth !== null && growth < 0
-        ? <ArrowTrendingDownIcon className="size-3.5 text-red-400 shrink-0" />
-        : <ArrowTrendingUpIcon className={`size-3.5 shrink-0 ${growth ? "text-indigo-400" : "text-gray-600"}`} />
+        ? <ArrowTrendingDownIcon className="size-3.5 text-red-400 light:text-red-600 shrink-0" />
+        : <ArrowTrendingUpIcon className={`size-3.5 shrink-0 ${growth ? "text-indigo-400 light:text-indigo-600" : "text-gray-600 light:text-gray-400"}`} />
       }
     </button>
   );
@@ -138,7 +138,7 @@ function DownloadsCell({ value, connected, pending, locked, bundleHasCredential,
   if (locked) {
     return (
       <span
-        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400"
+        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 light:text-violet-700"
         title="Est. Downloads requires the Pro plan"
       >
         <LockClosedIcon className="size-2.5" />
@@ -148,29 +148,29 @@ function DownloadsCell({ value, connected, pending, locked, bundleHasCredential,
   }
   if (!connected) {
     return bundleHasCredential ? (
-      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+      <span className="inline-flex items-center gap-1 text-xs text-gray-600 light:text-gray-400">
         Follow to enable
         <InformationCircleIcon
-          className="size-3.5 text-gray-600 shrink-0"
+          className="size-3.5 text-gray-600 light:text-gray-400 shrink-0"
           title="This app is already connected to App Store Connect / Play Console under another country. Just follow this app (button in the header above) to start seeing real download data — no credentials needed."
         />
       </span>
     ) : (
-      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+      <span className="inline-flex items-center gap-1 text-xs text-gray-600 light:text-gray-400">
         Not connected
         <InformationCircleIcon
-          className="size-3.5 text-gray-600 shrink-0"
+          className="size-3.5 text-gray-600 light:text-gray-400 shrink-0"
           title="First follow this app, then use the settings (gear) icon next to the app name in the header above to connect it and see real download data."
         />
       </span>
     );
   }
-  if (pending) return <span className="text-xs text-gray-600">Syncing…</span>;
-  if (value == null) return <span className="text-sm text-gray-600">-</span>;
+  if (pending) return <span className="text-xs text-gray-600 light:text-gray-400">Syncing…</span>;
+  if (value == null) return <span className="text-sm text-gray-600 light:text-gray-400">-</span>;
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors" title="View downloads history">
-      <span className="text-sm text-gray-300">~{DOWNLOADS_FORMATTER.format(value)}</span>
-      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+    <button onClick={onClick} className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors" title="View downloads history">
+      <span className="text-sm text-gray-300 light:text-gray-700">~{DOWNLOADS_FORMATTER.format(value)}</span>
+      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
     </button>
   );
 }
@@ -186,12 +186,12 @@ export function PerformanceTable({
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
   const [input, setInput] = useState("");
-  const [page,  setPage]  = useState(1);
+  const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [translating, setTranslating]   = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (!translateToggle) return;
@@ -302,13 +302,13 @@ export function PerformanceTable({
   const avgRank = ranked.length ? Math.round(ranked.reduce((s, k) => s + (k.rank ?? 0), 0) / ranked.length) : null;
 
   const summary = useMemo(() => {
-    const volLatests  = filtered.map((k) => snapshots[k.term]?.volumeLatest ?? k.volume).filter((v): v is number => v != null);
+    const volLatests = filtered.map((k) => snapshots[k.term]?.volumeLatest ?? k.volume).filter((v): v is number => v != null);
     const rankLatests = filtered.map((k) => snapshots[k.term]?.rankLatest).filter((v): v is number => typeof v === "number");
     const downloadValues = filtered.map((k) => k.estimatedDownloads).filter((v): v is number => v != null);
     const avg = (arr: number[]) => arr.length ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length) : null;
     return {
       volumeLatest: avg(volLatests),
-      rankLatest:   avg(rankLatests),
+      rankLatest: avg(rankLatests),
       // A sum (not an average) — since each keyword's estimate is already a
       // share of the same real total, summing the tracked keywords' shares
       // approximates how much of that total they collectively account for.
@@ -317,16 +317,16 @@ export function PerformanceTable({
   }, [filtered, snapshots]);
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       {keywords.length > 0 && (
-        <div className="grid grid-cols-2 divide-x divide-white/[0.07] border-b border-white/[0.07]">
+        <div className="grid grid-cols-2 divide-x divide-white/[0.07] light:divide-black/[0.08] border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="px-5 py-3.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Avg Ranking</p>
-            <p className="text-lg font-semibold text-white mt-0.5">{avgRank ?? "—"}</p>
+            <p className="text-lg font-semibold text-white light:text-gray-900 mt-0.5">{avgRank ?? "—"}</p>
           </div>
           <div className="px-5 py-3.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ranked Keywords</p>
-            <p className="text-lg font-semibold text-white mt-0.5">{ranked.length} <span className="text-sm text-gray-600">/ {keywords.length}</span></p>
+            <p className="text-lg font-semibold text-white mt-0.5">{ranked.length} <span className="text-sm text-gray-600 light:text-gray-400">/ {keywords.length}</span></p>
           </div>
         </div>
       )}
@@ -342,14 +342,14 @@ export function PerformanceTable({
         onCompetitorsChange={onCompetitorsChange}
       />
 
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
-        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 transition-all min-w-[200px]">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
+        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all min-w-[200px]">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Enter comma-separated keywords"
-            className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+            className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
           />
         </div>
         <button
@@ -369,7 +369,7 @@ export function PerformanceTable({
             onClick={onRefetchRanks}
             disabled={refetchingRanks}
             title="These keywords are automatically retried in the background — click to force an immediate retry"
-            className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 hover:text-white transition-colors shrink-0"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
           >
             <ArrowPathIcon className="size-3.5 animate-spin" />
             {refetchingRanks ? "Refetching…" : `${stuckRankCount} unranked · refreshing`}
@@ -385,14 +385,14 @@ export function PerformanceTable({
 
       {keywords.length === 0 ? (
         <div className="py-12 text-center px-6">
-          <MagnifyingGlassIcon className="size-8 text-gray-700 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-400">Your keyword list is empty</p>
-          <p className="mt-1 text-xs text-gray-600">Add keywords to this list to monitor their performance.</p>
+          <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">Your keyword list is empty</p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Add keywords to this list to monitor their performance.</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="py-12 text-center px-6">
-          <MagnifyingGlassIcon className="size-8 text-gray-700 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-400">No keywords match these filters</p>
+          <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">No keywords match these filters</p>
         </div>
       ) : (
         <div ref={scrollRef} className="overflow-x-auto">
@@ -413,29 +413,29 @@ export function PerformanceTable({
               <col className="w-20" />
             </colgroup>
             <thead>
-              <tr className="border-b border-white/[0.04]">
-                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] border-r border-white/[0.07] w-10 px-2 py-2 align-bottom text-center">
+              <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
+                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] w-10 px-2 py-2 align-bottom text-center">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={() => setSelected(allSelected ? new Set() : new Set(filtered.map((k) => k.term)))}
-                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                   />
                 </th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] border-r border-white/[0.07] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">
-                  <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "keyword" ? "text-gray-300" : ""}`}>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">
+                  <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "keyword" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Keyword <SortIcon active={sortKey === "keyword"} dir={sortDir} />
                   </button>
                 </th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] whitespace-nowrap">
-                  <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "volume" ? "text-gray-300" : ""}`}>
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] light:bg-white px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
+                  <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "volume" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Volume <SortIcon active={sortKey === "volume"} dir={sortDir} />
                   </button>
                 </th>
                 <th rowSpan={2} className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom whitespace-nowrap">
                   Est. Downloads
                 </th>
-                <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
+                <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={appIcon} alt="" className="size-4 rounded shrink-0" />
@@ -443,7 +443,7 @@ export function PerformanceTable({
                   </div>
                 </th>
                 {competitors.map((c) => (
-                  <th key={c.storeId} colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] whitespace-nowrap">
+                  <th key={c.storeId} colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={c.icon} alt="" className="size-4 rounded shrink-0" />
@@ -451,16 +451,16 @@ export function PerformanceTable({
                     </div>
                   </th>
                 ))}
-                <th rowSpan={2} className="sticky right-0 z-20 bg-[#1a1d24] border-l border-white/[0.07] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 align-bottom whitespace-nowrap">Actions</th>
+                <th rowSpan={2} className="sticky right-0 z-20 bg-[#1a1d24] light:bg-white border-l border-white/[0.07] light:border-black/[0.08] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">Actions</th>
               </tr>
-              <tr className="border-b border-white/[0.07]">
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">
-                  <button onClick={() => handleSort("rank")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "rank" ? "text-gray-300" : ""}`}>
+              <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
+                  <button onClick={() => handleSort("rank")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "rank" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Rank <SortIcon active={sortKey === "rank"} dir={sortDir} />
                   </button>
                 </th>
-                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">
-                  <button onClick={() => handleSort("change")} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "change" ? "text-gray-300" : ""}`}>
+                <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 whitespace-nowrap">
+                  <button onClick={() => handleSort("change")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "change" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Change <SortIcon active={sortKey === "change"} dir={sortDir} />
                   </button>
                 </th>
@@ -469,13 +469,13 @@ export function PerformanceTable({
                   const changeKey: SortKey = `change:${c.storeId}`;
                   return (
                     <Fragment key={c.storeId}>
-                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 border-l border-white/[0.07] whitespace-nowrap">
-                        <button onClick={() => handleSort(rankKey)} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === rankKey ? "text-gray-300" : ""}`}>
+                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
+                        <button onClick={() => handleSort(rankKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === rankKey ? "text-gray-300 light:text-gray-700" : ""}`}>
                           Rank <SortIcon active={sortKey === rankKey} dir={sortDir} />
                         </button>
                       </th>
-                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 whitespace-nowrap">
-                        <button onClick={() => handleSort(changeKey)} className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === changeKey ? "text-gray-300" : ""}`}>
+                      <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 whitespace-nowrap">
+                        <button onClick={() => handleSort(changeKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === changeKey ? "text-gray-300 light:text-gray-700" : ""}`}>
                           Change <SortIcon active={sortKey === changeKey} dir={sortDir} />
                         </button>
                       </th>
@@ -484,35 +484,35 @@ export function PerformanceTable({
                 })}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.04]">
+            <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
               {pageRows.map((k) => {
                 const s = snapshots[k.term];
                 return (
-                  <tr key={k.term} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="sticky left-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-2 py-3 text-center">
+                  <tr key={k.term} className="hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group">
+                    <td className="sticky left-0 z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-2 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={selected.has(k.term)}
                         onChange={() => toggleSelect(k.term)}
-                        className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                        className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                       />
                     </td>
-                    <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-r border-white/[0.04] px-4 py-3">
+                    <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-4 py-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <button onClick={() => onToggleStar(k.term)} className="shrink-0 transition-colors">
-                          <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400" : "text-gray-600"}`} />
+                          <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400 light:text-amber-700" : "text-gray-600 light:text-gray-400"}`} />
                         </button>
                         <span className="flex flex-col items-start leading-tight py-0.5 min-w-0">
-                          <span className="text-sm text-gray-300 truncate">{k.term}</span>
+                          <span className="text-sm text-gray-300 light:text-gray-700 truncate">{k.term}</span>
                           {translationFor(k.term) && (
                             <span className="text-[10px] text-gray-500 truncate">(en) {translationFor(k.term)}</span>
                           )}
                         </span>
                       </div>
                     </td>
-                    <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-r border-white/[0.04] px-3 py-3">
+                    <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-l border-r border-white/[0.04] light:border-black/[0.05] px-3 py-3">
                       {k.loading ? (
-                        <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
+                        <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
                       ) : (
                         <VolumeCell
                           value={s?.volumeLatest ?? k.volume}
@@ -523,7 +523,7 @@ export function PerformanceTable({
                     </td>
                     <td className="px-4 py-3">
                       {k.loading ? (
-                        <div className="h-3 w-16 rounded bg-white/[0.06] animate-pulse" />
+                        <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
                       ) : (
                         <DownloadsCell
                           value={k.estimatedDownloads}
@@ -536,10 +536,10 @@ export function PerformanceTable({
                       )}
                     </td>
                     {k.loading ? (
-                      <td colSpan={2 + competitors.length * 2} className="px-4 py-3"><div className="h-3 w-full rounded bg-white/[0.06] animate-pulse" /></td>
+                      <td colSpan={2 + competitors.length * 2} className="px-4 py-3"><div className="h-3 w-full rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /></td>
                     ) : (
                       <>
-                        <td className="px-3 py-3 border-l border-white/[0.04]">
+                        <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]">
                           <RankCell
                             value={effectiveRank(s?.rankLatest, k.rank)}
                             date={effectiveRankDate(s?.rankLatest, s?.rankLatestDate)}
@@ -551,7 +551,7 @@ export function PerformanceTable({
                           const cs = s?.competitors?.[c.storeId];
                           return (
                             <Fragment key={c.storeId}>
-                              <td className="px-3 py-3 border-l border-white/[0.04]">
+                              <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]">
                                 <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} onClick={() => onViewRankHistory(k.term, c.storeId)} />
                               </td>
                               <td className="px-3 py-3"><GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} /></td>
@@ -560,19 +560,19 @@ export function PerformanceTable({
                         })}
                       </>
                     )}
-                    <td className="sticky right-0 z-10 bg-[#1a1d24] group-hover:bg-[#1d2029] border-l border-white/[0.04] pr-4 py-3">
+                    <td className="sticky right-0 z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-l border-white/[0.04] light:border-black/[0.05] pr-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
                         <button
                           onClick={() => onLiveSearch(k.term)}
                           title="Live search"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
                         >
                           <MagnifyingGlassIcon className="size-3" />
                         </button>
                         <button
                           onClick={() => onRemoveKeyword(k.term)}
                           title="Remove keyword"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                         >
                           <XMarkIcon className="size-3" />
                         </button>
@@ -583,34 +583,34 @@ export function PerformanceTable({
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t border-white/[0.07] bg-white/[0.015]">
-                <td className="sticky left-0 z-10 bg-[#1c1f27] border-r border-white/[0.07]" />
-                <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] border-r border-white/[0.07] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
-                <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] border-l border-r border-white/[0.07] px-3 py-3 text-sm text-gray-300 tabular-nums">{summary.volumeLatest ?? "-"}</td>
-                <td className="px-4 py-3 text-sm text-gray-300 tabular-nums">{summary.downloadsTotal != null ? `~${DOWNLOADS_FORMATTER.format(summary.downloadsTotal)}` : "-"}</td>
-                <td className="px-3 py-3 border-l border-white/[0.04] text-sm text-gray-300 tabular-nums">{summary.rankLatest ?? "-"}</td>
+              <tr className="border-t border-white/[0.07] light:border-black/[0.08] bg-white/[0.015]">
+                <td className="sticky left-0 z-10 bg-[#1c1f27] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08]" />
+                <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
+                <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] light:bg-gray-50 border-l border-r border-white/[0.07] light:border-black/[0.08] px-3 py-3 text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.volumeLatest ?? "-"}</td>
+                <td className="px-4 py-3 text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.downloadsTotal != null ? `~${DOWNLOADS_FORMATTER.format(summary.downloadsTotal)}` : "-"}</td>
+                <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05] text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.rankLatest ?? "-"}</td>
                 <td className="px-3 py-3" />
                 {competitors.map((c) => (
-                  <td key={c.storeId} colSpan={2} className="px-3 py-3 border-l border-white/[0.04]" />
+                  <td key={c.storeId} colSpan={2} className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]" />
                 ))}
-                <td className="sticky right-0 z-10 bg-[#1c1f27] border-l border-white/[0.07] pr-4 py-3" />
+                <td className="sticky right-0 z-10 bg-[#1c1f27] light:bg-gray-50 border-l border-white/[0.07] light:border-black/[0.08] pr-4 py-3" />
               </tr>
             </tfoot>
           </table>
 
           {pageCount > 1 && (
-            <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-white/[0.07]">
-              <button onClick={() => setPage(1)} disabled={clampedPage === 1} className="text-gray-500 hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
+            <div className="flex items-center justify-center gap-2 px-4 py-3 border-t border-white/[0.07] light:border-black/[0.08]">
+              <button onClick={() => setPage(1)} disabled={clampedPage === 1} className="text-gray-500 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
                 <ChevronDoubleLeftIcon className="size-3.5" />
               </button>
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={clampedPage === 1} className="text-gray-500 hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={clampedPage === 1} className="text-gray-500 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
                 <ChevronLeftIcon className="size-3.5" />
               </button>
-              <span className="text-xs text-gray-400">Page {clampedPage} of {pageCount}</span>
-              <button onClick={() => setPage((p) => Math.min(pageCount, p + 1))} disabled={clampedPage === pageCount} className="text-gray-500 hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
+              <span className="text-xs text-gray-400 light:text-gray-600">Page {clampedPage} of {pageCount}</span>
+              <button onClick={() => setPage((p) => Math.min(pageCount, p + 1))} disabled={clampedPage === pageCount} className="text-gray-500 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
                 <ChevronRightIcon className="size-3.5" />
               </button>
-              <button onClick={() => setPage(pageCount)} disabled={clampedPage === pageCount} className="text-gray-500 hover:text-white disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
+              <button onClick={() => setPage(pageCount)} disabled={clampedPage === pageCount} className="text-gray-500 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-500 transition-colors">
                 <ChevronDoubleRightIcon className="size-3.5" />
               </button>
             </div>

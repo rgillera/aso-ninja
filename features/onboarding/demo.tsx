@@ -13,23 +13,23 @@ import { VolumeBar } from "@/features/aso/keywords/research/ui";
 // section. Everything here is fixed sample data, not a live API call.
 
 const EXAMPLE_KEYWORDS = [
-  { keyword: "instagram",       volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },
-  { keyword: "photo editor",    volume: 76, relevancy: 81, opportunity: 74, estimatedDownloads: 96_000,  rank: 12 },
-  { keyword: "reels video",     volume: 64, relevancy: 77, opportunity: 69, estimatedDownloads: 58_000,  rank: 19 },
-  { keyword: "story maker",     volume: 58, relevancy: 68, opportunity: 61, estimatedDownloads: 31_000,  rank: 27 },
-  { keyword: "social media",    volume: 89, relevancy: 42, opportunity: 38, estimatedDownloads: 12_000,  rank: null },
-  { keyword: "filters camera",  volume: 45, relevancy: 55, opportunity: 33, estimatedDownloads: 6_400,   rank: 41 },
+  { keyword: "instagram", volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },
+  { keyword: "photo editor", volume: 76, relevancy: 81, opportunity: 74, estimatedDownloads: 96_000, rank: 12 },
+  { keyword: "reels video", volume: 64, relevancy: 77, opportunity: 69, estimatedDownloads: 58_000, rank: 19 },
+  { keyword: "story maker", volume: 58, relevancy: 68, opportunity: 61, estimatedDownloads: 31_000, rank: 27 },
+  { keyword: "social media", volume: 89, relevancy: 42, opportunity: 38, estimatedDownloads: 12_000, rank: null },
+  { keyword: "filters camera", volume: 45, relevancy: 55, opportunity: 33, estimatedDownloads: 6_400, rank: 41 },
 ];
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 const RANK_HISTORY = [
-  { date: "Jan 1",  position: 42 },
-  { date: "Jan 8",  position: 38 },
+  { date: "Jan 1", position: 42 },
+  { date: "Jan 8", position: 38 },
   { date: "Jan 15", position: 41 },
   { date: "Jan 22", position: 29 },
   { date: "Jan 29", position: 22 },
-  { date: "Feb 5",  position: 18 },
+  { date: "Feb 5", position: 18 },
   { date: "Feb 12", position: 12 },
 ];
 
@@ -47,7 +47,7 @@ export function scorePill(value: number) {
 
 export function AppSearchDemo() {
   return (
-    <div className="rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-2">
+    <div className="rounded-lg bg-[#1a1d24] p-2">
       <div className="flex items-center gap-2 px-2 py-1.5">
         <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
         <span className="text-sm text-gray-200">instagram</span>
@@ -67,7 +67,7 @@ export function AppSearchDemo() {
 
 export function KeywordTableDemo() {
   return (
-    <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-x-auto">
+    <div className="rounded-xl bg-[#1a1d24] overflow-x-auto">
       <table className="w-full min-w-[680px]">
         <thead>
           <tr className="border-b border-white/[0.07]">
@@ -149,7 +149,7 @@ export function PushNotificationDemo() {
 
   return (
     <div ref={ref} className="relative mx-auto h-[288px] w-[300px] overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-[600px] w-[300px] rounded-[3rem] bg-black p-2 ring-1 ring-white/10 shadow-2xl">
+      <div className="absolute inset-x-0 top-0 h-[600px] w-[300px] rounded-[3rem] bg-black p-2 shadow-2xl">
         <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-indigo-950 via-[#15171d] to-[#0c0d10]">
           <div className="absolute left-1/2 top-4 h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black" />
           <span className="absolute inset-x-0 top-5 text-center text-xs font-semibold text-white/90">
@@ -157,7 +157,7 @@ export function PushNotificationDemo() {
           </span>
 
           <div className={`absolute inset-x-4 top-20 ${visible ? "animate-notif-in" : "opacity-0"}`}>
-            <div className="rounded-2xl bg-[#1c1e26]/95 p-3.5 ring-1 ring-white/10 shadow-lg backdrop-blur">
+            <div className="rounded-2xl bg-[#1c1e26]/95 p-3.5 shadow-lg backdrop-blur">
               <div className="flex items-start gap-3">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
                   <CameraIcon className="size-4 text-white" />
@@ -183,7 +183,7 @@ export function PushNotificationDemo() {
 
 export function RankChartDemo() {
   return (
-    <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] p-4">
+    <div className="rounded-xl bg-[#1a1d24] p-4">
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={RANK_HISTORY} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />

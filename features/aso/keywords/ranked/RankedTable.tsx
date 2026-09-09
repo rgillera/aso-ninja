@@ -30,15 +30,15 @@ type Props = {
 const PAGE_SIZE = 25;
 
 function VolumeCell({ volume, onClick }: { volume: number | null; onClick: () => void }) {
-  if (volume == null) return <span className="text-sm text-gray-600">—</span>;
+  if (volume == null) return <span className="text-sm text-gray-600 light:text-gray-400">—</span>;
   return (
     <button
       onClick={onClick}
       title="View volume history"
-      className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+      className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
     >
       <VolumeBar value={volume} />
-      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
     </button>
   );
 }
@@ -48,10 +48,10 @@ function RankCell({ rank, onClick }: { rank: number; onClick: () => void }) {
     <button
       onClick={onClick}
       title="View rank history"
-      className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+      className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
     >
-      <span className="text-sm tabular-nums font-medium text-white">#{rank}</span>
-      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+      <span className="text-sm tabular-nums font-medium text-white light:text-gray-900">#{rank}</span>
+      <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
     </button>
   );
 }
@@ -64,10 +64,10 @@ function Dropdown({ label, active, children }: { label: string; active?: boolean
         onClick={() => setOpen((v) => !v)}
         className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${
           active
-            ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300"
+            ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
             : open
-              ? "bg-[#0d0f14] ring-indigo-500/40 text-white"
-              : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"
+              ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white"
+              : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
         }`}
       >
         {label}
@@ -76,7 +76,7 @@ function Dropdown({ label, active, children }: { label: string; active?: boolean
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 mt-1.5 min-w-[200px] rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.1] shadow-2xl p-3">
+          <div className="absolute z-20 mt-1.5 min-w-[200px] rounded-lg bg-[#1a1d24] light:bg-white shadow-2xl p-3">
             {children}
           </div>
         </>
@@ -93,12 +93,12 @@ function RangeFields({ min, max, onMin, onMax, cap }: {
     <div className="flex items-center gap-2">
       <input type="number" min={0} max={cap} value={min}
         onChange={(e) => onMin(Math.max(0, Math.min(cap, parseInt(e.target.value, 10) || 0)))}
-        className="w-16 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1 text-xs text-gray-200 outline-none focus:ring-indigo-500/40"
+        className="w-16 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
       />
-      <span className="text-xs text-gray-600">to</span>
+      <span className="text-xs text-gray-600 light:text-gray-400">to</span>
       <input type="number" min={0} max={cap} value={max}
         onChange={(e) => onMax(Math.max(0, Math.min(cap, parseInt(e.target.value, 10) || 0)))}
-        className="w-16 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1 text-xs text-gray-200 outline-none focus:ring-indigo-500/40"
+        className="w-16 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
       />
     </div>
   );
@@ -113,7 +113,7 @@ export function RankedTable({
   const [sortKey, setSortKey] = useState<"rank" | "volume" | "keyword">("rank");
   const [sortAsc, setSortAsc] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [translating, setTranslating]   = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (!translateToggle) return;
@@ -143,17 +143,17 @@ export function RankedTable({
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
       let diff = 0;
-      if (sortKey === "rank")    diff = a.rank - b.rank;
-      if (sortKey === "volume")  diff = (b.volume ?? -1) - (a.volume ?? -1);
+      if (sortKey === "rank") diff = a.rank - b.rank;
+      if (sortKey === "volume") diff = (b.volume ?? -1) - (a.volume ?? -1);
       if (sortKey === "keyword") diff = a.term.localeCompare(b.term);
       return sortAsc ? diff : -diff;
     });
   }, [filtered, sortKey, sortAsc]);
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
-  const pageRows   = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const pageRows = sorted.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
-  const pageTerms  = new Set(pageRows.map((k) => k.term));
+  const pageTerms = new Set(pageRows.map((k) => k.term));
   const allPageSel = pageRows.length > 0 && pageRows.every((k) => selected.has(k.term));
 
   function toggleSort(key: typeof sortKey) {
@@ -199,11 +199,11 @@ export function RankedTable({
   }
 
   const volumeActive = filters.volumeMin !== DEFAULT_FILTERS.volumeMin || filters.volumeMax !== DEFAULT_FILTERS.volumeMax;
-  const rankActive   = filters.rankMin !== DEFAULT_FILTERS.rankMin || filters.rankMax !== DEFAULT_FILTERS.rankMax;
+  const rankActive = filters.rankMin !== DEFAULT_FILTERS.rankMin || filters.rankMax !== DEFAULT_FILTERS.rankMax;
 
   const SortTh = ({ col, label, className = "" }: { col: typeof sortKey; label: string; className?: string }) => (
     <th
-      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 transition-colors whitespace-nowrap ${className}`}
+      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 light:hover:text-gray-700 transition-colors whitespace-nowrap ${className}`}
       onClick={() => toggleSort(col)}
     >
       {label}{sortKey === col ? (sortAsc ? " ↑" : " ↓") : ""}
@@ -211,15 +211,15 @@ export function RankedTable({
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       {/* Filters */}
-      <div className="px-4 py-3 border-b border-white/[0.07] flex flex-wrap items-center gap-2">
+      <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
         <Dropdown label={filters.query ? `Keyword: ${filters.query}` : "Keyword"} active={!!filters.query}>
-          <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input autoFocus value={filters.query} onChange={(e) => { onFiltersChange({ query: e.target.value }); setPage(0); }}
               placeholder="Search keyword"
-              className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none min-w-0"
+              className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none min-w-0"
             />
           </div>
         </Dropdown>
@@ -242,7 +242,7 @@ export function RankedTable({
           <div className="flex flex-col gap-0.5">
             {([["all", "All"], [1, "1 word"], [2, "2 words"], [3, "3+ words"]] as const).map(([v, label]) => (
               <button key={String(v)} onClick={() => { onFiltersChange({ wordCount: v }); setPage(0); }}
-                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors ${filters.wordCount === v ? "bg-indigo-500/15 text-indigo-300" : "text-gray-300 hover:bg-white/[0.05]"}`}
+                className={`flex items-center justify-between rounded-md px-2 py-1.5 text-xs text-left transition-colors ${filters.wordCount === v ? "bg-indigo-500/15 text-indigo-300 light:text-indigo-600" : "text-gray-300 light:text-gray-700 hover:bg-white/[0.05] light:hover:bg-black/[0.04]"}`}
               >
                 {label}
                 {filters.wordCount === v && <CheckIcon className="size-3.5" />}
@@ -253,7 +253,7 @@ export function RankedTable({
 
         {!isFiltersDefault(filters) && (
           <button onClick={() => { onFiltersChange(DEFAULT_FILTERS); setPage(0); }}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors"
           >
             <XMarkIcon className="size-3.5" /> Clear
           </button>
@@ -264,14 +264,14 @@ export function RankedTable({
         )}
         <TranslateToggle checked={translateToggle} onChange={onTranslateToggle} locked={translateLocked} />
 
-        <span className="ml-auto text-xs text-gray-600">{filtered.length.toLocaleString()} / {keywords.length.toLocaleString()}</span>
+        <span className="ml-auto text-xs text-gray-600 light:text-gray-400">{filtered.length.toLocaleString()} / {keywords.length.toLocaleString()}</span>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] border-collapse">
           <thead>
-            <tr className="border-b border-white/[0.07]">
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <th className="w-10 px-3 py-2.5">
                 <input type="checkbox" checked={allPageSel} onChange={toggleAll}
                   className="rounded border-gray-600 bg-transparent accent-indigo-500 cursor-pointer"
@@ -289,7 +289,7 @@ export function RankedTable({
               return (
                 <tr
                   key={kw.term}
-                  className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${sel ? "bg-indigo-500/5" : ""}`}
+                  className={`border-b border-white/[0.04] light:border-black/[0.05] hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors ${sel ? "bg-indigo-500/5" : ""}`}
                 >
                   <td className="px-3 py-2.5">
                     <input type="checkbox" checked={sel} onChange={() => toggleOne(kw.term)}
@@ -302,7 +302,7 @@ export function RankedTable({
                   <td className="px-3 py-2.5">
                     <RankCell rank={kw.rank} onClick={() => onViewRankHistory(kw.term)} />
                   </td>
-                  <td className="px-3 py-2.5 text-sm text-gray-200">
+                  <td className="px-3 py-2.5 text-sm text-gray-200 light:text-gray-800">
                     <span className="flex flex-col items-start leading-tight py-0.5">
                       <span>{kw.term}</span>
                       {translationFor(kw.term) && (
@@ -310,7 +310,7 @@ export function RankedTable({
                       )}
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-xs text-gray-600 whitespace-nowrap">{formatDate(kw.rankDate)}</td>
+                  <td className="px-3 py-2.5 text-xs text-gray-600 light:text-gray-400 whitespace-nowrap">{formatDate(kw.rankDate)}</td>
                 </tr>
               );
             })}
@@ -319,9 +319,9 @@ export function RankedTable({
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MagnifyingGlassIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">No keywords match your filters</p>
-            <button onClick={() => onFiltersChange(DEFAULT_FILTERS)} className="mt-2 text-xs text-indigo-400 hover:text-indigo-300">
+            <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">No keywords match your filters</p>
+            <button onClick={() => onFiltersChange(DEFAULT_FILTERS)} className="mt-2 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600">
               Clear filters
             </button>
           </div>
@@ -330,20 +330,20 @@ export function RankedTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.07] text-xs text-gray-500">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/[0.07] light:border-black/[0.08] text-xs text-gray-500">
           <span>{page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} of {sorted.length.toLocaleString()}</span>
           <div className="flex items-center gap-1">
-            <button onClick={() => setPage(0)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+            <button onClick={() => setPage(0)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
               <ChevronDoubleLeftIcon className="size-3.5" />
             </button>
-            <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+            <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
               <ChevronLeftIcon className="size-3.5" />
             </button>
             <span className="px-2">{page + 1} / {totalPages}</span>
-            <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+            <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
               <ChevronRightIcon className="size-3.5" />
             </button>
-            <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+            <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
               <ChevronDoubleRightIcon className="size-3.5" />
             </button>
           </div>

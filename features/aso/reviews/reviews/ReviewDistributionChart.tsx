@@ -41,25 +41,25 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-2">
-        <p className="text-sm font-semibold text-white">Review distribution per star</p>
+        <p className="text-sm font-semibold text-white light:text-gray-900">Review distribution per star</p>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-1.5">
           <CalendarDaysIcon className="size-3.5 text-gray-500" />
           <input
             type="date"
             value={from}
             max={to || undefined}
             onChange={(e) => onFromChange(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 focus:outline-none"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
             style={{ colorScheme: "dark" }}
           />
-          <span className="text-gray-600">–</span>
+          <span className="text-gray-600 light:text-gray-400">–</span>
           <input
             type="date"
             value={to}
             min={from || undefined}
             onChange={(e) => onToChange(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 focus:outline-none"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
             style={{ colorScheme: "dark" }}
           />
         </div>
@@ -71,7 +71,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
             key={g.id}
             onClick={() => setGranularity(g.id)}
             className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
-              granularity === g.id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+              granularity === g.id ? "bg-white/[0.08] light:bg-black/[0.06] text-white light:text-gray-900" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
             }`}
           >
             {g.label}
@@ -81,9 +81,9 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
 
       {rows.length === 0 ? (
         <div className="flex h-72 flex-col items-center justify-center text-center px-6">
-          <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-          <p className="text-sm font-medium text-gray-400">No reviews in this date range</p>
-          <p className="mt-1 text-xs text-gray-600 max-w-xs">Try widening the date range above.</p>
+          <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">No reviews in this date range</p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">Try widening the date range above.</p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={320}>

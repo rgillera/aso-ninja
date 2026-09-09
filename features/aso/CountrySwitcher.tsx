@@ -34,8 +34,8 @@ export function CountrySwitcher({ currentId, currentCountry, siblings, onSelect,
         onClick={() => setOpen((v) => !v)}
         className={
           variant === "pill"
-            ? "flex items-center gap-1.5 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3 py-3.5 text-xs text-gray-300 hover:bg-white/[0.06] transition-colors"
-            : "ml-1 flex items-center gap-0.5 rounded px-1 -mx-1 hover:bg-white/[0.06] transition-colors"
+            ? "flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-3.5 text-xs text-gray-300 light:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.04] transition-colors"
+            : "ml-1 flex items-center gap-0.5 rounded px-1 -mx-1 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         }
       >
         {variant === "pill" ? (
@@ -43,11 +43,11 @@ export function CountrySwitcher({ currentId, currentCountry, siblings, onSelect,
         ) : (
           <>&middot; {countryFlag(currentCountry)} {currentCountry.toUpperCase()}</>
         )}
-        <ChevronDownIcon className={`size-3 text-gray-600 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDownIcon className={`size-3 text-gray-600 light:text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
           <div className="max-h-64 overflow-y-auto py-1">
             {sorted.map((s) => (
               <button
@@ -56,13 +56,13 @@ export function CountrySwitcher({ currentId, currentCountry, siblings, onSelect,
                   setOpen(false);
                   if (s.id !== currentId) onSelect(s);
                 }}
-                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left hover:bg-white/[0.05] transition-colors"
+                className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
               >
                 <span className="text-base leading-none">{countryFlag(s.country ?? "")}</span>
-                <span className={s.id === currentId ? "font-medium text-white" : "text-gray-400"}>
+                <span className={s.id === currentId ? "font-medium text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"}>
                   {(s.country ?? "").toUpperCase()}
                 </span>
-                {s.id === currentId && <CheckIcon className="size-3 text-indigo-400 ml-auto shrink-0" />}
+                {s.id === currentId && <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 ml-auto shrink-0" />}
               </button>
             ))}
           </div>

@@ -18,14 +18,14 @@ import type { IntentKeyword, IntentTheme } from "./types";
 import { ThemeMenuButton } from "./ThemeMenuButton";
 
 const THEME_COLORS = [
-  { ring: "ring-indigo-500/30", text: "text-indigo-300", dot: "bg-indigo-400" },
-  { ring: "ring-emerald-500/30", text: "text-emerald-300", dot: "bg-emerald-400" },
-  { ring: "ring-violet-500/30", text: "text-violet-300", dot: "bg-violet-400" },
-  { ring: "ring-amber-500/30", text: "text-amber-300", dot: "bg-amber-400" },
-  { ring: "ring-sky-500/30", text: "text-sky-300", dot: "bg-sky-400" },
-  { ring: "ring-rose-500/30", text: "text-rose-300", dot: "bg-rose-400" },
-  { ring: "ring-teal-500/30", text: "text-teal-300", dot: "bg-teal-400" },
-  { ring: "ring-fuchsia-500/30", text: "text-fuchsia-300", dot: "bg-fuchsia-400" },
+  { ring: "ring-indigo-500/30", text: "text-indigo-300 light:text-indigo-600", dot: "bg-indigo-400" },
+  { ring: "ring-emerald-500/30", text: "text-emerald-300 light:text-emerald-700", dot: "bg-emerald-400" },
+  { ring: "ring-violet-500/30", text: "text-violet-300 light:text-violet-700", dot: "bg-violet-400" },
+  { ring: "ring-amber-500/30", text: "text-amber-300 light:text-amber-700", dot: "bg-amber-400" },
+  { ring: "ring-sky-500/30", text: "text-sky-300 light:text-sky-700", dot: "bg-sky-400" },
+  { ring: "ring-rose-500/30", text: "text-rose-300 light:text-rose-700", dot: "bg-rose-400" },
+  { ring: "ring-teal-500/30", text: "text-teal-300 light:text-teal-700", dot: "bg-teal-400" },
+  { ring: "ring-fuchsia-500/30", text: "text-fuchsia-300 light:text-fuchsia-700", dot: "bg-fuchsia-400" },
 ];
 
 const OTHER_ID = "__other__";
@@ -43,14 +43,14 @@ function RegenerateConfirmDialog({ keywordCount, onCancel, onConfirm }: { keywor
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 light:bg-white shadow-2xl p-6">
         <div className="flex items-start gap-3 mb-5">
           <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-amber-500/20">
-            <ExclamationTriangleIcon className="size-5 text-amber-400" />
+            <ExclamationTriangleIcon className="size-5 text-amber-400 light:text-amber-700" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Regenerate intent themes?</h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <h2 className="text-base font-semibold text-white light:text-gray-900">Regenerate intent themes?</h2>
+            <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
               {`This reclassifies all ${keywordCount} tracked keyword${keywordCount === 1 ? "" : "s"} against a fresh theme list. Any keyword sitting in a generated theme that doesn't recur moves back to "Other." Your own custom-added themes and their keywords are left alone.`}
             </p>
           </div>
@@ -61,7 +61,7 @@ function RegenerateConfirmDialog({ keywordCount, onCancel, onConfirm }: { keywor
             type="button"
             onClick={onCancel}
             autoFocus
-            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
           >
             Cancel
           </button>
@@ -100,14 +100,14 @@ function DeleteIntentConfirmDialog({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 light:bg-white shadow-2xl p-6">
         <div className="flex items-start gap-3 mb-5">
           <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/20">
-            <ExclamationTriangleIcon className="size-5 text-red-400" />
+            <ExclamationTriangleIcon className="size-5 text-red-400 light:text-red-600" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Delete &ldquo;{label}&rdquo;?</h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <h2 className="text-base font-semibold text-white light:text-gray-900">Delete &ldquo;{label}&rdquo;?</h2>
+            <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
               {keywordCount
                 ? `Its ${keywordCount} keyword${keywordCount === 1 ? "" : "s"} move back to "Other." This can't be undone.`
                 : `This can't be undone.`}
@@ -120,7 +120,7 @@ function DeleteIntentConfirmDialog({
             type="button"
             onClick={onCancel}
             autoFocus
-            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
           >
             Cancel
           </button>
@@ -164,7 +164,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 self-start rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] hover:ring-white/[0.16] px-3 py-2 text-xs font-medium text-gray-300 hover:text-white transition-colors"
+        className="flex items-center gap-1.5 self-start rounded-lg bg-[#1a1d24] light:bg-white hover:ring-white/[0.16] light:hover:ring-black/[0.16] px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
       >
         <PlusIcon className="size-3.5" />
         Add your own intent
@@ -173,7 +173,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
   }
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] px-4 py-3 flex flex-col gap-2">
+    <div className="rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3 flex flex-col gap-2 shadow-lg shadow-black/20 light:shadow-black/10">
       <div className="flex items-center gap-2">
         <input
           autoFocus
@@ -184,7 +184,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
             if (e.key === "Escape") close();
           }}
           placeholder="e.g. shared pet care"
-          className="flex-1 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2 text-xs text-gray-300 placeholder-gray-600 outline-none"
+          className="flex-1 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
         />
         <button
           onClick={submit}
@@ -193,11 +193,11 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
         >
           {saving ? "Adding…" : "Add"}
         </button>
-        <button onClick={close} className="text-xs text-gray-500 hover:text-gray-300 transition-colors shrink-0 px-1">
+        <button onClick={close} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors shrink-0 px-1">
           Cancel
         </button>
       </div>
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p className="text-[11px] text-red-400 light:text-red-600">{error}</p>}
     </div>
   );
 }
@@ -240,7 +240,7 @@ function EditIntentForm({
             type="button"
             onClick={() => setColor(i)}
             title="Pick a color"
-            className={`size-4 rounded-full ${c.dot} ${color === i ? "ring-2 ring-offset-1 ring-offset-[#1a1d24] ring-white/70" : "opacity-50 hover:opacity-90"} transition-opacity`}
+            className={`size-4 rounded-full ${c.dot} ${color === i ? "ring-2 ring-offset-1 ring-offset-[#1a1d24] light:ring-offset-white ring-white/70 light:ring-black/50" : "opacity-50 hover:opacity-90"} transition-opacity`}
           />
         ))}
       </div>
@@ -252,20 +252,20 @@ function EditIntentForm({
           if (e.key === "Enter") submit();
           if (e.key === "Escape") onCancel();
         }}
-        className="min-w-0 flex-1 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1 text-sm text-gray-200 outline-none"
+        className="min-w-0 flex-1 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1 text-sm text-gray-200 light:text-gray-800 outline-none"
       />
-      {error && <p className="text-[11px] text-red-400 shrink-0">{error}</p>}
+      {error && <p className="text-[11px] text-red-400 light:text-red-600 shrink-0">{error}</p>}
       <button
         onClick={submit}
         disabled={saving || !value.trim()}
-        className="flex items-center justify-center rounded-lg p-1.5 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40 transition-colors shrink-0"
+        className="flex items-center justify-center rounded-lg p-1.5 text-emerald-400 light:text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 transition-colors shrink-0"
         title="Save"
       >
         <CheckIcon className="size-3.5" />
       </button>
       <button
         onClick={onCancel}
-        className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-colors shrink-0"
+        className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors shrink-0"
         title="Cancel"
       >
         <XMarkIcon className="size-3.5" />
@@ -340,11 +340,11 @@ function GroupSection({
   const pageKeywords = filteredKeywords.slice(safePage * GROUP_PAGE_SIZE, (safePage + 1) * GROUP_PAGE_SIZE);
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className={`flex items-center gap-2 px-4 py-3 ${collapsed ? "" : "border-b border-white/[0.07]"}`}>
+    <div className="rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className={`flex items-center gap-2 px-4 py-3 ${collapsed ? "" : "border-b border-white/[0.07] light:border-black/[0.08]"}`}>
         <button
           onClick={() => setCollapsed((v) => !v)}
-          className="flex items-center justify-center rounded p-0.5 text-gray-500 hover:text-white transition-colors shrink-0"
+          className="flex items-center justify-center rounded p-0.5 text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
           title={collapsed ? "Expand group" : "Collapse group"}
         >
           <ChevronDownIcon className={`size-3.5 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
@@ -354,7 +354,7 @@ function GroupSection({
             type="checkbox"
             checked={allSelected}
             onChange={() => onToggleSelectAll(filteredKeywords.map((k) => k.term))}
-            className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
+            className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
             title="Select all in this group"
           />
         )}
@@ -373,9 +373,9 @@ function GroupSection({
         ) : (
           <>
             <span className={`size-2 rounded-full shrink-0 ${color.dot}`} />
-            <span className="text-sm font-semibold text-white truncate">{label}</span>
+            <span className="text-sm font-semibold text-white light:text-gray-900 truncate">{label}</span>
             {isManual && (
-              <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-white/[0.06] text-gray-400 leading-none">
+              <span className="rounded px-1.5 py-0.5 text-[9px] font-bold bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600 leading-none">
                 CUSTOM
               </span>
             )}
@@ -383,7 +383,7 @@ function GroupSection({
             {onEdit && (
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center justify-center rounded-lg p-1 text-gray-500 hover:text-white hover:bg-white/[0.06] transition-colors shrink-0"
+                className="flex items-center justify-center rounded-lg p-1 text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors shrink-0"
                 title="Rename or recolor this intent"
               >
                 <PencilIcon className="size-3.5" />
@@ -393,17 +393,17 @@ function GroupSection({
         )}
         <div className="ml-auto flex items-center gap-2">
           {id === OTHER_ID && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
-              <MagnifyingGlassIcon className="size-3.5 text-gray-600 shrink-0" />
+            <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+              <MagnifyingGlassIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search keywords…"
-                className="w-36 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+                className="w-36 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
               />
               {search && (
                 <button onClick={() => setSearch("")}>
-                  <XMarkIcon className="size-3 text-gray-600 hover:text-gray-300" />
+                  <XMarkIcon className="size-3 text-gray-600 light:text-gray-400 hover:text-gray-300 light:hover:text-gray-700" />
                 </button>
               )}
             </div>
@@ -411,7 +411,7 @@ function GroupSection({
           <button
             onClick={copyGroup}
             disabled={!filteredKeywords.length}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400 light:text-emerald-700" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
             title="Copy every keyword in this group, comma-separated — ready to paste into ASA"
           >
             <ClipboardDocumentIcon className="size-3.5" />
@@ -420,7 +420,7 @@ function GroupSection({
           {onDelete && (
             <button
               onClick={() => setConfirmingDelete(true)}
-              className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="flex items-center justify-center rounded-lg p-1.5 text-gray-500 hover:text-red-400 light:hover:text-red-600 hover:bg-red-500/10 transition-colors"
               title="Delete this intent theme"
             >
               <TrashIcon className="size-3.5" />
@@ -431,47 +431,47 @@ function GroupSection({
       {!collapsed && (
         <>
           {filteredKeywords.length ? (
-            <div className="divide-y divide-white/[0.04]">
+            <div className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
               {pageKeywords.map((k) => (
-                <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] transition-colors">
+                <div key={k.term} className="flex items-center gap-3 px-4 py-2.5 group hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors">
                   <input
                     type="checkbox"
                     checked={selected.has(k.term)}
                     onChange={() => onToggleSelect(k.term)}
-                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500 shrink-0"
+                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
                   />
-                  <span className="text-sm text-gray-200 flex-1 truncate">{k.term}</span>
+                  <span className="text-sm text-gray-200 light:text-gray-800 flex-1 truncate">{k.term}</span>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                     <ThemeMenuButton
                       label="Move to"
                       themes={themes}
                       currentThemeId={id === OTHER_ID ? null : id}
                       onPick={(themeId) => onMove([k.term], themeId)}
-                      buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                      buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="px-4 py-3 text-xs text-gray-600">
+            <div className="px-4 py-3 text-xs text-gray-600 light:text-gray-400">
               {search ? `No keywords match “${search}.”` : <>No keywords yet — move some in with &ldquo;Move to&rdquo;.</>}
             </div>
           )}
           {pageCount > 1 && (
-            <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07]">
+            <div className="flex items-center justify-center gap-3 px-4 py-2.5 border-t border-white/[0.07] light:border-black/[0.08]">
               <button
                 onClick={() => setPage(safePage - 1)}
                 disabled={safePage === 0}
-                className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-[11px] font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 ‹ Prev
               </button>
-              <span className="text-[11px] text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+              <span className="text-[11px] text-gray-600 light:text-gray-400 tabular-nums">Page {safePage + 1} of {pageCount}</span>
               <button
                 onClick={() => setPage(safePage + 1)}
                 disabled={safePage >= pageCount - 1}
-                className="text-[11px] font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-[11px] font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 Next ›
               </button>
@@ -504,21 +504,21 @@ function BulkMoveBar({
 }) {
   if (!count) return null;
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] ring-1 ring-white/[0.12] shadow-2xl px-2 py-2">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] light:bg-white shadow-2xl px-2 py-2">
       <button
         onClick={onClear}
         title="Clear selection"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+        className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
       >
         <XMarkIcon className="size-4" />
       </button>
-      <span className="px-2 text-xs font-medium text-gray-300 whitespace-nowrap">{count} selected</span>
-      <div className="w-px h-5 bg-white/[0.1] mx-1" />
+      <span className="px-2 text-xs font-medium text-gray-300 light:text-gray-700 whitespace-nowrap">{count} selected</span>
+      <div className="w-px h-5 bg-white/[0.1] light:bg-black/[0.1] mx-1" />
       <ThemeMenuButton
         label="Move to"
         themes={themes}
         onPick={onMove}
-        buttonClassName="flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-full text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
+        buttonClassName="flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-full text-xs font-semibold text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
       />
     </div>
   );
@@ -599,10 +599,10 @@ export function IntentBoard({
 
   return (
     <div className="mx-6 my-6 flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] px-4 py-3.5">
-        <TagIcon className="size-5 text-indigo-400 shrink-0" />
+      <div className="flex items-center gap-3 rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3.5 shadow-lg shadow-black/20 light:shadow-black/10">
+        <TagIcon className="size-5 text-indigo-400 light:text-indigo-600 shrink-0" />
         <div className="flex-1">
-          <p className="text-sm font-medium text-white">Search-intent themes</p>
+          <p className="text-sm font-medium text-white light:text-gray-900">Search-intent themes</p>
           <p className="text-xs text-gray-500">
             {themes.length
               ? "Generated from this app's description — regenerating reclassifies every tracked keyword."
@@ -626,11 +626,11 @@ export function IntentBoard({
       </div>
 
       {!loaded ? (
-        <div className="py-16 text-center text-sm text-gray-600">Loading…</div>
+        <div className="py-16 text-center text-sm text-gray-600 light:text-gray-400">Loading…</div>
       ) : !keywords.length ? (
         <div className="py-16 text-center">
-          <TagIcon className="size-8 text-gray-700 mx-auto mb-3" />
-          <p className="text-sm text-gray-600">No tracked keywords yet — add some in Keyword Research first.</p>
+          <TagIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+          <p className="text-sm text-gray-600 light:text-gray-400">No tracked keywords yet — add some in Keyword Research first.</p>
         </div>
       ) : (
         <>
@@ -638,8 +638,8 @@ export function IntentBoard({
 
           {!themes.length ? (
             <div className="py-16 text-center">
-              <SparklesIcon className="size-8 text-gray-700 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">Click &ldquo;Generate intents&rdquo; or add your own above to start clustering your keywords.</p>
+              <SparklesIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-600 light:text-gray-400">Click &ldquo;Generate intents&rdquo; or add your own above to start clustering your keywords.</p>
             </div>
           ) : (
             <>
@@ -664,7 +664,7 @@ export function IntentBoard({
               <GroupSection
                 id={OTHER_ID}
                 label="Other"
-                color={{ ring: "ring-gray-500/30", text: "text-gray-400", dot: "bg-gray-500" }}
+                color={{ ring: "ring-gray-500/30", text: "text-gray-400 light:text-gray-600", dot: "bg-gray-500" }}
                 colorIndex={-1}
                 keywords={other}
                 themes={themes}

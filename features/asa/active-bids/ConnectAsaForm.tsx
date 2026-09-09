@@ -54,45 +54,45 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Client ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Client ID</label>
           <input
             value={clientId}
             onChange={(e) => setClientId(e.target.value)}
             placeholder="SEARCHADS.a1b2c3d4-..."
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">Apple Search Ads → Account Settings → API</p>
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Apple Search Ads → Account Settings → API</p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Team ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Team ID</label>
           <input
             value={teamId}
             onChange={(e) => setTeamId(e.target.value)}
             placeholder="SEARCHADS.a1b2c3d4-..."
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">Shown on the same API settings page</p>
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Shown on the same API settings page</p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Key ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Key ID</label>
           <input
             value={keyId}
             onChange={(e) => setKeyId(e.target.value)}
             placeholder="2X9R4HXF34"
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">Shown next to the key you generate</p>
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Shown next to the key you generate</p>
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-medium text-gray-400">Private key</label>
+            <label className="block text-xs font-medium text-gray-400 light:text-gray-600">Private key</label>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
             >
               Upload file
             </button>
@@ -104,15 +104,15 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Generated alongside the Client ID/Team ID/Key ID above. Only downloadable once, so save the file.
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
             {error}
           </div>
@@ -128,8 +128,8 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
         </button>
       </form>
 
-      <div className="rounded-lg bg-white/[0.03] ring-1 ring-white/[0.06] px-3.5 py-3">
-        <p className="text-[11px] font-medium text-gray-400 mb-1.5">Before connecting</p>
+      <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3">
+        <p className="text-[11px] font-medium text-gray-400 light:text-gray-600 mb-1.5">Before connecting</p>
         <ol className="text-[11px] text-gray-500 list-decimal list-inside space-y-1.5">
           <li>In Apple Search Ads, go to Account Settings → API.</li>
           <li>Generate a certificate/key pair for API access, following Apple&apos;s OAuth setup steps for the Search Ads API.</li>

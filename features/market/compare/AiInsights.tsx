@@ -113,29 +113,29 @@ export function AiInsights({ apps }: Props) {
 
   if (locked) {
     return (
-      <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-8 px-4 text-center">
-        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 mb-3">
+      <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-8 px-4 text-center">
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 light:text-amber-700 mb-3">
           <LockClosedIcon className="size-2.5" />
           Pro+
         </span>
-        <p className="text-xs font-medium text-gray-400">AI Insights is a Pro+ feature</p>
-        <p className="mt-1 text-xs text-gray-600 max-w-sm">Upgrade to Pro+ to generate an AI-written summary and keyword gap analysis across the apps you&apos;re comparing.</p>
+        <p className="text-xs font-medium text-gray-400 light:text-gray-600">AI Insights is a Pro+ feature</p>
+        <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-sm">Upgrade to Pro+ to generate an AI-written summary and keyword gap analysis across the apps you&apos;re comparing.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-          <span className="text-indigo-400">✦</span>
+          <span className="text-indigo-400 light:text-indigo-600">✦</span>
           AI Insights
         </span>
         <button
           onClick={generate}
           disabled={!canGenerate || loading}
           title={!canGenerate ? "Add at least 2 apps to generate AI insights" : undefined}
-          className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/30 hover:bg-indigo-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 rounded-lg bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-300 light:text-indigo-600 ring-1 ring-indigo-500/30 hover:bg-indigo-500/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <SparklesIcon className="size-3.5" />
           {loading ? "Generating…" : summary ? "Regenerate" : "Generate AI Insights"}
@@ -144,19 +144,19 @@ export function AiInsights({ apps }: Props) {
 
       <div className="px-4 py-4">
         {!canGenerate && !summary && !loading && (
-          <p className="text-xs text-gray-600">Add at least 2 apps to generate AI insights.</p>
+          <p className="text-xs text-gray-600 light:text-gray-400">Add at least 2 apps to generate AI insights.</p>
         )}
 
         {loading && (
           <div className="space-y-2">
-            <div className="h-3.5 w-full rounded bg-white/[0.05] animate-pulse" />
-            <div className="h-3.5 w-11/12 rounded bg-white/[0.05] animate-pulse" />
-            <div className="h-3.5 w-4/5 rounded bg-white/[0.05] animate-pulse" />
+            <div className="h-3.5 w-full rounded bg-white/[0.05] light:bg-black/[0.04] animate-pulse" />
+            <div className="h-3.5 w-11/12 rounded bg-white/[0.05] light:bg-black/[0.04] animate-pulse" />
+            <div className="h-3.5 w-4/5 rounded bg-white/[0.05] light:bg-black/[0.04] animate-pulse" />
           </div>
         )}
 
         {error && !loading && (
-          <p className="flex items-center gap-1.5 text-xs text-amber-400">
+          <p className="flex items-center gap-1.5 text-xs text-amber-400 light:text-amber-700">
             <ExclamationTriangleIcon className="size-3.5 shrink-0" />
             {error}
           </p>
@@ -164,16 +164,16 @@ export function AiInsights({ apps }: Props) {
 
         {summary && !loading && (
           <div className="space-y-4">
-            <p className="text-sm text-gray-300 leading-relaxed">{summary}</p>
+            <p className="text-sm text-gray-300 light:text-gray-700 leading-relaxed">{summary}</p>
 
             {gaps.length > 0 && (
-              <div className="space-y-2 pt-3 border-t border-white/[0.05]">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">Keyword gaps</p>
+              <div className="space-y-2 pt-3 border-t border-white/[0.05] light:border-black/[0.04]">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 light:text-gray-400">Keyword gaps</p>
                 {gaps.map((g) => (
-                  <p key={g.key} className="text-xs text-gray-400">
-                    <span className="font-medium text-gray-300">{g.name}:</span> {g.note}
+                  <p key={g.key} className="text-xs text-gray-400 light:text-gray-600">
+                    <span className="font-medium text-gray-300 light:text-gray-700">{g.name}:</span> {g.note}
                     {g.keywords.length > 0 && (
-                      <span className="text-gray-600"> ({g.keywords.slice(0, 5).join(", ")})</span>
+                      <span className="text-gray-600 light:text-gray-400"> ({g.keywords.slice(0, 5).join(", ")})</span>
                     )}
                   </p>
                 ))}

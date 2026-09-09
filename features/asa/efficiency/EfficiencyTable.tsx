@@ -10,10 +10,10 @@ type Props = { rows: EfficiencyRow[] };
 type SortKey = "text" | "spend" | "installs" | "cpi";
 
 const TAG_PILL: Record<EfficiencyTag, string> = {
-  "Scale candidate": "bg-emerald-500/15 text-emerald-400",
-  "Pause candidate": "bg-red-500/10 text-red-400/80",
+  "Scale candidate": "bg-emerald-500/15 text-emerald-400 light:text-emerald-700",
+  "Pause candidate": "bg-red-500/10 text-red-400 light:text-red-600/80",
   "Monitor": "bg-yellow-500/15 text-yellow-400",
-  "No spend": "bg-gray-500/10 text-gray-600 italic",
+  "No spend": "bg-gray-500/10 text-gray-600 light:text-gray-400 italic",
 };
 
 function TagPill({ tag }: { tag: EfficiencyTag }) {
@@ -69,7 +69,7 @@ export function EfficiencyTable({ rows }: Props) {
 
   const SortTh = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
     <th
-      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 transition-colors whitespace-nowrap ${className}`}
+      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 light:hover:text-gray-700 transition-colors whitespace-nowrap ${className}`}
       onClick={() => toggleSort(col)}
     >
       {label}{sortKey === col ? (sortAsc ? " ↑" : " ↓") : ""}
@@ -77,33 +77,33 @@ export function EfficiencyTable({ rows }: Props) {
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="px-4 py-3 border-b border-white/[0.07] flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1.5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search keyword or campaign"
-            className="bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none min-w-0"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none min-w-0"
           />
         </div>
 
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 ring-1 ring-white/[0.08] hover:text-white hover:bg-white/[0.05] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
           <ArrowDownTrayIcon className="size-3.5" />
           Export CSV
         </button>
 
-        <span className="ml-auto text-xs text-gray-600">{filtered.length.toLocaleString()} / {rows.length.toLocaleString()}</span>
+        <span className="ml-auto text-xs text-gray-600 light:text-gray-400">{filtered.length.toLocaleString()} / {rows.length.toLocaleString()}</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] border-collapse">
           <thead>
-            <tr className="border-b border-white/[0.07]">
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <SortTh col="text" label="Keyword" />
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Campaign / Ad Group</th>
               <SortTh col="spend" label="Spend (30d)" />
@@ -114,12 +114,12 @@ export function EfficiencyTable({ rows }: Props) {
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={r.keywordId} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                <td className="px-3 py-2.5 text-sm text-gray-200">{r.text}</td>
+              <tr key={r.keywordId} className="border-b border-white/[0.04] light:border-black/[0.05] hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors">
+                <td className="px-3 py-2.5 text-sm text-gray-200 light:text-gray-800">{r.text}</td>
                 <td className="px-3 py-2.5 text-xs text-gray-500">{r.campaignName} / {r.adGroupName}</td>
-                <td className="px-3 py-2.5 text-sm text-gray-300 tabular-nums">{money(r.spend, r.currency)}</td>
-                <td className="px-3 py-2.5 text-sm text-gray-300 tabular-nums">{r.installs ?? "—"}</td>
-                <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-gray-200">{money(r.cpi, r.currency)}</td>
+                <td className="px-3 py-2.5 text-sm text-gray-300 light:text-gray-700 tabular-nums">{money(r.spend, r.currency)}</td>
+                <td className="px-3 py-2.5 text-sm text-gray-300 light:text-gray-700 tabular-nums">{r.installs ?? "—"}</td>
+                <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-gray-200 light:text-gray-800">{money(r.cpi, r.currency)}</td>
                 <td className="px-3 py-2.5"><TagPill tag={r.efficiency} /></td>
               </tr>
             ))}
@@ -128,8 +128,8 @@ export function EfficiencyTable({ rows }: Props) {
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MagnifyingGlassIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">No keywords match your search</p>
+            <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">No keywords match your search</p>
           </div>
         )}
       </div>

@@ -7,6 +7,7 @@ import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider } from "./PlanContext";
+import { ThemeProvider, type Theme } from "./ThemeContext";
 import { ActiveAppProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
@@ -19,7 +20,7 @@ import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { WorkspaceFrozen } from "@/features/workspace/WorkspaceFrozen";
-import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
+import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 // Paths that manage the account/plan itself, not a specific workspace's
 // content — stay reachable even when the active workspace is frozen, since
@@ -81,18 +82,18 @@ type Props = {
   lastPreview?: string;
   lastWorkspaceId?: string;
   accessByWorkspace: Record<string, WorkspaceAccess[]>;
-  roleByWorkspace: Record<string, WorkspaceRole>;
   initialPlanSlug?: PlanSlug;
   initialWorkspaceLimit?: number | null;
+  initialTheme: Theme;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, children }: Props) {
-  const pathname     = usePathname();
-  const router       = useRouter();
-  const rawParams    = useParams<{ id?: string }>();
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialTheme, children }: Props) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const rawParams = useParams<{ id?: string }>();
   const searchParams = useSearchParams();
 
   // useParams() reflects whatever dynamic route is currently matched — and
@@ -104,7 +105,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   const isOnPreview = pathname === "/dashboard/preview";
   const wsParam = searchParams.get("ws");
-  const rawSearch   = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+  const rawSearch = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
   const rawSearchClean = (() => {
     if (!rawSearch) return "";
     const sp = new URLSearchParams(rawSearch.slice(1));
@@ -112,7 +113,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     return sp.size > 0 ? `?${sp.toString()}` : "";
   })();
 
-  const [savedAppId,   setSavedAppId]   = useState<string | undefined>(lastAppId);
+  const [savedAppId, setSavedAppId] = useState<string | undefined>(lastAppId);
   // lastPreview is handed to us already url-decoded — Next's cookie parser
   // (next/headers cookies(), via the `cookie` package) calls decodeURIComponent
   // on every cookie value it reads, undoing the single encodeURIComponent()
@@ -138,7 +139,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // away — sidebar links, search results, any in-app link — asks for confirmation
   // first instead of silently losing the in-progress add.
   const [guardMessage, setGuardMessage] = useState<string | null>(null);
-  const [pendingHref,  setPendingHref]  = useState<string | null>(null);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   // Last step of Keywords Research's onboarding coach mark points at the
   // sidebar — see SidebarTourContext for why this lives here rather than on
@@ -216,8 +217,8 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       // Track every preview navigation as recently viewed
       const sp = new URLSearchParams(rawSearchClean.slice(1));
       const bundleId = sp.get("bundleId");
-      const store    = sp.get("store") as "ios" | "android" | null;
-      const name     = sp.get("name");
+      const store = sp.get("store") as "ios" | "android" | null;
+      const name = sp.get("name");
       if (bundleId && store && name) {
         saveRecentEntry(resolvedWorkspaceId ?? "", {
           name,
@@ -235,7 +236,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // Resolve sidebar context ─────────────────────────────────────────────────
 
   const resolvedAppId = params.id ?? savedAppId;
-  const activeApp     = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
+  const activeApp = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
 
   // Persist an explicit workspace switch (the sidebar switcher navigates to
   // /dashboard?ws=<id>) so it sticks on the next navigation — otherwise it's
@@ -277,7 +278,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     : undefined;
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
-  const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
 
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId);
   const isFreezeExemptPath = WORKSPACE_FREEZE_EXEMPT_PREFIXES.some(p => pathname.startsWith(p));
@@ -393,7 +393,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     const previewApp: ActiveApp | undefined = (() => {
       if (!previewStr) return undefined;
       const sp = new URLSearchParams(previewStr.slice(1));
-      const name  = sp.get("name");
+      const name = sp.get("name");
       const store = sp.get("store") as "ios" | "android" | null;
       if (!name || !store) return undefined;
       const bundleId = sp.get("bundleId") ?? undefined;
@@ -408,7 +408,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       return {
         id: matched?.id,
         bundle_id: bundleId,
-        store_id:  sp.get("storeId")  ?? undefined,
+        store_id: sp.get("storeId") ?? undefined,
         name, icon_url: sp.get("icon") ?? null, store, country,
       };
     })();
@@ -427,6 +427,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   })();
 
   return (
+    <ThemeProvider initialTheme={initialTheme}>
     <WorkspaceProvider value={activeWorkspaceId ?? ""}>
     <WorkspaceNameProvider value={activeWorkspace?.name ?? ""}>
     <PlanProvider value={planSlug}>
@@ -435,7 +436,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <AllAppsProvider value={allApps}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
     <SidebarTourProvider value={{ ...sidebarTour, setSidebarTour }}>
-      <div className="flex h-screen bg-[#111318] overflow-hidden" onClickCapture={handleNavClickCapture}>
+      <div className="flex h-screen bg-[#111318] light:bg-[#f5f6f8] overflow-hidden" onClickCapture={handleNavClickCapture}>
         <DashboardSidebar
           currentPath={pathname}
           workspaces={workspaces}
@@ -444,23 +445,22 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           metaOverrideHref={metaOverrideHref}
           activePreviewPage={activePreviewPage}
           access={currentAccess}
-          role={currentRole}
           planSlug={planSlug}
           workspaceLimit={workspaceLimit}
           isMobileOpen={mobileNavOpen}
           onMobileClose={() => setMobileNavOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318]">
-          <div className="flex items-center gap-3 border-b border-white/[0.07] px-4 py-3 lg:hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+          <div className="flex items-center gap-3 border-b border-white/[0.07] light:border-black/[0.08] px-4 py-3 lg:hidden">
             <button
               type="button"
               onClick={() => setMobileNavOpen(true)}
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+              className="rounded-lg p-1.5 text-gray-400 light:text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.05] hover:text-white light:hover:text-gray-900 transition-colors"
               aria-label="Open navigation"
             >
               <Bars3Icon className="size-5" />
             </button>
-            <span className="text-sm font-medium text-white truncate">
+            <span className="text-sm font-medium text-white light:text-gray-900 truncate">
               {activeWorkspace?.name ?? "My Workspace"}
             </span>
           </div>
@@ -497,5 +497,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     </PlanProvider>
     </WorkspaceNameProvider>
     </WorkspaceProvider>
+    </ThemeProvider>
   );
 }

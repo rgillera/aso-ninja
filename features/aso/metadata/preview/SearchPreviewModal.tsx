@@ -19,15 +19,15 @@ export default function SearchPreviewModal({ app, storeData, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-6" onClick={onClose}>
       <div
-        className="relative w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl bg-[#1a1d24] p-8 ring-1 ring-white/10 shadow-2xl"
+        className="relative w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl bg-[#1a1d24] light:bg-white p-8 shadow-2xl light:shadow-black/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <button onClick={onClose} className="absolute right-5 top-5 text-gray-500 hover:text-gray-300 transition-colors">
+        <button onClick={onClose} className="absolute right-5 top-5 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">
           <XMarkIcon className="size-5" />
         </button>
 
-        <h2 className="text-xl font-semibold text-white">Search Preview for {app.name}</h2>
-        <p className="mt-3 text-sm leading-relaxed text-gray-400">
+        <h2 className="text-xl font-semibold text-white light:text-gray-900">Search Preview for {app.name}</h2>
+        <p className="mt-3 text-sm leading-relaxed text-gray-400 light:text-gray-600">
           See how your new app metadata version looks like in the store search view.
         </p>
 

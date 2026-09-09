@@ -105,6 +105,19 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // The dashboard's theme toggle (features/dashboard/ThemeContext.tsx) sets
+      // data-theme on this element out of band — via a synchronous inline
+      // script (app/dashboard/layout.tsx) before hydration, and via a plain
+      // DOM call afterward — specifically so a light-mode session (the
+      // product default) never flashes the CSS's built-in dark styling.
+      // Both intentionally run before/outside
+      // React's own render of this node, so React's hydration diff always
+      // sees an attribute here it didn't itself produce; suppressed rather
+      // than "fixed" since there's no server-rendered value that could ever
+      // match a client-only preference read from a cookie set on this same
+      // request. Scoped to just this element's own attributes — everything
+      // else still gets normal hydration mismatch warnings.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}

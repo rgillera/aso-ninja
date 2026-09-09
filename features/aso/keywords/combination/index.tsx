@@ -20,36 +20,36 @@ import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <PuzzlePieceIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <PuzzlePieceIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
 }
 
 export default function KeywordCombinationPage() {
-  const activeApp   = useActiveApp();
+  const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "pro");
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
-  const [groups,          setGroups]          = useState<CombinationGroup[]>([]);
+  const [groups, setGroups] = useState<CombinationGroup[]>([]);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
-  const [pendingTerms,    setPendingTerms]    = useState<Set<string>>(new Set());
+  const [pendingTerms, setPendingTerms] = useState<Set<string>>(new Set());
   const [translateToggle, setTranslateToggle] = useState(false);
-  const [intentThemes,    setIntentThemes]    = useState<IntentTheme[]>([]);
+  const [intentThemes, setIntentThemes] = useState<IntentTheme[]>([]);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingTerms.size > 0 ? "A keyword is still being saved. Leaving now may lose it." : null);
     return () => setGuardMessage(null);
   }, [pendingTerms, setGuardMessage]);
-  const [researchTerms,   setResearchTerms]   = useState<string[]>([]);
-  const [liveSearchTerm,  setLiveSearchTerm]  = useState<string | null>(null);
-  const [appSubtitle,     setAppSubtitle]     = useState<string>("");
-  const [saveError,       setSaveError]       = useState<string | null>(null);
+  const [researchTerms, setResearchTerms] = useState<string[]>([]);
+  const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
+  const [appSubtitle, setAppSubtitle] = useState<string>("");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Shared identity for resolving/creating the apps row server-side — mirrors
   // the fallback used by /api/keywords/save so this works for a previewed
@@ -57,12 +57,12 @@ export default function KeywordCombinationPage() {
   function combinationIdentity() {
     return {
       workspaceId,
-      appId:    activeApp?.id,
+      appId: activeApp?.id,
       bundleId: activeApp?.bundle_id,
-      storeId:  activeApp?.store_id,
-      appName:  activeApp?.name,
-      store:    activeApp?.store,
-      country:  activeApp?.country ?? "us",
+      storeId: activeApp?.store_id,
+      appName: activeApp?.name,
+      store: activeApp?.store,
+      country: activeApp?.country ?? "us",
     };
   }
 
@@ -158,7 +158,7 @@ export default function KeywordCombinationPage() {
   const loadedSubtitleFor = useRef<string | undefined>(undefined);
   useEffect(() => {
     const storeId = activeApp?.store_id;
-    const store   = activeApp?.store;
+    const store = activeApp?.store;
     if (!storeId || !store || isLocked || loadedSubtitleFor.current === storeId) return;
     loadedSubtitleFor.current = storeId;
     const country = activeApp?.country ?? "us";
@@ -242,7 +242,7 @@ export default function KeywordCombinationPage() {
         appName: activeApp?.name ?? "",
         appSubtitle,
       });
-      const res  = await fetch(`/api/keywords/combinations?${params}`);
+      const res = await fetch(`/api/keywords/combinations?${params}`);
       const data: CombinationsResult = await res.json();
 
       setGroups((prev) => prev.map((g) => {
@@ -287,13 +287,13 @@ export default function KeywordCombinationPage() {
     // Mark as pending immediately — blocks duplicate clicks and bulk re-adds
     setPendingTerms((prev) => new Set([...prev, ...freshLower]));
 
-    const store   = activeApp?.store ?? "ios";
+    const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
     const baseParams = {
       // Percent-encode each term before joining — see the matching comment
       // on the /api/keywords/combinations seeds param above.
-      terms:   fresh.map(encodeURIComponent).join(","),
+      terms: fresh.map(encodeURIComponent).join(","),
       store,
       country,
       appName: activeApp?.name ?? "",
@@ -312,11 +312,11 @@ export default function KeywordCombinationPage() {
             terms: fresh,
             workspaceId,
             metrics,
-            appId:    activeApp?.id,
+            appId: activeApp?.id,
             bundleId: activeApp?.bundle_id,
-            storeId:  activeApp?.store_id,
-            appName:  activeApp?.name,
-            iconUrl:  activeApp?.icon_url ?? undefined,
+            storeId: activeApp?.store_id,
+            appName: activeApp?.name,
+            iconUrl: activeApp?.icon_url ?? undefined,
             store,
             country,
           }),
@@ -351,7 +351,7 @@ export default function KeywordCombinationPage() {
 
     try {
       // Phase 1: fast metrics (no LLM) — update the saved record with real data
-      const res  = await fetch(`/api/keywords/metrics?${new URLSearchParams({ ...baseParams, fast: "1" })}`);
+      const res = await fetch(`/api/keywords/metrics?${new URLSearchParams({ ...baseParams, fast: "1" })}`);
       const data = await res.json();
       await saveKeywords(data);
 
@@ -360,7 +360,7 @@ export default function KeywordCombinationPage() {
 
       // Phase 2: full metrics (LLM relevancy + opportunity) — re-save to update
       try {
-        const res2  = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
+        const res2 = await fetch(`/api/keywords/metrics?${new URLSearchParams(baseParams)}`);
         const data2 = await res2.json();
         await saveKeywords(data2);
       } catch {}
@@ -397,7 +397,7 @@ export default function KeywordCombinationPage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Long Tail Keywords" />
         <FeatureLocked
           minPlan="pro"
@@ -415,11 +415,11 @@ export default function KeywordCombinationPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />
 
       {saveError && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">

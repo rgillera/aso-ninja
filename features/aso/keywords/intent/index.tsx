@@ -15,11 +15,11 @@ import type { SavedKeyword } from "@/app/api/keywords/list/route";
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <TagIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <TagIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
@@ -38,12 +38,12 @@ type MetricsResponse = Record<string, {
 }>;
 
 export default function KeywordIntentPage() {
-  const activeApp   = useActiveApp();
+  const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const planSlug    = usePlanSlug();
-  const isLocked    = !isPlanAtLeast(planSlug, "pro");
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
 
-  const [themes, setThemes]   = useState<IntentTheme[]>([]);
+  const [themes, setThemes] = useState<IntentTheme[]>([]);
   const [keywords, setKeywords] = useState<IntentKeyword[]>([]);
   const [resolvedAppId, setResolvedAppId] = useState<string | null>(null);
   // Key of the app whose data is currently in `themes`/`keywords` — compared
@@ -54,7 +54,7 @@ export default function KeywordIntentPage() {
   const loaded = loadedKey !== null && loadedKey === currentKey;
   const [generating, setGenerating] = useState(false);
   const [classifyProgress, setClassifyProgress] = useState<{ done: number; total: number } | null>(null);
-  const [error, setError]     = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function identityParams(): Record<string, string> | null {
     if (activeApp?.id) return { appId: activeApp.id };
@@ -93,9 +93,9 @@ export default function KeywordIntentPage() {
   }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, workspaceId, isLocked]);
 
   async function classifyAll(appId: string) {
-    const store   = activeApp?.store ?? "ios";
+    const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
-    const terms   = keywords.map((k) => k.term);
+    const terms = keywords.map((k) => k.term);
     if (!terms.length) return;
 
     setClassifyProgress({ done: 0, total: terms.length });
@@ -117,7 +117,7 @@ export default function KeywordIntentPage() {
       });
 
       try {
-        const res  = await fetch(`/api/keywords/metrics?${params}`);
+        const res = await fetch(`/api/keywords/metrics?${params}`);
         const data: MetricsResponse = await res.json();
 
         setKeywords((prev) =>
@@ -287,7 +287,7 @@ export default function KeywordIntentPage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Group by Intent" />
         <FeatureLocked
           minPlan="pro"
@@ -305,11 +305,11 @@ export default function KeywordIntentPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Group by Intent" />
 
       {error && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={error} /></span>
           <button onClick={() => setError(null)} className="shrink-0 hover:text-red-300">

@@ -53,9 +53,9 @@ function axisTick(currentIndex: number) {
 
 export function RankHistoryPanel({ term, storeId, store, country, onClose }: Props) {
   const workspaceId = useWorkspaceId();
-  const [daily, setDaily]     = useState<DailyRankEntry[]>([]);
-  const [weekly, setWeekly]   = useState<WeeklyRankEntry[]>([]);
-  const [locked, setLocked]   = useState(false);
+  const [daily, setDaily] = useState<DailyRankEntry[]>([]);
+  const [weekly, setWeekly] = useState<WeeklyRankEntry[]>([]);
+  const [locked, setLocked] = useState(false);
   const [firstRecordedOn, setFirstRecordedOn] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,13 +90,13 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-2xl bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
-          <h2 className="text-sm font-medium text-gray-300">
+      <div className="relative z-10 w-full max-w-2xl bg-[#141417] light:bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
+          <h2 className="text-sm font-medium text-gray-300 light:text-gray-700">
             Rank history for{" "}
-            <span className="font-bold text-white">{term}</span>
+            <span className="font-bold text-white light:text-gray-900">{term}</span>
           </h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-600 light:text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors">
             <XMarkIcon className="size-5" />
           </button>
         </div>
@@ -108,16 +108,16 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
             </div>
           ) : daily.length === 0 && weekly.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-              <p className="text-sm font-medium text-gray-400">No history yet for this keyword</p>
-              <p className="mt-1 text-xs text-gray-600 max-w-xs">
+              <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet for this keyword</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 Rank snapshots accumulate automatically each time this keyword is checked.
               </p>
             </div>
           ) : (
             <div className="flex flex-col gap-6">
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-400">
+                <p className="mb-2 text-xs font-medium text-gray-400 light:text-gray-600">
                   {daily.length === 1 ? "Today" : "This week"}
                 </p>
                 <ResponsiveContainer width="100%" height={160}>
@@ -152,7 +152,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-400">Last 3 months</p>
+                <p className="mb-2 text-xs font-medium text-gray-400 light:text-gray-600">Last 3 months</p>
                 <div className="relative">
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={weekly} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
@@ -189,14 +189,14 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
 
                   {locked && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center px-4">
-                      <LockClosedIcon className="size-5 text-violet-400" />
-                      <p className="text-sm font-semibold text-white">3 months of rank trend locked</p>
-                      <p className="text-xs text-gray-400 max-w-[16rem]">
+                      <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
+                      <p className="text-sm font-semibold text-white light:text-gray-900">3 months of rank trend locked</p>
+                      <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
                         Upgrade to Pro to see how this keyword&apos;s rank moved over the last 3 months.
                       </p>
                       <Link
                         href="/dashboard/subscription"
-                        className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors underline underline-offset-2"
+                        className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
                       >
                         Upgrade to Pro
                       </Link>

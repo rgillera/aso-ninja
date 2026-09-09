@@ -13,7 +13,7 @@ function DeltaBadge({ value, avg }: { value: number; avg: number }) {
   }
   const up = diffPct > 0;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${up ? "text-emerald-400" : "text-amber-400"}`}>
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${up ? "text-emerald-400 light:text-emerald-700" : "text-amber-400 light:text-amber-700"}`}>
       {up ? <ArrowUpIcon className="size-3" /> : <ArrowDownIcon className="size-3" />}
       {Math.abs(diffPct)}% {up ? "above" : "below"} category avg
     </span>
@@ -29,21 +29,21 @@ export function CategoryRatingCard({ rating, category }: Props) {
   const categoryLabel = category?.genreName || "category";
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] p-5 ring-1 ring-white/[0.08]">
-      <p className="text-sm font-medium text-gray-300 mb-4">My category ({categoryLabel})</p>
+    <div className="rounded-xl bg-[#1a1d24] light:bg-white p-5">
+      <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">My category ({categoryLabel})</p>
 
       {category ? (
         <>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="flex items-center gap-1.5 text-2xl font-bold text-white leading-none">
+              <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
                 {category.avgRating != null ? category.avgRating.toFixed(2) : "—"}
-                <StarIcon className="size-4 text-amber-400" />
+                <StarIcon className="size-4 text-amber-400 light:text-amber-700" />
               </p>
               <p className="mt-1 text-xs text-gray-500">average rating</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-white leading-none">
+              <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">
                 {category.medianRatingCount != null ? formatCompact(category.medianRatingCount) : "—"}
               </p>
               <p className="mt-1 text-xs text-gray-500">median ratings (top apps)</p>
@@ -56,7 +56,7 @@ export function CategoryRatingCard({ rating, category }: Props) {
           )}
         </>
       ) : (
-        <p className="text-xs text-gray-600">
+        <p className="text-xs text-gray-600 light:text-gray-400">
           Category comparison isn&rsquo;t available for this app right now.
         </p>
       )}

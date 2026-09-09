@@ -31,7 +31,7 @@ function formatCount(n: number): string {
 }
 
 function Stars({ rating }: { rating: number }) {
-  const full    = Math.floor(rating);
+  const full = Math.floor(rating);
   const partial = rating - full;
   return (
     <div className="flex items-center gap-px">
@@ -73,7 +73,7 @@ function AppRow({
   return (
     <div className="border-b border-gray-100 last:border-0 px-3 py-2">
       <div className="flex items-center gap-2.5">
-        <span className="text-[9px] font-bold text-gray-300 w-3 shrink-0 text-center">{app.position}</span>
+        <span className="text-[9px] font-bold text-gray-300 light:text-gray-700 w-3 shrink-0 text-center">{app.position}</span>
         <div className={`relative w-11 h-11 overflow-hidden shrink-0 bg-gray-100 border border-black/[0.06] ${store === "android" ? "rounded-xl" : "rounded-2xl"} ${!isCurrentApp ? "group/icon" : ""}`}>
           {app.icon && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -109,7 +109,7 @@ function AppRow({
           {app.rating > 0 && (
             <div className="flex items-center gap-1 mt-0.5">
               <Stars rating={app.rating} />
-              <span className="text-[9px] text-gray-400">{formatCount(app.ratingCount)}</span>
+              <span className="text-[9px] text-gray-400 light:text-gray-600">{formatCount(app.ratingCount)}</span>
             </div>
           )}
         </div>
@@ -245,11 +245,11 @@ function PhoneFrame({
             {/* App Store search bar */}
             <div className="px-3 py-2 shrink-0">
               <div className="flex items-center gap-2 bg-[#f2f2f7] rounded-xl px-3 py-2">
-                <svg className="size-3.5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="size-3.5 text-gray-400 light:text-gray-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
                 </svg>
                 <span className="flex-1 text-[12px] text-gray-900 font-normal truncate">{keyword}</span>
-                <svg className="size-3 text-gray-400 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="size-3 text-gray-400 light:text-gray-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -281,10 +281,10 @@ function PhoneFrame({
             : error
             ? (
                 <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
-                  <svg className="size-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="size-8 text-gray-300 light:text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
                   </svg>
-                  <p className="text-[11px] text-gray-400 leading-snug">
+                  <p className="text-[11px] text-gray-400 light:text-gray-600 leading-snug">
                     {isAndroid ? "Google Play’s search is currently unavailable. Try again later." : "Apple’s search API is currently unavailable. Try again later."}
                   </p>
                 </div>
@@ -326,14 +326,14 @@ function PhoneFrame({
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitorAdded }: Props) {
-  const activeApp   = useActiveApp();
+  const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const [apps, setApps]           = useState<AppSearchResult[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const [apps, setApps] = useState<AppSearchResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [addingStoreId, setAddingStoreId] = useState<string | null>(null);
   const [addedStoreIds, setAddedStoreIds] = useState<Set<string>>(new Set());
-  const [addError, setAddError]           = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -364,11 +364,11 @@ export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitor
         body: JSON.stringify({
           workspaceId,
           bundleId: activeApp.bundle_id,
-          storeId:  activeApp.store_id,
-          appName:  activeApp.name,
-          iconUrl:  activeApp.icon_url ?? undefined,
-          store:    activeApp.store,
-          country:  activeApp.country,
+          storeId: activeApp.store_id,
+          appName: activeApp.name,
+          iconUrl: activeApp.icon_url ?? undefined,
+          store: activeApp.store,
+          country: activeApp.country,
           competitor,
         }),
       });
@@ -392,26 +392,26 @@ export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitor
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal card */}
-      <div className="relative z-10 w-full max-w-xl bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col"
+      <div className="relative z-10 w-full max-w-xl bg-[#141417] light:bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{ maxHeight: "90vh" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
-          <h2 className="text-sm font-medium text-gray-300">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
+          <h2 className="text-sm font-medium text-gray-300 light:text-gray-700">
             Live Search insights for{" "}
-            <span className="font-bold text-white">{keyword}</span>
+            <span className="font-bold text-white light:text-gray-900">{keyword}</span>
           </h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-600 light:text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors">
             <XMarkIcon className="size-5" />
           </button>
         </div>
 
-        <p className="px-6 py-2 border-b border-white/[0.07] shrink-0 text-[11px] text-gray-500">
+        <p className="px-6 py-2 border-b border-white/[0.07] light:border-black/[0.08] shrink-0 text-[11px] text-gray-500">
           Tip: hover an app icon below and click it to add that app as a competitor.
         </p>
 
         {addError && (
-          <div className="flex items-center gap-2 px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-[11px] shrink-0">
+          <div className="flex items-center gap-2 px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-[11px] shrink-0">
             <ExclamationTriangleIcon className="size-3.5 shrink-0" />
             <span className="flex-1"><PlanLimitMessage message={addError} /></span>
             <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300">

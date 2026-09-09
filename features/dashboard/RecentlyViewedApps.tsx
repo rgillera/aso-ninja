@@ -17,7 +17,7 @@ function AndroidIcon() {
 
 function ConnectedBadge() {
   return (
-    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/25">
+    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 light:text-emerald-700 ring-1 ring-emerald-500/25">
       Following
     </span>
   );
@@ -29,25 +29,25 @@ function AppCard({ entry, onNavigate }: { entry: RecentEntry; onNavigate: (e: Re
     <a
       href={entry.href}
       onClick={() => onNavigate(entry)}
-      className="flex items-center gap-2.5 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] px-3 py-2.5 w-[200px] shrink-0 hover:bg-[#1e2129] hover:ring-white/[0.12] transition-all"
+      className="flex items-center gap-2.5 rounded-xl bg-[#1a1d24] light:bg-white px-3 py-2.5 w-[200px] shrink-0 hover:bg-[#1e2129] light:hover:bg-gray-50 hover:ring-white/[0.12] light:hover:ring-black/[0.16] transition-all"
     >
       {/* Icon + store badge */}
       <div className="relative shrink-0">
         {entry.iconUrl ? (
           <img src={entry.iconUrl} alt={entry.name} className="size-9 rounded-xl object-cover" />
         ) : (
-          <div className="size-9 rounded-xl bg-[#0d0f14] flex items-center justify-center">
-            <DevicePhoneMobileIcon className="size-4 text-gray-600" />
+          <div className="size-9 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+            <DevicePhoneMobileIcon className="size-4 text-gray-600 light:text-gray-400" />
           </div>
         )}
-        <div className="absolute -bottom-1 -left-1 rounded-full bg-[#1a1d24] p-px ring-1 ring-white/[0.08]">
+        <div className="absolute -bottom-1 -left-1 rounded-full bg-[#1a1d24] light:bg-white p-px">
           {entry.store === "ios" ? <IosIcon /> : <AndroidIcon />}
         </div>
       </div>
 
       {/* Name + country */}
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-semibold text-white truncate leading-tight">{entry.name}</p>
+        <p className="text-xs font-semibold text-white light:text-gray-900 truncate leading-tight">{entry.name}</p>
         <p className="mt-0.5 text-[10px] text-gray-500 truncate leading-tight">
           {countryFlag(entry.country)} {COUNTRY_MAP[entry.country] ?? entry.country}
         </p>
@@ -84,7 +84,7 @@ export function RecentlyViewedApps({ apps }: { apps: App[] }) {
     <section className="px-6 pt-6 pb-2">
       <div className="flex items-center gap-2 mb-4">
         <ClockIcon className="size-4 text-gray-500" />
-        <h2 className="text-sm font-semibold text-gray-300">Recently Viewed Apps</h2>
+        <h2 className="text-sm font-semibold text-gray-300 light:text-gray-700">Recently Viewed Apps</h2>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">

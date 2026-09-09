@@ -36,7 +36,7 @@ export function UpgradeButton({
       <button
         type="button"
         disabled
-        className="mt-6 rounded-lg bg-white/[0.06] px-4 py-2.5 text-sm font-semibold text-gray-500 cursor-default"
+        className="mt-6 rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-4 py-2.5 text-sm font-semibold text-gray-500 cursor-default"
       >
         Current plan
       </button>
@@ -64,7 +64,7 @@ export function UpgradeButton({
 
   if (isCancelToFree && scheduledFor !== undefined) {
     return (
-      <p className="mt-6 rounded-lg bg-white/[0.06] px-4 py-2.5 text-center text-xs text-gray-400">
+      <p className="mt-6 rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-4 py-2.5 text-center text-xs text-gray-400 light:text-gray-600">
         {scheduledFor
           ? `Switching to Free on ${formatDate(scheduledFor)}`
           : "Switching to Free at the end of your billing period"}
@@ -109,7 +109,7 @@ export function UpgradeButton({
             ? "Downgrade"
             : "Upgrade"}
       </button>
-      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-xs text-red-400 light:text-red-600">{error}</p>}
 
       {showConfirm && (
         <DowngradeConfirmDialog

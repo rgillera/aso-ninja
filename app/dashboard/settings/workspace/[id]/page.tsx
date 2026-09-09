@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import WorkspacePage from "@/features/workspace/WorkspacePage";
-import type { Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
+import type { PlanSlug, Workspace, WorkspaceMember, WorkspaceRole } from "@/libs/contracts";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -36,6 +36,7 @@ export default async function Page({ params }: PageProps) {
 
   const canInviteMembers =
     "plan" in planState ? planState.plan.member_limit !== 0 : true;
+  const planSlug: PlanSlug = "plan" in planState ? planState.plan.slug : "free";
 
   if (wsError || !workspace) notFound();
 
@@ -70,6 +71,7 @@ export default async function Page({ params }: PageProps) {
       currentUserRole={currentMember.role as WorkspaceRole}
       allWorkspaces={(allWorkspaces ?? []) as Workspace[]}
       canInviteMembers={canInviteMembers}
+      planSlug={planSlug}
     />
   );
 }

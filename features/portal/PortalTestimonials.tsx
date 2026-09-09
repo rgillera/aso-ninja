@@ -37,7 +37,7 @@ export default function PortalTestimonials() {
           {testimonials.map((t) => (
             <figure
               key={t.name}
-              className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8"
+              className="flex flex-col rounded-2xl bg-gray-800/50 p-8"
             >
               <blockquote className="flex-1 text-base leading-7 text-gray-300">
                 <p>&ldquo;{t.quote}&rdquo;</p>

@@ -61,9 +61,9 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
   if (!rows.length) {
     return (
       <div className="flex h-80 flex-col items-center justify-center text-center px-6">
-        <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-        <p className="text-sm font-medium text-gray-400">No visibility data yet</p>
-        <p className="mt-1 text-xs text-gray-600 max-w-xs">
+        <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No visibility data yet</p>
+        <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
           Run a Live Search on a tracked keyword to start capturing rank history for this date range.
         </p>
       </div>
@@ -74,7 +74,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
     <div className="px-2">
       <div className="flex flex-wrap items-center gap-4 px-4 pt-4 pb-1">
         {apps.map((app, i) => (
-          <div key={app.id} className="flex items-center gap-1.5 text-xs text-gray-400">
+          <div key={app.id} className="flex items-center gap-1.5 text-xs text-gray-400 light:text-gray-600">
             <span className="size-2 rounded-full" style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }} />
             {app.name}
           </div>

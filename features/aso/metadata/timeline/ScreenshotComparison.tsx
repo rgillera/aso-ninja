@@ -5,15 +5,15 @@ import { SS_GRADIENTS } from "./constants";
 function ScreenshotCard({ gradientIdx, status, url }: { gradientIdx: number; status: ScreenshotStatus; url?: string }) {
   const grad = SS_GRADIENTS[gradientIdx % SS_GRADIENTS.length];
   const barCls = {
-    removed:      "bg-red-500",
-    added:        "bg-green-500",
+    removed: "bg-red-500",
+    added: "bg-green-500",
     repositioned: "bg-yellow-400",
-    unchanged:    "bg-white/10",
+    unchanged: "bg-white/10",
   }[status];
 
   return (
     <div className="flex-shrink-0 flex flex-col gap-1.5">
-      <div className={`w-[80px] h-[172px] rounded-2xl ring-1 ring-white/10 overflow-hidden ${url ? "" : `bg-gradient-to-b ${grad} flex flex-col`}`}>
+      <div className={`w-[80px] h-[172px] rounded-2xl overflow-hidden ${url ? "" : `bg-gradient-to-b ${grad} flex flex-col`}`}>
         {url ? (
           <img src={url} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -38,15 +38,15 @@ function ScreenshotCard({ gradientIdx, status, url }: { gradientIdx: number; sta
 export function ScreenshotComparison({ before, after }: { before: ScreenshotItem[]; after: ScreenshotItem[] }) {
   return (
     <div className="px-6 pb-6">
-      <div className="grid grid-cols-2 divide-x divide-white/[0.06] rounded-xl overflow-hidden ring-1 ring-white/[0.06]">
-        <div className="bg-[#0d0f14]/60 p-4">
+      <div className="grid grid-cols-2 divide-x divide-white/[0.06] light:divide-black/[0.06] rounded-xl overflow-hidden">
+        <div className="bg-[#0d0f14]/60 light:bg-black/[0.03] p-4">
           <div className="flex gap-2.5 overflow-x-auto pb-1">
             {before.map((ss, i) => (
               <ScreenshotCard key={i} gradientIdx={i} status={ss.status} url={ss.url} />
             ))}
           </div>
         </div>
-        <div className="bg-[#0d0f14]/60 p-4">
+        <div className="bg-[#0d0f14]/60 light:bg-black/[0.03] p-4">
           <div className="flex gap-2.5 overflow-x-auto pb-1">
             {after.map((ss, i) => (
               <ScreenshotCard key={i} gradientIdx={before.length + i} status={ss.status} url={ss.url} />
@@ -54,7 +54,7 @@ export function ScreenshotComparison({ before, after }: { before: ScreenshotItem
           </div>
         </div>
       </div>
-      <p className="mt-3 text-[10px] text-gray-600 text-center leading-relaxed">
+      <p className="mt-3 text-[10px] text-gray-600 light:text-gray-400 text-center leading-relaxed">
         <InformationCircleIcon className="size-3 inline -mt-0.5 mr-0.5" />
         <span className="text-red-500/70">Red lines</span> show screenshots that have been removed.{" "}
         <span className="text-yellow-500/70">Yellow lines</span> show screenshots that changed position.{" "}

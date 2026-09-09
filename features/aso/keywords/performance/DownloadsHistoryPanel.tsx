@@ -43,13 +43,13 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative z-10 w-full max-w-2xl bg-[#141417] rounded-2xl ring-1 ring-white/[0.1] shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
-          <h2 className="text-sm font-medium text-gray-300">
+      <div className="relative z-10 w-full max-w-2xl bg-[#141417] light:bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ maxHeight: "85vh" }}>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
+          <h2 className="text-sm font-medium text-gray-300 light:text-gray-700">
             Est. downloads history for{" "}
-            <span className="font-bold text-white">{term}</span>
+            <span className="font-bold text-white light:text-gray-900">{term}</span>
           </h2>
-          <button onClick={onClose} className="text-gray-600 hover:text-white transition-colors">
+          <button onClick={onClose} className="text-gray-600 light:text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors">
             <XMarkIcon className="size-5" />
           </button>
         </div>
@@ -61,17 +61,17 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
             </div>
           ) : rows.length === 0 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ArrowTrendingUpIcon className="size-8 text-gray-700 mb-3" />
-              <p className="text-sm font-medium text-gray-400">No history yet</p>
-              <p className="mt-1 text-xs text-gray-600 max-w-xs">
+              <ArrowTrendingUpIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 A day is added here each time your connected app syncs real download data.
               </p>
             </div>
           ) : rows.length === 1 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <p className="text-3xl font-semibold text-white">~{rows[0].estimated}</p>
-              <p className="mt-1 text-xs text-gray-600">Only synced day so far — {formatDate(rows[0].recorded_on)}</p>
-              <p className="mt-3 text-xs text-gray-600 max-w-xs">A trend will appear once your app keeps syncing.</p>
+              <p className="text-3xl font-semibold text-white light:text-gray-900">~{rows[0].estimated}</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Only synced day so far — {formatDate(rows[0].recorded_on)}</p>
+              <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A trend will appear once your app keeps syncing.</p>
             </div>
           ) : (
             <>
@@ -108,7 +108,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
                   />
                 </LineChart>
               </ResponsiveContainer>
-              <p className="mt-3 text-center text-[11px] text-gray-600">
+              <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
                 {Math.round((data?.share ?? 0) * 100)}% of total downloads (today&apos;s search-volume/rank weight, applied to each past day)
               </p>
             </>

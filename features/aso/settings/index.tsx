@@ -19,14 +19,14 @@ function StatusBadge({ connection }: { connection: ConnectionStatus }) {
   }
   if (connection.status === "error") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400 light:text-red-600">
         <ExclamationTriangleIcon className="size-3.5" />
         Connection error
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-400 light:text-emerald-700">
       <CheckCircleIcon className="size-3.5" />
       Connected
     </span>
@@ -77,51 +77,51 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Issuer ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Issuer ID</label>
           <input
             value={issuerId}
             onChange={(e) => setIssuerId(e.target.value)}
             placeholder="69a6de7f-...-47e3-e053-5b8c7c11a4d1"
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Users and Access → Integrations
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Key ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Key ID</label>
           <input
             value={keyId}
             onChange={(e) => setKeyId(e.target.value)}
             placeholder="2X9R4HXF34"
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Shown next to the key you generate on that same page
           </p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Vendor Number</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Vendor Number</label>
           <input
             value={vendorNumber}
             onChange={(e) => setVendorNumber(e.target.value)}
             placeholder="e.g. 12345678"
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Reports
           </p>
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-medium text-gray-400">Private key (.p8)</label>
+            <label className="block text-xs font-medium text-gray-400 light:text-gray-600">Private key (.p8)</label>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
             >
               Upload file
             </button>
@@ -133,15 +133,15 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
             placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Users and Access → Integrations, shown right after you generate the key. Only downloadable once, so save the file.
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
             {error}
           </div>
@@ -157,8 +157,8 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
         </button>
       </form>
 
-      <div className="rounded-lg bg-white/[0.03] ring-1 ring-white/[0.06] px-3.5 py-3">
-        <p className="text-[11px] font-medium text-gray-400 mb-1.5">Before connecting</p>
+      <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3">
+        <p className="text-[11px] font-medium text-gray-400 light:text-gray-600 mb-1.5">Before connecting</p>
         <ol className="text-[11px] text-gray-500 list-decimal list-inside space-y-1.5">
           <li>
             In App Store Connect, go to Users and Access → Integrations → App Store Connect API, then
@@ -225,25 +225,25 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium text-gray-400 mb-1.5">Cloud Storage bucket ID</label>
+          <label className="block text-xs font-medium text-gray-400 light:text-gray-600 mb-1.5">Cloud Storage bucket ID</label>
           <input
             value={bucketId}
             onChange={(e) => setBucketId(e.target.value)}
             placeholder="pubsite_prod_rev_01234567890987654321"
             required
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Play Console → Setup → API access → Download reports
           </p>
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className="block text-xs font-medium text-gray-400">Service account JSON key</label>
+            <label className="block text-xs font-medium text-gray-400 light:text-gray-600">Service account JSON key</label>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
             >
               Upload file
             </button>
@@ -255,15 +255,15 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
             placeholder='{"type": "service_account", "client_email": "...", "private_key": "..."}'
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 placeholder-gray-600 transition-all"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
-          <p className="mt-1 text-[11px] text-gray-600">
+          <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Google Cloud Console → IAM &amp; Admin → Service Accounts → Keys
           </p>
         </div>
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
             {error}
           </div>
@@ -279,8 +279,8 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
         </button>
       </form>
 
-      <div className="rounded-lg bg-white/[0.03] ring-1 ring-white/[0.06] px-3.5 py-3">
-        <p className="text-[11px] font-medium text-gray-400 mb-1.5">Before connecting</p>
+      <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3">
+        <p className="text-[11px] font-medium text-gray-400 light:text-gray-600 mb-1.5">Before connecting</p>
         <ol className="text-[11px] text-gray-500 list-decimal list-inside space-y-1.5">
           <li>Play Console: Setup → API access → enable Cloud Storage download reports (if not already on).</li>
           <li>Google Cloud Console: create a service account, then generate a JSON key for it.</li>
@@ -408,7 +408,7 @@ export default function AppConnectionSettings({ app }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={app} title="Settings" />
 
       <div className="flex-1 overflow-y-auto scroll-smooth p-6">
@@ -428,9 +428,9 @@ export default function AppConnectionSettings({ app }: Props) {
             ]}
           />
         ) : (
-        <div className="w-full rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/[0.07]">
-            <h2 className="text-sm font-semibold text-white">
+        <div className="w-full rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+          <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
+            <h2 className="text-sm font-semibold text-white light:text-gray-900">
               {app.store === "ios" ? "App Store Connect" : "Google Play Console"}
             </h2>
             <p className="mt-1 text-xs text-gray-500">
@@ -453,20 +453,20 @@ export default function AppConnectionSettings({ app }: Props) {
                 <div className="flex items-center justify-between">
                   <StatusBadge connection={connection} />
                   {connection.lastSyncedOn && (
-                    <span className="text-xs text-gray-600">Last synced {connection.lastSyncedOn}</span>
+                    <span className="text-xs text-gray-600 light:text-gray-400">Last synced {connection.lastSyncedOn}</span>
                   )}
                 </div>
                 {connection.displayLabel && (
                   <p className="text-xs text-gray-500">{connection.displayLabel}</p>
                 )}
                 {connection.status === "error" && connection.lastError && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
                     <ExclamationTriangleIcon className="size-4 shrink-0" />
                     {connection.lastError}
                   </div>
                 )}
                 {syncError && (
-                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
                     <ExclamationTriangleIcon className="size-4 shrink-0" />
                     {syncError}
                   </div>
@@ -475,7 +475,7 @@ export default function AppConnectionSettings({ app }: Props) {
                   <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
                   >
                     <ArrowPathIcon className={`size-3.5 ${syncing ? "animate-spin" : ""}`} />
                     {syncing ? "Syncing…" : "Sync now"}
@@ -483,7 +483,7 @@ export default function AppConnectionSettings({ app }: Props) {
                   <button
                     onClick={handleDisconnect}
                     disabled={disconnecting}
-                    className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 transition-colors"
+                    className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 light:hover:text-red-600 transition-colors"
                   >
                     {disconnecting ? "Disconnecting…" : "Disconnect"}
                   </button>
@@ -516,9 +516,9 @@ export default function AppConnectionSettings({ app }: Props) {
               />
             </div>
           ) : (
-            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden scroll-mt-6">
-              <div className="px-5 py-4 border-b border-white/[0.07]">
-                <h2 className="text-sm font-semibold text-white">Apple Search Ads</h2>
+            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden scroll-mt-6">
+              <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
+                <h2 className="text-sm font-semibold text-white light:text-gray-900">Apple Search Ads</h2>
                 <p className="mt-1 text-xs text-gray-500">
                   Connect your Apple Search Ads account to power Bid Suggestions and Active Bids. One
                   connection covers every app it runs campaigns for, not just this one, so connecting or
@@ -538,7 +538,7 @@ export default function AppConnectionSettings({ app }: Props) {
                       <p className="text-xs text-gray-500">{asaConnection.displayLabel}</p>
                     )}
                     {asaConnection.status === "error" && asaConnection.lastError && (
-                      <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+                      <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
                         <ExclamationTriangleIcon className="size-4 shrink-0" />
                         {asaConnection.lastError}
                       </div>
@@ -546,7 +546,7 @@ export default function AppConnectionSettings({ app }: Props) {
                     <button
                       onClick={handleAsaDisconnect}
                       disabled={asaDisconnecting}
-                      className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 transition-colors"
+                      className="rounded-lg px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-400 light:hover:text-red-600 transition-colors"
                     >
                       {asaDisconnecting ? "Disconnecting…" : "Disconnect"}
                     </button>

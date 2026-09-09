@@ -22,12 +22,12 @@ export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
   return (
     <div className="mx-6 mt-6 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 ring-1 ring-indigo-500/20 px-5 py-4">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
-        <ArrowTrendingUpIcon className="size-5 text-indigo-400" />
+        <ArrowTrendingUpIcon className="size-5 text-indigo-400 light:text-indigo-600" />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white">Don&apos;t leave downloads on the table</p>
-        <p className="text-xs text-gray-400">Track unlimited keywords, monitor your rankings around the clock, and outrank the competition.</p>
+        <p className="text-sm font-semibold text-white light:text-gray-900">Don&apos;t leave downloads on the table</p>
+        <p className="text-xs text-gray-400 light:text-gray-600">Track unlimited keywords, monitor your rankings around the clock, and outrank the competition.</p>
       </div>
 
       <Link
@@ -43,7 +43,7 @@ export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
           localStorage.setItem(dismissKey(workspaceId), "1");
           setDismissed(true);
         }}
-        className="shrink-0 rounded-lg p-1.5 text-gray-500 hover:text-gray-300 hover:bg-white/[0.06] transition-colors"
+        className="shrink-0 rounded-lg p-1.5 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         title="Dismiss"
       >
         <XMarkIcon className="size-4" />

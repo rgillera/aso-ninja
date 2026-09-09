@@ -26,7 +26,7 @@ export function GrowthServicesGlobe() {
         <div className="mx-auto h-full w-2/3 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-400 opacity-20" />
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl bg-gray-800/40 ring-1 ring-white/10">
+      <div className="relative overflow-hidden rounded-2xl bg-gray-800/40">
         <svg
           viewBox="0 0 1000 480"
           className="block w-full h-auto"
@@ -102,7 +102,7 @@ export function GrowthServicesGlobe() {
 
         <div className="pointer-events-none absolute inset-0">
           <span
-            className="absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-gray-400 ring-1 ring-white/10"
+            className="absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-gray-400"
             style={{ left: "17.5%", top: "38.5%" }}
           >
             🇺🇸 In-house hire (US)

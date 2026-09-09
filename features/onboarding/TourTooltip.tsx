@@ -95,14 +95,14 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
     <div
       ref={tipRef}
       style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
-      className="w-64 rounded-xl bg-[#1a1d24] ring-1 ring-indigo-400/40 shadow-2xl p-3.5"
+      className="w-64 rounded-xl bg-[#1a1d24] light:bg-white ring-1 ring-indigo-400/40 shadow-2xl light:shadow-black/10 p-3.5"
     >
       <div className="flex items-start gap-2.5">
         {icon}
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-200 leading-relaxed">{message}</p>
+          <p className="text-xs text-gray-200 light:text-gray-800 leading-relaxed">{message}</p>
           <div className="mt-2.5 flex items-center justify-between">
-            <span className="text-[10px] font-medium text-gray-600 tabular-nums">{step} of {total}</span>
+            <span className="text-[10px] font-medium text-gray-600 light:text-gray-400 tabular-nums">{step} of {total}</span>
             <button
               onClick={onAdvance}
               className="rounded-md bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"

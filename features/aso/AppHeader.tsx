@@ -33,18 +33,18 @@ function ConfirmUnfollowDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-2xl shadow-black/50 p-6">
-        <p className="text-sm text-gray-300 mb-2">
-          Unfollow <span className="font-semibold text-white">{name}</span>?
+      <div className="w-full max-w-sm rounded-2xl bg-[#1a1d24] light:bg-white shadow-2xl light:shadow-black/10 p-6">
+        <p className="text-sm text-gray-300 light:text-gray-700 mb-2">
+          Unfollow <span className="font-semibold text-white light:text-gray-900">{name}</span>?
         </p>
-        <p className="text-xs text-red-400/80 mb-6">
+        <p className="text-xs text-red-400/80 light:text-red-600 mb-6">
           All tracked keywords and metrics for this app will be permanently deleted. This cannot be undone.
         </p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
             disabled={pending}
-            className="flex-1 rounded-lg bg-white/[0.06] px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-white/[0.10] hover:text-white transition-colors disabled:opacity-50"
+            className="flex-1 rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-4 py-2.5 text-sm font-medium text-gray-300 light:text-gray-700 hover:bg-white/[0.10] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors disabled:opacity-50"
           >
             Cancel
           </button>
@@ -121,7 +121,7 @@ export function FollowButton({ app }: { app: ActiveApp }) {
         <button
           onClick={() => setConfirmOpen(true)}
           title="Unfollow app"
-          className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/25 hover:bg-red-500/15 hover:text-red-400 hover:ring-red-500/25 transition-colors shrink-0"
+          className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-400 light:text-emerald-700 ring-1 ring-emerald-500/25 hover:bg-red-500/15 hover:text-red-400 light:hover:text-red-700 hover:ring-red-500/25 transition-colors shrink-0"
         >
           <CheckIcon className="size-3.5" />
           Unfollow
@@ -144,12 +144,12 @@ export function FollowButton({ app }: { app: ActiveApp }) {
         onClick={handleFollow}
         disabled={isPending || !app.bundle_id || !app.store_id}
         title="Follow app"
-        className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 ring-1 ring-white/[0.08] hover:bg-indigo-500/15 hover:text-indigo-400 hover:ring-indigo-500/25 transition-colors disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-3 py-1 text-xs font-medium text-gray-400 light:text-gray-600 hover:bg-indigo-500/15 hover:text-indigo-400 hover:ring-indigo-500/25 transition-colors disabled:opacity-50"
       >
         <PlusIcon className="size-3.5" />
         {isPending ? "Following…" : "Follow"}
       </button>
-      {error && <span className="text-xs text-red-400/80"><PlanLimitMessage message={error} /></span>}
+      {error && <span className="text-xs text-red-400/80 light:text-red-600"><PlanLimitMessage message={error} /></span>}
     </div>
   );
 }
@@ -169,7 +169,7 @@ export function StoreLinkButton({ app }: { app: ActiveApp }) {
       target="_blank"
       rel="noopener noreferrer"
       title={app.store === "ios" ? "View on App Store" : "View on Google Play"}
-      className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 ring-1 ring-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
+      className="flex items-center gap-1.5 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-3 py-1 text-xs font-medium text-gray-400 light:text-gray-600 hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
     >
       {app.store === "ios" ? (
         <img src="/app-store.svg" alt="" className="size-3.5" />
@@ -193,7 +193,7 @@ function SettingsLinkButton({ app }: { app: ActiveApp }) {
     <Link
       href={`/dashboard/apps/${app.id}/settings`}
       title="App settings"
-      className="flex items-center justify-center rounded-full bg-white/[0.06] p-1.5 text-gray-400 ring-1 ring-white/[0.08] hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
+      className="flex items-center justify-center rounded-full bg-white/[0.06] light:bg-black/[0.05] p-1.5 text-gray-400 light:text-gray-600 hover:bg-white/[0.10] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
     >
       <Cog6ToothIcon className="size-3.5" />
     </Link>
@@ -248,19 +248,19 @@ export function AppHeader({ app, title }: Props) {
     : [];
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] shrink-0">
+    <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
       <div className="flex items-center gap-3">
         {app ? (
           <>
             {app.icon_url ? (
               <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
             ) : (
-              <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
                 <DevicePhoneMobileIcon className="size-4 text-gray-500" />
               </div>
             )}
             <div>
-              <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
+              <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">{app.name}</p>
               <div className="text-xs text-gray-500 leading-tight flex items-center gap-1">
                 {app.store === "ios" ? (
                   <img src="/app-store.svg" alt="" className="size-3" />
@@ -285,18 +285,18 @@ export function AppHeader({ app, title }: Props) {
           </>
         ) : (
           <>
-            <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+            <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
               <DevicePhoneMobileIcon className="size-4 text-gray-500" />
             </div>
             <div>
               <p className="text-sm text-gray-500 leading-tight">No app selected</p>
-              <p className="text-xs text-gray-600 leading-tight">Select an app from My Apps</p>
+              <p className="text-xs text-gray-600 light:text-gray-400 leading-tight">Select an app from My Apps</p>
             </div>
           </>
         )}
       </div>
       <div className="hidden items-center gap-1.5 sm:flex">
-        <h1 className="text-sm font-semibold text-white">{title}</h1>
+        <h1 className="text-sm font-semibold text-white light:text-gray-900">{title}</h1>
         <InformationCircleIcon className="size-4 text-gray-500" />
       </div>
     </div>

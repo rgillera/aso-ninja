@@ -53,7 +53,7 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
           )}
         </div>
 
-        <div className="mt-20 w-full rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-2">
+        <div className="mt-20 w-full rounded-2xl bg-gray-800/50 p-2">
           <DashboardHeroDemo />
         </div>
       </div>

@@ -22,8 +22,8 @@ type Props = {
 function VisualCardHeader({ title, badge }: { title: string; badge?: React.ReactNode }) {
   return (
     <div className="flex items-center gap-1.5 px-5 pt-4 pb-1">
-      <h3 className="text-sm font-semibold text-white">{title}</h3>
-      <QuestionMarkCircleIcon className="size-4 text-gray-600" />
+      <h3 className="text-sm font-semibold text-white light:text-gray-900">{title}</h3>
+      <QuestionMarkCircleIcon className="size-4 text-gray-600 light:text-gray-400" />
       {badge}
     </div>
   );
@@ -44,7 +44,7 @@ function UploadLabel({
 }) {
   return (
     <label
-      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/[0.12] bg-[#0d0f14] text-gray-500 hover:text-gray-300 hover:border-white/20 transition-colors ${className}`}
+      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/[0.12] light:border-black/[0.12] bg-[#0d0f14] light:bg-gray-50 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:border-white/20 light:hover:border-black/20 transition-colors ${className}`}
     >
       <input
         type="file"
@@ -98,7 +98,7 @@ export default function AppVisualPreview({
   return (
     <>
       {/* App Icon */}
-      <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
         <VisualCardHeader title="App Icon" />
         <p className="px-5 pb-4 text-xs text-gray-500 leading-relaxed">
           For iPhone 6.5&rdquo; display, Apple requires app icons to have 1024x1024 dimensions.
@@ -117,19 +117,19 @@ export default function AppVisualPreview({
             />
             {app.icon_url ? (
               <>
-                <img src={app.icon_url} alt={app.name} className="size-28 rounded-2xl object-cover ring-1 ring-white/[0.08]" />
+                <img src={app.icon_url} alt={app.name} className="size-28 rounded-2xl object-cover" />
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
                   <span className="flex items-center gap-1.5 text-xs font-medium text-white">
                     <ArrowUpTrayIcon className="size-4" />
                     Replace
                   </span>
                 </div>
-                <div className="absolute -bottom-1.5 -right-1.5 flex size-7 items-center justify-center rounded-full bg-indigo-500 text-white ring-2 ring-[#1a1d24] shadow-md transition-transform group-hover:scale-110">
+                <div className="absolute -bottom-1.5 -right-1.5 flex size-7 items-center justify-center rounded-full bg-indigo-500 text-white ring-2 ring-[#1a1d24] light:ring-white shadow-md transition-transform group-hover:scale-110">
                   <ArrowUpTrayIcon className="size-3.5" />
                 </div>
               </>
             ) : (
-              <div className="flex size-28 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-white/[0.12] text-gray-500 transition-colors group-hover:text-gray-300 group-hover:border-white/20">
+              <div className="flex size-28 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed border-white/[0.12] light:border-black/[0.12] text-gray-500 transition-colors group-hover:text-gray-300 light:group-hover:text-gray-700 group-hover:border-white/20 light:group-hover:border-black/20">
                 <ArrowUpTrayIcon className="size-5" />
                 <span className="text-xs">Upload</span>
               </div>
@@ -139,12 +139,12 @@ export default function AppVisualPreview({
       </div>
 
       {/* Screenshots */}
-      <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
         <VisualCardHeader
           title="Screenshots"
           badge={
             totalScreenshots > 0 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-400 ring-1 ring-green-500/20">
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-500/10 px-2.5 py-1 text-xs font-medium text-green-400 light:text-green-700 ring-1 ring-green-500/20">
                 <CheckCircleIcon className="size-3.5" />
                 {totalScreenshots} screenshots
               </span>
@@ -164,7 +164,7 @@ export default function AppVisualPreview({
               onFiles={onScreenshotUpload}
             />
             {customScreenshotUrls.map((url, i) => (
-              <div key={`custom-${url}`} className="group relative w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] ring-1 ring-emerald-500/40">
+              <div key={`custom-${url}`} className="group relative w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] light:bg-gray-100 ring-1 ring-emerald-500/40">
                 <img src={url} alt={`Custom screenshot ${i + 1}`} className="size-full object-cover" />
                 <button
                   onClick={() => onRemoveScreenshot(url)}
@@ -175,7 +175,7 @@ export default function AppVisualPreview({
               </div>
             ))}
             {storeScreenshots.map((url, i) => (
-              <div key={`store-${i}`} className="w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] ring-1 ring-white/[0.08]">
+              <div key={`store-${i}`} className="w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] light:bg-gray-100">
                 <img src={url} alt={`Screenshot ${i + 1}`} className="size-full object-cover" />
               </div>
             ))}
@@ -183,7 +183,7 @@ export default function AppVisualPreview({
           {canScrollRight && (
             <button
               onClick={() => screenshotsRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-[#22252f] ring-1 ring-white/[0.1] text-gray-300 hover:text-white shadow-lg shadow-black/30 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-[#22252f] light:bg-white text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 shadow-lg shadow-black/30 light:shadow-black/10 transition-colors"
             >
               <ChevronRightIcon className="size-4" />
             </button>
@@ -192,14 +192,14 @@ export default function AppVisualPreview({
       </div>
 
       {/* Video */}
-      <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
         <VisualCardHeader title="Video" />
         <p className="px-5 pb-4 text-xs text-gray-500 leading-relaxed">
           Apple requires App previews to be in M4V, MP4, or MOV format and can&rsquo;t exceed 500 MB.
         </p>
         <div className="mx-5 mb-5">
           {customVideoUrl ? (
-            <label className="group relative block h-40 w-full cursor-pointer overflow-hidden rounded-xl ring-1 ring-white/[0.08]">
+            <label className="group relative block h-40 w-full cursor-pointer overflow-hidden rounded-xl">
               <input
                 type="file"
                 accept="video/mp4,video/quicktime,.m4v,.mp4,.mov"

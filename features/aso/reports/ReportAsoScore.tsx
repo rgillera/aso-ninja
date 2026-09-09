@@ -33,11 +33,11 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
     <div className="group relative">
       {iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={iconUrl} alt={name} title={name} className="size-9 rounded-xl ring-1 ring-white/[0.08]" />
+        <img src={iconUrl} alt={name} title={name} className="size-9 rounded-xl" />
       ) : (
         <div
           title={name}
-          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-[11px] font-semibold text-gray-400 ring-1 ring-white/[0.08]"
+          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] light:bg-black/[0.05] text-[11px] font-semibold text-gray-400 light:text-gray-600"
         >
           {name.slice(0, 1).toUpperCase()}
         </div>
@@ -46,7 +46,7 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
         <button
           onClick={onRemove}
           title={`Remove ${name}`}
-          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] transition-opacity group-hover:opacity-100"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] light:ring-white transition-opacity group-hover:opacity-100"
         >
           <XMarkIcon className="size-2.5" />
         </button>
@@ -85,10 +85,10 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
   }
 
   return (
-    <div className="rounded-3xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
-      <div className="flex items-center gap-2 border-b border-white/[0.07] px-5 py-3">
+    <div className="rounded-3xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="flex items-center gap-2 border-b border-white/[0.07] light:border-black/[0.08] px-5 py-3">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Summary</h3>
-        <InformationCircleIcon className="size-3.5 text-gray-600" />
+        <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400" />
       </div>
 
       <div className="overflow-x-auto">
@@ -111,7 +111,7 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                 <button
                   onClick={onAddCompetitor}
                   title="Add competitor"
-                  className="flex size-9 items-center justify-center rounded-xl border border-dashed border-white/20 text-gray-500 transition-colors hover:border-white/40 hover:text-white"
+                  className="flex size-9 items-center justify-center rounded-xl border border-dashed border-white/20 light:border-black/20 text-gray-500 transition-colors hover:border-white/40 light:hover:border-black/40 hover:text-white light:hover:text-gray-900"
                 >
                   <PlusIcon className="size-4" />
                 </button>
@@ -119,15 +119,15 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
             </tr>
           </thead>
           <tbody>
-            <tr className="border-t border-white/[0.06]">
+            <tr className="border-t border-white/[0.06] light:border-black/[0.06]">
               <td className="px-5 py-3">
-                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 light:text-gray-600">
                   ASO Score
-                 
+
                 </span>
               </td>
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-center text-sm font-semibold text-white">
+                <td key={col.key} className="px-4 py-3 text-center text-sm font-semibold text-white light:text-gray-900">
                   {col.overallPercent}%
                 </td>
               ))}
@@ -140,12 +140,12 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                   tabIndex={0}
                   onClick={() => setExpanded(expanded === item.label ? null : item.label)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setExpanded(expanded === item.label ? null : item.label); } }}
-                  className="cursor-pointer border-t border-white/[0.06] transition-colors hover:bg-white/[0.03]"
+                  className="cursor-pointer border-t border-white/[0.06] light:border-black/[0.06] transition-colors hover:bg-white/[0.03] light:hover:bg-black/[0.03]"
                 >
                   <td className="px-5 py-3">
-                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 light:text-gray-600">
                       {item.label}
-                      <ChevronRightIcon className={`size-3.5 text-gray-600 transition-transform ${expanded === item.label ? "rotate-90" : ""}`} />
+                      <ChevronRightIcon className={`size-3.5 text-gray-600 light:text-gray-400 transition-transform ${expanded === item.label ? "rotate-90" : ""}`} />
                     </span>
                   </td>
                   {columns.map((col) => (
@@ -160,17 +160,17 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                 {expanded === item.label && item.tags.map((tag, tagIdx) => {
                   const anchor = TAG_ANCHOR[tag.label];
                   return (
-                    <tr key={tag.label} className="border-t border-white/[0.04] bg-[#14171d]">
+                    <tr key={tag.label} className="border-t border-white/[0.04] light:border-black/[0.05] bg-[#14171d] light:bg-gray-50">
                       <td className="whitespace-nowrap py-2.5 pl-9 pr-5">
                         {anchor ? (
                           <button
                             onClick={() => scrollToAnchor(anchor)}
-                            className="text-xs font-medium text-gray-400 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-white"
+                            className="text-xs font-medium text-gray-400 light:text-gray-600 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-white light:hover:text-gray-900"
                           >
                             {tag.label}
                           </button>
                         ) : (
-                          <span className="text-xs font-medium text-gray-400">{tag.label}</span>
+                          <span className="text-xs font-medium text-gray-400 light:text-gray-600">{tag.label}</span>
                         )}
                       </td>
                       {columns.map((col) => (

@@ -78,16 +78,16 @@ function formatPct(n: number) {
 
 export function DensityTable({ rows }: { rows: DensityRow[] }) {
   if (rows.length === 0) {
-    return <p className="px-5 py-8 text-center text-sm text-gray-600">Not enough description text yet to analyze.</p>;
+    return <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Not enough description text yet to analyze.</p>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-left font-medium text-gray-400">Keyword(s)</th>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">Count</th>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-left font-medium text-gray-400 light:text-gray-600">Keyword(s)</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">Count</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">
               <span className="inline-flex w-full items-center justify-end gap-1">
                 Density <QuestionMarkCircleIcon className="size-3.5" />
               </span>
@@ -97,9 +97,9 @@ export function DensityTable({ rows }: { rows: DensityRow[] }) {
         <tbody>
           {rows.map((row, i) => (
             <tr key={i}>
-              <td className="border-t border-white/[0.08] px-4 py-3 align-top text-gray-200">{row.keywords.join(",")}</td>
-              <td className="border-t border-white/[0.08] px-4 py-3 text-right align-top text-white">{row.count}</td>
-              <td className="border-t border-white/[0.08] px-4 py-3 text-right align-top text-white">{formatPct(row.density)}</td>
+              <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 align-top text-gray-200 light:text-gray-800">{row.keywords.join(",")}</td>
+              <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right align-top text-white light:text-gray-900">{row.count}</td>
+              <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right align-top text-white light:text-gray-900">{formatPct(row.density)}</td>
             </tr>
           ))}
         </tbody>
@@ -132,7 +132,7 @@ function ComparisonTable({ current, original }: { current: string; original: str
     .slice(0, 12);
 
   if (rows.length === 0) {
-    return <p className="px-5 py-8 text-center text-sm text-gray-600">Not enough description text yet to compare.</p>;
+    return <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Not enough description text yet to compare.</p>;
   }
 
   return (
@@ -140,23 +140,23 @@ function ComparisonTable({ current, original }: { current: string; original: str
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-left font-medium text-gray-400">Keyword</th>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">New</th>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">Original</th>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">Change</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-left font-medium text-gray-400 light:text-gray-600">Keyword</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">New</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">Original</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">Change</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => {
             const delta = row.currentDensity - row.originalDensity;
-            const deltaColor = delta > 0.01 ? "text-green-400" : delta < -0.01 ? "text-red-400" : "text-gray-500";
+            const deltaColor = delta > 0.01 ? "text-green-400 light:text-green-700" : delta < -0.01 ? "text-red-400 light:text-red-600" : "text-gray-500";
             const deltaLabel = delta > 0.01 ? `+${delta.toFixed(2)}%` : delta < -0.01 ? `${delta.toFixed(2)}%` : "—";
             return (
               <tr key={row.term}>
-                <td className="border-t border-white/[0.08] px-4 py-3 text-gray-200">{row.term}</td>
-                <td className="border-t border-white/[0.08] px-4 py-3 text-right text-white">{formatPct(row.currentDensity)}</td>
-                <td className="border-t border-white/[0.08] px-4 py-3 text-right text-gray-400">{formatPct(row.originalDensity)}</td>
-                <td className={`border-t border-white/[0.08] px-4 py-3 text-right font-medium ${deltaColor}`}>{deltaLabel}</td>
+                <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-gray-200 light:text-gray-800">{row.term}</td>
+                <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-white light:text-gray-900">{formatPct(row.currentDensity)}</td>
+                <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-gray-400 light:text-gray-600">{formatPct(row.originalDensity)}</td>
+                <td className={`border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium ${deltaColor}`}>{deltaLabel}</td>
               </tr>
             );
           })}
@@ -171,17 +171,17 @@ export default function KeywordDensity({ description, originalDescription }: Pro
   const rows = computeKeywordDensity(description);
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       <div className="flex items-center gap-2 p-4">
         <button
           onClick={() => setTab("density")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "density" ? "bg-white/10 text-white" : "text-gray-400 hover:text-gray-200"}`}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "density" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"}`}
         >
           Keywords density
         </button>
         <button
           onClick={() => setTab("comparison")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "comparison" ? "bg-white/10 text-white" : "text-gray-400 hover:text-gray-200"}`}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${tab === "comparison" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"}`}
         >
           Density comparison
         </button>

@@ -34,19 +34,19 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTran
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       title={`Used by: ${kw.competitors.join(", ")}`}
-      className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
+      className={`group flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
         tracked
           ? hovered
-            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 cursor-pointer"
-            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300"
-          : "bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-300 hover:ring-indigo-500/50 hover:text-white"
+            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 light:text-red-600 cursor-pointer"
+            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
+          : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
       }`}
     >
       {tracked
         ? hovered
-          ? <MinusIcon className="size-3 text-red-400 shrink-0" />
-          : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
-        : <PlusIcon className="size-3 text-gray-500 shrink-0" />
+          ? <MinusIcon className="size-3 text-red-400 light:text-red-600 shrink-0" />
+          : <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 shrink-0" />
+        : <PlusIcon className="size-3 text-gray-500 group-hover:text-indigo-400 light:group-hover:text-indigo-600 transition-colors shrink-0" />
       }
       <span className="flex flex-col items-start leading-tight py-0.5">
         <span>{kw.term}</span>
@@ -54,14 +54,14 @@ function CompetitorPill({ kw, tracked, onAdd, onRemove, translation, loadingTran
           <span className="text-[10px] text-gray-500">(en) {translation}</span>
         )}
         {loadingTranslation && !translation && (
-          <span className="h-2 w-10 rounded bg-white/[0.08] animate-pulse" />
+          <span className="h-2 w-10 rounded bg-white/[0.08] light:bg-black/[0.06] animate-pulse" />
         )}
       </span>
       {kw.competitors.length > 1 && (
         <span className={`ml-0.5 text-[10px] tabular-nums rounded px-1 ${
           tracked
-            ? hovered ? "bg-red-500/10 text-red-400" : "bg-indigo-500/10 text-indigo-400"
-            : "bg-white/[0.06] text-gray-600"
+            ? hovered ? "bg-red-500/10 text-red-400 light:text-red-600" : "bg-indigo-500/10 text-indigo-400 light:text-indigo-600"
+            : "bg-white/[0.06] light:bg-black/[0.05] text-gray-600 light:text-gray-400"
         }`}>
           {kw.competitors.length}
         </span>
@@ -86,15 +86,15 @@ function KeywordSection({
   const STEP = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE);
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
-  const total   = keywords?.length ?? 0;
+  const total = keywords?.length ?? 0;
   const visible = keywords?.slice(0, visibleCount);
 
   return (
-    <div className="py-3 border-b border-white/[0.05] last:border-0">
+    <div className="py-3 border-b border-white/[0.05] light:border-black/[0.04] last:border-0">
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
-          {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
+          {keywords && <span className="text-[10px] text-gray-600 light:text-gray-400">{tracked} / {total}</span>}
         </div>
         <AnalyzeAllButton
           onClick={() => {
@@ -108,11 +108,11 @@ function KeywordSection({
       {keywords === null ? (
         <div className="flex flex-wrap gap-1.5">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-6 rounded-md bg-white/[0.04] animate-pulse" style={{ width: `${50 + i * 12}px` }} />
+            <div key={i} className="h-6 rounded-md bg-white/[0.04] light:bg-black/[0.04] animate-pulse" style={{ width: `${50 + i * 12}px` }} />
           ))}
         </div>
       ) : keywords.length === 0 ? (
-        <p className="text-xs text-gray-600">No keywords found.</p>
+        <p className="text-xs text-gray-600 light:text-gray-400">No keywords found.</p>
       ) : (
         <>
           <div className="flex flex-wrap gap-1.5">
@@ -131,7 +131,7 @@ function KeywordSection({
           {keywords.length > PAGE && (
             <button
               onClick={() => setVisibleCount((v) => v < total ? Math.min(v + STEP, total) : PAGE)}
-              className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="mt-2 text-[11px] text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
             >
               {visibleCount < total ? `Show more (${Math.min(STEP, total - visibleCount)} more)` : "Show less"}
             </button>
@@ -145,11 +145,11 @@ function KeywordSection({
 export function KeywordSuggestionCompetitors({
   activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle,
 }: Props) {
-  const [data,    setData]    = useState<CompetitorKeywordsResult | null>(null);
+  const [data, setData] = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchKey, setFetchKey] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [translating, setTranslating]   = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   // Tracks the most recently *started* request's key. Compared against (not
   // an effect-cleanup flag) because this effect calls setFetchKey on itself,
@@ -179,9 +179,9 @@ export function KeywordSuggestionCompetitors({
     // slower stale response for the old (larger) competitor set can land
     // after the corrected one and silently overwrite it with wrong data.
     const params = new URLSearchParams({
-      storeId:       activeApp.store_id,
-      country:       activeApp.country ?? "us",
-      store:         activeApp.store,
+      storeId: activeApp.store_id,
+      country: activeApp.country ?? "us",
+      store: activeApp.store,
       competitorIds: competitors.map((c) => c.storeId).join(","),
     });
     fetch(`/api/keywords/competitor-keywords?${params}`)
@@ -213,14 +213,14 @@ export function KeywordSuggestionCompetitors({
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
   if (!activeApp?.store_id) {
-    return <p className="px-4 py-4 text-xs text-gray-600 text-center">Select an app to see competitor keywords.</p>;
+    return <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">Select an app to see competitor keywords.</p>;
   }
 
   if (!competitors.length) {
-    return <p className="px-4 py-4 text-xs text-gray-600 text-center">Add a competitor above to extract their keywords.</p>;
+    return <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">Add a competitor above to extract their keywords.</p>;
   }
 
-  const multiKeywords  = loading ? null : (data?.keywords.filter((k) => k.competitors.length >= 2) ?? []);
+  const multiKeywords = loading ? null : (data?.keywords.filter((k) => k.competitors.length >= 2) ?? []);
   const singleKeywords = loading ? null : (data?.keywords.filter((k) => k.competitors.length === 1) ?? []);
 
   return (

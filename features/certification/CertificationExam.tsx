@@ -116,17 +116,17 @@ export default function CertificationExam({ holderName = "" }: Props) {
       <div className="h-full overflow-y-auto">
         <div className="mx-auto max-w-2xl px-6 py-14 text-center">
           <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-indigo-500/15">
-            <TrophyIcon className="size-7 text-indigo-400" />
+            <TrophyIcon className="size-7 text-indigo-400 light:text-indigo-600" />
           </div>
-          <h1 className="mt-5 text-xl font-semibold text-white">ASO Certification Exam</h1>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-400">
+          <h1 className="mt-5 text-xl font-semibold text-white light:text-gray-900">ASO Certification Exam</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-400 light:text-gray-600">
             {MAX_EXAM_QUESTIONS} questions, basic to advanced, drawn at random so a retake serves a different set. Score{" "}
             {PASS_PERCENT}% or higher to pass. You&apos;ll have {EXAM_DURATION_SECONDS / 60} minutes for the whole exam once you start.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
               href="/dashboard/certification/learn"
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-300 ring-1 ring-white/10 hover:bg-white/5"
+              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-300 light:text-gray-700 hover:bg-white/5 light:hover:bg-black/[0.04]"
             >
               Review the lessons first
             </Link>
@@ -134,11 +134,11 @@ export default function CertificationExam({ holderName = "" }: Props) {
               <Link
                 href="/dashboard/subscription"
                 title="Requires the Basic plan or above"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/15"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 light:bg-black/[0.06] px-5 py-2.5 text-sm font-semibold text-gray-300 light:text-gray-700 hover:bg-white/15 light:hover:bg-black/[0.08]"
               >
                 <LockClosedIcon className="size-4" />
                 Start exam
-                <span className="rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-semibold text-emerald-500">Basic</span>
+                <span className="rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-semibold text-emerald-500 light:text-emerald-700">Basic</span>
               </Link>
             ) : (
               <button
@@ -164,12 +164,12 @@ export default function CertificationExam({ holderName = "" }: Props) {
               passed ? "bg-emerald-500/15" : "bg-amber-500/15"
             }`}
           >
-            <TrophyIcon className={`size-7 ${passed ? "text-emerald-400" : "text-amber-400"}`} />
+            <TrophyIcon className={`size-7 ${passed ? "text-emerald-400 light:text-emerald-700" : "text-amber-400 light:text-amber-700"}`} />
           </div>
-          <h1 className="mt-5 text-xl font-semibold text-white">
+          <h1 className="mt-5 text-xl font-semibold text-white light:text-gray-900">
             {passed ? "You're certified" : "Not quite, try again"}
           </h1>
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="mt-2 text-sm text-gray-400 light:text-gray-600">
             You scored {score} / {total} ({percent}%).{" "}
             {passed ? `That clears the ${PASS_PERCENT}% pass mark.` : `You need ${PASS_PERCENT}% to pass.`}
             {secondsLeft === 0 && " Time ran out, unanswered questions counted as incorrect."}
@@ -177,9 +177,9 @@ export default function CertificationExam({ holderName = "" }: Props) {
 
           <div className="mt-8 grid grid-cols-3 gap-3 text-left">
             {byLevel.map(({ level, correct, total: levelTotal }) => (
-              <div key={level} className="rounded-xl bg-white/5 ring-1 ring-white/10 px-4 py-3">
+              <div key={level} className="rounded-xl bg-white/5 light:bg-black/[0.04] px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">{LEVEL_LABEL[level]}</p>
-                <p className="mt-1 text-lg font-semibold text-white">
+                <p className="mt-1 text-lg font-semibold text-white light:text-gray-900">
                   {correct}/{levelTotal}
                 </p>
               </div>
@@ -187,9 +187,9 @@ export default function CertificationExam({ holderName = "" }: Props) {
           </div>
 
           {passed && (
-            <div className="mt-8 rounded-2xl bg-white/5 ring-1 ring-white/10 p-5 text-left">
-              <p className="text-sm font-semibold text-white">Download your certificate</p>
-              <p className="mt-1 text-xs text-gray-400">
+            <div className="mt-8 rounded-2xl bg-white/5 light:bg-black/[0.04] p-5 text-left">
+              <p className="text-sm font-semibold text-white light:text-gray-900">Download your certificate</p>
+              <p className="mt-1 text-xs text-gray-400 light:text-gray-600">
                 {certRecord
                   ? "Confirm the name that should appear on the PDF. Saved to your account, you can redownload anytime from the certification page."
                   : "Confirm the name that should appear on the PDF. Saving to your account..."}
@@ -203,7 +203,7 @@ export default function CertificationExam({ holderName = "" }: Props) {
           <div className="mt-8 flex items-center justify-center gap-3">
             <Link
               href="/dashboard/certification/learn"
-              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-300 ring-1 ring-white/10 hover:bg-white/5"
+              className="rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-300 light:text-gray-700 hover:bg-white/5 light:hover:bg-black/[0.04]"
             >
               Review the lessons
             </Link>
@@ -230,7 +230,7 @@ export default function CertificationExam({ holderName = "" }: Props) {
             Question {index + 1} of {total}
           </span>
           <span
-            className={`inline-flex items-center gap-1 ${timeRunningLow ? "text-amber-400" : "text-gray-500"}`}
+            className={`inline-flex items-center gap-1 ${timeRunningLow ? "text-amber-400 light:text-amber-700" : "text-gray-500"}`}
             title="Time left for the whole exam"
           >
             <ClockIcon className="size-3.5" />
@@ -238,11 +238,11 @@ export default function CertificationExam({ holderName = "" }: Props) {
           </span>
           <span className="uppercase tracking-wide">{LEVEL_LABEL[question.level]}</span>
         </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10 light:bg-black/[0.08]">
           <div className="h-full rounded-full bg-indigo-500 transition-all" style={{ width: `${(index / total) * 100}%` }} />
         </div>
 
-        <h2 className="mt-6 text-base font-semibold leading-relaxed text-white">{question.question}</h2>
+        <h2 className="mt-6 text-base font-semibold leading-relaxed text-white light:text-gray-900">{question.question}</h2>
 
         <div className="mt-5 space-y-2.5">
           {question.options.map((option, i) => (
@@ -252,13 +252,13 @@ export default function CertificationExam({ holderName = "" }: Props) {
               onClick={() => selectAnswer(i)}
               className={`flex w-full items-start gap-3 rounded-xl px-4 py-3 text-left text-sm ring-1 transition-colors ${
                 selected === i
-                  ? "bg-indigo-500/15 text-white ring-indigo-500/50"
-                  : "bg-white/5 text-gray-300 ring-white/10 hover:bg-white/[0.07]"
+                  ? "bg-indigo-500/15 text-white light:text-indigo-700 ring-indigo-500/50"
+                  : "bg-white/5 light:bg-black/[0.04] text-gray-300 light:text-gray-700 ring-white/10 light:ring-black/[0.08] hover:bg-white/[0.07]"
               }`}
             >
               <span
                 className={`mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full ring-1 ${
-                  selected === i ? "bg-indigo-500 ring-indigo-500" : "ring-white/20"
+                  selected === i ? "bg-indigo-500 ring-indigo-500" : "ring-white/20 light:ring-black/20"
                 }`}
               >
                 {selected === i && <span className="size-1.5 rounded-full bg-white" />}
@@ -273,7 +273,7 @@ export default function CertificationExam({ holderName = "" }: Props) {
             type="button"
             disabled={index === 0}
             onClick={() => setIndex((v) => Math.max(0, v - 1))}
-            className="text-sm font-medium text-gray-400 hover:text-white disabled:pointer-events-none disabled:opacity-30"
+            className="text-sm font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:pointer-events-none disabled:opacity-30"
           >
             Back
           </button>

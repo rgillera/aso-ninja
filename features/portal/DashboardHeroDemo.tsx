@@ -38,11 +38,11 @@ import { countryFlag } from "@/libs/countries";
 // shipping a screenshot that goes stale the moment the UI changes.
 
 const ROWS = [
-  { keyword: "instagram",          volume: 82, diff: 100, chance: 95, relevancy: 100, opportunity: 88, estDownloads: 482_000, rank: 1 },
-  { keyword: "instagram reels",    volume: 55, diff: 100, chance: 95, relevancy: 75,  opportunity: 41, estDownloads: 64_000,  rank: 1 },
-  { keyword: "social media",       volume: 57, diff: 100, chance: 95, relevancy: 68,  opportunity: 34, estDownloads: 51_000,  rank: 1 },
-  { keyword: "instagram feed",     volume: 5,  diff: 70,  chance: 94, relevancy: 64,  opportunity: 9,  estDownloads: 3_100,   rank: 6 },
-  { keyword: "instagram connect",  volume: 5,  diff: 72,  chance: 52, relevancy: 69,  opportunity: 8,  estDownloads: 2_800,   rank: 48 },
+  { keyword: "instagram", volume: 82, diff: 100, chance: 95, relevancy: 100, opportunity: 88, estDownloads: 482_000, rank: 1 },
+  { keyword: "instagram reels", volume: 55, diff: 100, chance: 95, relevancy: 75, opportunity: 41, estDownloads: 64_000, rank: 1 },
+  { keyword: "social media", volume: 57, diff: 100, chance: 95, relevancy: 68, opportunity: 34, estDownloads: 51_000, rank: 1 },
+  { keyword: "instagram feed", volume: 5, diff: 70, chance: 94, relevancy: 64, opportunity: 9, estDownloads: 3_100, rank: 6 },
+  { keyword: "instagram connect", volume: 5, diff: 72, chance: 52, relevancy: 69, opportunity: 8, estDownloads: 2_800, rank: 48 },
 ];
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
@@ -110,7 +110,7 @@ function Chip({ label, active }: { label: string; active?: boolean }) {
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${
         active
           ? "bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/40"
-          : "bg-white/[0.04] text-gray-400 ring-1 ring-white/[0.08]"
+          : "bg-white/[0.04] text-gray-400"
       }`}
     >
       {active ? <CheckIcon className="size-2.5" /> : <PlusIcon className="size-2.5" />}
@@ -192,7 +192,7 @@ export function DashboardHeroDemo() {
       style={scaled ? { height: naturalHeight * scale } : undefined}
     >
       <div ref={innerRef} style={scaled ? { width: DEMO_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" } : undefined}>
-      <div className="flex min-w-[1000px] rounded-xl bg-[#0d0f14] ring-1 ring-white/[0.07] overflow-hidden">
+      <div className="flex min-w-[1000px] rounded-xl bg-[#0d0f14] overflow-hidden">
         {/* Sidebar — mirrors features/dashboard/DashboardSidebar.tsx's structure,
             labels, and icons, collapsed to the state it'd be in on this page
             (Keywords section open, Metadata/Reviews collapsed). */}
@@ -264,7 +264,7 @@ export function DashboardHeroDemo() {
                 <CheckIcon className="size-3.5" />
                 Unfollow
               </span>
-              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 ring-1 ring-white/[0.08] shrink-0">
+              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 shrink-0">
                 <img src="/app-store.svg" alt="" className="size-3.5" />
                 App Store
               </span>
@@ -276,7 +276,7 @@ export function DashboardHeroDemo() {
           </div>
 
           {/* Keyword Suggestions panel */}
-          <div className="mx-5 mt-4 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+          <div className="mx-5 mt-4 rounded-xl bg-[#1a1d24] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
               <span className="text-sm font-semibold text-white">Keyword Suggestions</span>
               <ChevronUpIcon className="size-4 text-gray-500" />
@@ -314,16 +314,16 @@ export function DashboardHeroDemo() {
           </div>
 
           {/* Table panel */}
-          <div className="mx-5 my-4 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+          <div className="mx-5 my-4 rounded-xl bg-[#1a1d24] overflow-hidden">
             <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.07] flex-wrap gap-y-2">
               {["Keyword", "Volume", "Rank", "Relevancy"].map((label) => (
-                <span key={label} className="flex items-center gap-1 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-2.5 py-1 text-xs text-gray-400">
+                <span key={label} className="flex items-center gap-1 rounded-lg bg-[#0d0f14] px-2.5 py-1 text-xs text-gray-400">
                   {label === "Relevancy" && <SparklesIcon className="size-3 text-violet-400" />}
                   {label}
                   <ChevronDownIcon className="size-3 text-gray-600" />
                 </span>
               ))}
-              <div className="flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] p-0.5">
+              <div className="flex items-center rounded-lg bg-[#0d0f14] p-0.5">
                 <span className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white">All</span>
                 <span className="rounded-md p-1 text-gray-500"><CheckIcon className="size-3.5" /></span>
                 <span className="rounded-md p-1 text-gray-500"><StarIcon className="size-3.5" /></span>
@@ -334,14 +334,14 @@ export function DashboardHeroDemo() {
             </div>
 
             <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.07]">
-              <div className="flex-1 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-2.5 py-1.5 text-xs text-gray-600">
+              <div className="flex-1 rounded-lg bg-[#0d0f14] px-2.5 py-1.5 text-xs text-gray-600">
                 Enter comma-separated keywords to add…
               </div>
               <span className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white shrink-0">
                 <PlusIcon className="size-3.5" />
                 Add
               </span>
-              <span className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-2.5 py-1.5 text-xs text-gray-400 shrink-0">
+              <span className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] px-2.5 py-1.5 text-xs text-gray-400 shrink-0">
                 <TableCellsIcon className="size-3.5" />
                 Edit columns
                 <ChevronDownIcon className="size-3 text-gray-600" />

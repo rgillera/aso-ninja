@@ -29,7 +29,7 @@ export default function BlogArticle({ content }: { content: BlogBlock[] }) {
             );
           case "table":
             return (
-              <div key={i} className="overflow-x-auto rounded-xl ring-1 ring-white/10">
+              <div key={i} className="overflow-x-auto rounded-xl">
                 <table className="w-full min-w-[640px] divide-y divide-white/10 text-left text-sm">
                   <thead className="bg-gray-800/50">
                     <tr>
@@ -63,7 +63,7 @@ export default function BlogArticle({ content }: { content: BlogBlock[] }) {
             );
           case "cta":
             return (
-              <div key={i} className="mt-4 rounded-2xl bg-gray-800/50 p-8 text-center ring-1 ring-white/10">
+              <div key={i} className="mt-4 rounded-2xl bg-gray-800/50 p-8 text-center">
                 <h3 className="text-lg font-semibold text-white">{block.heading}</h3>
                 <p className="mt-2 text-sm text-gray-400">{block.body}</p>
                 <a

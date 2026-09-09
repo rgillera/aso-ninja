@@ -68,19 +68,19 @@ function ShufflePill({ term, tracked, onAdd, onRemove }: {
       onClick={() => tracked ? onRemove?.(term) : onAdd(term)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
+      className={`group flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
         tracked
           ? hovered
-            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 cursor-pointer"
-            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300"
-          : "bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-300 hover:ring-indigo-500/50 hover:text-white"
+            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 light:text-red-600 cursor-pointer"
+            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
+          : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
       }`}
     >
       {tracked
         ? hovered
-          ? <MinusIcon className="size-3 text-red-400 shrink-0" />
-          : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
-        : <PlusIcon className="size-3 text-gray-500 shrink-0" />
+          ? <MinusIcon className="size-3 text-red-400 light:text-red-600 shrink-0" />
+          : <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 shrink-0" />
+        : <PlusIcon className="size-3 text-gray-500 group-hover:text-indigo-400 light:group-hover:text-indigo-600 transition-colors shrink-0" />
       }
       <span>{term}</span>
     </button>
@@ -98,11 +98,11 @@ function ComboSection({ label, terms, trackedSet, onAdd, onRemove, onAddAll }: {
   const tracked = terms.filter((t) => trackedSet.has(t.toLowerCase())).length;
 
   return (
-    <div className="py-3 border-b border-white/[0.05] last:border-0">
+    <div className="py-3 border-b border-white/[0.05] light:border-black/[0.04] last:border-0">
       <div className="mb-2.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
-          <span className="text-[10px] text-gray-600">{tracked} / {terms.length}</span>
+          <span className="text-[10px] text-gray-600 light:text-gray-400">{tracked} / {terms.length}</span>
         </div>
         <AnalyzeAllButton
           onClick={() => {
@@ -128,19 +128,19 @@ function ComboSection({ label, terms, trackedSet, onAdd, onRemove, onAddAll }: {
 }
 
 export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword }: Props) {
-  const [words, setWords]   = useState<string[]>(Array(WORD_COUNT).fill(""));
+  const [words, setWords] = useState<string[]>(Array(WORD_COUNT).fill(""));
   const [combos, setCombos] = useState<Combos | null>(null);
 
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
-  const filled      = words.map((w) => w.trim()).filter(Boolean);
-  const canShuffle  = filled.length >= 2;
+  const filled = words.map((w) => w.trim()).filter(Boolean);
+  const canShuffle = filled.length >= 2;
 
   const handleShuffle = () => {
     if (!canShuffle) return;
     setCombos({
-      two:   buildCombos(filled, 2),
+      two: buildCombos(filled, 2),
       three: buildCombos(filled, 3),
-      four:  buildCombos(filled, 4),
+      four: buildCombos(filled, 4),
     });
   };
 
@@ -169,13 +169,13 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
             onChange={(e) => updateWord(i, e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleShuffle()}
             placeholder={`Word ${i + 1}`}
-            className="min-w-[80px] flex-1 rounded-md bg-[#0d0f14] px-2.5 py-1.5 text-xs text-gray-200 ring-1 ring-white/[0.08] placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            className="min-w-[80px] flex-1 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1.5 text-xs text-gray-200 light:text-gray-800 placeholder:text-gray-600 light:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
           />
         ))}
         <button
           onClick={handleShuffle}
           disabled={!canShuffle}
-          className="flex w-32 shrink-0 items-center justify-center gap-1.5 rounded-md bg-indigo-500/20 px-3 py-1.5 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/40 transition-colors hover:bg-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-indigo-500/20"
+          className="flex w-32 shrink-0 items-center justify-center gap-1.5 rounded-md bg-indigo-500/20 px-3 py-1.5 text-xs font-medium text-indigo-300 light:text-indigo-600 ring-1 ring-indigo-500/40 transition-colors hover:bg-indigo-500/30 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-indigo-500/20"
         >
           <ArrowsRightLeftIcon className="size-3.5" />
           Shuffle
@@ -183,7 +183,7 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
         {hasInput && (
           <button
             onClick={handleReset}
-            className="shrink-0 text-xs text-gray-500 transition-colors hover:text-gray-300"
+            className="shrink-0 text-xs text-gray-500 transition-colors hover:text-gray-300 light:hover:text-gray-700"
           >
             Reset
           </button>
@@ -193,7 +193,7 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
       {combos !== null && (
         <div className="mt-1">
           {combos.two.length === 0 ? (
-            <p className="py-3 text-xs text-gray-600">No combinations yet.</p>
+            <p className="py-3 text-xs text-gray-600 light:text-gray-400">No combinations yet.</p>
           ) : (
             <>
               <ComboSection

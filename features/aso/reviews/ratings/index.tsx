@@ -15,11 +15,11 @@ import type { RatingsResult } from "./types";
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
@@ -29,8 +29,8 @@ const DAYS_OF_HISTORY = 90;
 
 export default function RatingsDashboardPage() {
   const activeApp = useActiveApp();
-  const planSlug  = usePlanSlug();
-  const isLocked  = !isPlanAtLeast(planSlug, "pro");
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
   const [result, setResult] = useState<RatingsResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -70,7 +70,7 @@ export default function RatingsDashboardPage() {
 
   if (isLocked) {
     return (
-      <main className="h-full overflow-y-auto bg-[#111318]">
+      <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Ratings" />
         <FeatureLocked
           minPlan="pro"
@@ -88,7 +88,7 @@ export default function RatingsDashboardPage() {
   }
 
   return (
-    <main className="h-full overflow-y-auto bg-[#111318]">
+    <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Ratings" />
 
       <div className="p-6 space-y-5">
@@ -114,7 +114,7 @@ export default function RatingsDashboardPage() {
               ratingCount={result?.current.ratingCount ?? null}
             />
 
-            <div className="rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07]">
+            <div className="rounded-xl bg-[#1a1d24] light:bg-white">
               <RatingsGainedChart
                 series={result?.series ?? []}
                 hasStarBreakdown={!!result?.current.ratingHistogram}

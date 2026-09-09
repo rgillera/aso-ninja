@@ -64,7 +64,7 @@ export default function PortalFeature() {
           {features.map((f) => (
             <div
               key={f.name}
-              className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8 transition-colors hover:bg-gray-800/80 hover:ring-indigo-500/30"
+              className="flex flex-col rounded-2xl bg-gray-800/50 p-8 transition-colors hover:bg-gray-800/80 hover:ring-indigo-500/30"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
                 <f.icon className="size-5 text-indigo-400" aria-hidden="true" />

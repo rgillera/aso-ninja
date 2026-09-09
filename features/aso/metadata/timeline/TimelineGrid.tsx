@@ -21,7 +21,7 @@ function AppIcon({ app }: { app: App }) {
   return app.icon_url
     ? <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover" />
     : (
-      <div className="size-8 rounded-xl bg-[#0d0f14] flex items-center justify-center">
+      <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
         <DevicePhoneMobileIcon className="size-4 text-gray-500" />
       </div>
     );
@@ -31,12 +31,12 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
   const visibleDates = allDates.slice(dateOffset, dateOffset + DAYS_SHOWN);
 
   const yearMonthGroups = useMemo(() => {
-    const years:  { year: number; days: number }[]  = [];
+    const years: { year: number; days: number }[] = [];
     const months: { label: string; days: number }[] = [];
     for (const d of visibleDates) {
       const yr = d.getFullYear();
       const mo = d.toLocaleString("en-US", { month: "long" });
-      if (!years.length  || years[years.length - 1].year   !== yr) years.push({ year: yr, days: 1 });   else years[years.length - 1].days++;
+      if (!years.length || years[years.length - 1].year !== yr) years.push({ year: yr, days: 1 }); else years[years.length - 1].days++;
       if (!months.length || months[months.length - 1].label !== mo) months.push({ label: mo, days: 1 }); else months[months.length - 1].days++;
     }
     return { years, months };
@@ -52,12 +52,12 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
   }, [visibleDates, eventByDate]);
 
   return (
-    <div className="shrink-0 relative border-b border-white/[0.07] overflow-x-auto">
+    <div className="shrink-0 relative border-b border-white/[0.07] light:border-black/[0.08] overflow-x-auto">
       {/* Prev */}
       <button
         onClick={() => onOffsetChange(Math.max(0, dateOffset - DAYS_SHOWN))}
         disabled={dateOffset === 0}
-        className="absolute left-[52px] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] ring-1 ring-white/[0.08] text-gray-400 hover:text-white disabled:opacity-20 transition-colors shadow-md"
+        className="absolute left-[52px] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronLeftIcon className="size-3" />
       </button>
@@ -65,7 +65,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
       <button
         onClick={() => onOffsetChange(Math.min(allDates.length - DAYS_SHOWN, dateOffset + DAYS_SHOWN))}
         disabled={dateOffset + DAYS_SHOWN >= allDates.length}
-        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] ring-1 ring-white/[0.08] text-gray-400 hover:text-white disabled:opacity-20 transition-colors shadow-md"
+        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronRightIcon className="size-3" />
       </button>
@@ -75,7 +75,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
         <div className="flex">
           <div style={{ width: LABEL_W }} className="shrink-0" />
           {yearMonthGroups.years.map((g, i) => (
-            <div key={i} style={{ width: g.days * COL_W }} className="text-[10px] text-gray-600 px-2 pt-1.5">{g.year}</div>
+            <div key={i} style={{ width: g.days * COL_W }} className="text-[10px] text-gray-600 light:text-gray-400 px-2 pt-1.5">{g.year}</div>
           ))}
         </div>
 
@@ -83,19 +83,19 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
         <div className="flex">
           <div style={{ width: LABEL_W }} className="shrink-0" />
           {yearMonthGroups.months.map((g, i) => (
-            <div key={i} style={{ width: g.days * COL_W }} className="text-[10px] font-medium text-gray-500 px-2 pb-1 border-l border-white/[0.04]">{g.label}</div>
+            <div key={i} style={{ width: g.days * COL_W }} className="text-[10px] font-medium text-gray-500 px-2 pb-1 border-l border-white/[0.04] light:border-black/[0.05]">{g.label}</div>
           ))}
         </div>
 
         {/* Day numbers */}
-        <div className="flex border-t border-white/[0.05]">
+        <div className="flex border-t border-white/[0.05] light:border-black/[0.06]">
           <div style={{ width: LABEL_W }} className="shrink-0" />
           {visibleDates.map((d, i) => {
-            const ds    = toDateStr(d);
+            const ds = toDateStr(d);
             const isSel = selectedEvent?.date === ds;
             return (
-              <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center pt-1 pb-0.5 ${isSel ? "bg-white/[0.04]" : ""}`}>
-                <span className={`text-[10px] ${isSel ? "text-white font-semibold" : visibleEventDates.has(ds) ? "text-gray-400" : "text-gray-700"}`}>{d.getDate()}</span>
+              <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center pt-1 pb-0.5 ${isSel ? "bg-white/[0.04] light:bg-black/[0.04]" : ""}`}>
+                <span className={`text-[10px] ${isSel ? "text-white light:text-gray-900 font-semibold" : visibleEventDates.has(ds) ? "text-gray-400 light:text-gray-600" : "text-gray-700 light:text-gray-300"}`}>{d.getDate()}</span>
               </div>
             );
           })}
@@ -107,11 +107,11 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
             <AppIcon app={app} />
           </div>
           {visibleDates.map((d, i) => {
-            const ds    = toDateStr(d);
+            const ds = toDateStr(d);
             const event = eventByDate.get(ds);
             const isSel = selectedEvent?.date === ds;
             return (
-              <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center h-full ${isSel ? "bg-white/[0.04]" : ""}`}>
+              <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center h-full ${isSel ? "bg-white/[0.04] light:bg-black/[0.04]" : ""}`}>
                 {event && (
                   <button
                     onClick={() => onSelectEvent(isSel ? null : event)}

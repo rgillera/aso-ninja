@@ -44,7 +44,7 @@ function AndroidIcon() {
 
 function FollowedBadge() {
   return (
-    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 ring-1 ring-emerald-500/25">
+    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400 light:text-emerald-700 ring-1 ring-emerald-500/25">
       Following
     </span>
   );
@@ -70,11 +70,11 @@ function AppIconWithBadge({
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="size-11 rounded-xl bg-[#0d0f14] flex items-center justify-center">
-          <DevicePhoneMobileIcon className="size-5 text-gray-600" />
+        <div className="size-11 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+          <DevicePhoneMobileIcon className="size-5 text-gray-600 light:text-gray-400" />
         </div>
       )}
-      <div className="absolute -bottom-1 -left-1 rounded-full bg-[#111318] p-px ring-1 ring-white/[0.08]">
+      <div className="absolute -bottom-1 -left-1 rounded-full bg-[#111318] light:bg-white p-px">
         {store === "ios" ? (
           <img src="/app-store.svg" alt="" className="size-3.5" />
         ) : (
@@ -86,17 +86,17 @@ function AppIconWithBadge({
 }
 
 export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, hrefForApp }: Props) {
-  const [open, setOpen]               = useState(false);
-  const [tab, setTab]                 = useState<Tab>("recent");
-  const [query, setQuery]             = useState("");
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("recent");
+  const [query, setQuery] = useState("");
   const [storeFilter, setStoreFilter] = useState<StoreFilter>("all");
-  const [country, setCountry]         = useState("US");
+  const [country, setCountry] = useState("US");
   const [countryOpen, setCountryOpen] = useState(false);
   const [countryQuery, setCountryQuery] = useState("");
-  const [results, setResults]         = useState<AppSearchResult[]>([]);
-  const [iosDown, setIosDown]         = useState(false);
-  const [showAll, setShowAll]         = useState(false);
-  const [isPending, startTransition]  = useTransition();
+  const [results, setResults] = useState<AppSearchResult[]>([]);
+  const [iosDown, setIosDown] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [recentlyViewed, setRecentlyViewed] = useState<RecentEntry[]>([]);
 
   // Reload recently viewed whenever the popup opens or workspace changes,
@@ -107,10 +107,10 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
     // eslint-disable-next-line react-hooks/exhaustive-deps -- apps.map(...) is derived fresh every render; apps itself is the real dependency
   }, [open, workspaceId, apps]);
 
-  const wrapRef    = useRef<HTMLDivElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const countryRef = useRef<HTMLDivElement>(null);
-  const debounce   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isSearching = query.trim().length > 0;
 
@@ -254,7 +254,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
   }
 
   return (
-    <div ref={wrapRef} className="relative border-b border-white/[0.07]">
+    <div ref={wrapRef} className="relative border-b border-white/[0.07] light:border-black/[0.08]">
       {/* Search bar */}
       <div className="flex items-center gap-3 px-5 py-3">
         <MagnifyingGlassIcon className="size-5 text-gray-500 shrink-0" />
@@ -264,10 +264,10 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
           onChange={e => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
           placeholder="Search for an app by name, app id or URL ..."
-          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+          className="flex-1 bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none"
         />
         {query && (
-          <button onClick={clearQuery} className="text-gray-600 hover:text-gray-400 transition-colors shrink-0">
+          <button onClick={clearQuery} className="text-gray-600 light:text-gray-400 hover:text-gray-400 light:hover:text-gray-600 transition-colors shrink-0">
             <XMarkIcon className="size-4" />
           </button>
         )}
@@ -275,18 +275,18 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
 
       {/* Popup */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 bg-[#111318] border-t border-white/[0.07] shadow-2xl shadow-black/50">
+        <div className="absolute left-0 right-0 top-full z-50 bg-[#111318] light:bg-white border-t border-white/[0.07] light:border-black/[0.08] shadow-2xl shadow-black/50 light:shadow-black/10">
 
           {/* Tabs */}
-          <div className="flex items-end gap-6 px-5 pt-4 border-b border-white/[0.07]">
+          <div className="flex items-end gap-6 px-5 pt-4 border-b border-white/[0.07] light:border-black/[0.08]">
             {tabs.map(t => (
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 className={`pb-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
                   tab === t.key
-                    ? "border-white text-white"
-                    : "border-transparent text-gray-500 hover:text-gray-300"
+                    ? "border-white light:border-gray-900 text-white light:text-gray-900"
+                    : "border-transparent text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
                 }`}
               >
                 {t.label}
@@ -295,13 +295,13 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] flex-wrap">
+          <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.04] light:border-black/[0.05] flex-wrap">
 
             {/* Country */}
             <div className="relative" ref={countryRef}>
               <button
                 onClick={() => { setCountryOpen(v => !v); setCountryQuery(""); }}
-                className="flex items-center gap-2 rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] px-3.5 py-2 text-sm text-gray-200 hover:text-white transition-colors min-w-[160px]"
+                className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-gray-100 px-3.5 py-2 text-sm text-gray-200 light:text-gray-800 hover:text-white light:hover:text-gray-900 transition-colors min-w-[160px]"
               >
                 <span className="text-base leading-none">{countryFlag(country)}</span>
                 <span className="flex-1 text-left truncate">{COUNTRY_MAP[country] ?? country}</span>
@@ -309,7 +309,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
               </button>
 
               {countryOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
                   <div className="px-2 pt-2 pb-1">
                     <input
                       autoFocus
@@ -317,7 +317,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                       placeholder="Search country…"
                       value={countryQuery}
                       onChange={e => setCountryQuery(e.target.value)}
-                      className="w-full rounded-md bg-white/[0.06] px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none"
+                      className="w-full rounded-md bg-white/[0.06] light:bg-black/[0.04] px-2.5 py-1.5 text-xs text-white light:text-gray-900 placeholder-gray-500 light:placeholder-gray-400 outline-none"
                     />
                   </div>
                   <div className="max-h-52 overflow-y-auto py-1">
@@ -330,13 +330,13 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                         <button
                           key={code}
                           onClick={() => { setCountry(code); setCountryOpen(false); setCountryQuery(""); }}
-                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] transition-colors ${
-                            country === code ? "text-white" : "text-gray-400"
+                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors ${
+                            country === code ? "text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"
                           }`}
                         >
                           <span className="text-base leading-none">{countryFlag(code)}</span>
                           <span className="flex-1 truncate">{COUNTRY_MAP[code] ?? code}</span>
-                          <span className="text-xs text-gray-600">{code}</span>
+                          <span className="text-xs text-gray-600 light:text-gray-400">{code}</span>
                         </button>
                       ))}
                   </div>
@@ -345,13 +345,13 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
             </div>
 
             {/* Store filter */}
-            <div className="flex items-center rounded-lg bg-[#1a1d24] ring-1 ring-white/[0.08] p-1 gap-0.5">
+            <div className="flex items-center rounded-lg bg-[#1a1d24] light:bg-gray-100 p-1 gap-0.5">
               {(["all", "ios", "android"] as StoreFilter[]).map(s => (
                 <button
                   key={s}
                   onClick={() => setStoreFilter(s)}
                   className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                    storeFilter === s ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                    storeFilter === s ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
                   }`}
                 >
                   {s === "all" && "All"}
@@ -371,9 +371,9 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
               <>
                 {tab === "recent" && (
                   combinedRecent.length === 0 ? (
-                    <p className="px-5 py-8 text-center text-sm text-gray-600">No recently viewed apps</p>
+                    <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">No recently viewed apps</p>
                   ) : (
-                    <div className="divide-y divide-white/[0.04]">
+                    <div className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
                       {combinedRecent.map((r, i) => {
                         const followedApp = apps.find(a =>
                           a.bundle_id === r.bundleId &&
@@ -400,11 +400,11 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                               href: r.href,
                               trackedId,
                             })}
-                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] light:hover:bg-black/[0.03] transition-colors"
                           >
                             <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-white truncate">
+                              <p className="text-sm font-semibold text-white light:text-gray-900 truncate">
                                 {r.name}
                               </p>
                               <p className="text-xs text-gray-500 truncate mt-0.5">
@@ -423,25 +423,25 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                 {tab === "all" && (
                   <>
                     {isPending && results.length === 0 ? (
-                      <div className="flex items-center gap-2 px-5 py-5 text-xs text-gray-600">
+                      <div className="flex items-center gap-2 px-5 py-5 text-xs text-gray-600 light:text-gray-400">
                         <span className="size-3 rounded-full border border-gray-600 border-t-transparent animate-spin" />
                         Searching App Store &amp; Google Play…
                       </div>
                     ) : filteredResults.length === 0 && !isPending ? (
                       <div className="px-5 py-6 space-y-1">
                         {iosDown && (
-                          <p className="text-xs text-amber-500/80">App Store search is temporarily unavailable.</p>
+                          <p className="text-xs text-amber-500/80 light:text-amber-700">App Store search is temporarily unavailable.</p>
                         )}
-                        <p className="text-sm text-gray-600">No results for &ldquo;{query}&rdquo;</p>
+                        <p className="text-sm text-gray-600 light:text-gray-400">No results for &ldquo;{query}&rdquo;</p>
                       </div>
                     ) : (
                       <>
                         {iosDown && (
-                          <div className="px-5 py-2 border-b border-white/[0.04]">
-                            <p className="text-xs text-amber-500/80">App Store is temporarily unavailable — showing Google Play results only.</p>
+                          <div className="px-5 py-2 border-b border-white/[0.04] light:border-black/[0.05]">
+                            <p className="text-xs text-amber-500/80 light:text-amber-700">App Store is temporarily unavailable — showing Google Play results only.</p>
                           </div>
                         )}
-                        <div className="divide-y divide-white/[0.04]">
+                        <div className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
                           {visibleResults.map((r, i) => {
                             const trackedApp = apps.find(a => a.bundle_id === r.bundleId && a.store === r.store && (a.country ?? "US").toUpperCase() === country.toUpperCase());
                             const href = trackedApp
@@ -465,11 +465,11 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                                   href,
                                   trackedId: trackedApp?.id,
                                 })}
-                                className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                                className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] light:hover:bg-black/[0.03] transition-colors"
                               >
                                 <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
                                 <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-white truncate">
+                                        <p className="text-sm font-semibold text-white light:text-gray-900 truncate">
                                           <span className="mr-2 text-base leading-none">{countryFlag(country)}</span>
                                           {r.name}
                                         </p>
@@ -487,7 +487,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                         {hasMore && (
                           <button
                             onClick={() => setShowAll(true)}
-                            className="w-full px-5 py-3 text-sm text-gray-500 hover:text-gray-300 text-left border-t border-white/[0.04] transition-colors"
+                            className="w-full px-5 py-3 text-sm text-gray-500 hover:text-gray-300 text-left border-t border-white/[0.04] light:border-black/[0.05] transition-colors"
                           >
                             See all results
                           </button>
@@ -503,11 +503,11 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
             {tab === "myapps" && (
               <>
                 {filteredApps.length === 0 ? (
-                  <p className="px-5 py-8 text-center text-sm text-gray-600">
+                  <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">
                     {apps.length === 0 ? "No apps added yet" : "No apps match your filters"}
                   </p>
                 ) : (
-                  <div className="divide-y divide-white/[0.04]">
+                  <div className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
                     {filteredApps.map(app => {
                       const targetHref = stayInPlace ? `/dashboard/apps/${app.id}/report` : hrefForApp({
                         trackedId: app.id, bundleId: app.bundle_id, storeId: app.store_id, store: app.store,
@@ -527,17 +527,17 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                             href: `/dashboard/apps/${app.id}/report`,
                             trackedId: app.id,
                           })}
-                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] transition-colors"
+                          className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] light:hover:bg-black/[0.03] transition-colors"
                         >
                           <AppIconWithBadge iconUrl={app.icon_url} name={app.name} store={app.store} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{app.name}</p>
+                            <p className="text-sm font-semibold text-white light:text-gray-900 truncate">{app.name}</p>
                             <p className="text-xs text-gray-500 truncate mt-0.5">
                               {app.country && (
                                 <span>{countryFlag(app.country)} {COUNTRY_MAP[app.country] ?? app.country} - {app.country}</span>
                               )}
                               {app.bundle_id && (
-                                <span className="ml-2 text-gray-700">{app.bundle_id.split(".").slice(0, 3).join(".")}</span>
+                                <span className="ml-2 text-gray-700 light:text-gray-300">{app.bundle_id.split(".").slice(0, 3).join(".")}</span>
                               )}
                             </p>
                           </div>

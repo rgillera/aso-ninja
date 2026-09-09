@@ -41,14 +41,14 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
 
   const popover = (
     <div
-      className={`absolute z-50 w-64 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 p-4 ${
+      className={`absolute z-50 w-64 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 p-4 ${
         variant === "row" ? "bottom-full left-0 mb-2" : "top-full right-0 mt-1.5"
       }`}
     >
       <div className="flex justify-center rounded-lg bg-white p-3">
         <QRCodeSVG value={mobileUrl} size={144} />
       </div>
-      <p className="mt-3 text-center text-xs text-gray-400">
+      <p className="mt-3 text-center text-xs text-gray-400 light:text-gray-600">
         Scan with your phone to track rankings and get push notifications the moment they change.
       </p>
     </div>
@@ -60,7 +60,7 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
         <button
           type="button"
           onClick={handleClick}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
           <QrCodeIcon className="size-4 shrink-0" />
           Get mobile app
@@ -74,7 +74,7 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
     <div className="relative" ref={ref}>
       <button
         onClick={handleClick}
-        className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] ring-1 px-3 py-2.5 text-xs transition-colors ${open ? "text-white ring-indigo-500/50" : "ring-white/[0.08] text-gray-400 hover:text-gray-200"}`}
+        className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white ring-1 px-3 py-2.5 text-xs transition-colors ${open ? "text-white light:text-gray-900 ring-indigo-500/50" : "ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"}`}
       >
         <QrCodeIcon className="size-3.5" />
         Get mobile app

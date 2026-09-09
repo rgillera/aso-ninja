@@ -7,9 +7,9 @@ export function CharBadge({ count, limit }: { count: number; limit: number }) {
     count === 0 || exceeded ? "red" : ratio >= 0.7 ? "green" : "yellow";
 
   const styles = {
-    green:  "bg-green-500/10 text-green-400 ring-1 ring-green-500/20",
-    yellow: "bg-yellow-500/10 text-yellow-400 ring-1 ring-yellow-500/20",
-    red:    "bg-red-500/10 text-red-400 ring-1 ring-red-500/20",
+    green: "bg-green-500/10 text-green-400 light:text-green-700 ring-1 ring-green-500/20",
+    yellow: "bg-yellow-500/10 text-yellow-400 light:text-yellow-700 ring-1 ring-yellow-500/20",
+    red: "bg-red-500/10 text-red-400 light:text-red-600 ring-1 ring-red-500/20",
   };
   const dotStyles = {
     green: "bg-green-400",
@@ -30,7 +30,6 @@ export function MetadataSection({
   value,
   limit,
   placeholder,
-  dark,
   rows = 2,
   originalValue,
   onChange,
@@ -39,7 +38,6 @@ export function MetadataSection({
   value: string;
   limit: number;
   placeholder: string;
-  dark: boolean;
   rows?: number;
   originalValue?: string;
   onChange: (value: string) => void;
@@ -48,29 +46,32 @@ export function MetadataSection({
   const showCurrentValue = originalValue !== undefined && originalValue !== "" && originalValue !== value;
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       {/* Card header */}
       <div className="flex items-center gap-1.5 px-5 pt-4 pb-3">
-        <h3 className="text-sm font-semibold text-white">{title}</h3>
-        <QuestionMarkCircleIcon className="size-4 text-gray-600" />
+        <h3 className="text-sm font-semibold text-white light:text-gray-900">{title}</h3>
+        <QuestionMarkCircleIcon className="size-4 text-gray-600 light:text-gray-400" />
       </div>
 
       {exceeded && (
-        <div className="flex items-center gap-1.5 px-5 pb-2 text-xs text-red-400">
+        <div className="flex items-center gap-1.5 px-5 pb-2 text-xs text-red-400 light:text-red-600">
           <ExclamationCircleIcon className="size-4 shrink-0" />
           {title} can&rsquo;t have more than {limit} characters
         </div>
       )}
 
-      {/* Inner content area */}
-      <div className={`mx-4 rounded-xl ring-1 ${exceeded ? "ring-red-500/40" : "ring-white/[0.06]"} ${dark ? "bg-[#0d0f14]" : "bg-[#13151b]"} ${showCurrentValue ? "mb-2" : "mb-4"}`}>
+      {/* Inner content area — this is our own editing UI, not the simulated
+          store screen (see PhonePreview, which has its own real dark/light
+          toggle for that), so it follows the site theme like any other
+          recessed input well. */}
+      <div className={`mx-4 rounded-xl bg-[#0d0f14] light:bg-gray-50 ${exceeded ? "ring-1 ring-red-500/40" : ""} ${showCurrentValue ? "mb-2" : "mb-4"}`}>
         <div className="px-4 pt-3 pb-2">
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             rows={rows}
-            className="w-full resize-none bg-transparent text-sm text-white leading-relaxed outline-none placeholder:italic placeholder:text-gray-600"
+            className="w-full resize-none bg-transparent text-sm text-white light:text-gray-900 leading-relaxed outline-none placeholder:italic placeholder:text-gray-600 light:placeholder:text-gray-400"
           />
         </div>
         <div className="px-4 pb-3">
@@ -81,8 +82,8 @@ export function MetadataSection({
       {showCurrentValue && (
         <div className="px-5 pb-4">
           <p className="mb-2 text-xs text-gray-500">Current {title}:</p>
-          <div className="max-h-48 overflow-y-auto rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] px-4 py-3">
-            <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-line">{originalValue}</p>
+          <div className="max-h-48 overflow-y-auto rounded-xl bg-white/[0.03] light:bg-black/[0.03] px-4 py-3">
+            <p className="text-sm text-gray-400 light:text-gray-600 leading-relaxed whitespace-pre-line">{originalValue}</p>
           </div>
         </div>
       )}

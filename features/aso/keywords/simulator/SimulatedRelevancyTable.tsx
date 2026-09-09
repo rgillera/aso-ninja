@@ -24,10 +24,10 @@ function opportunityDelta(row: SimulatorRow, hasSimulated: boolean): number | nu
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
-  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+  if (!active) return <ArrowsUpDownIcon className="size-3 text-gray-700 light:text-gray-300" />;
   return dir === "asc"
-    ? <ChevronUpIcon className="size-3 text-indigo-400" />
-    : <ChevronDownIcon className="size-3 text-indigo-400" />;
+    ? <ChevronUpIcon className="size-3 text-indigo-400 light:text-indigo-600" />
+    : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
 }
 
 export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: SimulatorRow[]; hasSimulated: boolean }) {
@@ -96,12 +96,12 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
   const pageRows = sorted.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   if (rows.length === 0) {
-    return <p className="px-5 py-8 text-center text-sm text-gray-600">No tracked keywords yet — add some in Keyword Research first.</p>;
+    return <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">No tracked keywords yet — add some in Keyword Research first.</p>;
   }
 
   function headerButton(key: SortKey, label: string) {
     return (
-      <button onClick={() => handleSort(key)} className={`ml-auto flex items-center gap-1 hover:text-gray-300 transition-colors ${sortKey === key ? "text-gray-300" : ""}`}>
+      <button onClick={() => handleSort(key)} className={`ml-auto flex items-center gap-1 hover:text-gray-300 light:hover:text-gray-700 transition-colors ${sortKey === key ? "text-gray-300 light:text-gray-700" : ""}`}>
         {label} <SortIcon active={sortKey === key} dir={sortDir} />
       </button>
     );
@@ -109,17 +109,17 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
 
   return (
     <div>
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08]">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.08] light:border-black/[0.08]">
         <div className="relative flex-1 max-w-xs">
-          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-gray-600" />
+          <MagnifyingGlassIcon className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-gray-600 light:text-gray-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search keyword…"
-            className="w-full rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-gray-600 outline-none focus:ring-indigo-500/40"
+            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-gray-600 light:text-gray-400 outline-none focus:ring-indigo-500/40"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300">
+            <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 light:text-gray-400 hover:text-gray-300 light:hover:text-gray-700">
               <XMarkIcon className="size-3.5" />
             </button>
           )}
@@ -127,28 +127,28 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
       </div>
 
       {sorted.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-gray-600">No keywords match &ldquo;{search}&rdquo;.</p>
+        <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">No keywords match &ldquo;{search}&rdquo;.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-left font-medium text-gray-400">
-                  <button onClick={() => handleSort("term")} className={`flex items-center gap-1 hover:text-gray-300 transition-colors ${sortKey === "term" ? "text-gray-300" : ""}`}>
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-left font-medium text-gray-400 light:text-gray-600">
+                  <button onClick={() => handleSort("term")} className={`flex items-center gap-1 hover:text-gray-300 light:hover:text-gray-700 transition-colors ${sortKey === "term" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Keyword <SortIcon active={sortKey === "term"} dir={sortDir} />
                   </button>
                 </th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">{headerButton("currentRelevancy", "Current Relevancy")}</th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">{headerButton("simulatedRelevancy", "Simulated Relevancy")}</th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">{headerButton("currentRelevancy", "Current Relevancy")}</th>
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">{headerButton("simulatedRelevancy", "Simulated Relevancy")}</th>
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">
                   <span className="ml-auto inline-flex items-center justify-end gap-1.5">
                     {headerButton("relevancyDelta", "Δ")}
                     <ColumnTooltip text="The predicted change in relevancy from applying this title/subtitle: Simulated Relevancy minus Current Relevancy." />
                   </span>
                 </th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">{headerButton("currentOpportunity", "Current Opportunity")}</th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">{headerButton("simulatedOpportunity", "Simulated Opportunity")}</th>
-                <th className="border-t border-white/[0.08] px-4 py-3 text-right font-medium text-gray-400">
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">{headerButton("currentOpportunity", "Current Opportunity")}</th>
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">{headerButton("simulatedOpportunity", "Simulated Opportunity")}</th>
+                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">
                   <span className="ml-auto inline-flex items-center justify-end gap-1.5">
                     {headerButton("opportunityDelta", "Δ")}
                     <ColumnTooltip text="The predicted change in opportunity from applying this title/subtitle: Simulated Opportunity minus Current Opportunity. Opportunity already weighs relevancy by search volume and current rank chance, so this is the more decision-relevant number." />
@@ -159,24 +159,24 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
             <tbody>
               {pageRows.map((row) => {
                 const relDelta = relevancyDelta(row, hasSimulated);
-                const relDeltaColor = relDelta === null ? "text-gray-600" : relDelta > 0 ? "text-green-400" : relDelta < 0 ? "text-red-400" : "text-gray-500";
+                const relDeltaColor = relDelta === null ? "text-gray-600 light:text-gray-400" : relDelta > 0 ? "text-green-400" : relDelta < 0 ? "text-red-400 light:text-red-600" : "text-gray-500";
                 const relDeltaLabel = relDelta === null ? "—" : relDelta > 0 ? `+${relDelta}` : relDelta < 0 ? `${relDelta}` : "0";
                 const oppDelta = opportunityDelta(row, hasSimulated);
-                const oppDeltaColor = oppDelta === null ? "text-gray-600" : oppDelta > 0 ? "text-green-400" : oppDelta < 0 ? "text-red-400" : "text-gray-500";
+                const oppDeltaColor = oppDelta === null ? "text-gray-600 light:text-gray-400" : oppDelta > 0 ? "text-green-400" : oppDelta < 0 ? "text-red-400 light:text-red-600" : "text-gray-500";
                 const oppDeltaLabel = oppDelta === null ? "—" : oppDelta > 0 ? `+${oppDelta}` : oppDelta < 0 ? `${oppDelta}` : "0";
                 return (
                   <tr key={row.term}>
-                    <td className="border-t border-white/[0.08] px-4 py-3 text-gray-200">{row.term}</td>
-                    <td className="border-t border-white/[0.08] px-4 py-3 text-right text-gray-400">{formatScore(row.currentRelevancy)}</td>
-                    <td className="border-t border-white/[0.08] px-4 py-3 text-right text-white">
+                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-gray-200 light:text-gray-800">{row.term}</td>
+                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-gray-400 light:text-gray-600">{formatScore(row.currentRelevancy)}</td>
+                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-white">
                       {hasSimulated ? formatScore(row.simulatedRelevancy) : "—"}
                     </td>
-                    <td className={`border-t border-white/[0.08] px-4 py-3 text-right font-medium ${relDeltaColor}`}>{relDeltaLabel}</td>
-                    <td className="border-t border-white/[0.08] px-4 py-3 text-right text-gray-400">{formatScore(row.currentOpportunity)}</td>
-                    <td className="border-t border-white/[0.08] px-4 py-3 text-right text-white">
+                    <td className={`border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium ${relDeltaColor}`}>{relDeltaLabel}</td>
+                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-gray-400 light:text-gray-600">{formatScore(row.currentOpportunity)}</td>
+                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-white">
                       {hasSimulated ? formatScore(row.simulatedOpportunity) : "—"}
                     </td>
-                    <td className={`border-t border-white/[0.08] px-4 py-3 text-right font-medium ${oppDeltaColor}`}>{oppDeltaLabel}</td>
+                    <td className={`border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium ${oppDeltaColor}`}>{oppDeltaLabel}</td>
                   </tr>
                 );
               })}
@@ -186,22 +186,22 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
       )}
 
       {sorted.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.08]">
-          <span className="text-xs text-gray-600">{sorted.length} keyword{sorted.length !== 1 ? "s" : ""}</span>
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.08] light:border-black/[0.08]">
+          <span className="text-xs text-gray-600 light:text-gray-400">{sorted.length} keyword{sorted.length !== 1 ? "s" : ""}</span>
           {pageCount > 1 && (
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setPage(safePage - 1)}
                 disabled={safePage === 0}
-                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 ‹ Prev
               </button>
-              <span className="text-xs text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+              <span className="text-xs text-gray-600 light:text-gray-400 tabular-nums">Page {safePage + 1} of {pageCount}</span>
               <button
                 onClick={() => setPage(safePage + 1)}
                 disabled={safePage >= pageCount - 1}
-                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 Next ›
               </button>

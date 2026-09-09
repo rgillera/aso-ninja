@@ -58,9 +58,9 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
   if (series.length < 2) {
     return (
       <div className="flex h-72 flex-col items-center justify-center text-center px-6">
-        <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-        <p className="text-sm font-medium text-gray-400">Tracking starts today</p>
-        <p className="mt-1 text-xs text-gray-600 max-w-xs">
+        <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">Tracking starts today</p>
+        <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
           Check back after a few visits to see your ratings history build up — there&rsquo;s no
           way to backfill history the store doesn&rsquo;t expose.
         </p>
@@ -77,7 +77,7 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === t.id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+                tab === t.id ? "bg-white/[0.08] light:bg-black/[0.06] text-white light:text-gray-900" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
               }`}
             >
               {t.label}
@@ -85,23 +85,23 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-1.5">
           <CalendarDaysIcon className="size-3.5 text-gray-500" />
           <input
             type="date"
             value={from}
             max={to || undefined}
             onChange={(e) => setFrom(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 focus:outline-none"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
             style={{ colorScheme: "dark" }}
           />
-          <span className="text-gray-600">–</span>
+          <span className="text-gray-600 light:text-gray-400">–</span>
           <input
             type="date"
             value={to}
             min={from || undefined}
             onChange={(e) => setTo(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 focus:outline-none"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
             style={{ colorScheme: "dark" }}
           />
         </div>
@@ -113,7 +113,7 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
             key={g.id}
             onClick={() => setGranularity(g.id)}
             className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors ${
-              granularity === g.id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+              granularity === g.id ? "bg-white/[0.08] light:bg-black/[0.06] text-white light:text-gray-900" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
             }`}
           >
             {g.label}

@@ -19,21 +19,21 @@ import type { AsaConnectionStatus, AsaKeywordRow } from "@/libs/asa-connections/
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
 }
 
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "amber" | "emerald" }) {
-  const color = tone === "amber" ? "text-amber-400" : "text-emerald-400";
+  const color = tone === "amber" ? "text-amber-400 light:text-amber-700" : "text-emerald-400 light:text-emerald-700";
   return (
-    <div className="flex-1 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] px-5 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{label}</p>
+    <div className="flex-1 rounded-xl bg-[#1a1d24] light:bg-white px-5 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 light:text-gray-400">{label}</p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
     </div>
   );
@@ -49,16 +49,16 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-          <ExclamationTriangleIcon className="size-3.5 text-amber-400" />
+          <ExclamationTriangleIcon className="size-3.5 text-amber-400 light:text-amber-700" />
           Possibly wasted spend
         </span>
         {rows.length > 0 && (
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 ring-1 ring-white/[0.08] hover:text-white hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
           >
             <ArrowDownTrayIcon className="size-3.5" />
             Export CSV
@@ -67,12 +67,12 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-4 py-6 text-xs text-gray-600">No overlap found — you&apos;re not currently bidding on keywords you already rank top 3 for organically.</p>
+        <p className="px-4 py-6 text-xs text-gray-600 light:text-gray-400">No overlap found — you&apos;re not currently bidding on keywords you already rank top 3 for organically.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] border-collapse">
             <thead>
-              <tr className="border-b border-white/[0.07]">
+              <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Organic Rank</th>
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Spend (30d)</th>
@@ -81,10 +81,10 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.term} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                  <td className="px-3 py-2.5 text-sm text-gray-200">{r.term}</td>
-                  <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-emerald-400">#{r.rank}</td>
-                  <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-amber-400">{r.currency ?? ""} {r.spend.toFixed(2)}</td>
+                <tr key={r.term} className="border-b border-white/[0.04] light:border-black/[0.05] hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors">
+                  <td className="px-3 py-2.5 text-sm text-gray-200 light:text-gray-800">{r.term}</td>
+                  <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-emerald-400 light:text-emerald-700">#{r.rank}</td>
+                  <td className="px-3 py-2.5 text-sm font-medium tabular-nums text-amber-400 light:text-amber-700">{r.currency ?? ""} {r.spend.toFixed(2)}</td>
                   <td className="px-3 py-2.5 text-xs text-gray-500">{r.campaignName} / {r.adGroupName}</td>
                 </tr>
               ))}
@@ -106,16 +106,16 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-          <ArrowTrendingUpIcon className="size-3.5 text-emerald-400" />
+          <ArrowTrendingUpIcon className="size-3.5 text-emerald-400 light:text-emerald-700" />
           Untapped opportunities
         </span>
         {rows.length > 0 && (
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 ring-1 ring-white/[0.08] hover:text-white hover:bg-white/[0.05] transition-colors"
+            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
           >
             <ArrowDownTrayIcon className="size-3.5" />
             Export CSV
@@ -124,12 +124,12 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
       </div>
 
       {rows.length === 0 ? (
-        <p className="px-4 py-6 text-xs text-gray-600">No high-value gaps found — your best tracked keywords are either already targeted or already ranking well organically.</p>
+        <p className="px-4 py-6 text-xs text-gray-600 light:text-gray-400">No high-value gaps found — your best tracked keywords are either already targeted or already ranking well organically.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[500px] border-collapse">
             <thead>
-              <tr className="border-b border-white/[0.07]">
+              <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Keyword</th>
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Volume</th>
                 <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Opportunity</th>
@@ -138,11 +138,11 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.term} className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                  <td className="px-3 py-2.5 text-sm text-gray-200">{r.term}</td>
-                  <td className="px-3 py-2.5 text-sm text-gray-300 tabular-nums">{r.volume}</td>
+                <tr key={r.term} className="border-b border-white/[0.04] light:border-black/[0.05] hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors">
+                  <td className="px-3 py-2.5 text-sm text-gray-200 light:text-gray-800">{r.term}</td>
+                  <td className="px-3 py-2.5 text-sm text-gray-300 light:text-gray-700 tabular-nums">{r.volume}</td>
                   <td className="px-3 py-2.5">
-                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-emerald-500/15 text-emerald-400">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-emerald-500/15 text-emerald-400 light:text-emerald-700">
                       {r.opportunity}
                     </span>
                   </td>
@@ -210,7 +210,7 @@ export default function SpendInsightsPage() {
 
   if (locked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Spend Insights" />
         <FeatureLocked
           minPlan="pro"
@@ -228,49 +228,49 @@ export default function SpendInsightsPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Spend Insights" />
       <div className="flex items-center gap-1.5 px-6 pt-3 text-xs text-gray-500">
-        <InformationCircleIcon className="size-3.5 text-gray-600 shrink-0" />
+        <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
         Cross-references your live Apple Search Ads data with your tracked organic keyword data.
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <DevicePhoneMobileIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">ASA Intelligence is only available for iOS apps</p>
-            <p className="text-xs text-gray-600 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
+            <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : connLoading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : !connection?.connected ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <BanknotesIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">Apple Search Ads isn&apos;t connected yet</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">Apple Search Ads isn&apos;t connected yet</p>
             {activeApp.id && activeApp.id !== "__preview__" ? (
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-gray-600 light:text-gray-400 mt-1">
                 <Link
                   href={`/dashboard/apps/${activeApp.id}/settings#apple-search-ads`}
-                  className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                  className="text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
                 >
                   Connect it in Settings
                 </Link>
                 . One connection covers every app in the workspace.
               </p>
             ) : (
-              <p className="text-xs text-gray-600 mt-1">Follow this app to connect Apple Search Ads from its Settings page.</p>
+              <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Follow this app to connect Apple Search Ads from its Settings page.</p>
             )}
           </div>
         ) : error ? (
-          <div className="mx-6 mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+          <div className="mx-6 mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
             {error}
           </div>
         ) : loading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : (

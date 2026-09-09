@@ -63,16 +63,16 @@ export default async function Page({ searchParams }: PageProps) {
 
   // Synthetic App — not in DB, no workspace
   const syntheticApp: App = {
-    id:           "__preview__",
+    id: "__preview__",
     workspace_id: firstWorkspace?.id ?? "",
-    name:         name,
-    store:        store as "ios" | "android",
-    bundle_id:    bundleId,
-    store_id:     resolvedStoreId,
-    icon_url:     icon ? decodeURIComponent(icon) : null,
-    country:      resolvedCountry,
-    created_at:   new Date().toISOString(),
-    updated_at:   new Date().toISOString(),
+    name: name,
+    store: store as "ios" | "android",
+    bundle_id: bundleId,
+    store_id: resolvedStoreId,
+    icon_url: icon ? decodeURIComponent(icon) : null,
+    country: resolvedCountry,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   const storeData = await fetchStoreData(store, resolvedStoreId, bundleId, resolvedCountry);

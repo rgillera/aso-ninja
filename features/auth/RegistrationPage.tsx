@@ -24,7 +24,7 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
           </p>
         </div>
 
-        <div className="bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-8">
+        <div className="bg-gray-800/50 rounded-2xl p-8">
           <form action={action} className="space-y-5">
             {next && <input type="hidden" name="next" value={next} />}
             {state?.error && typeof state.error === "string" && (
@@ -128,7 +128,7 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
             {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
-              className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-900 ring-1 ring-white/10 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
             >
               <svg className="size-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

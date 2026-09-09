@@ -166,7 +166,7 @@ export default async function GrowthServicesPage() {
               {benefits.map((b) => (
                 <div
                   key={b.name}
-                  className="flex flex-col items-center rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8 text-center"
+                  className="flex flex-col items-center rounded-2xl bg-gray-800/50 p-8 text-center"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
                     <b.icon className="size-5 text-indigo-400" aria-hidden="true" />
@@ -196,7 +196,7 @@ export default async function GrowthServicesPage() {
               {services.map((s) => (
                 <div
                   key={s.name}
-                  className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8 transition-colors hover:bg-gray-800/80 hover:ring-indigo-500/30"
+                  className="flex flex-col rounded-2xl bg-gray-800/50 p-8 transition-colors hover:bg-gray-800/80 hover:ring-indigo-500/30"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
                     <s.icon className="size-5 text-indigo-400" aria-hidden="true" />
@@ -223,7 +223,7 @@ export default async function GrowthServicesPage() {
             </div>
 
             <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 items-stretch" style={{ paddingTop: "1rem" }}>
-              <div className="flex flex-col rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] p-8">
+              <div className="flex flex-col rounded-2xl bg-gray-800/40 p-8">
                 <h3 className="text-lg font-semibold text-gray-100">In-house hire (US market)</h3>
                 <p className="mt-2 text-xs text-gray-500">One person, one salary</p>
                 <div className="mt-4 flex items-baseline gap-x-2">
@@ -293,7 +293,7 @@ export default async function GrowthServicesPage() {
 
             <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-2 lg:max-w-none lg:grid-cols-4">
               {engagementSteps.map((step) => (
-                <div key={step.n} className="flex flex-col rounded-2xl bg-gray-800/50 ring-1 ring-white/10 p-8">
+                <div key={step.n} className="flex flex-col rounded-2xl bg-gray-800/50 p-8">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
                     <span className="text-sm font-semibold text-indigo-400">{step.n}</span>
                   </div>
@@ -307,7 +307,7 @@ export default async function GrowthServicesPage() {
 
         <section className="pb-24 sm:pb-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-6 py-10 text-center sm:px-10">
+            <div className="mx-auto max-w-3xl rounded-2xl bg-gray-800/40 px-6 py-10 text-center sm:px-10">
               <h2 className="text-2xl font-bold text-white">Ready to talk growth?</h2>
               <p className="mt-3 text-sm text-gray-400">
                 Tell us about your app and we&apos;ll figure out if it&apos;s a fit.

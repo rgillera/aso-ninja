@@ -31,19 +31,19 @@ function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTransla
       onClick={() => tracked ? onRemove?.(kw.term) : onAdd(kw.term)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
+      className={`group flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
         tracked
           ? hovered
-            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 cursor-pointer"
-            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300"
-          : "bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-300 hover:ring-indigo-500/50 hover:text-white"
+            ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 light:text-red-600 cursor-pointer"
+            : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
+          : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
       }`}
     >
       {tracked
         ? hovered
-          ? <MinusIcon className="size-3 text-red-400 shrink-0" />
-          : <CheckIcon className="size-3 text-indigo-400 shrink-0" />
-        : <PlusIcon className="size-3 text-gray-500 shrink-0" />
+          ? <MinusIcon className="size-3 text-red-400 light:text-red-600 shrink-0" />
+          : <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 shrink-0" />
+        : <PlusIcon className="size-3 text-gray-500 group-hover:text-indigo-400 light:group-hover:text-indigo-600 transition-colors shrink-0" />
       }
       <span className="flex flex-col items-start leading-tight py-0.5">
         <span>{kw.term}</span>
@@ -51,11 +51,11 @@ function KeywordPill({ kw, tracked, onAdd, onRemove, translation, loadingTransla
           <span className="text-[10px] text-gray-500">(en) {translation}</span>
         )}
         {loadingTranslation && !translation && (
-          <span className="h-2 w-10 rounded bg-white/[0.08] animate-pulse" />
+          <span className="h-2 w-10 rounded bg-white/[0.08] light:bg-black/[0.06] animate-pulse" />
         )}
       </span>
       {kw.volume > 0 && (
-        <span className={`ml-0.5 font-semibold tabular-nums ${tracked ? (hovered ? "text-red-400" : "text-indigo-400") : "text-gray-500"}`}>
+        <span className={`ml-0.5 font-semibold tabular-nums ${tracked ? (hovered ? "text-red-400 light:text-red-600" : "text-indigo-400 light:text-indigo-600") : "text-gray-500"}`}>
           {kw.volume}
         </span>
       )}
@@ -97,14 +97,14 @@ function MetadataSection({
   translating?: boolean;
 }) {
   const tracked = keywords?.filter((k) => trackedSet.has(k.term)).length ?? 0;
-  const total   = keywords?.length ?? 0;
+  const total = keywords?.length ?? 0;
 
   return (
-    <div className="py-3 border-b border-white/[0.05] last:border-0">
+    <div className="py-3 border-b border-white/[0.05] light:border-black/[0.04] last:border-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{label}</span>
-          {keywords && <span className="text-[10px] text-gray-600">{tracked} / {total}</span>}
+          {keywords && <span className="text-[10px] text-gray-600 light:text-gray-400">{tracked} / {total}</span>}
         </div>
         <AnalyzeAllButton
           onClick={() => {
@@ -118,16 +118,16 @@ function MetadataSection({
         keywords === null ? (
           <div className="flex flex-wrap gap-1.5">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-6 rounded-md bg-white/[0.04] animate-pulse" style={{ width: `${50 + i * 15}px` }} />
+              <div key={i} className="h-6 rounded-md bg-white/[0.04] light:bg-black/[0.04] animate-pulse" style={{ width: `${50 + i * 15}px` }} />
             ))}
           </div>
         ) : keywords.length === 0 ? (
           rawText?.trim() ? (
-            <p className="text-xs text-gray-600">
-              Every word in <span className="text-gray-400">&ldquo;{truncate(rawText, 140)}&rdquo;</span> is too common to track as a keyword.
+            <p className="text-xs text-gray-600 light:text-gray-400">
+              Every word in <span className="text-gray-400 light:text-gray-600">&ldquo;{truncate(rawText, 140)}&rdquo;</span> is too common to track as a keyword.
             </p>
           ) : (
-            <p className="text-xs text-gray-600">No keywords found.</p>
+            <p className="text-xs text-gray-600 light:text-gray-400">No keywords found.</p>
           )
         ) : (
           <>
@@ -148,7 +148,7 @@ function MetadataSection({
               <button
                 onClick={onLoadMore}
                 disabled={loadingMore}
-                className="mt-2 text-[11px] text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
+                className="mt-2 text-[11px] text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 disabled:opacity-50 transition-colors"
               >
                 {loadingMore ? "Loading…" : `Show more (${loadMoreCount ?? 20} more)`}
               </button>
@@ -161,15 +161,15 @@ function MetadataSection({
 }
 
 export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle }: Props) {
-  const [data, setData]                 = useState<AppMetadataResult | null>(null);
-  const [loading, setLoading]           = useState(false);
+  const [data, setData] = useState<AppMetadataResult | null>(null);
+  const [loading, setLoading] = useState(false);
   const [descKeywords, setDescKeywords] = useState<MetadataKeyword[]>([]);
-  const [hasMoreDesc, setHasMoreDesc]   = useState(false);
-  const [descTotal, setDescTotal]       = useState(0);
-  const [descOffset, setDescOffset]     = useState(0);
-  const [loadingMore, setLoadingMore]   = useState(false);
+  const [hasMoreDesc, setHasMoreDesc] = useState(false);
+  const [descTotal, setDescTotal] = useState(0);
+  const [descOffset, setDescOffset] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [translating, setTranslating]   = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   const fetchMetadata = async (storeId: string, store: string, country: string, offset: number, append: boolean) => {
     const params = new URLSearchParams({ storeId, store, country, descOffset: String(offset) });
@@ -235,7 +235,7 @@ export function KeywordSuggestionMetadata({ activeApp, trackedKeywords, onAddKey
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
   if (!activeApp?.store_id) {
-    return <p className="px-4 py-4 text-xs text-gray-600 text-center">Select an app to see its metadata keywords.</p>;
+    return <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">Select an app to see its metadata keywords.</p>;
   }
 
   const subtitleLabel = activeApp.store === "android" ? "Short Description Keywords" : "Subtitle Keywords";

@@ -18,21 +18,21 @@ import type { AsaConnectionStatus, AsaKeywordRow } from "@/libs/asa-connections/
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
 }
 
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "amber" | "emerald" }) {
-  const color = tone === "amber" ? "text-amber-400" : "text-emerald-400";
+  const color = tone === "amber" ? "text-amber-400 light:text-amber-700" : "text-emerald-400 light:text-emerald-700";
   return (
-    <div className="flex-1 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] px-5 py-4">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">{label}</p>
+    <div className="flex-1 rounded-xl bg-[#1a1d24] light:bg-white px-5 py-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 light:text-gray-400">{label}</p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
     </div>
   );
@@ -88,7 +88,7 @@ export default function EfficiencyPage() {
 
   if (locked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Efficiency" />
         <FeatureLocked
           minPlan="pro"
@@ -106,60 +106,60 @@ export default function EfficiencyPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Efficiency" />
       <div className="flex items-center gap-1.5 px-6 pt-3 text-xs text-gray-500">
-        <InformationCircleIcon className="size-3.5 text-gray-600 shrink-0" />
+        <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
         Cost per install and Pause/Scale calls, computed from your last 30 days of Apple Search Ads spend.
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <DevicePhoneMobileIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">ASA Intelligence is only available for iOS apps</p>
-            <p className="text-xs text-gray-600 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
+            <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : connLoading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : !connection?.connected ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <BanknotesIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">Apple Search Ads isn&apos;t connected yet</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">Apple Search Ads isn&apos;t connected yet</p>
             {activeApp.id && activeApp.id !== "__preview__" ? (
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs text-gray-600 light:text-gray-400 mt-1">
                 <Link
                   href={`/dashboard/apps/${activeApp.id}/settings#apple-search-ads`}
-                  className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                  className="text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
                 >
                   Connect it in Settings
                 </Link>
                 . One connection covers every app in the workspace.
               </p>
             ) : (
-              <p className="text-xs text-gray-600 mt-1">Follow this app to connect Apple Search Ads from its Settings page.</p>
+              <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Follow this app to connect Apple Search Ads from its Settings page.</p>
             )}
           </div>
         ) : (
           <>
             {error && (
-              <div className="mx-6 mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400">
+              <div className="mx-6 mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
                 <ExclamationTriangleIcon className="size-4 shrink-0" />
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex items-center justify-center py-16">
+              <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
                 <p className="text-sm text-gray-500">Loading…</p>
               </div>
             ) : keywords.length === 0 && !error ? (
-              <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-                <AdjustmentsHorizontalIcon className="size-8 text-gray-700 mb-3" />
-                <p className="text-sm font-medium text-gray-400">No active campaigns found for this app</p>
-                <p className="text-xs text-gray-600 mt-1">This Apple Search Ads account isn&apos;t running campaigns for this app&apos;s App Store listing.</p>
+              <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+                <AdjustmentsHorizontalIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+                <p className="text-sm font-medium text-gray-400 light:text-gray-600">No active campaigns found for this app</p>
+                <p className="text-xs text-gray-600 light:text-gray-400 mt-1">This Apple Search Ads account isn&apos;t running campaigns for this app&apos;s App Store listing.</p>
               </div>
             ) : (
               <>
@@ -169,7 +169,7 @@ export default function EfficiencyPage() {
                   <button
                     onClick={loadKeywords}
                     disabled={loading}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 hover:text-white transition-colors self-start"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white transition-colors self-start"
                   >
                     <ArrowPathIcon className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
                     Refresh

@@ -74,13 +74,13 @@ export function ThemeMenuButton({
         <div
           ref={menuRef}
           style={{ position: "fixed", left: pos.left, ...("top" in pos ? { top: pos.top } : { bottom: pos.bottom }), zIndex: 9999 }}
-          className="w-52 bg-[#1a1d24] ring-1 ring-white/[0.12] rounded-xl overflow-hidden shadow-2xl py-1 max-h-72 overflow-y-auto"
+          className="w-52 bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl py-1 max-h-72 overflow-y-auto"
         >
           {themes.map((t) => (
             <button
               key={t.id}
               onClick={() => pick(t.id)}
-              className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${currentThemeId === t.id ? "text-indigo-400" : "text-gray-300"}`}
+              className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${currentThemeId === t.id ? "text-indigo-400 light:text-indigo-600" : "text-gray-300 light:text-gray-700"}`}
             >
               {currentThemeId === t.id ? <CheckIcon className="size-3 shrink-0" /> : <span className="w-3 shrink-0" />}
               <span className="truncate">{t.label}</span>
@@ -89,7 +89,7 @@ export function ThemeMenuButton({
           {includeOther && (
             <button
               onClick={() => pick(null)}
-              className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] border-t border-white/[0.06] mt-1 pt-2 ${currentThemeId === null ? "text-indigo-400" : "text-gray-500"}`}
+              className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] border-t border-white/[0.06] light:border-black/[0.06] mt-1 pt-2 ${currentThemeId === null ? "text-indigo-400 light:text-indigo-600" : "text-gray-500"}`}
             >
               {currentThemeId === null ? <CheckIcon className="size-3 shrink-0" /> : <span className="w-3 shrink-0" />}
               Other

@@ -1,6 +1,21 @@
 @import "tailwindcss";
 
 /*
+ * Lets any class in the authenticated app (dashboard + onboarding) carry a
+ * `light:` counterpart alongside its dark (default, unprefixed) styling —
+ * e.g. `bg-[#111318] light:bg-[#f5f6f8]`. It's additive rather than a
+ * dark/light pair of full class sets, so the existing hardcoded-dark classes
+ * stay the source of truth and `light:` only overrides what actually needs
+ * to flip. Matches on a `data-theme="light"` attribute rather than Tailwind's
+ * built-in `dark:` (class or prefers-color-scheme) because dark stays this
+ * app's default and only ThemeProvider (features/dashboard/ThemeContext.tsx)
+ * opts a session into light — see that file for why the attribute lives on
+ * <html> rather than some inner wrapper (it has to be a real ancestor of
+ * document.body for createPortal trees like OnboardingWizard to match too).
+ */
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/*
  * `body`'s background is the only thing painted before/behind every actual
  * page container (DashboardShell, the onboarding overlay, portal pages,
  * etc.) -- all of which hardcode the product's real dark palette directly
@@ -13,13 +28,21 @@
  * mismatched seam instead of just more of the app's background. #111318 is
  * the same tone DashboardShell and most page-level containers already use
  * as their own outermost layer, so a stray sliver of it disappears instead
- * of standing out. No prefers-color-scheme split: the product doesn't have
- * a light theme anywhere else, so following the OS's light-mode preference
- * here would only reintroduce the exact mismatch this is fixing.
+ * of standing out. Still no prefers-color-scheme split: the authenticated
+ * app's light theme (see the `light:` custom variant above) is an explicit
+ * per-session opt-in via ThemeProvider, not the OS preference — these two
+ * vars just follow along via the [data-theme="light"] override below so a
+ * stray sliver of body matches whichever theme that session is actually in,
+ * same reasoning as the dark-only case this comment used to describe.
  */
 :root {
   --background: #111318;
   --foreground: #ededed;
+}
+
+[data-theme="light"] {
+  --background: #f5f6f8;
+  --foreground: #111318;
 }
 
 @theme inline {
@@ -28,6 +51,39 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --animate-notif-in: notif-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+
+  /*
+   * A step up from Tailwind's stock sizes on the tiers actual UI copy uses
+   * (labels, body text, buttons) — text-xl and above (headings) are left
+   * alone since they're already prominent. Doesn't reach text sized with an
+   * arbitrary value (text-[10px] and friends, common on small badges/counts
+   * throughout the keyword tables) — those are literal pixel values outside
+   * this token scale, so a follow-up pass through call sites would be needed
+   * to size those up too.
+   */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: calc(1.125 / 0.8125);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.375 / 0.9375);
+  --text-base: 1.0625rem;
+  --text-base--line-height: calc(1.625 / 1.0625);
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: calc(1.8125 / 1.1875);
+
+  /*
+   * Squarer corners app-wide — buttons (mostly rounded-lg) and cards/modals
+   * (rounded-xl/2xl/3xl) all pull from this one scale, so tuning it here
+   * moves everything at once instead of hunting down each call site. Doesn't
+   * reach `rounded-full` (pills/avatars — a fixed value, not part of this
+   * scale) or arbitrary radii like the phone-mockup frames' rounded-[44px]
+   * (deliberately fixed device-bezel shapes, unrelated to this scale).
+   */
+  --radius-sm: 0.1875rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.875rem;
 }
 
 @keyframes notif-in {

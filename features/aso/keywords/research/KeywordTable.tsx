@@ -42,7 +42,7 @@ function LockedCell({ plan, title }: { plan: "Pro"; title: string }) {
   return (
     <Link
       href="/dashboard/subscription"
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 transition-opacity hover:opacity-75"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 light:text-violet-700 transition-opacity hover:opacity-75"
       title={title}
     >
       <LockClosedIcon className="size-2.5" />
@@ -60,7 +60,7 @@ function PoolLimitCell() {
   return (
     <Link
       href="/dashboard/subscription"
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 transition-opacity hover:opacity-75"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 transition-opacity hover:opacity-75"
       title="Your plan's relevancy & opportunity scoring pool is used up — click to upgrade for a bigger pool"
     >
       <LockClosedIcon className="size-2.5" />
@@ -85,14 +85,14 @@ function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; o
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 light:bg-white shadow-2xl p-6">
         <div className="flex items-start gap-3 mb-5">
           <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-amber-500/20">
-            <ExclamationTriangleIcon className="size-5 text-amber-400" />
+            <ExclamationTriangleIcon className="size-5 text-amber-400 light:text-amber-700" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Add {count} keywords?</h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <h2 className="text-base font-semibold text-white light:text-gray-900">Add {count} keywords?</h2>
+            <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
               Adding this many keywords at once may take a while to load.
             </p>
           </div>
@@ -103,7 +103,7 @@ function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; o
             type="button"
             onClick={onCancel}
             autoFocus
-            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
           >
             Cancel
           </button>
@@ -124,7 +124,7 @@ function PausedBadge() {
   return (
     <Link
       href="/dashboard/subscription"
-      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 transition-opacity hover:opacity-75"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 transition-opacity hover:opacity-75"
       title="This keyword is over your plan's limit — rank and volume stopped updating. Click to upgrade and resume tracking."
     >
       <LockClosedIcon className="size-2.5" />
@@ -164,14 +164,14 @@ type ColumnDef = {
 };
 
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: "volume",      label: "Volume",        defaultVisible: true,  tooltip: "Search popularity (0–100), estimated from how many apps target this keyword in their title vs. total search results. Higher = more apps competing for it, which correlates with search demand." },
-  { key: "results",     label: "Results",       defaultVisible: false, tooltip: "Number of apps returned when searching this keyword. More results = more competition." },
-  { key: "diff",        label: "Difficulty",    defaultVisible: true,  tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
-  { key: "chance",      label: "Chance",        defaultVisible: true,  tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
-  { key: "relevancy",   label: "Relevancy",     defaultVisible: true,  smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
-  { key: "opportunity", label: "Opportunity",   defaultVisible: true,  smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
+  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Search popularity (0–100), estimated from how many apps target this keyword in their title vs. total search results. Higher = more apps competing for it, which correlates with search demand." },
+  { key: "results", label: "Results", defaultVisible: false, tooltip: "Number of apps returned when searching this keyword. More results = more competition." },
+  { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
+  { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
+  { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
+  { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
   { key: "estimatedDownloads", label: "Est. Downloads", defaultVisible: true, tooltip: "This app's real total downloads (from your connected App Store Connect / Play Console account), split across tracked keywords by search volume and current rank. Neither store attributes downloads to specific search terms, so this is a modeled share of a real number." },
-  { key: "rank",        label: "App Rank",      defaultVisible: true,  tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
+  { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
 ];
 
 const DEFAULT_VISIBLE = new Set(
@@ -181,7 +181,7 @@ const DEFAULT_VISIBLE = new Set(
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 function PendingSyncCell() {
-  return <ClockIcon className="size-4 text-gray-600 animate-pulse" />;
+  return <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />;
 }
 
 function ConnectDownloadsCell({ bundleHasCredential }: { bundleHasCredential?: boolean }) {
@@ -413,10 +413,10 @@ export function KeywordTable({
   }
 
   function SortIcon({ colKey }: { colKey: string }) {
-    if (sortKey !== colKey) return <ArrowsUpDownIcon className="size-3 text-gray-700" />;
+    if (sortKey !== colKey) return <ArrowsUpDownIcon className="size-3 text-gray-700 light:text-gray-300" />;
     return sortDir === "asc"
-      ? <ChevronUpIcon className="size-3 text-indigo-400" />
-      : <ChevronDownIcon className="size-3 text-indigo-400" />;
+      ? <ChevronUpIcon className="size-3 text-indigo-400 light:text-indigo-600" />
+      : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
   }
 
   const displayed = useMemo(() => {
@@ -426,18 +426,18 @@ export function KeywordTable({
 
     if (kwSearch) rows = rows.filter((k) => k.keyword.toLowerCase().includes(kwSearch.toLowerCase()));
 
-    if (volumeFilter === "low")    rows = rows.filter((k) => (k.volume ?? 0) < 20);
+    if (volumeFilter === "low") rows = rows.filter((k) => (k.volume ?? 0) < 20);
     else if (volumeFilter === "medium") rows = rows.filter((k) => (k.volume ?? 0) >= 20 && (k.volume ?? 0) <= 60);
-    else if (volumeFilter === "high")   rows = rows.filter((k) => (k.volume ?? 0) > 60);
+    else if (volumeFilter === "high") rows = rows.filter((k) => (k.volume ?? 0) > 60);
 
-    if (rankFilter === "ranked")   rows = rows.filter((k) => k.rank !== null);
+    if (rankFilter === "ranked") rows = rows.filter((k) => k.rank !== null);
     else if (rankFilter === "unranked") rows = rows.filter((k) => k.rank === null);
-    else if (rankFilter === "top3")     rows = rows.filter((k) => k.rank !== null && k.rank <= 3);
-    else if (rankFilter === "top10")    rows = rows.filter((k) => k.rank !== null && k.rank <= 10);
+    else if (rankFilter === "top3") rows = rows.filter((k) => k.rank !== null && k.rank <= 3);
+    else if (rankFilter === "top10") rows = rows.filter((k) => k.rank !== null && k.rank <= 10);
 
-    if (relevancyFilter === "low")    rows = rows.filter((k) => (k.relevancy ?? 0) < 40);
+    if (relevancyFilter === "low") rows = rows.filter((k) => (k.relevancy ?? 0) < 40);
     else if (relevancyFilter === "medium") rows = rows.filter((k) => (k.relevancy ?? 0) >= 40 && (k.relevancy ?? 0) <= 70);
-    else if (relevancyFilter === "high")   rows = rows.filter((k) => (k.relevancy ?? 0) > 70);
+    else if (relevancyFilter === "high") rows = rows.filter((k) => (k.relevancy ?? 0) > 70);
 
     if (!sortKey) return rows;
 
@@ -501,11 +501,11 @@ export function KeywordTable({
 
   function cellValue(colKey: string, row: Keyword): string | number {
     switch (colKey) {
-      case "rank":       return row.rank ?? "Unranked";
-      case "relevancy":  return row.relevancy ?? "";
+      case "rank": return row.rank ?? "Unranked";
+      case "relevancy": return row.relevancy ?? "";
       case "opportunity": return row.opportunity ?? "";
-      case "results":    return row.results ?? "";
-      default:           return (row as unknown as Record<string, number>)[colKey] ?? "";
+      case "results": return row.results ?? "";
+      default: return (row as unknown as Record<string, number>)[colKey] ?? "";
     }
   }
 
@@ -518,50 +518,50 @@ export function KeywordTable({
 
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
-      case "volume":      return (
+      case "volume": return (
         <button
           onClick={() => setVolumeHistoryKeyword(row.keyword)}
           title="View volume history"
-          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] transition-colors"
+          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
           <VolumeBar value={row.volume} />
-          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 shrink-0" />
+          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
         </button>
       );
-      case "diff":        return (
-        <span className={`text-sm ${row.diff > 60 ? "text-red-400" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400"}`}>
+      case "diff": return (
+        <span className={`text-sm ${row.diff > 60 ? "text-red-400 light:text-red-600" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400 light:text-emerald-700"}`}>
           {row.diff}
         </span>
       );
-      case "chance":      return (
-        <span className={`text-sm ${row.chance > 15 ? "text-emerald-400" : "text-gray-400"}`}>
+      case "chance": return (
+        <span className={`text-sm ${row.chance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600"}`}>
           {row.chance}
         </span>
       );
       case "opportunity": return (
         row.aiDown && row.opportunity == null
-          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
+          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400 light:text-red-600">Error</span>
           : row.opportunity === null
           ? <PoolLimitCell />
           : row.opportunity !== undefined
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-              row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+              row.opportunity >= 70 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700" :
               row.opportunity >= 40 ? "bg-yellow-500/15 text-yellow-400" :
                                       "bg-gray-500/10 text-gray-500"
             }`}>
               {row.opportunity}
             </span>
           )
-          : <ClockIcon className="size-4 text-gray-600 animate-pulse" />
+          : <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />
       );
-      case "rank":        return row.rank !== null
-        ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>#{row.rank}</span>
-        : <span className="text-xs text-gray-600 italic">Unranked</span>;
-      case "results":     return (
+      case "rank": return row.rank !== null
+        ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
+        : <span className="text-xs text-gray-600 light:text-gray-400 italic">Unranked</span>;
+      case "results": return (
         row.results != null
-          ? <span className="text-sm text-gray-300">{row.results.toLocaleString()}</span>
-          : <span className="text-sm text-gray-600">—</span>
+          ? <span className="text-sm text-gray-300 light:text-gray-700">{row.results.toLocaleString()}</span>
+          : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
       );
       case "estimatedDownloads": return (
         downloadsLocked
@@ -571,35 +571,35 @@ export function KeywordTable({
           : downloadsConnection.pending
           ? <PendingSyncCell />
           : row.estimatedDownloads != null
-          ? <span className="text-sm text-gray-300" title="Modeled from real total downloads — see column tooltip">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
-          : <span className="text-sm text-gray-600">—</span>
+          ? <span className="text-sm text-gray-300 light:text-gray-700" title="Modeled from real total downloads — see column tooltip">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
+          : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
       );
-      case "relevancy":   return (
+      case "relevancy": return (
         row.aiDown && row.relevancy == null
-          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400">Error</span>
+          ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400 light:text-red-600">Error</span>
           : row.relevancy === null
           ? <PoolLimitCell />
           : row.relevancy !== undefined
           ? (
             <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-              row.relevancy >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+              row.relevancy >= 70 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700" :
               row.relevancy >= 40 ? "bg-yellow-500/15 text-yellow-400" :
                                     "bg-gray-500/10 text-gray-500"
             }`}>
               {row.relevancy}
             </span>
           )
-          : <ClockIcon className="size-4 text-gray-600 animate-pulse" />
+          : <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />
       );
-      default:            return <span className="text-sm text-gray-600">—</span>;
+      default: return <span className="text-sm text-gray-600 light:text-gray-400">—</span>;
     }
   }
 
   return (
     <div
       ref={tableContainerRef}
-      className={`mx-6 mb-6 rounded-xl bg-[#1a1d24] overflow-hidden transition-all ${
-        tourStep === "table" ? "ring-2 ring-indigo-400/70" : "ring-1 ring-white/[0.07]"
+      className={`mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10 transition-all ${
+        tourStep === "table" ? "ring-2 ring-indigo-400/70" : ""
       }`}
     >
       <TourTooltip
@@ -607,9 +607,9 @@ export function KeywordTable({
         active={tourStep === "table"}
         step={TOUR_STEPS.indexOf("table") + 1}
         total={TOUR_STEPS.length}
-        icon={<TableCellsIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        icon={<TableCellsIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
@@ -617,62 +617,62 @@ export function KeywordTable({
       />
 
       {/* Filter toolbar */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] flex-wrap gap-y-2">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex-wrap gap-y-2">
         {/* Keyword search */}
         <button
           onClick={(e) => toggleFilterDropdown("keyword", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "keyword" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "keyword" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           <MagnifyingGlassIcon className="size-3.5" />
           {kwSearch ? `"${kwSearch}"` : "Keyword"}
-          <ChevronDownIcon className="size-3 text-gray-600" />
+          <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
         {/* Volume filter */}
         <button
           onClick={(e) => toggleFilterDropdown("volume", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "volume" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "volume" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {volumeFilter !== "any" ? `Volume: ${volumeFilter.charAt(0).toUpperCase() + volumeFilter.slice(1)}` : "Volume"}
-          <ChevronDownIcon className="size-3 text-gray-600" />
+          <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
         {/* Rank filter */}
         <button
           onClick={(e) => toggleFilterDropdown("rank", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "rank" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? "Unranked" : rankFilter === "top3" ? "Top 3" : "Top 10"}
-          <ChevronDownIcon className="size-3 text-gray-600" />
+          <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
         {/* Relevancy filter — every plan has some relevancy pool now, so this is never locked */}
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300" : openFilter === "relevancy" ? "bg-[#0d0f14] ring-indigo-500/40 text-white" : "bg-[#0d0f14] ring-white/[0.08] text-gray-400 hover:text-white"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
-          <SparklesIcon className="size-3 text-violet-400" />
+          <SparklesIcon className="size-3 text-violet-400 light:text-violet-700" />
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
-          <ChevronDownIcon className="size-3 text-gray-600" />
+          <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
         {/* All / checked / starred segment */}
-        <div className="flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] p-0.5">
+        <div className="flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 p-0.5">
           <button
             onClick={() => setTableFilter("all")}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${tableFilter === "all" ? "bg-white/10 text-white" : "text-gray-500 hover:text-white"}`}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${tableFilter === "all" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-white light:hover:text-gray-900"}`}
           >
             All
           </button>
           <button
             onClick={() => setTableFilter("checked")}
-            className={`rounded-md p-1.5 transition-colors ${tableFilter === "checked" ? "bg-white/10 text-white" : "text-gray-500 hover:text-white"}`}
+            className={`rounded-md p-1.5 transition-colors ${tableFilter === "checked" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-white light:hover:text-gray-900"}`}
           >
             <CheckIcon className="size-3.5" />
           </button>
           <button
             onClick={() => setTableFilter("starred")}
-            className={`rounded-md p-1.5 transition-colors ${tableFilter === "starred" ? "bg-white/10 text-yellow-400" : "text-gray-500 hover:text-white"}`}
+            className={`rounded-md p-1.5 transition-colors ${tableFilter === "starred" ? "bg-white/10 light:bg-amber-50 text-yellow-400 light:text-amber-600" : "text-gray-500 hover:text-white light:hover:text-gray-900"}`}
           >
             <StarIcon className="size-3.5" />
           </button>
@@ -681,7 +681,7 @@ export function KeywordTable({
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors"
           >
             <XMarkIcon className="size-3.5" />
             Clear
@@ -701,22 +701,22 @@ export function KeywordTable({
         <div
           ref={filterDropdownRef}
           style={{ position: "fixed", top: filterPosRef.current.top, left: filterPosRef.current.left, zIndex: 9999 }}
-          className="bg-[#1a1d24] ring-1 ring-white/[0.12] rounded-xl overflow-hidden shadow-2xl"
+          className="bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl"
         >
           {openFilter === "keyword" && (
             <div className="p-2 w-56">
-              <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
-                <MagnifyingGlassIcon className="size-3.5 text-gray-600 shrink-0" />
+              <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+                <MagnifyingGlassIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
                 <input
                   autoFocus
                   value={kwSearch}
                   onChange={(e) => setKwSearch(e.target.value)}
                   placeholder="Search keywords…"
-                  className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+                  className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
                 />
                 {kwSearch && (
                   <button onClick={() => setKwSearch("")}>
-                    <XMarkIcon className="size-3 text-gray-600 hover:text-gray-300" />
+                    <XMarkIcon className="size-3 text-gray-600 light:text-gray-400 hover:text-gray-300 light:hover:text-gray-700" />
                   </button>
                 )}
               </div>
@@ -724,9 +724,9 @@ export function KeywordTable({
           )}
           {openFilter === "volume" && (
             <div className="py-1 w-44">
-              {([["any","Any"],["low","Low  (< 20)"],["medium","Medium  20–60"],["high","High  (> 60)"]] as const).map(([val, label]) => (
+              {([["any","Any"],["low","Low (< 20)"],["medium","Medium 20–60"],["high","High (> 60)"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => { setVolumeFilter(val); setOpenFilter(null); }}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${volumeFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${volumeFilter === val ? "text-indigo-400 light:text-indigo-600" : "text-gray-400 light:text-gray-600"}`}>
                   {volumeFilter === val && <CheckIcon className="size-3 shrink-0" />}
                   <span className={volumeFilter === val ? "" : "ml-5"}>{label}</span>
                 </button>
@@ -737,7 +737,7 @@ export function KeywordTable({
             <div className="py-1 w-44">
               {([["any","Any"],["ranked","Ranked"],["unranked","Unranked"],["top3","Top 3"],["top10","Top 10"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => { setRankFilter(val); setOpenFilter(null); }}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${rankFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${rankFilter === val ? "text-indigo-400 light:text-indigo-600" : "text-gray-400 light:text-gray-600"}`}>
                   {rankFilter === val && <CheckIcon className="size-3 shrink-0" />}
                   <span className={rankFilter === val ? "" : "ml-5"}>{label}</span>
                 </button>
@@ -746,9 +746,9 @@ export function KeywordTable({
           )}
           {openFilter === "relevancy" && (
             <div className="py-1 w-44">
-              {([["any","Any"],["low","Low  (< 40)"],["medium","Medium  40–70"],["high","High  (> 70)"]] as const).map(([val, label]) => (
+              {([["any","Any"],["low","Low (< 40)"],["medium","Medium 40–70"],["high","High (> 70)"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => { setRelevancyFilter(val); setOpenFilter(null); }}
-                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] ${relevancyFilter === val ? "text-indigo-400" : "text-gray-400"}`}>
+                  className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${relevancyFilter === val ? "text-indigo-400 light:text-indigo-600" : "text-gray-400 light:text-gray-600"}`}>
                   {relevancyFilter === val && <CheckIcon className="size-3 shrink-0" />}
                   <span className={relevancyFilter === val ? "" : "ml-5"}>{label}</span>
                 </button>
@@ -761,7 +761,7 @@ export function KeywordTable({
 
       {/* Add keyword error */}
       {addError && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1">{addError}</span>
           <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300">
@@ -771,11 +771,11 @@ export function KeywordTable({
       )}
 
       {/* Add keyword input + Edit columns */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07]">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <div
           ref={addKeywordBoxRef}
-          className={`flex-1 flex items-center rounded-lg bg-[#0d0f14] px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
-            tourStep === "addKeyword" ? "ring-2 ring-indigo-400/70 bg-indigo-500/5" : "ring-1 ring-white/[0.08]"
+          className={`flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
+            tourStep === "addKeyword" ? "ring-2 ring-indigo-400/70 bg-indigo-500/5" : "light:ring-black/[0.08]"
           }`}
         >
           <input
@@ -788,7 +788,7 @@ export function KeywordTable({
             }}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Enter comma-separated keywords to add…"
-            className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+            className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
           />
         </div>
         <button
@@ -807,11 +807,11 @@ export function KeywordTable({
         <div className="shrink-0" ref={colPickerRef}>
           <button
             onClick={openColPicker}
-            className={`flex items-center gap-1.5 rounded-lg bg-[#0d0f14] ring-1 px-3 py-2 text-xs text-gray-400 hover:text-white transition-colors ${colPickerOpen ? "ring-indigo-500/50 text-white" : "ring-white/[0.08]"}`}
+            className={`flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 ring-1 px-3 py-2 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors ${colPickerOpen ? "ring-indigo-500/50 text-white" : "ring-white/[0.08] light:ring-black/[0.08]"}`}
           >
             <TableCellsIcon className="size-3.5" />
             Edit columns
-            <ChevronDownIcon className={`size-3 text-gray-600 transition-transform duration-150 ${colPickerOpen ? "rotate-180" : ""}`} />
+            <ChevronDownIcon className={`size-3 text-gray-600 light:text-gray-400 transition-transform duration-150 ${colPickerOpen ? "rotate-180" : ""}`} />
           </button>
         </div>
 
@@ -819,40 +819,40 @@ export function KeywordTable({
           <div
             ref={colPickerMenuRef}
             style={{ position: "fixed", top: pickerRectRef.current.top, right: pickerRectRef.current.right, zIndex: 9999 }}
-            className="w-60 bg-[#1a1d24] ring-1 ring-white/[0.12] rounded-xl overflow-hidden shadow-2xl"
+            className="w-60 bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl"
           >
             {/* Search */}
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.07]">
-              <MagnifyingGlassIcon className="size-3.5 text-gray-600 shrink-0" />
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.07] light:border-black/[0.08]">
+              <MagnifyingGlassIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
               <input
                 value={colSearch}
                 onChange={(e) => setColSearch(e.target.value)}
                 placeholder="Search…"
                 autoFocus
-                className="flex-1 bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none"
+                className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
               />
             </div>
 
             {/* Add all / Remove all */}
-            <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.07]">
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-white/[0.07] light:border-black/[0.08]">
               <button
                 onClick={() => {
                   const next = new Set(COLUMN_DEFS.map((c) => c.key));
                   setVisibleCols(next);
                   saveVisibleColumns(next);
                 }}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
               >
                 <PlusIcon className="size-3" />
                 Add all
               </button>
-              <span className="text-gray-700 mx-1">·</span>
+              <span className="text-gray-700 light:text-gray-300 mx-1">·</span>
               <button
                 onClick={() => {
                   setVisibleCols(new Set());
                   saveVisibleColumns(new Set());
                 }}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
               >
                 <XMarkIcon className="size-3" />
                 Remove all
@@ -867,14 +867,14 @@ export function KeywordTable({
                   <button
                     key={col.key}
                     onClick={() => toggleCol(col.key)}
-                    className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04] ${active ? "bg-white/[0.03]" : ""}`}
+                    className={`flex items-center gap-2.5 w-full px-3 py-2.5 text-left transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${active ? "bg-white/[0.03] light:bg-black/[0.03]" : ""}`}
                   >
                     <span
                       className={`flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${active ? "border-indigo-500 bg-indigo-500" : "border-gray-600"}`}
                     >
                       {active && <CheckIcon className="size-2.5 text-white" />}
                     </span>
-                    <span className={`flex-1 text-xs ${active ? "text-white" : "text-gray-400"}`}>
+                    <span className={`flex-1 text-xs ${active ? "text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"}`}>
                       {col.label}
                     </span>
                     {col.isNew && (
@@ -900,9 +900,9 @@ export function KeywordTable({
         active={tourStep === "addKeyword"}
         step={TOUR_STEPS.indexOf("addKeyword") + 1}
         total={TOUR_STEPS.length}
-        icon={<PlusIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        icon={<PlusIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is where you add keywords. Type one or more, <span className="font-semibold text-white">comma separated</span>, then press Enter or hit Add.</>
+          <>This is where you add keywords. Type one or more, <span className="font-semibold text-white light:text-gray-900">comma separated</span>, then press Enter or hit Add.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
@@ -916,9 +916,9 @@ export function KeywordTable({
         active={tourStep === "opportunity"}
         step={TOUR_STEPS.indexOf("opportunity") + 1}
         total={TOUR_STEPS.length}
-        icon={<ArrowsUpDownIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+        icon={<ArrowsUpDownIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white">Opportunity</span> score. Sort this column to find the best keyword to target.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Opportunity</span> score. Sort this column to find the best keyword to target.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
@@ -928,7 +928,7 @@ export function KeywordTable({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-white/[0.07]">
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <th className="w-10 px-4 py-3 text-left">
                 <input
                   type="checkbox"
@@ -938,13 +938,13 @@ export function KeywordTable({
                       allSelected ? new Set() : new Set(displayed.map((_, i) => i))
                     )
                   }
-                  className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                  className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                 />
               </th>
-              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+              <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
                 <button
                   onClick={() => handleSort("keyword")}
-                  className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === "keyword" ? "text-gray-300" : ""}`}
+                  className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "keyword" ? "text-gray-300 light:text-gray-700" : ""}`}
                 >
                   Keywords
                   <SortIcon colKey="keyword" />
@@ -954,7 +954,7 @@ export function KeywordTable({
                 <th
                   key={col.key}
                   ref={col.key === "opportunity" ? opportunityThRef : undefined}
-                  className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap ${
+                  className={`px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap ${
                     col.key === "opportunity" && tourStep === "opportunity"
                       ? "rounded-t-lg ring-2 ring-inset ring-indigo-400/70 bg-indigo-500/10"
                       : ""
@@ -968,7 +968,7 @@ export function KeywordTable({
                         // itself — treat it as "got it" and advance the tour.
                         if (col.key === "opportunity" && tourStep === "opportunity") onAdvanceTour();
                       }}
-                      className={`flex items-center gap-1 hover:text-gray-400 transition-colors ${sortKey === col.key ? "text-gray-300" : ""}`}
+                      className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
                     >
                       {col.tableLabel ?? col.label}
                       <SortIcon colKey={col.key} />
@@ -980,17 +980,17 @@ export function KeywordTable({
               <th className="w-4 pr-4" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
             {pageRows.map((row, j) => {
               const i = pageStart + j;
               return (
-              <tr key={i} className={`hover:bg-white/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
+              <tr key={i} className={`hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
                 <td className="px-4 py-3.5">
                   <input
                     type="checkbox"
                     checked={selected.has(i)}
                     onChange={() => toggleSelect(i)}
-                    className="rounded border-gray-700 bg-[#0d0f14] text-indigo-500 accent-indigo-500"
+                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                   />
                 </td>
                 <td className="px-4 py-3.5">
@@ -999,11 +999,11 @@ export function KeywordTable({
                       onClick={() => onToggleStar(keywords.indexOf(row))}
                       className="shrink-0 transition-colors"
                     >
-                      <StarIcon className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`} />
+                      <StarIcon className={`size-3.5 ${row.starred ? "fill-yellow-400 text-yellow-400" : "text-gray-600 light:text-gray-400"}`} />
                     </button>
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm text-gray-200">{row.keyword}</span>
+                        <span className="text-sm text-gray-200 light:text-gray-800">{row.keyword}</span>
                         {row.frozen && <PausedBadge />}
                       </div>
                       {translateToggle && (
@@ -1011,7 +1011,7 @@ export function KeywordTable({
                           ? translations[row.keyword].toLowerCase() !== row.keyword.toLowerCase() && (
                             <span className="text-[11px] text-gray-500">(en) {translations[row.keyword]}</span>
                           )
-                          : <span className="h-2.5 w-16 rounded bg-white/[0.06] animate-pulse" />
+                          : <span className="h-2.5 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
                       )}
                     </div>
                   </div>
@@ -1019,7 +1019,7 @@ export function KeywordTable({
                 {row.loading ? (
                   visibleColDefs.map((col) => (
                     <td key={col.key} className="px-4 py-3.5">
-                      <div className="h-3 w-10 rounded bg-white/[0.06] animate-pulse" />
+                      <div className="h-3 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
                     </td>
                   ))
                 ) : (
@@ -1033,14 +1033,14 @@ export function KeywordTable({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     >
                       <MagnifyingGlassIcon className="size-3" />
                       Live search
                     </button>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}
-                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-400 hover:text-red-400 hover:ring-red-500/30 transition-colors"
+                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                     >
                       <XMarkIcon className="size-3" />
                     </button>
@@ -1054,16 +1054,16 @@ export function KeywordTable({
 
         {displayed.length === 0 && (
           <div className="py-16 text-center">
-            <MagnifyingGlassIcon className="size-8 text-gray-700 mx-auto mb-3" />
-            <p className="text-sm text-gray-600">No keywords yet — add some above.</p>
+            <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+            <p className="text-sm text-gray-600 light:text-gray-400">No keywords yet — add some above.</p>
           </div>
         )}
       </div>
 
       {/* Footer */}
       {displayed.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.07]">
-          <span className="text-xs text-gray-600">
+        <div className="flex items-center justify-between px-4 py-2.5 border-t border-white/[0.07] light:border-black/[0.08]">
+          <span className="text-xs text-gray-600 light:text-gray-400">
             {displayed.length} keyword{displayed.length !== 1 ? "s" : ""}
           </span>
           {pageCount > 1 && (
@@ -1071,15 +1071,15 @@ export function KeywordTable({
               <button
                 onClick={() => setPage(safePage - 1)}
                 disabled={safePage === 0}
-                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 ‹ Prev
               </button>
-              <span className="text-xs text-gray-600 tabular-nums">Page {safePage + 1} of {pageCount}</span>
+              <span className="text-xs text-gray-600 light:text-gray-400 tabular-nums">Page {safePage + 1} of {pageCount}</span>
               <button
                 onClick={() => setPage(safePage + 1)}
                 disabled={safePage >= pageCount - 1}
-                className="text-xs font-medium text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-colors"
+                className="text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400 light:hover:text-gray-600 transition-colors"
               >
                 Next ›
               </button>

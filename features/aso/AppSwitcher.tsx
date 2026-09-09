@@ -20,7 +20,7 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Extract sub-path after /dashboard/apps/[id]/  e.g. "preview", "timeline", ""
+  // Extract sub-path after /dashboard/apps/[id]/ e.g. "preview", "timeline", ""
   const subPath = pathname.replace(/^\/dashboard\/apps\/[^/]+\/?/, "");
 
   function buildHref(appId: string) {
@@ -41,7 +41,7 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
     <div className="relative" ref={ref}>
       <button
         onClick={() => canSwitch && setOpen((v) => !v)}
-        className="flex items-center gap-3 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] px-4 py-2.5 transition-colors shadow-lg shadow-black/20 hover:bg-[#22252f]"
+        className="flex items-center gap-3 rounded-xl bg-[#1a1d24] px-4 py-2.5 transition-colors shadow-lg shadow-black/20 hover:bg-[#22252f]"
       >
         <AppIcon app={current} />
         <div className="text-left">
@@ -58,7 +58,7 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-xl bg-[#1a1d24] shadow-xl shadow-black/30 overflow-hidden">
           <div className="p-1.5 max-h-72 overflow-y-auto">
             {apps.map((a) => (
               <a

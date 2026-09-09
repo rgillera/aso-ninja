@@ -26,14 +26,14 @@ export function LeaveConfirmDialog({ message, onCancel, onConfirm }: Props) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={leaving ? undefined : onCancel} />
 
-      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 ring-1 ring-white/10 shadow-2xl p-6">
+      <div className="relative w-full max-w-md rounded-2xl bg-gray-900 light:bg-white shadow-2xl light:shadow-black/10 p-6">
         <div className="flex items-start gap-3 mb-5">
           <div className="shrink-0 flex size-9 items-center justify-center rounded-full bg-amber-500/10 ring-1 ring-amber-500/20">
-            <ExclamationTriangleIcon className="size-5 text-amber-400" />
+            <ExclamationTriangleIcon className="size-5 text-amber-400 light:text-amber-700" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Leave this page?</h2>
-            <p className="mt-1 text-sm text-gray-400">{message}</p>
+            <h2 className="text-base font-semibold text-white light:text-gray-900">Leave this page?</h2>
+            <p className="mt-1 text-sm text-gray-400 light:text-gray-600">{message}</p>
           </div>
         </div>
 
@@ -43,7 +43,7 @@ export function LeaveConfirmDialog({ message, onCancel, onConfirm }: Props) {
             onClick={onCancel}
             disabled={leaving}
             autoFocus
-            className="rounded-lg px-4 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg px-4 py-2 text-sm text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Stay
           </button>

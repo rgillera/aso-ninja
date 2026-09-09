@@ -115,16 +115,16 @@ export function VolumeHistoryPanel({ keyword, store, country, onClose }: Props) 
       <div className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed z-[9999] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[92vw] bg-[#1a1d24] ring-1 ring-white/[0.10] rounded-2xl shadow-2xl overflow-hidden">
+      <div className="fixed z-[9999] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[92vw] bg-[#1a1d24] light:bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-0.5">Volume history</p>
-            <h3 className="text-sm font-semibold text-white">{keyword}</h3>
+            <h3 className="text-sm font-semibold text-white light:text-gray-900">{keyword}</h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-gray-500 hover:text-white hover:bg-white/[0.08] transition-colors"
+            className="rounded-lg p-1.5 text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.08] light:hover:bg-black/[0.06] transition-colors"
           >
             <XMarkIcon className="size-4" />
           </button>
@@ -146,8 +146,8 @@ export function VolumeHistoryPanel({ keyword, store, country, onClose }: Props) 
 
           {data && data.length === 0 && (
             <div className="h-40 flex flex-col items-center justify-center gap-2 text-center">
-              <p className="text-sm text-gray-400">No history yet</p>
-              <p className="text-xs text-gray-600 max-w-xs">
+              <p className="text-sm text-gray-400 light:text-gray-600">No history yet</p>
+              <p className="text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 Popularity is recorded each time keywords are fetched. Check back tomorrow to see the trend build up.
               </p>
             </div>
@@ -157,13 +157,13 @@ export function VolumeHistoryPanel({ keyword, store, country, onClose }: Props) 
             <>
               <LineChart data={data} />
               {data.length === 1 && (
-                <p className="mt-3 text-center text-xs text-gray-600">
+                <p className="mt-3 text-center text-xs text-gray-600 light:text-gray-400">
                   Only one data point so far — history will grow as you fetch keywords daily.
                 </p>
               )}
-              <div className="mt-4 flex items-center justify-between text-[10px] text-gray-600">
+              <div className="mt-4 flex items-center justify-between text-[10px] text-gray-600 light:text-gray-400">
                 <span>Last 90 days · {store === "ios" ? "App Store" : "Play Store"} · {country.toUpperCase()}</span>
-                <span>Latest score: <span className="text-indigo-400 font-semibold">{data[data.length - 1].score}</span></span>
+                <span>Latest score: <span className="text-indigo-400 light:text-indigo-600 font-semibold">{data[data.length - 1].score}</span></span>
               </div>
             </>
           )}

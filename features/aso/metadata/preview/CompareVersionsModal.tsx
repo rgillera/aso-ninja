@@ -37,24 +37,24 @@ export default function CompareVersionsModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-6" onClick={onClose}>
       <div
-        className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a1d24] p-8 ring-1 ring-white/10 shadow-2xl"
+        className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[#1a1d24] light:bg-white p-8 shadow-2xl light:shadow-black/10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <h2 className="text-lg font-semibold text-white">Compare versions</h2>
+            <h2 className="text-lg font-semibold text-white light:text-gray-900">Compare versions</h2>
             <InformationCircleIcon className="size-4 text-gray-500" />
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 rounded-lg bg-[#22252f] ring-1 ring-white/[0.08] p-1.5">
-              <button onClick={() => setDark(false)} className={`rounded-md p-1.5 transition-colors ${!dark ? "bg-white/10 text-white" : "text-gray-500"}`}>
+            <div className="flex items-center gap-1 rounded-lg bg-[#22252f] light:bg-gray-100 p-1.5">
+              <button onClick={() => setDark(false)} className={`rounded-md p-1.5 transition-colors ${!dark ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500"}`}>
                 <SunIcon className="size-4" />
               </button>
-              <button onClick={() => setDark(true)} className={`rounded-md p-1.5 transition-colors ${dark ? "bg-white/10 text-white" : "text-gray-500"}`}>
+              <button onClick={() => setDark(true)} className={`rounded-md p-1.5 transition-colors ${dark ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500"}`}>
                 <MoonIcon className="size-4" />
               </button>
             </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 transition-colors">
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">
               <XMarkIcon className="size-5" />
             </button>
           </div>
@@ -62,13 +62,13 @@ export default function CompareVersionsModal({
 
         <div className="mt-6 grid grid-cols-2 gap-6">
           <div className="flex flex-col items-center">
-            <p className="mb-3 text-sm font-medium text-gray-300">Current version</p>
+            <p className="mb-3 text-sm font-medium text-gray-300 light:text-gray-700">Current version</p>
             <ScaledPhone>
               <PhonePreview app={currentApp} dark={dark} storeData={currentStoreData} />
             </ScaledPhone>
           </div>
           <div className="flex flex-col items-center">
-            <p className="mb-3 text-sm font-medium text-gray-300">Your version</p>
+            <p className="mb-3 text-sm font-medium text-gray-300 light:text-gray-700">Your version</p>
             <ScaledPhone>
               <PhonePreview app={yourApp} dark={dark} storeData={yourStoreData} videoUrl={yourVideoUrl} />
             </ScaledPhone>

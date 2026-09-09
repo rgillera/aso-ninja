@@ -51,10 +51,10 @@ type Props = {
 };
 
 const BADGE_CLASS: Record<Tone, string> = {
-  neutral: "bg-white/[0.06] text-gray-400 ring-1 ring-white/[0.08]",
-  emerald: "bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/20",
-  amber: "bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/20",
-  rose: "bg-rose-500/10 text-rose-300 ring-1 ring-rose-500/20",
+  neutral: "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600",
+  emerald: "bg-emerald-500/10 text-emerald-300 light:text-emerald-700 ring-1 ring-emerald-500/20",
+  amber: "bg-amber-500/10 text-amber-300 light:text-amber-700 ring-1 ring-amber-500/20",
+  rose: "bg-rose-500/10 text-rose-300 light:text-rose-700 ring-1 ring-rose-500/20",
 };
 
 const DOT_CLASS: Record<Tone, string> = {
@@ -110,7 +110,7 @@ function HighlightedText({ text, repeated, active }: { text: string; repeated: S
       {text.split(/(\s+)/).map((part, i) => {
         const clean = part.toLowerCase().replace(/[^a-z0-9]/g, "");
         return clean.length >= 3 && repeated.has(clean) ? (
-          <mark key={i} className="rounded bg-indigo-500/25 text-indigo-200">{part}</mark>
+          <mark key={i} className="rounded bg-indigo-500/25 text-indigo-200 light:text-indigo-800">{part}</mark>
         ) : (
           <span key={i}>{part}</span>
         );
@@ -124,11 +124,11 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
     <div className="group relative shrink-0">
       {iconUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={iconUrl} alt={name} title={name} className="size-9 rounded-xl ring-1 ring-white/[0.08]" />
+        <img src={iconUrl} alt={name} title={name} className="size-9 rounded-xl" />
       ) : (
         <div
           title={name}
-          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] text-[11px] font-semibold text-gray-400 ring-1 ring-white/[0.08]"
+          className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] light:bg-black/[0.05] text-[11px] font-semibold text-gray-400 light:text-gray-600"
         >
           {name.slice(0, 1).toUpperCase()}
         </div>
@@ -137,7 +137,7 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           title={`Remove ${name}`}
-          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] transition-opacity group-hover:opacity-100"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] light:ring-white transition-opacity group-hover:opacity-100"
         >
           <XMarkIcon className="size-2.5" />
         </button>
@@ -157,12 +157,12 @@ function CardShell({
 }) {
   const [expanded, setExpanded] = useState(true);
   return (
-    <div id={id} className="scroll-mt-4 rounded-3xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+    <div id={id} className="scroll-mt-4 rounded-3xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <div className="flex items-center gap-2">
           {tone && <span className={`size-2.5 rounded-full ${DOT_CLASS[tone]}`} />}
-          <h3 className="text-base font-semibold text-white">{label}</h3>
-          <InformationCircleIcon className="size-4 text-gray-600" />
+          <h3 className="text-base font-semibold text-white light:text-gray-900">{label}</h3>
+          <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" />
         </div>
         <div className="flex items-center gap-4">
           {toggle && (
@@ -171,12 +171,12 @@ function CardShell({
               <span className="text-xs text-gray-500 whitespace-nowrap">Highlight repeated keywords</span>
             </label>
           )}
-          <button onClick={() => setExpanded((v) => !v)} className="text-gray-500 hover:text-white transition-colors" aria-label={expanded ? "Collapse" : "Expand"}>
+          <button onClick={() => setExpanded((v) => !v)} className="text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors" aria-label={expanded ? "Collapse" : "Expand"}>
             <ChevronUpIcon className={`size-4 transition-transform ${expanded ? "" : "rotate-180"}`} />
           </button>
         </div>
       </div>
-      {expanded && <div className="border-t border-white/[0.07]">{children}</div>}
+      {expanded && <div className="border-t border-white/[0.07] light:border-black/[0.08]">{children}</div>}
     </div>
   );
 }
@@ -190,7 +190,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] last:border-b-0">
+    <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] light:border-black/[0.06] last:border-b-0">
       <AppIconCell name={name} iconUrl={iconUrl} onRemove={onRemove} />
       {children}
     </div>
@@ -220,9 +220,9 @@ function TextFieldCard({
 
   return (
     <CardShell id={id} label={label} tone={lengthTone(primary.text.length, limit)} toggle={{ checked: highlight, onChange: () => setHighlight((v) => !v) }}>
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-white/[0.06] light:border-black/[0.06]">
         <PencilSquareIcon className="size-4 text-gray-500 shrink-0" />
-        <div className="flex-1 flex items-center gap-3 rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] px-3 py-2">
+        <div className="flex-1 flex items-center gap-3 rounded-xl bg-white/[0.03] light:bg-black/[0.03] px-3 py-2">
           <Badge tone={lengthTone(testValue.length, limit)}>{testValue.length} characters</Badge>
           {multiline ? (
             <textarea
@@ -230,21 +230,21 @@ function TextFieldCard({
               onChange={(e) => setTestValue(e.target.value)}
               placeholder={`Test a new ${field}!`}
               rows={2}
-              className="flex-1 min-w-0 resize-none bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+              className="flex-1 min-w-0 resize-none bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none"
             />
           ) : (
             <input
               value={testValue}
               onChange={(e) => setTestValue(e.target.value)}
               placeholder={`Test a new ${field}!`}
-              className="flex-1 min-w-0 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+              className="flex-1 min-w-0 bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none"
             />
           )}
         </div>
       </div>
 
       <Row name={primary.name} iconUrl={primary.iconUrl}>
-        <p className={`flex-1 min-w-0 text-sm text-white ${multiline ? "line-clamp-2" : "truncate"}`}>
+        <p className={`flex-1 min-w-0 text-sm text-white light:text-gray-900 ${multiline ? "line-clamp-2" : "truncate"}`}>
           <HighlightedText text={primary.text} repeated={repeatedWords} active={highlight} />
         </p>
         <Badge tone={lengthTone(primary.text.length, limit)}>{primary.text.length} characters</Badge>
@@ -253,7 +253,7 @@ function TextFieldCard({
 
       {rows.map((r) => (
         <Row key={r.key} name={r.name} iconUrl={r.iconUrl} onRemove={() => onRemoveCompetitor(r.key)}>
-          <p className={`flex-1 min-w-0 text-sm text-white ${multiline ? "line-clamp-2" : "truncate"}`}>
+          <p className={`flex-1 min-w-0 text-sm text-white light:text-gray-900 ${multiline ? "line-clamp-2" : "truncate"}`}>
             <HighlightedText text={r.text} repeated={repeatedWords} active={highlight} />
           </p>
           <Badge tone={lengthTone(r.text.length, limit)}>{r.text.length} characters</Badge>
@@ -300,16 +300,16 @@ function CrossDensityTable({
   rows: CrossDensityRow[];
 }) {
   if (rows.length === 0) {
-    return <p className="px-5 py-8 text-center text-sm text-gray-600">Not enough description text yet to compare.</p>;
+    return <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Not enough description text yet to compare.</p>;
   }
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th className="border-t border-white/[0.08] px-4 py-3 text-left font-medium text-gray-400">Keyword(s)</th>
+            <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-left font-medium text-gray-400 light:text-gray-600">Keyword(s)</th>
             {apps.map((a) => (
-              <th key={a.key} colSpan={2} className="border-t border-white/[0.08] px-4 py-3">
+              <th key={a.key} colSpan={2} className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3">
                 <div className="flex justify-center">
                   <AppIconCell name={a.name} iconUrl={a.iconUrl} />
                 </div>
@@ -317,11 +317,11 @@ function CrossDensityTable({
             ))}
           </tr>
           <tr>
-            <th className="border-t border-white/[0.06] px-4 py-2" />
+            <th className="border-t border-white/[0.06] light:border-black/[0.06] px-4 py-2" />
             {apps.map((a) => (
               <Fragment key={a.key}>
-                <th className="border-t border-white/[0.06] px-4 py-2 text-right font-medium text-gray-500">Count</th>
-                <th className="border-t border-white/[0.06] px-4 py-2 text-right font-medium text-gray-500">Density</th>
+                <th className="border-t border-white/[0.06] light:border-black/[0.06] px-4 py-2 text-right font-medium text-gray-500">Count</th>
+                <th className="border-t border-white/[0.06] light:border-black/[0.06] px-4 py-2 text-right font-medium text-gray-500">Density</th>
               </Fragment>
             ))}
           </tr>
@@ -329,13 +329,13 @@ function CrossDensityTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.term}>
-              <td className="border-t border-white/[0.08] px-4 py-3 text-gray-200">{row.term}</td>
+              <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-gray-200 light:text-gray-800">{row.term}</td>
               {row.perApp.map((cell, i) => (
                 <Fragment key={apps[i].key}>
-                  <td className="border-t border-white/[0.08] px-4 py-3 text-right text-white">
+                  <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-white light:text-gray-900">
                     {cell.count > 0 ? cell.count : "-"}
                   </td>
-                  <td className="border-t border-white/[0.08] px-4 py-3 text-right text-white">
+                  <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right text-white light:text-gray-900">
                     {cell.count > 0 ? `${Number(cell.density.toFixed(1))}%` : "-"}
                   </td>
                 </Fragment>
@@ -382,7 +382,7 @@ function DescriptionCard({
 
   return (
     <CardShell id="description" label="Description" tone={lengthTone(primary.text.length, limit)}>
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] light:border-black/[0.06]">
         {apps.map((a) => (
           // AppIconCell renders its own remove <button>, so this tab can't be a
           // <button> itself — nested buttons are invalid HTML and break hydration.
@@ -400,7 +400,7 @@ function DescriptionCard({
         <div className="group relative ml-1">
           <button
             onClick={() => setView("table")}
-            className={`flex size-9 items-center justify-center rounded-xl ring-1 transition-colors ${view === "table" ? "bg-white/[0.08] ring-white/20 text-white" : "ring-white/[0.08] text-gray-500 hover:text-white"}`}
+            className={`flex size-9 items-center justify-center rounded-xl ring-1 transition-colors ${view === "table" ? "bg-white/[0.08] light:bg-indigo-50 ring-white/20 light:ring-indigo-200 text-white light:text-indigo-700" : "ring-white/[0.08] light:ring-black/[0.08] text-gray-500 hover:text-white light:hover:text-gray-900"}`}
           >
             <TableCellsIcon className="size-4" />
           </button>
@@ -416,7 +416,7 @@ function DescriptionCard({
             <select
               value={rowLimit}
               onChange={(e) => setRowLimit(Number(e.target.value))}
-              className="rounded-lg bg-white/[0.03] ring-1 ring-white/[0.08] px-3 py-2 text-sm text-white outline-none"
+              className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3 py-2 text-sm text-white light:text-gray-900 outline-none"
             >
               {[10, 20, 50, 100].map((n) => (
                 <option key={n} value={n} className="bg-[#1a1d24]">Display {n} rows</option>
@@ -440,7 +440,7 @@ function DescriptionCard({
                   if (next) setTestDraft(active.text);
                   else setAppliedTest(null);
                 }}
-                className="flex items-center gap-1.5 rounded-lg ring-1 ring-white/[0.1] px-3 py-1.5 text-xs font-medium text-gray-300 hover:text-white hover:ring-white/20 transition-colors"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 hover:ring-white/20 light:hover:ring-black/20 transition-colors"
               >
                 <PencilSquareIcon className="size-3.5" />
                 Test a new description
@@ -450,18 +450,18 @@ function DescriptionCard({
           </div>
 
           {activeKey === "primary" && testing && (
-            <div className="mx-5 mb-4 rounded-xl bg-white/[0.02] p-4 ring-1 ring-white/[0.08]">
+            <div className="mx-5 mb-4 rounded-xl bg-white/[0.02] light:bg-black/[0.03] p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <PencilSquareIcon className="size-4 text-gray-400" />
-                <span className="text-sm font-medium text-white">Test a new Description for your app!</span>
-                <InformationCircleIcon className="size-3.5 text-gray-600" />
+                <PencilSquareIcon className="size-4 text-gray-400 light:text-gray-600" />
+                <span className="text-sm font-medium text-white light:text-gray-900">Test a new Description for your app!</span>
+                <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400" />
                 <Badge tone={lengthTone(testDraft.length, limit)}>{testDraft.length} characters</Badge>
               </div>
               <textarea
                 value={testDraft}
                 onChange={(e) => setTestDraft(e.target.value)}
                 rows={8}
-                className="w-full resize-none rounded-xl bg-white/[0.03] ring-1 ring-white/[0.06] px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none"
+                className="w-full resize-none rounded-xl bg-white/[0.03] light:bg-black/[0.03] px-3 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none"
               />
               <button
                 onClick={() => setAppliedTest(testDraft)}
@@ -473,10 +473,10 @@ function DescriptionCard({
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 px-5 pb-5">
-            <div className="max-h-96 overflow-y-auto rounded-xl bg-white/[0.02] ring-1 ring-white/[0.06] p-4 text-sm text-gray-300 whitespace-pre-line">
-              {displayText || <span className="italic text-gray-600">No description yet.</span>}
+            <div className="max-h-96 overflow-y-auto rounded-xl bg-white/[0.02] light:bg-black/[0.03] p-4 text-sm text-gray-300 light:text-gray-700 whitespace-pre-line">
+              {displayText || <span className="italic text-gray-600 light:text-gray-400">No description yet.</span>}
             </div>
-            <div className="max-h-96 overflow-y-auto rounded-xl ring-1 ring-white/[0.06]">
+            <div className="max-h-96 overflow-y-auto rounded-xl">
               <DensityTable rows={densityRows} />
             </div>
           </div>
@@ -487,12 +487,12 @@ function DescriptionCard({
 }
 
 function ScreenshotStrip({ urls, height }: { urls: string[]; height: number }) {
-  if (urls.length === 0) return <span className="text-xs italic text-gray-600">No screenshots available</span>;
+  if (urls.length === 0) return <span className="text-xs italic text-gray-600 light:text-gray-400">No screenshots available</span>;
   return (
     <div className="flex gap-2 overflow-x-auto">
       {urls.map((url, i) => (
         // eslint-disable-next-line @next/next/no-img-element
-        <img key={i} src={url} alt="" style={{ height }} className="w-auto shrink-0 rounded-lg ring-1 ring-white/[0.08]" />
+        <img key={i} src={url} alt="" style={{ height }} className="w-auto shrink-0 rounded-lg" />
       ))}
     </div>
   );
@@ -527,7 +527,7 @@ function ScreenshotsCard({
 
   return (
     <CardShell id="screenshots" label="Screenshots" tone={toneForCount(primary.screenshotCount)}>
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06]">
+      <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] light:border-black/[0.06]">
         {apps.map((a) => (
           <div
             key={a.key}
@@ -543,7 +543,7 @@ function ScreenshotsCard({
         <div className="group relative ml-1">
           <button
             onClick={() => setView("table")}
-            className={`flex size-9 items-center justify-center rounded-xl ring-1 transition-colors ${view === "table" ? "bg-white/[0.08] ring-white/20 text-white" : "ring-white/[0.08] text-gray-500 hover:text-white"}`}
+            className={`flex size-9 items-center justify-center rounded-xl ring-1 transition-colors ${view === "table" ? "bg-white/[0.08] light:bg-indigo-50 ring-white/20 light:ring-indigo-200 text-white light:text-indigo-700" : "ring-white/[0.08] light:ring-black/[0.08] text-gray-500 hover:text-white light:hover:text-gray-900"}`}
           >
             <TableCellsIcon className="size-4" />
           </button>
@@ -556,7 +556,7 @@ function ScreenshotsCard({
       {view === "table" ? (
         <div>
           {apps.map((a) => (
-            <div key={a.key} className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06] last:border-b-0">
+            <div key={a.key} className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06] light:border-black/[0.06] last:border-b-0">
               <AppIconCell name={a.name} iconUrl={a.iconUrl} onRemove={a.key === "primary" ? undefined : () => onRemoveCompetitor(a.key)} />
               <div className="flex-1 min-w-0">
                 <ScreenshotStrip urls={a.screenshotUrls} height={160} />
@@ -589,7 +589,7 @@ function PreviewVideoCard({
   return (
     <CardShell id="preview-video" label="Preview Video" tone={toneForVideo(primary.hasPreviewVideo)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
-        <p className="flex-1 min-w-0 text-sm text-white">{primary.hasPreviewVideo ? "Has a preview video" : "No preview video"}</p>
+        <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">{primary.hasPreviewVideo ? "Has a preview video" : "No preview video"}</p>
         <Badge tone={toneForVideo(primary.hasPreviewVideo)}>{primary.hasPreviewVideo ? "Yes" : "No"}</Badge>
         {!primary.hasPreviewVideo && (
           <span className="hidden lg:inline shrink-0 text-xs text-gray-500 max-w-xs">A preview video can meaningfully lift conversion rate.</span>
@@ -597,7 +597,7 @@ function PreviewVideoCard({
       </Row>
       {rows.map((r) => (
         <Row key={r.key} name={r.name} iconUrl={r.iconUrl} onRemove={() => onRemoveCompetitor(r.key)}>
-          <p className="flex-1 min-w-0 text-sm text-white">{r.hasPreviewVideo ? "Has a preview video" : "No preview video"}</p>
+          <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">{r.hasPreviewVideo ? "Has a preview video" : "No preview video"}</p>
           <Badge tone={toneForVideo(r.hasPreviewVideo)}>{r.hasPreviewVideo ? "Yes" : "No"}</Badge>
         </Row>
       ))}
@@ -627,7 +627,7 @@ function ReviewsCard({
         </>
       ) : (
         <>
-          <StarIcon className="size-3.5 text-gray-600 shrink-0" />
+          <StarIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
           No rating
         </>
       )}
@@ -638,12 +638,12 @@ function ReviewsCard({
   return (
     <CardShell id="reviews-and-ratings" label="Reviews and Ratings" tone={toneForReviews(primary.rating, primary.ratingCount)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
-        <p className="flex-1 min-w-0 text-sm text-white">{summary(primary.rating, primary.ratingCount)}</p>
+        <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">{summary(primary.rating, primary.ratingCount)}</p>
         <Badge tone={toneForReviews(primary.rating, primary.ratingCount)}>{(primary.ratingCount ?? 0).toLocaleString()} ratings</Badge>
       </Row>
       {rows.map((r) => (
         <Row key={r.key} name={r.name} iconUrl={r.iconUrl} onRemove={() => onRemoveCompetitor(r.key)}>
-          <p className="flex-1 min-w-0 text-sm text-white">{summary(r.rating, r.ratingCount)}</p>
+          <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">{summary(r.rating, r.ratingCount)}</p>
           <Badge tone={toneForReviews(r.rating, r.ratingCount)}>{(r.ratingCount ?? 0).toLocaleString()} ratings</Badge>
         </Row>
       ))}
@@ -665,12 +665,12 @@ function FreshnessCard({
   return (
     <CardShell id="recently-updated" label="Recently Updated" tone={toneForDays(primary.daysSinceUpdate)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
-        <p className="flex-1 min-w-0 text-sm text-white">Last updated {label(primary.daysSinceUpdate).toLowerCase()}</p>
+        <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">Last updated {label(primary.daysSinceUpdate).toLowerCase()}</p>
         <Badge tone={toneForDays(primary.daysSinceUpdate)}>{label(primary.daysSinceUpdate)}</Badge>
       </Row>
       {rows.map((r) => (
         <Row key={r.key} name={r.name} iconUrl={r.iconUrl} onRemove={() => onRemoveCompetitor(r.key)}>
-          <p className="flex-1 min-w-0 text-sm text-white">Last updated {label(r.daysSinceUpdate).toLowerCase()}</p>
+          <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">Last updated {label(r.daysSinceUpdate).toLowerCase()}</p>
           <Badge tone={toneForDays(r.daysSinceUpdate)}>{label(r.daysSinceUpdate)}</Badge>
         </Row>
       ))}
@@ -692,12 +692,12 @@ function LocalizationCard({
   return (
     <CardShell id="localization" label="Localization" tone={toneForLangs(primary.languageCount)}>
       <Row name={primary.name} iconUrl={primary.iconUrl}>
-        <p className="flex-1 min-w-0 text-sm text-white">Available in {label(primary.languageCount)}</p>
+        <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">Available in {label(primary.languageCount)}</p>
         <Badge tone={toneForLangs(primary.languageCount)}>{label(primary.languageCount)}</Badge>
       </Row>
       {rows.map((r) => (
         <Row key={r.key} name={r.name} iconUrl={r.iconUrl} onRemove={() => onRemoveCompetitor(r.key)}>
-          <p className="flex-1 min-w-0 text-sm text-white">Available in {label(r.languageCount)}</p>
+          <p className="flex-1 min-w-0 text-sm text-white light:text-gray-900">Available in {label(r.languageCount)}</p>
           <Badge tone={toneForLangs(r.languageCount)}>{label(r.languageCount)}</Badge>
         </Row>
       ))}

@@ -62,7 +62,7 @@ const cardStyles: Record<Variant, {
   badge: string;
 }> = {
   default: {
-    card: "bg-gray-800/40 ring-1 ring-white/[0.08]",
+    card: "bg-gray-800/40",
     title: "text-gray-100",
     subtitle: "text-gray-500",
     price: "text-white",
@@ -84,14 +84,14 @@ const cardStyles: Record<Variant, {
     badge: "bg-white/20 text-white",
   },
   premium: {
-    card: "bg-gray-900 ring-1 ring-white/[0.12]",
+    card: "bg-gray-900",
     title: "text-white",
     subtitle: "text-gray-500",
     price: "text-white",
     desc: "text-gray-400",
     check: "text-emerald-400",
     feature: "text-gray-300",
-    cta: "bg-white/[0.08] text-white hover:bg-white/[0.13] ring-1 ring-white/[0.12]",
+    cta: "bg-white/[0.08] text-white hover:bg-white/[0.13]",
     badge: "bg-white/10 text-gray-300",
   },
 };
@@ -112,7 +112,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
           </p>
 
           {/* Billing toggle */}
-          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-gray-800/60 ring-1 ring-white/10 p-1">
+          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-gray-800/60 p-1">
             <button
               onClick={() => setYearly(false)}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
@@ -211,7 +211,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
           })}
         </div>
 
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-gray-800/40 ring-1 ring-white/[0.08] px-6 py-5 sm:flex-row">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-gray-800/40 px-6 py-5 sm:flex-row">
           <p className="text-sm text-gray-300">
             Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span>
           </p>
@@ -219,7 +219,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
             target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
             rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/[0.12] transition-colors hover:bg-white/[0.13]"
+            className="shrink-0 rounded-lg bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.13]"
           >
             Talk to us
           </a>

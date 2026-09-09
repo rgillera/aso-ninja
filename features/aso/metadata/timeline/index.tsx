@@ -18,14 +18,14 @@ export default function Timeline({ app }: TimelineProps) {
   const isLocked = !isPlanAtLeast(planSlug, "pro");
   const { start: defStart, end: defEnd } = defaultRange();
 
-  const [rangeStart, setRangeStart]       = useState(defStart);
-  const [rangeEnd,   setRangeEnd]         = useState(defEnd);
-  const [dateOffset, setDateOffset]       = useState(0);
+  const [rangeStart, setRangeStart] = useState(defStart);
+  const [rangeEnd, setRangeEnd] = useState(defEnd);
+  const [dateOffset, setDateOffset] = useState(0);
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(ALL_FIELDS));
   const [selectedEvent, setSelectedEvent] = useState<UpdateEvent | null>(null);
-  const [showDiff, setShowDiff]           = useState(true);
-  const [events, setEvents]               = useState<UpdateEvent[]>([]);
-  const [loading, setLoading]             = useState(false);
+  const [showDiff, setShowDiff] = useState(true);
+  const [events, setEvents] = useState<UpdateEvent[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // Reset selection when app changes
   useEffect(() => { setSelectedEvent(null); }, [app.id]);
@@ -83,10 +83,10 @@ export default function Timeline({ app }: TimelineProps) {
 
   if (isLocked) {
     return (
-      <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
-        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07]">
+      <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
-          <p className="text-sm font-semibold text-white">{app.name}</p>
+          <p className="text-sm font-semibold text-white light:text-gray-900">{app.name}</p>
         </div>
         <FeatureLocked
           minPlan="pro"
@@ -104,7 +104,7 @@ export default function Timeline({ app }: TimelineProps) {
   }
 
   return (
-    <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
+    <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <TimelineHeader
           app={app}
           rangeStart={rangeStart}
@@ -137,17 +137,17 @@ export default function Timeline({ app }: TimelineProps) {
           />
         ) : loading && events.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-600">Loading update history…</p>
+            <p className="text-xs text-gray-600 light:text-gray-400">Loading update history…</p>
           </div>
         ) : events.length === 0 ? (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-600 text-center max-w-sm leading-relaxed">
+            <p className="text-xs text-gray-600 light:text-gray-400 text-center max-w-sm leading-relaxed">
               No changes recorded yet — history builds up automatically once the app is followed.
             </p>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-600">Click an update dot on the timeline to compare before &amp; after</p>
+            <p className="text-xs text-gray-600 light:text-gray-400">Click an update dot on the timeline to compare before &amp; after</p>
           </div>
         )}
     </main>

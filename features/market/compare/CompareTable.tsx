@@ -70,7 +70,7 @@ function FieldLengthCell({ length, limit }: { length: number; limit: number }) {
     <span className="inline-flex items-center gap-1.5">
       {length}/{limit} chars
       {maxed && (
-        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-medium text-emerald-400">
+        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-medium text-emerald-400 light:text-emerald-700">
           <CheckCircleIcon className="size-2.5" />
           Maxed
         </span>
@@ -94,12 +94,12 @@ function bestIndices(values: (number | null | undefined)[]): Set<number> {
 
 function MetricRow({ label, cells, bestSet, wrap = false }: { label: string; cells: ReactNode[]; bestSet?: Set<number>; wrap?: boolean }) {
   return (
-    <tr className="border-b border-white/[0.04]">
-      <td className="sticky left-0 bg-[#1a1d24] px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
+    <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
+      <td className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
       {cells.map((cell, i) => (
         <td
           key={i}
-          className={`px-4 py-3 align-top text-sm ${wrap ? "" : "whitespace-nowrap"} ${bestSet?.has(i) ? "text-emerald-400 font-medium" : "text-gray-300"}`}
+          className={`px-4 py-3 align-top text-sm ${wrap ? "" : "whitespace-nowrap"} ${bestSet?.has(i) ? "text-emerald-400 light:text-emerald-700 font-medium" : "text-gray-300 light:text-gray-700"}`}
         >
           {cell}
         </td>
@@ -153,12 +153,12 @@ export function CompareTable({ apps, country, onRemove }: Props) {
   const lightboxUrls = lightboxApp?.storeData?.screenshotUrls ?? [];
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <table className="border-collapse">
           <thead>
-            <tr className="border-b border-white/[0.07]">
-              <th className="sticky left-0 bg-[#1a1d24] px-4 py-3 text-left text-xs font-medium text-gray-500 w-40" />
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
+              <th className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 text-left text-xs font-medium text-gray-500 w-40" />
               {apps.map((app) => {
                 const key = compareKey(app.store, app.storeId);
                 return (
@@ -167,9 +167,9 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="relative shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05]" />
-                          <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] ring-1 ring-white/10">
-                            <StoreIcon store={app.store} className="size-2.5 text-gray-300" />
+                          <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05] light:bg-black/[0.04]" />
+                          <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+                            <StoreIcon store={app.store} className="size-2.5 text-gray-300 light:text-gray-700" />
                           </span>
                         </div>
                         <div className="min-w-0">
@@ -177,18 +177,18 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                             href={storeUrl(app, country)}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 text-sm font-medium text-white hover:text-indigo-300 transition-colors group"
+                            className="flex items-center gap-1 text-sm font-medium text-white hover:text-indigo-300 light:hover:text-indigo-600 transition-colors group"
                             title="Open store listing"
                           >
                             <span className="truncate">{app.name}</span>
-                            <ArrowTopRightOnSquareIcon className="size-3 shrink-0 text-gray-600 group-hover:text-indigo-300 transition-colors" />
+                            <ArrowTopRightOnSquareIcon className="size-3 shrink-0 text-gray-600 light:text-gray-400 group-hover:text-indigo-300 light:hover:text-indigo-600 transition-colors" />
                           </a>
-                          <p className="text-xs text-gray-600 truncate">{app.developer}</p>
+                          <p className="text-xs text-gray-600 light:text-gray-400 truncate">{app.developer}</p>
                         </div>
                       </div>
                       <button
                         onClick={() => onRemove(key)}
-                        className="shrink-0 rounded p-1 text-gray-600 hover:bg-white/[0.08] hover:text-white transition-colors"
+                        className="shrink-0 rounded p-1 text-gray-600 light:text-gray-400 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-white transition-colors"
                         aria-label={`Remove ${app.name}`}
                       >
                         <XMarkIcon className="size-3.5" />
@@ -203,7 +203,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
             <MetricRow
               label="Store"
               cells={apps.map((a) => (
-                <span key={compareKey(a.store, a.storeId)} className="inline-flex items-center gap-1.5 text-xs text-gray-400">
+                <span key={compareKey(a.store, a.storeId)} className="inline-flex items-center gap-1.5 text-xs text-gray-400 light:text-gray-600">
                   <StoreIcon store={a.store} className="size-3" />
                   {STORE_LABEL[a.store]}
                 </span>
@@ -216,9 +216,9 @@ export function CompareTable({ apps, country, onRemove }: Props) {
               cells={apps.map((a) => cellFor(a, (d) =>
                 d.rating != null ? (
                   <span className="inline-flex items-center gap-1">
-                    <StarIcon className="size-3.5 text-amber-400 shrink-0" />
+                    <StarIcon className="size-3.5 text-amber-400 light:text-amber-700 shrink-0" />
                     {d.rating.toFixed(1)}
-                    {d.ratingCount != null && <span className="text-xs text-gray-600">({formatRatingCount(d.ratingCount)})</span>}
+                    {d.ratingCount != null && <span className="text-xs text-gray-600 light:text-gray-400">({formatRatingCount(d.ratingCount)})</span>}
                   </span>
                 ) : "—"
               ))}
@@ -244,13 +244,13 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                           src={url}
                           alt=""
                           onClick={() => setLightbox({ key, index: i })}
-                          className="size-10 shrink-0 rounded-md object-cover bg-white/[0.05] ring-1 ring-white/[0.08] cursor-zoom-in hover:ring-indigo-400/60 transition-all"
+                          className="size-10 shrink-0 rounded-md object-cover bg-white/[0.05] light:bg-black/[0.04] cursor-zoom-in hover:ring-indigo-400/60 transition-all"
                         />
                       ))}
                       {extra > 0 && (
                         <button
                           onClick={() => setLightbox({ key, index: SCREENSHOT_PREVIEW_COUNT })}
-                          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/[0.04] ring-1 ring-white/[0.08] text-xs text-gray-400 hover:text-white hover:ring-white/20 transition-colors"
+                          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/[0.04] light:bg-black/[0.04] text-xs text-gray-400 light:text-gray-600 hover:text-white hover:ring-white/20 transition-colors"
                         >
                           +{extra}
                         </button>
@@ -278,7 +278,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                   <span className="inline-flex items-center gap-1.5" title={formatUpdated(d.lastUpdatedAt)}>
                     {formatDaysAgo(days)}
                     {stale && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-medium text-amber-400">
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-medium text-amber-400 light:text-amber-700">
                         <ExclamationTriangleIcon className="size-2.5" />
                         Stale
                       </span>
@@ -320,7 +320,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                     {(expanded || text.length > DESCRIPTION_CLAMP_THRESHOLD) && (
                       <button
                         onClick={() => toggleDescription(key)}
-                        className="mt-1 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                        className="mt-1 text-xs font-medium text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
                       >
                         {expanded ? "Show less" : "Show more"}
                       </button>
@@ -335,7 +335,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
               cells={apps.map((a) => cellFor(a, (d) => {
                 const text = d.description?.trim() ?? "";
                 const rows = text ? computeKeywordDensity(text) : [];
-                if (rows.length === 0) return <span className="text-gray-600">Not enough text to analyze</span>;
+                if (rows.length === 0) return <span className="text-gray-600 light:text-gray-400">Not enough text to analyze</span>;
                 const key = compareKey(a.store, a.storeId);
                 const expanded = expandedDensity.has(key);
                 const shown = expanded ? rows : rows.slice(0, DENSITY_PREVIEW_COUNT);
@@ -350,7 +350,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                             key={row.keywords.join(",")}
                             // rounded-lg (not rounded-full) — a pill shape distorts into a
                             // blob once the joined term list wraps to more than one line.
-                            className="inline-flex items-start gap-1.5 rounded-lg bg-white/[0.05] ring-1 ring-white/[0.08] px-2 py-1 text-[11px] text-gray-300"
+                            className="inline-flex items-start gap-1.5 rounded-lg bg-white/[0.05] light:bg-black/[0.04] px-2 py-1 text-[11px] text-gray-300 light:text-gray-700"
                           >
                             <span>{terms.join(", ")}{extraTerms > 0 ? `, +${extraTerms} more` : ""}</span>
                             <span className="shrink-0 text-gray-500">{row.density.toFixed(1)}%</span>
@@ -361,7 +361,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                     {rows.length > DENSITY_PREVIEW_COUNT && (
                       <button
                         onClick={() => toggleDensity(key)}
-                        className="mt-1 text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                        className="mt-1 text-xs font-medium text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors"
                       >
                         {expanded ? "Show less" : `+${rows.length - DENSITY_PREVIEW_COUNT} more`}
                       </button>
@@ -379,16 +379,16 @@ export function CompareTable({ apps, country, onRemove }: Props) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6"
           onClick={() => setLightbox(null)}
         >
-          <div className="absolute top-4 left-4 flex items-center gap-2 text-sm text-gray-300">
+          <div className="absolute top-4 left-4 flex items-center gap-2 text-sm text-gray-300 light:text-gray-700">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={lightboxApp.iconUrl} alt="" className="size-6 rounded-md" />
             <span>{lightboxApp.name}</span>
-            <span className="text-gray-600">{lightbox.index + 1} / {lightboxUrls.length}</span>
+            <span className="text-gray-600 light:text-gray-400">{lightbox.index + 1} / {lightboxUrls.length}</span>
           </div>
 
           <button
             onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
-            className="absolute top-4 right-4 rounded-full p-2 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+            className="absolute top-4 right-4 rounded-full p-2 text-gray-300 light:text-gray-700 hover:bg-white/10 hover:text-white transition-colors"
             aria-label="Close"
           >
             <XMarkIcon className="size-5" />
@@ -397,7 +397,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
           {lightboxUrls.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox((prev) => prev && { ...prev, index: (prev.index - 1 + lightboxUrls.length) % lightboxUrls.length }); }}
-              className="absolute left-4 rounded-full p-2 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+              className="absolute left-4 rounded-full p-2 text-gray-300 light:text-gray-700 hover:bg-white/10 hover:text-white transition-colors"
               aria-label="Previous screenshot"
             >
               <ChevronLeftIcon className="size-6" />
@@ -415,7 +415,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
           {lightboxUrls.length > 1 && (
             <button
               onClick={(e) => { e.stopPropagation(); setLightbox((prev) => prev && { ...prev, index: (prev.index + 1) % lightboxUrls.length }); }}
-              className="absolute right-4 rounded-full p-2 text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+              className="absolute right-4 rounded-full p-2 text-gray-300 light:text-gray-700 hover:bg-white/10 hover:text-white transition-colors"
               aria-label="Next screenshot"
             >
               <ChevronRightIcon className="size-6" />
@@ -430,7 +430,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
 // Renders a metric cell from an app's storeData, covering the three states
 // every row shares: still loading, failed/unavailable, and a real value.
 function cellFor(app: CompareApp, render: (d: NonNullable<CompareApp["storeData"]>) => ReactNode): ReactNode {
-  if (app.loading) return <span className="inline-block h-3.5 w-16 rounded bg-white/[0.06] animate-pulse" />;
-  if (app.failed || !app.storeData) return <span className="text-gray-600">—</span>;
+  if (app.loading) return <span className="inline-block h-3.5 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />;
+  if (app.failed || !app.storeData) return <span className="text-gray-600 light:text-gray-400">—</span>;
   return render(app.storeData);
 }

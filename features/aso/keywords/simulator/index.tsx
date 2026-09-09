@@ -17,11 +17,11 @@ const MAX_TERMS = 50;
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
@@ -202,7 +202,7 @@ export default function KeywordSimulator() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Keyword Simulator" />
         <FeatureLocked
           minPlan="pro_plus"
@@ -223,23 +223,22 @@ export default function KeywordSimulator() {
     : { title: 30, subtitle: 30 };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Keyword Simulator" />
 
       <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         {/* Left: hypothetical title/subtitle */}
-        <div className="flex flex-col lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-white/[0.07]">
-          <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] bg-[#111318]">
-            <p className="text-sm font-medium text-white">Try a new title &amp; subtitle</p>
-            <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 transition-colors">Clear all</button>
+        <div className="flex flex-col lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-white/[0.07] light:border-black/[0.08]">
+          <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] light:border-black/[0.08] bg-[#111318] light:bg-[#f5f6f8]">
+            <p className="text-sm font-medium text-white light:text-gray-900">Try a new title &amp; subtitle</p>
+            <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">Clear all</button>
           </div>
-          <div className="flex-1 p-6 space-y-4 bg-[#111318]">
+          <div className="flex-1 p-6 space-y-4 bg-[#111318] light:bg-[#f5f6f8]">
             <MetadataSection
               title="App Name"
               value={hypotheticalTitle}
               limit={limits.title}
               placeholder="Enter app name…"
-              dark
               originalValue={originalTitle}
               onChange={setHypotheticalTitle}
             />
@@ -248,7 +247,6 @@ export default function KeywordSimulator() {
               value={hypotheticalSubtitle}
               limit={limits.subtitle}
               placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
-              dark
               rows={activeApp.store === "android" ? 3 : 2}
               originalValue={storeSubtitle}
               onChange={setHypotheticalSubtitle}
@@ -261,11 +259,11 @@ export default function KeywordSimulator() {
               {simulating ? `Simulating…${simulateProgress !== null ? ` ${simulateProgress}%` : ""}` : "Simulate"}
             </button>
             {!activeApp.id ? (
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 light:text-gray-400">
                 Follow this app and track some keywords in Keyword Research to run a simulation.
               </p>
             ) : !hasChanges ? (
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 light:text-gray-400">
                 Edit the title or subtitle above, then click Simulate to see how your tracked keywords&rsquo; relevancy would change. Nothing here is saved or published.
               </p>
             ) : null}
@@ -275,7 +273,7 @@ export default function KeywordSimulator() {
         {/* Right: comparison table */}
         <div className="flex flex-col flex-1 lg:overflow-y-auto">
           {relevancyLimitReached && (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 text-xs">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 light:text-indigo-600 text-xs">
               <ExclamationTriangleIcon className="size-4 shrink-0" />
               <span className="flex-1">Your plan&apos;s relevancy &amp; opportunity scoring pool is used up. Upgrade for a bigger pool.</span>
               <button onClick={() => setRelevancyLimitReached(false)} className="shrink-0 hover:text-indigo-200">
@@ -293,7 +291,7 @@ export default function KeywordSimulator() {
             </div>
           )}
           {error && (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
               <ExclamationTriangleIcon className="size-4 shrink-0" />
               <span className="flex-1">{error}</span>
               <button onClick={() => setError(null)} className="shrink-0 hover:text-red-300">
@@ -302,7 +300,7 @@ export default function KeywordSimulator() {
             </div>
           )}
           <div className="p-6">
-            <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+            <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
               <SimulatedRelevancyTable rows={rows} hasSimulated={simulatedResults !== null} />
             </div>
           </div>

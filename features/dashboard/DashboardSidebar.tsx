@@ -27,7 +27,6 @@ import {
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
-  CreditCardIcon,
   LockClosedIcon,
   BeakerIcon,
   TrophyIcon,
@@ -35,25 +34,17 @@ import {
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { TourTooltip } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
-import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
-
-const PLAN_BADGE: Record<PlanSlug, { label: string; className: string }> = {
-  free: { label: "Free", className: "bg-white/5 text-gray-400" },
-  basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
-  pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
-  pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
-  enterprise: { label: "Enterprise", className: "bg-indigo-500/10 text-indigo-400" },
-};
+import type { PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
-  basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500" },
-  pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400" },
-  pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500" },
-  enterprise: { label: "Enterprise", className: "bg-indigo-500/10 text-indigo-400" },
+  basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500 light:text-emerald-700" },
+  pro: { label: "Pro", className: "bg-violet-500/10 text-violet-400 light:text-violet-700" },
+  pro_plus: { label: "Pro+", className: "bg-amber-500/10 text-amber-500 light:text-amber-700" },
+  enterprise: { label: "Enterprise", className: "bg-indigo-500/10 text-indigo-400 light:text-indigo-700" },
 };
 
 function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
@@ -69,23 +60,23 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
 }
 
 const metadataLinks: { label: string; appPath: string; fallback: string; previewPage: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Preview", appPath: "preview",   fallback: "/dashboard/metadata/preview",    previewPage: "preview",   icon: EyeIcon },
-  { label: "Timeline",         appPath: "timeline",  fallback: "/dashboard/metadata/timeline",   previewPage: "timeline",  icon: ClockIcon,      minPlan: "pro" },
-  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon,  minPlan: "pro" },
+  { label: "Preview", appPath: "preview", fallback: "/dashboard/metadata/preview", previewPage: "preview", icon: EyeIcon },
+  { label: "Timeline", appPath: "timeline", fallback: "/dashboard/metadata/timeline", previewPage: "timeline", icon: ClockIcon, minPlan: "pro" },
+  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon, minPlan: "pro" },
 ];
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Keyword Research",    href: "/dashboard/keywords/research",    icon: MagnifyingGlassIcon },
-  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination",  icon: PuzzlePieceIcon, minPlan: "pro" },
-  { label: "Keyword Performance", href: "/dashboard/keywords/performance",  icon: ArrowTrendingUpIcon },
-  { label: "Group by Intent",      href: "/dashboard/keywords/intent",       icon: TagIcon,                    minPlan: "pro" },
-  { label: "Ranked Keywords",      href: "/dashboard/keywords/ranked",       icon: ListBulletIcon,             minPlan: "pro_plus" },
-  { label: "Keyword Simulator",    href: "/dashboard/keywords/simulator",    icon: BeakerIcon,                 minPlan: "pro_plus" },
+  { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
+  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
+  { label: "Keyword Performance", href: "/dashboard/keywords/performance", icon: ArrowTrendingUpIcon },
+  { label: "Group by Intent", href: "/dashboard/keywords/intent", icon: TagIcon, minPlan: "pro" },
+  { label: "Ranked Keywords", href: "/dashboard/keywords/ranked", icon: ListBulletIcon, minPlan: "pro_plus" },
+  { label: "Keyword Simulator", href: "/dashboard/keywords/simulator", icon: BeakerIcon, minPlan: "pro_plus" },
 ];
 
 const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "App Explorer",   href: "/dashboard/market/explorer",   icon: MagnifyingGlassCircleIcon, minPlan: "pro" },
-  { label: "Compare Apps",   href: "/dashboard/market/compare",    icon: ScaleIcon,                 minPlan: "pro" },
+  { label: "App Explorer", href: "/dashboard/market/explorer", icon: MagnifyingGlassCircleIcon, minPlan: "pro" },
+  { label: "Compare Apps", href: "/dashboard/market/compare", icon: ScaleIcon, minPlan: "pro" },
 ];
 
 // Bid Suggestions works with zero setup (just tracked keywords), so it stays
@@ -94,14 +85,14 @@ const marketLinks: { label: string; href: string; icon: typeof MagnifyingGlassIc
 // Data" parent — same convention as Keywords/Metadata below (a category
 // collapses once it holds 3+ related items).
 const asaAccountLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Active Bids",     href: "/dashboard/asa/active-bids",    icon: ChartBarIcon,              minPlan: "pro" },
-  { label: "Spend Insights",  href: "/dashboard/asa/spend-insights", icon: LightBulbIcon,             minPlan: "pro" },
-  { label: "Efficiency",      href: "/dashboard/asa/efficiency",     icon: AdjustmentsHorizontalIcon, minPlan: "pro" },
+  { label: "Active Bids", href: "/dashboard/asa/active-bids", icon: ChartBarIcon, minPlan: "pro" },
+  { label: "Spend Insights", href: "/dashboard/asa/spend-insights", icon: LightBulbIcon, minPlan: "pro" },
+  { label: "Efficiency", href: "/dashboard/asa/efficiency", icon: AdjustmentsHorizontalIcon, minPlan: "pro" },
 ];
 
 const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Ratings", href: "/dashboard/reviews/ratings",  icon: StarIcon,                   minPlan: "pro" },
-  { label: "Reviews", href: "/dashboard/reviews/reviews",  icon: ChatBubbleLeftEllipsisIcon,  minPlan: "pro" },
+  { label: "Ratings", href: "/dashboard/reviews/ratings", icon: StarIcon, minPlan: "pro" },
+  { label: "Reviews", href: "/dashboard/reviews/reviews", icon: ChatBubbleLeftEllipsisIcon, minPlan: "pro" },
 ];
 
 type Props = {
@@ -115,8 +106,6 @@ type Props = {
   activePreviewPage?: string;
   /** Which product areas the current member has access to in the active workspace */
   access: WorkspaceAccess[];
-  /** The current member's role in the active workspace — only owners can manage billing */
-  role?: WorkspaceRole;
   planSlug?: PlanSlug;
   /** Max workspaces the current user may own under their plan; null = unlimited */
   workspaceLimit?: number | null;
@@ -138,14 +127,11 @@ export default function DashboardSidebar({
   metaOverrideHref,
   activePreviewPage,
   access,
-  role,
   planSlug = "free",
   workspaceLimit,
   isMobileOpen = false,
   onMobileClose,
 }: Props) {
-  const planBadge = PLAN_BADGE[planSlug];
-  const canManagePlan = role === "owner";
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
@@ -235,16 +221,16 @@ export default function DashboardSidebar({
         // is mostly cosmetic — avoids the drawer visibly staying open mid-navigation.
         if ((e.target as HTMLElement).closest("a")) onMobileClose?.();
       }}
-      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0d0f14] border-r border-white/[0.07] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0d0f14] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
       {/* Workspace switcher */}
-      <div className="relative p-3 border-b border-white/[0.07]" ref={ref}>
-        <div className="group flex items-center rounded-lg hover:bg-white/5 transition-colors">
+      <div className="relative p-3 border-b border-white/[0.07] light:border-black/[0.08]" ref={ref}>
+        <div className="group flex items-center rounded-lg hover:bg-white/5 light:hover:bg-black/[0.04] transition-colors">
           <button
             onClick={() => setOpen(!open)}
-            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 text-sm font-medium text-white"
+            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 text-sm font-medium text-white light:text-gray-900"
           >
             <div className="flex size-6 shrink-0 items-center justify-center rounded bg-indigo-500 text-xs font-bold text-white">
               {active ? workspaceInitial(active.name) : "W"}
@@ -256,8 +242,8 @@ export default function DashboardSidebar({
             title="Workspace settings"
             className={`shrink-0 rounded p-1.5 mr-1 transition-all ${
               currentPath.startsWith("/dashboard/settings/workspace")
-                ? "text-indigo-400"
-                : "opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white hover:bg-white/10"
+                ? "text-indigo-400 light:text-indigo-600"
+                : "opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-white/10 light:hover:bg-black/[0.06]"
             }`}
           >
             <Cog6ToothIcon className="size-4" />
@@ -269,9 +255,9 @@ export default function DashboardSidebar({
         </div>
 
         {open && (
-          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 overflow-hidden">
             <div className="px-2 py-1.5">
-              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-widest text-gray-600">
+              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
                 Workspaces
               </p>
               <div className="mt-1 space-y-0.5">
@@ -280,7 +266,7 @@ export default function DashboardSidebar({
                     key={ws.id}
                     href={`/dashboard?ws=${ws.id}`}
                     onClick={() => setOpen(false)}
-                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-sm text-gray-300 light:text-gray-700 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
                   >
                     <div className={`flex size-6 shrink-0 items-center justify-center rounded text-xs font-bold text-white ${ws.id === active?.id ? "bg-indigo-500" : "bg-indigo-500/60"}`}>
                       {workspaceInitial(ws.name)}
@@ -288,7 +274,7 @@ export default function DashboardSidebar({
                     <span className="flex-1 truncate">{ws.name}</span>
                     {ws.status === "frozen" && (
                       <span
-                        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500"
+                        className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700"
                         title="This workspace is over your plan's workspace limit and is paused."
                       >
                         <LockClosedIcon className="size-2.5" />
@@ -296,7 +282,7 @@ export default function DashboardSidebar({
                       </span>
                     )}
                     {ws.id === active?.id && (
-                      <CheckIcon className="size-3.5 text-indigo-400 shrink-0" />
+                      <CheckIcon className="size-3.5 text-indigo-400 light:text-indigo-600 shrink-0" />
                     )}
                   </a>
                 ))}
@@ -304,23 +290,23 @@ export default function DashboardSidebar({
             </div>
 
             {canCreateWorkspace ? (
-              <div className="border-t border-white/[0.07] px-2 py-1.5">
+              <div className="border-t border-white/[0.07] light:border-black/[0.08] px-2 py-1.5">
                 <button
                   onClick={() => { setOpen(false); setShowCreate(true); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
                 >
                   <PlusIcon className="size-4" />
                   Create workspace
                 </button>
               </div>
             ) : (
-              <div className="border-t border-white/[0.07] px-4 py-2.5">
-                <p className="text-xs text-gray-600">
+              <div className="border-t border-white/[0.07] light:border-black/[0.08] px-4 py-2.5">
+                <p className="text-xs text-gray-600 light:text-gray-400">
                   Your plan allows {workspaceLimit} workspace{workspaceLimit === 1 ? "" : "s"}.{" "}
                   <a
                     href="/dashboard/subscription"
                     onClick={() => setOpen(false)}
-                    className="text-indigo-400 hover:text-indigo-300 transition-colors"
+                    className="text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
                   >
                     Upgrade
                   </a>{" "}
@@ -344,7 +330,7 @@ export default function DashboardSidebar({
           active={tourActive}
           step={TOUR_STEPS.indexOf("sidebar") + 1}
           total={TOUR_STEPS.length}
-          icon={<MapIcon className="size-4 text-indigo-400 shrink-0 mt-0.5" />}
+          icon={<MapIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
           message={
             <>
               That&apos;s the walkthrough! Explore other tools here in the sidebar, like Metadata, Reports, and Market Intelligence, or{" "}
@@ -352,7 +338,7 @@ export default function DashboardSidebar({
                 href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
                 target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
                 rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-                className="font-semibold text-indigo-400 underline underline-offset-2 hover:text-indigo-300 hover:no-underline"
+                className="font-semibold text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:text-indigo-300 light:hover:text-indigo-700 hover:no-underline"
               >
                 book a demo
               </a>{" "}
@@ -367,8 +353,8 @@ export default function DashboardSidebar({
           href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
           className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
             currentPath === "/dashboard"
-              ? "bg-white/10 text-white"
-              : "text-gray-400 hover:bg-white/5 hover:text-white"
+              ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+              : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <Squares2X2Icon className="size-4 shrink-0" />
@@ -377,7 +363,7 @@ export default function DashboardSidebar({
 
         {hasAsoIntelligence && (
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
             ASO Intelligence
           </p>
           <div className="space-y-0.5">
@@ -386,8 +372,8 @@ export default function DashboardSidebar({
               href={reportHref()}
               className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                 isOnReport
-                  ? "bg-white/10 text-white"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                  : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
               }`}
             >
               <DocumentChartBarIcon className="size-4 shrink-0" />
@@ -396,7 +382,7 @@ export default function DashboardSidebar({
 
             {/* Metadata — collapsible */}
             <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
-              isOnMetadata ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+              isOnMetadata ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
             }`}>
               <a
                 href={metaHref(metadataLinks[0])}
@@ -417,7 +403,7 @@ export default function DashboardSidebar({
             </div>
 
             {metaOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
                 {metadataLinks.map((link) => {
                   const href = metaHref(link);
                   const isActive =
@@ -430,8 +416,8 @@ export default function DashboardSidebar({
                       href={href}
                       className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                         isActive
-                          ? "text-white bg-white/10"
-                          : "text-gray-400 hover:bg-white/5 hover:text-white"
+                          ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
+                          : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                       }`}
                     >
                       <link.icon className="size-4 shrink-0" />
@@ -448,8 +434,8 @@ export default function DashboardSidebar({
             {/* Keywords — collapsible */}
             <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
               currentPath.startsWith("/dashboard/keywords")
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
             }`}>
               <a
                 href="/dashboard/keywords/research"
@@ -470,15 +456,15 @@ export default function DashboardSidebar({
             </div>
 
             {keywordsOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
                 {keywordLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
                     className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
-                        ? "text-white bg-white/10"
-                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
+                        : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
@@ -494,8 +480,8 @@ export default function DashboardSidebar({
             {/* Reviews & Ratings — collapsible */}
             <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
               currentPath.startsWith("/dashboard/reviews")
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
             }`}>
               <a
                 href="/dashboard/reviews/ratings"
@@ -516,15 +502,15 @@ export default function DashboardSidebar({
             </div>
 
             {reviewsOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
                 {reviewLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
                     className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
-                        ? "text-white bg-white/10"
-                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
+                        : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
@@ -542,7 +528,7 @@ export default function DashboardSidebar({
 
         {hasAsaIntelligence && (
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
             ASA Intelligence
           </p>
           <div className="space-y-0.5">
@@ -550,8 +536,8 @@ export default function DashboardSidebar({
               href="/dashboard/asa/bids"
               className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                 currentPath.startsWith("/dashboard/asa/bids")
-                  ? "bg-white/10 text-white"
-                  : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                  : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
               }`}
             >
               <BanknotesIcon className="size-4 shrink-0" />
@@ -562,8 +548,8 @@ export default function DashboardSidebar({
             {/* Campaign Data — collapsible: Active Bids, Spend Insights, Efficiency all read from a connected Apple Search Ads account */}
             <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
               asaAccountLinks.some((l) => currentPath.startsWith(l.href))
-                ? "bg-white/10 text-white"
-                : "text-gray-400 hover:bg-white/5 hover:text-white"
+                ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
             }`}>
               <a
                 href="/dashboard/asa/active-bids"
@@ -584,15 +570,15 @@ export default function DashboardSidebar({
             </div>
 
             {asaAccountOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] space-y-0.5">
+              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
                 {asaAccountLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
                     className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
-                        ? "text-white bg-white/10"
-                        : "text-gray-400 hover:bg-white/5 hover:text-white"
+                        ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
+                        : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                     }`}
                   >
                     <link.icon className="size-4 shrink-0" />
@@ -610,7 +596,7 @@ export default function DashboardSidebar({
 
         {hasMarketIntelligence && (
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600">
+          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
             Market Intelligence
           </p>
           <div className="space-y-0.5">
@@ -622,8 +608,8 @@ export default function DashboardSidebar({
                   href={link.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                     isActive
-                      ? "bg-white/10 text-white"
-                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                      : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                   }`}
                 >
                   <link.icon className="size-4 shrink-0" />
@@ -641,13 +627,13 @@ export default function DashboardSidebar({
       </nav>
 
       {/* Account footer */}
-      <div className="border-t border-white/[0.07] p-2.5 space-y-0.5">
+      <div className="border-t border-white/[0.07] light:border-black/[0.08] p-2.5 space-y-0.5">
         <a
           href="/dashboard/certification"
           className={`flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors ${
             currentPath.startsWith("/dashboard/certification")
-              ? "bg-white/10 text-white"
-              : "text-gray-500 hover:bg-white/5 hover:text-white"
+              ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+              : "text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <TrophyIcon className="size-4 shrink-0" />
@@ -657,37 +643,14 @@ export default function DashboardSidebar({
         <button
           type="button"
           onClick={() => window.Tawk_API?.maximize?.()}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
           <ChatBubbleLeftRightIcon className="size-4 shrink-0" />
           Chat with us 👋
         </button>
-        {canManagePlan ? (
-          <a
-            href="/dashboard/subscription"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
-          >
-            <CreditCardIcon className="size-4 shrink-0" />
-            <span className="flex-1">Manage Plan</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
-              {planBadge.label}
-            </span>
-          </a>
-        ) : (
-          <div
-            title="Only the workspace owner can manage the plan"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-600 cursor-not-allowed"
-          >
-            <CreditCardIcon className="size-4 shrink-0" />
-            <span className="flex-1">Manage Plan</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${planBadge.className}`}>
-              {planBadge.label}
-            </span>
-          </div>
-        )}
         <a
           href="/dashboard/settings/account"
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 hover:text-white transition-colors"
+          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
           <UserCircleIcon className="size-4 shrink-0" />
           Account settings

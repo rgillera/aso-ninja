@@ -43,24 +43,24 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
 
   if (locked) {
     return (
-      <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
+      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-white">ASO Suggestions</h3>
-            <InformationCircleIcon className="size-4 text-gray-600" />
+            <h3 className="text-base font-semibold text-white light:text-gray-900">ASO Suggestions</h3>
+            <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" />
           </div>
-          <button onClick={() => setExpanded((v) => !v)} className="text-gray-500 hover:text-white transition-colors" aria-label={expanded ? "Collapse" : "Expand"}>
+          <button onClick={() => setExpanded((v) => !v)} className="text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors" aria-label={expanded ? "Collapse" : "Expand"}>
             <ChevronUpIcon className={`size-4 transition-transform ${expanded ? "" : "rotate-180"}`} />
           </button>
         </div>
         {expanded && (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-            <span className="mb-3 flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400">
+            <span className="mb-3 flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold text-violet-400 light:text-violet-700">
               <LockClosedIcon className="size-2.5" />
               Pro
             </span>
-            <p className="text-xs font-medium text-gray-400">ASO Suggestions is a Pro feature</p>
-            <p className="mt-1 max-w-xs text-xs text-gray-600">Upgrade to Pro or above to see ASO recommendations for this app.</p>
+            <p className="text-xs font-medium text-gray-400 light:text-gray-600">ASO Suggestions is a Pro feature</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-600 light:text-gray-400">Upgrade to Pro or above to see ASO recommendations for this app.</p>
           </div>
         )}
       </div>
@@ -78,7 +78,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
   const pageItems = visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
+    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-white">ASO Suggestions</h3>
@@ -89,7 +89,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
         </button>
       </div>
       {expanded && (
-        <ul className="divide-y divide-white/[0.06]">
+        <ul className="divide-y divide-white/[0.06] light:divide-black/[0.06]">
           {pageItems.map((suggestion) => {
             const copied = copiedTitle === suggestion.title;
             return (
@@ -97,22 +97,22 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
                 <button
                   onClick={() => handleCopy(suggestion)}
                   title="Copy"
-                  className="mt-0.5 shrink-0 text-gray-600 transition-colors hover:text-white"
+                  className="mt-0.5 shrink-0 text-gray-600 light:text-gray-400 transition-colors hover:text-white light:hover:text-gray-900"
                 >
                   {copied ? (
-                    <CheckIcon className="size-4 text-emerald-400" />
+                    <CheckIcon className="size-4 text-emerald-400 light:text-emerald-700" />
                   ) : (
                     <ClipboardDocumentIcon className="size-4" />
                   )}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-white">{suggestion.title}</span>
+                  <span className="text-sm font-medium text-white light:text-gray-900">{suggestion.title}</span>
                   <p className="mt-1 text-sm leading-6 text-gray-500">{suggestion.description}</p>
                 </div>
                 <button
                   onClick={() => handleDismiss(suggestion.title)}
                   title="Dismiss"
-                  className="shrink-0 text-gray-600 opacity-0 transition-opacity hover:text-white group-hover:opacity-100"
+                  className="shrink-0 text-gray-600 light:text-gray-400 opacity-0 transition-opacity hover:text-white light:hover:text-gray-900 group-hover:opacity-100"
                 >
                   <XMarkIcon className="size-4" />
                 </button>
@@ -122,11 +122,11 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
         </ul>
       )}
       {expanded && pageCount > 1 && (
-        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.07]">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.07] light:border-black/[0.08]">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={safePage === 0}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 light:text-gray-600 transition-colors hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400"
           >
             <ChevronLeftIcon className="size-3.5" />
             Prev
@@ -137,7 +137,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
           <button
             onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
             disabled={safePage === pageCount - 1}
-            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 transition-colors hover:text-white disabled:opacity-30 disabled:hover:text-gray-400"
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-gray-400 light:text-gray-600 transition-colors hover:text-white light:hover:text-gray-900 disabled:opacity-30 disabled:hover:text-gray-400"
           >
             Next
             <ChevronRightIcon className="size-3.5" />

@@ -47,28 +47,28 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] ring-1 ring-white/[0.12] shadow-2xl px-2 py-2">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] light:bg-white shadow-2xl px-2 py-2">
       <button
         onClick={onClear}
         title="Clear selection"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+        className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
       >
         <XMarkIcon className="size-4" />
       </button>
-      <span className="px-2 text-xs font-medium text-gray-300 whitespace-nowrap">{count}/{total} selected</span>
-      <div className="w-px h-5 bg-white/[0.1] mx-1" />
+      <span className="px-2 text-xs font-medium text-gray-300 light:text-gray-700 whitespace-nowrap">{count}/{total} selected</span>
+      <div className="w-px h-5 bg-white/[0.1] light:bg-black/[0.1] mx-1" />
       <button
         onClick={handleCopy}
         title="Copy to clipboard"
-        className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+        className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
       >
-        {copied ? <ClipboardDocumentCheckIcon className="size-4 text-emerald-400" /> : <ClipboardDocumentIcon className="size-4" />}
+        {copied ? <ClipboardDocumentCheckIcon className="size-4 text-emerald-400 light:text-emerald-700" /> : <ClipboardDocumentIcon className="size-4" />}
       </button>
       {onAdd && (
         <button
           onClick={onAdd}
           title="Add to tracked keywords"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         >
           <PlusCircleIcon className="size-4" />
           Add
@@ -80,14 +80,14 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
           themes={groupByIntent.themes}
           includeOther={false}
           onPick={(themeId) => themeId && groupByIntent.onPick(themeId)}
-          buttonClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 hover:text-indigo-300 hover:bg-white/[0.06] transition-colors"
+          buttonClassName="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         />
       )}
       {onStar && (
         <button
           onClick={onStar}
           title="Star selection"
-          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-amber-400 hover:bg-white/[0.06] transition-colors"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-amber-400 light:hover:text-amber-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         >
           <StarIcon className="size-4" />
         </button>
@@ -97,7 +97,7 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
           <Link
             href="/dashboard/subscription"
             title="Upgrade to Basic to export to CSV"
-            className="flex items-center justify-center size-8 rounded-full text-gray-600 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center size-8 rounded-full text-gray-600 light:text-gray-400 hover:text-emerald-400 light:hover:text-emerald-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
           >
             <LockClosedIcon className="size-4" />
           </Link>
@@ -105,7 +105,7 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
           <button
             onClick={onExport}
             title="Export to Google Sheets (CSV)"
-            className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-emerald-400 hover:bg-white/[0.06] transition-colors"
+            className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-emerald-400 light:hover:text-emerald-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
           >
             <TableCellsIcon className="size-4" />
           </button>
@@ -115,7 +115,7 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
         <button
           onClick={onDelete}
           title="Delete selection"
-          className="flex items-center justify-center size-8 rounded-full text-gray-400 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
+          className="flex items-center justify-center size-8 rounded-full text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         >
           <TrashIcon className="size-4" />
         </button>

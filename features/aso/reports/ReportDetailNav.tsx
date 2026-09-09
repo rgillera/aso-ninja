@@ -29,17 +29,17 @@ export function ReportDetailNav({ isIos }: ReportDetailNavProps) {
   }
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] overflow-hidden shadow-lg shadow-black/20">
-      <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.07]">
-        <h3 className="text-base font-semibold text-white">Links</h3>
-        <InformationCircleIcon className="size-4 text-gray-600" />
+    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="flex items-center gap-2 px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
+        <h3 className="text-base font-semibold text-white light:text-gray-900">Links</h3>
+        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" />
       </div>
       <div className="flex flex-wrap items-center gap-1 px-3 py-3">
         {items.map((item) => (
           <button
             key={item.id}
             onClick={() => scrollToAnchor(item.id)}
-            className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-400 light:text-gray-600 transition-colors hover:bg-white/[0.06] light:hover:bg-black/[0.05] hover:text-white light:hover:text-gray-900"
           >
             {item.label}
           </button>

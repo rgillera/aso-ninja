@@ -5,7 +5,6 @@ import { MetadataSection } from "./MetadataFieldCard";
 type Props = {
   app: App;
   storeData: StoreData;
-  dark: boolean;
   promotionalText: string;
   originalName: string;
   originalSubtitle: string;
@@ -19,7 +18,6 @@ type Props = {
 export default function AppTextPreview({
   app,
   storeData,
-  dark,
   promotionalText,
   originalName,
   originalSubtitle,
@@ -32,9 +30,9 @@ export default function AppTextPreview({
   if (app.store === "android") {
     return (
       <>
-        <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" dark={dark} originalValue={originalName} onChange={onNameChange} />
-        <MetadataSection title="Short Description" value={storeData?.subtitle ?? ""} limit={80} placeholder="Enter short description…" dark={dark} rows={3} originalValue={originalSubtitle} onChange={onSubtitleChange} />
-        <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" dark={dark} rows={10} originalValue={originalDescription} onChange={onDescriptionChange} />
+        <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" originalValue={originalName} onChange={onNameChange} />
+        <MetadataSection title="Short Description" value={storeData?.subtitle ?? ""} limit={80} placeholder="Enter short description…" rows={3} originalValue={originalSubtitle} onChange={onSubtitleChange} />
+        <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" rows={10} originalValue={originalDescription} onChange={onDescriptionChange} />
         <KeywordDensity description={storeData?.description ?? ""} originalDescription={originalDescription} />
       </>
     );
@@ -42,10 +40,10 @@ export default function AppTextPreview({
 
   return (
     <>
-      <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" dark={dark} originalValue={originalName} onChange={onNameChange} />
-      <MetadataSection title="App Subtitle" value={storeData?.subtitle ?? ""} limit={30} placeholder="Enter subtitle…" dark={dark} originalValue={originalSubtitle} onChange={onSubtitleChange} />
-      <MetadataSection title="Promotional Text" value={promotionalText} limit={170} placeholder="Enter promotional text…" dark={dark} rows={3} onChange={onPromotionalTextChange} />
-      <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" dark={dark} rows={10} originalValue={originalDescription} onChange={onDescriptionChange} />
+      <MetadataSection title="App Name" value={app.name} limit={30} placeholder="Enter app name…" originalValue={originalName} onChange={onNameChange} />
+      <MetadataSection title="App Subtitle" value={storeData?.subtitle ?? ""} limit={30} placeholder="Enter subtitle…" originalValue={originalSubtitle} onChange={onSubtitleChange} />
+      <MetadataSection title="Promotional Text" value={promotionalText} limit={170} placeholder="Enter promotional text…" rows={3} onChange={onPromotionalTextChange} />
+      <MetadataSection title="Description" value={storeData?.description ?? ""} limit={4000} placeholder="Enter description…" rows={10} originalValue={originalDescription} onChange={onDescriptionChange} />
     </>
   );
 }

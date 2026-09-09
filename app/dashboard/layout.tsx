@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
+import type { Theme } from "@/features/dashboard/ThemeContext";
+import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -13,24 +14,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!user) redirect("/login");
 
   const cookieStore = await cookies();
-  const lastAppId       = cookieStore.get("lastAppId")?.value;
+  const lastAppId = cookieStore.get("lastAppId")?.value;
   // cookies().get().value is already url-decoded by Next's cookie parser —
   // this is the plain "?bundleId=...&name=...&..." search string, not the
   // encodeURIComponent-wrapped form it was written as.
-  const lastPreview     = cookieStore.get("lastPreview")?.value;
+  const lastPreview = cookieStore.get("lastPreview")?.value;
   const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
+  const initialTheme: Theme = cookieStore.get("theme")?.value === "dark" ? "dark" : "light";
 
   const [{ data: workspaces }, { data: apps }, { data: memberships }] = await Promise.all([
     supabase.from("workspaces").select("*").order("created_at", { ascending: true }),
     supabase.from("apps").select("*").order("created_at", { ascending: false }),
-    supabase.from("workspace_members").select("workspace_id, access, role").eq("user_id", user.id),
+    supabase.from("workspace_members").select("workspace_id, access").eq("user_id", user.id),
   ]);
 
   const accessByWorkspace = Object.fromEntries(
     (memberships ?? []).map((m) => [m.workspace_id, m.access as WorkspaceAccess[]])
-  );
-  const roleByWorkspace = Object.fromEntries(
-    (memberships ?? []).map((m) => [m.workspace_id, m.role as WorkspaceRole])
   );
 
   // Best-guess active workspace for the initial paint — mirrors the fallback
@@ -47,20 +46,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.workspace_limit : 1;
 
   return (
-    <Suspense>
-      <DashboardShell
-        workspaces={(workspaces ?? []) as Workspace[]}
-        allApps={(apps ?? []) as App[]}
-        lastAppId={lastAppId}
-        lastPreview={lastPreview}
-        lastWorkspaceId={lastWorkspaceId}
-        accessByWorkspace={accessByWorkspace}
-        roleByWorkspace={roleByWorkspace}
-        initialPlanSlug={initialPlanSlug}
-        initialWorkspaceLimit={initialWorkspaceLimit}
-      >
-        {children}
-      </DashboardShell>
-    </Suspense>
+    <>
+      {/*
+        Sets <html data-theme> synchronously, before the browser paints
+        anything below it — ThemeProvider's own effect would only run after
+        hydration, which is one paint too late and would flash the CSS's
+        built-in dark styling at a user on light (the product default, for
+        both new users with no cookie yet and anyone who's opted into it).
+        Only emitted for "light": "dark" needs nothing since unprefixed
+        classes are the CSS default regardless of which theme is the
+        product default (see globals.css).
+      */}
+      {initialTheme === "light" && (
+        <script
+          dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','light')` }}
+        />
+      )}
+      <Suspense>
+        <DashboardShell
+          workspaces={(workspaces ?? []) as Workspace[]}
+          allApps={(apps ?? []) as App[]}
+          lastAppId={lastAppId}
+          lastPreview={lastPreview}
+          lastWorkspaceId={lastWorkspaceId}
+          accessByWorkspace={accessByWorkspace}
+          initialPlanSlug={initialPlanSlug}
+          initialWorkspaceLimit={initialWorkspaceLimit}
+          initialTheme={initialTheme}
+        >
+          {children}
+        </DashboardShell>
+      </Suspense>
+    </>
   );
 }

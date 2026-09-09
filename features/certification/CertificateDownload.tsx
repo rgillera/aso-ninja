@@ -35,7 +35,7 @@ export function CertificateDownload({ holderName, certificateId, issuedAt }: Pro
         value={certName}
         onChange={(e) => setCertName(e.target.value)}
         placeholder="Your name"
-        className="min-w-0 flex-1 rounded-lg bg-white/5 px-3.5 py-2.5 text-sm text-white ring-1 ring-white/10 placeholder:text-gray-500 focus:outline-none focus:ring-indigo-500/50"
+        className="min-w-0 flex-1 rounded-lg bg-white/5 light:bg-black/[0.04] px-3.5 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-indigo-500/50"
       />
       <button
         type="button"

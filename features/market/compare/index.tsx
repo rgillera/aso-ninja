@@ -71,9 +71,9 @@ export default function CompareAppsPage() {
 
   if (!isPlanAtLeast(planSlug, "pro")) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <div className="flex items-center gap-2 px-6 pt-6">
-          <h1 className="text-xl font-semibold text-white">Compare Apps</h1>
+          <h1 className="text-xl font-semibold text-white light:text-gray-900">Compare Apps</h1>
         </div>
         <FeatureLocked
           minPlan="pro"
@@ -94,10 +94,10 @@ export default function CompareAppsPage() {
   const atLimit = apps.length >= MAX_COMPARE_APPS;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <div className="flex items-center gap-2 px-6 pt-6">
-        <h1 className="text-xl font-semibold text-white">Compare Apps</h1>
-        <InformationCircleIcon className="size-4 text-gray-600" title="Metadata is scraped live from each app's public store listing in the selected storefront country. No download or revenue figures: neither store discloses those for apps you don't own." />
+        <h1 className="text-xl font-semibold text-white light:text-gray-900">Compare Apps</h1>
+        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Metadata is scraped live from each app's public store listing in the selected storefront country. No download or revenue figures: neither store discloses those for apps you don't own." />
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -108,15 +108,15 @@ export default function CompareAppsPage() {
         <AppPicker country={country} addedKeys={addedKeys} atLimit={atLimit} onAdd={addApp} />
 
         {apps.length === 0 ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <ScaleIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">Search for apps above to start comparing</p>
-            <p className="text-xs text-gray-600 mt-1">Add at least 2 apps — up to {MAX_COMPARE_APPS} at a time</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <ScaleIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">Search for apps above to start comparing</p>
+            <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Add at least 2 apps — up to {MAX_COMPARE_APPS} at a time</p>
           </div>
         ) : (
           <>
             {apps.length === 1 && (
-              <p className="px-6 mt-4 text-xs text-gray-600">Add one more app to compare.</p>
+              <p className="px-6 mt-4 text-xs text-gray-600 light:text-gray-400">Add one more app to compare.</p>
             )}
             <div className="mt-4">
               <CompareTable apps={apps} country={country} onRemove={removeApp} />

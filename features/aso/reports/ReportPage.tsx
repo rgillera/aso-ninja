@@ -234,14 +234,14 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
   const suggestions = [...deterministicSuggestions, ...aiSuggestions];
 
   return (
-    <main className="h-full overflow-y-auto bg-[#111318]">
+    <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={app} title="ASO Report" />
 
       {saveError && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
-          <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+          <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300 light:hover:text-red-700">
             <XMarkIcon className="size-4" />
           </button>
         </div>
@@ -253,7 +253,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
             <>
               <button
                 onClick={() => setShowCompetitorModal(true)}
-                className="flex w-full items-center gap-2 rounded-2xl bg-[#1a1d24] px-4 py-3 text-sm font-medium text-gray-300 ring-1 ring-white/[0.08] transition-colors hover:text-white hover:ring-white/[0.16]"
+                className="flex w-full items-center gap-2 rounded-2xl bg-[#1a1d24] light:bg-white px-4 py-3 text-sm font-medium text-gray-300 light:text-gray-700 transition-colors hover:text-white light:hover:text-gray-900 hover:ring-white/[0.16] light:hover:ring-black/20"
               >
                 <PlusIcon className="size-4" />
                 Add competitors to compare

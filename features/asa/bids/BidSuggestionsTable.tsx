@@ -14,11 +14,11 @@ type SortKey = "term" | "volume" | "rank" | "opportunity" | "tier";
 // features/aso/keywords/research/KeywordTable.tsx, extended with a tone for
 // Skip/Unscored so the table reads as one system with the rest of the app.
 const TIER_PILL: Record<BidTier, string> = {
-  Aggressive: "bg-emerald-500/15 text-emerald-400",
+  Aggressive: "bg-emerald-500/15 text-emerald-400 light:text-emerald-700",
   Moderate: "bg-yellow-500/15 text-yellow-400",
   Low: "bg-gray-500/10 text-gray-500",
-  Skip: "bg-red-500/10 text-red-400/80",
-  Unscored: "bg-gray-500/10 text-gray-600 italic",
+  Skip: "bg-red-500/10 text-red-400 light:text-red-600/80",
+  Unscored: "bg-gray-500/10 text-gray-600 light:text-gray-400 italic",
 };
 
 function TierPill({ tier }: { tier: BidTier }) {
@@ -30,11 +30,11 @@ function TierPill({ tier }: { tier: BidTier }) {
 }
 
 function OpportunityCell({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-xs text-gray-600">—</span>;
+  if (value === null) return <span className="text-xs text-gray-600 light:text-gray-400">—</span>;
   return (
     <span
       className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${
-        value >= 70 ? "bg-emerald-500/15 text-emerald-400" : value >= 40 ? "bg-yellow-500/15 text-yellow-400" : "bg-gray-500/10 text-gray-500"
+        value >= 70 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700" : value >= 40 ? "bg-yellow-500/15 text-yellow-400" : "bg-gray-500/10 text-gray-500"
       }`}
     >
       {value}
@@ -43,9 +43,9 @@ function OpportunityCell({ value }: { value: number | null }) {
 }
 
 function RankCell({ rank }: { rank: number | null }) {
-  if (rank === null) return <span className="text-xs text-gray-600 italic">Unranked</span>;
+  if (rank === null) return <span className="text-xs text-gray-600 light:text-gray-400 italic">Unranked</span>;
   return (
-    <span className={`text-sm font-medium tabular-nums ${rank <= 3 ? "text-emerald-400" : rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>
+    <span className={`text-sm font-medium tabular-nums ${rank <= 3 ? "text-emerald-400 light:text-emerald-700" : rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>
       #{rank}
     </span>
   );
@@ -121,7 +121,7 @@ export function BidSuggestionsTable({ rows }: Props) {
 
   const SortTh = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
     <th
-      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 transition-colors whitespace-nowrap ${className}`}
+      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 light:hover:text-gray-700 transition-colors whitespace-nowrap ${className}`}
       onClick={() => toggleSort(col)}
     >
       {label}{sortKey === col ? (sortAsc ? " ↑" : " ↓") : ""}
@@ -129,33 +129,33 @@ export function BidSuggestionsTable({ rows }: Props) {
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
-      <div className="px-4 py-3 border-b border-white/[0.07] flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] ring-1 ring-white/[0.08] px-2 py-1.5">
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+      <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1.5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search keyword"
-            className="bg-transparent text-xs text-gray-300 placeholder-gray-600 outline-none min-w-0"
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none min-w-0"
           />
         </div>
 
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 ring-1 ring-white/[0.08] hover:text-white hover:bg-white/[0.05] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
           <ArrowDownTrayIcon className="size-3.5" />
           Export CSV
         </button>
 
-        <span className="ml-auto text-xs text-gray-600">{filtered.length.toLocaleString()} / {rows.length.toLocaleString()}</span>
+        <span className="ml-auto text-xs text-gray-600 light:text-gray-400">{filtered.length.toLocaleString()} / {rows.length.toLocaleString()}</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[720px] border-collapse">
           <thead>
-            <tr className="border-b border-white/[0.07]">
+            <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <th className="w-10 px-3 py-2.5">
                 <input
                   type="checkbox"
@@ -176,7 +176,7 @@ export function BidSuggestionsTable({ rows }: Props) {
             {sorted.map((r) => {
               const sel = selected.has(r.term);
               return (
-                <tr key={r.term} className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${sel ? "bg-indigo-500/5" : ""}`}>
+                <tr key={r.term} className={`border-b border-white/[0.04] light:border-black/[0.05] hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors ${sel ? "bg-indigo-500/5" : ""}`}>
                   <td className="px-3 py-2.5">
                     <input
                       type="checkbox"
@@ -185,8 +185,8 @@ export function BidSuggestionsTable({ rows }: Props) {
                       className="rounded border-gray-600 bg-transparent accent-indigo-500 cursor-pointer"
                     />
                   </td>
-                  <td className="px-3 py-2.5 text-sm text-gray-200">{r.term}</td>
-                  <td className="px-3 py-2.5 text-sm text-gray-300 tabular-nums">{r.keyword.volume}</td>
+                  <td className="px-3 py-2.5 text-sm text-gray-200 light:text-gray-800">{r.term}</td>
+                  <td className="px-3 py-2.5 text-sm text-gray-300 light:text-gray-700 tabular-nums">{r.keyword.volume}</td>
                   <td className="px-3 py-2.5"><RankCell rank={r.keyword.rank} /></td>
                   <td className="px-3 py-2.5"><OpportunityCell value={r.keyword.opportunity} /></td>
                   <td className="px-3 py-2.5"><TierPill tier={r.tier} /></td>
@@ -199,8 +199,8 @@ export function BidSuggestionsTable({ rows }: Props) {
 
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <MagnifyingGlassIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">No keywords match your search</p>
+            <MagnifyingGlassIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">No keywords match your search</p>
           </div>
         )}
       </div>

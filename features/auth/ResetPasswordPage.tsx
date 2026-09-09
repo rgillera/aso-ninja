@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
           <h1 className="mt-6 text-2xl font-semibold text-white">Choose a new password</h1>
         </div>
 
-        <div className="bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-8">
+        <div className="bg-gray-800/50 rounded-2xl p-8">
           <form action={action} className="space-y-5">
             {state?.error && (
               <div className="rounded-lg bg-red-500/10 ring-1 ring-red-500/20 px-4 py-3 text-sm text-red-400">

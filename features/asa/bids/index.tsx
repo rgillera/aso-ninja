@@ -14,11 +14,11 @@ import type { SavedKeyword } from "@/app/api/keywords/list/route";
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
@@ -64,7 +64,7 @@ export default function BidSuggestionsPage() {
 
   if (locked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="Bid Suggestions" />
         <FeatureLocked
           minPlan="pro"
@@ -82,30 +82,30 @@ export default function BidSuggestionsPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="Bid Suggestions" />
       <div className="flex items-center gap-1.5 px-6 pt-3 text-xs text-gray-500">
-        <InformationCircleIcon className="size-3.5 text-gray-600 shrink-0" />
+        <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
         Suggested tiers only, not live Apple Search Ads auction data.
       </div>
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <DevicePhoneMobileIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">ASA Intelligence is only available for iOS apps</p>
-            <p className="text-xs text-gray-600 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
+            <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : loading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : keywords.length === 0 ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] flex flex-col items-center justify-center py-16 text-center">
-            <BanknotesIcon className="size-8 text-gray-700 mb-3" />
-            <p className="text-sm font-medium text-gray-400">No tracked keywords yet</p>
-            <p className="text-xs text-gray-600 mt-1">
-              <a href="/dashboard/keywords" className="text-indigo-400 hover:text-indigo-300 transition-colors">
+          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+            <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+            <p className="text-sm font-medium text-gray-400 light:text-gray-600">No tracked keywords yet</p>
+            <p className="text-xs text-gray-600 light:text-gray-400 mt-1">
+              <a href="/dashboard/keywords" className="text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors">
                 Track keywords in Keyword Research
               </a>{" "}
               to see ASA bid suggestions here.

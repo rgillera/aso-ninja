@@ -26,11 +26,11 @@ function formatDate(iso: string): string {
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
@@ -47,9 +47,9 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
   if (history.length === 0) {
     return (
       <div className="flex h-72 flex-col items-center justify-center text-center px-6">
-        <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-        <p className="text-sm font-medium text-gray-400">No ranking history yet</p>
-        <p className="mt-1 text-xs text-gray-600 max-w-xs">
+        <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No ranking history yet</p>
+        <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
           Run Live Search on a keyword to start capturing which positions your app holds over time.
         </p>
       </div>
@@ -61,7 +61,7 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
         <AreaChart data={history} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
           <defs>
             <linearGradient id="rk-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.25} />
+              <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25} />
               <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
             </linearGradient>
           </defs>
@@ -102,17 +102,17 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
 
 export default function RankedKeywordsPage() {
   const activeApp = useActiveApp();
-  const planSlug  = usePlanSlug();
-  const isLocked  = !isPlanAtLeast(planSlug, "pro_plus");
+  const planSlug = usePlanSlug();
+  const isLocked = !isPlanAtLeast(planSlug, "pro_plus");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
-  const [history,  setHistory]  = useState<RankedHistoryPoint[]>([]);
-  const [loading,  setLoading]  = useState(false);
-  const [tab,               setTab]               = useState<"chart" | "table">("table");
-  const [filters,           setFilters]           = useState<Filters>(DEFAULT_FILTERS);
+  const [history, setHistory] = useState<RankedHistoryPoint[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<"chart" | "table">("table");
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
-  const [rankHistoryTerm,   setRankHistoryTerm]   = useState<string | null>(null);
-  const [translateToggle,   setTranslateToggle]   = useState(false);
+  const [rankHistoryTerm, setRankHistoryTerm] = useState<string | null>(null);
+  const [translateToggle, setTranslateToggle] = useState(false);
 
   useEffect(() => {
     const storeId = activeApp?.store_id;
@@ -120,7 +120,7 @@ export default function RankedKeywordsPage() {
     setLoading(true);
     const params = new URLSearchParams({
       storeId,
-      store:   activeApp.store ?? "ios",
+      store: activeApp.store ?? "ios",
       country: activeApp.country ?? "us",
     });
     fetch(`/api/keywords/ranked?${params}`)
@@ -150,7 +150,7 @@ export default function RankedKeywordsPage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
         <AppHeader app={activeApp} title="All Ranked Keywords" />
         <FeatureLocked
           minPlan="pro_plus"
@@ -167,7 +167,7 @@ export default function RankedKeywordsPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp} title="All Ranked Keywords" />
 
       <div className="flex-1 overflow-y-auto">
@@ -179,14 +179,14 @@ export default function RankedKeywordsPage() {
                 key={id}
                 onClick={() => setTab(id)}
                 className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === id ? "bg-white/[0.08] text-white" : "text-gray-500 hover:text-gray-300"
+                  tab === id ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
                 }`}
               >
                 {label}
               </button>
             ))}
           </div>
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-gray-600 light:text-gray-400">
             {loading
               ? "Loading…"
               : `${keywords.length.toLocaleString()} keyword${keywords.length !== 1 ? "s" : ""} ranked`}
@@ -194,7 +194,7 @@ export default function RankedKeywordsPage() {
         </div>
 
         {tab === "chart" ? (
-          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.07] overflow-hidden">
+          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
             <RankedChart history={history} loading={loading} />
           </div>
         ) : (
@@ -205,9 +205,9 @@ export default function RankedKeywordsPage() {
               </div>
             ) : keywords.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-                <ChartBarIcon className="size-8 text-gray-700 mb-3" />
-                <p className="text-sm font-medium text-gray-400">No ranked keywords found</p>
-                <p className="mt-1 text-xs text-gray-600 max-w-xs">
+                <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+                <p className="text-sm font-medium text-gray-400 light:text-gray-600">No ranked keywords found</p>
+                <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                   Use Live Search on tracked keywords to record which positions your app holds.
                 </p>
               </div>

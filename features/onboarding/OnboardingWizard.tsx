@@ -6,6 +6,7 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
   CheckIcon,
+  MinusIcon,
   XMarkIcon,
   DevicePhoneMobileIcon,
   ArrowLeftIcon,
@@ -71,8 +72,8 @@ function ResultIcon({ iconUrl, name }: { iconUrl?: string | null; name: string }
   return iconUrl && !failed ? (
     <img src={iconUrl} alt={name} className="size-11 rounded-xl object-cover shrink-0" onError={() => setFailed(true)} />
   ) : (
-    <div className="size-11 shrink-0 rounded-xl bg-[#0d0f14] flex items-center justify-center">
-      <DevicePhoneMobileIcon className="size-5 text-gray-600" />
+    <div className="size-11 shrink-0 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+      <DevicePhoneMobileIcon className="size-5 text-gray-600 light:text-gray-400" />
     </div>
   );
 }
@@ -327,15 +328,15 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0a0b0d] px-4 py-8 overflow-y-auto">
-      <div className="w-full max-w-md rounded-2xl bg-[#141417] ring-1 ring-white/[0.1] shadow-2xl">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0a0b0d] light:bg-[#f5f6f8] px-4 py-8 overflow-y-auto">
+      <div className="w-full max-w-md rounded-2xl bg-[#141417] light:bg-white shadow-2xl light:shadow-black/10">
         {/* Progress */}
         <div className="flex items-center gap-1.5 px-6 pt-6">
           {(["search", "keywords"] as Step[]).map((s, i) => (
             <span
               key={s}
               className={`h-1 flex-1 rounded-full transition-colors ${
-                s === step || (step === "keywords" && i === 0) ? "bg-indigo-400" : "bg-white/10"
+                s === step || (step === "keywords" && i === 0) ? "bg-indigo-400" : "bg-white/10 light:bg-black/[0.08]"
               }`}
             />
           ))}
@@ -343,19 +344,19 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
 
         {step === "search" ? (
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-white">Welcome to AppASO</h2>
-            <p className="mt-1.5 text-sm text-gray-400">
+            <h2 className="text-lg font-semibold text-white light:text-gray-900">Welcome to AppASO</h2>
+            <p className="mt-1.5 text-sm text-gray-400 light:text-gray-600">
               Let&apos;s find the app you want to track. Search by name, bundle ID, or store URL.
             </p>
 
-            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3.5 py-2.5 transition-all">
+            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3.5 py-2.5 transition-all">
               <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
               <input
                 ref={searchInputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search for your app…"
-                className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 outline-none"
+                className="flex-1 bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none"
               />
             </div>
 
@@ -365,15 +366,17 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             <div className="relative mt-2" ref={countryRef}>
               <button
                 onClick={() => { setCountryOpen((v) => !v); setCountryQuery(""); }}
-                className="flex items-center gap-2 rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] px-3 py-1.5 text-xs text-gray-300 hover:text-white transition-colors"
+                className="flex w-full items-center justify-between gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3.5 py-2.5 text-sm text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
               >
-                <span className="text-sm leading-none">{countryFlag(country)}</span>
-                <span>{COUNTRY_MAP[country] ?? country}</span>
-                <ChevronDownIcon className={`size-3 shrink-0 text-gray-500 transition-transform ${countryOpen ? "rotate-180" : ""}`} />
+                <span className="flex items-center gap-2">
+                  <span className="text-base leading-none">{countryFlag(country)}</span>
+                  <span>{COUNTRY_MAP[country] ?? country}</span>
+                </span>
+                <ChevronDownIcon className={`size-3.5 shrink-0 text-gray-500 transition-transform ${countryOpen ? "rotate-180" : ""}`} />
               </button>
 
               {countryOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-10 w-56 rounded-xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-xl shadow-black/30 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1.5 z-10 w-full rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
                   <div className="px-2 pt-2 pb-1">
                     <input
                       autoFocus
@@ -381,7 +384,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                       placeholder="Search country…"
                       value={countryQuery}
                       onChange={(e) => setCountryQuery(e.target.value)}
-                      className="w-full rounded-md bg-white/[0.06] px-2.5 py-1.5 text-xs text-white placeholder-gray-500 outline-none"
+                      className="w-full rounded-md bg-white/[0.06] light:bg-black/[0.04] px-2.5 py-1.5 text-xs text-white light:text-gray-900 placeholder-gray-500 light:placeholder-gray-400 outline-none"
                     />
                   </div>
                   <div className="max-h-52 overflow-y-auto py-1">
@@ -394,13 +397,13 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                         <button
                           key={code}
                           onClick={() => { setCountry(code); setCountryOpen(false); setCountryQuery(""); }}
-                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] transition-colors ${
-                            country === code ? "text-white" : "text-gray-400"
+                          className={`flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors ${
+                            country === code ? "text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"
                           }`}
                         >
                           <span className="text-base leading-none">{countryFlag(code)}</span>
                           <span className="flex-1 truncate">{COUNTRY_MAP[code] ?? code}</span>
-                          <span className="text-xs text-gray-600">{code}</span>
+                          <span className="text-xs text-gray-600 light:text-gray-400">{code}</span>
                         </button>
                       ))}
                   </div>
@@ -410,14 +413,14 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
 
             <div className="mt-3 max-h-72 overflow-y-auto -mx-2">
               {searching && results.length === 0 ? (
-                <div className="flex items-center gap-2 px-2 py-5 text-xs text-gray-600">
-                  <span className="size-3 rounded-full border border-gray-600 border-t-transparent animate-spin" />
+                <div className="flex items-center gap-2 px-2 py-5 text-xs text-gray-600 light:text-gray-400">
+                  <span className="size-3 rounded-full border border-gray-600 light:border-gray-300 border-t-transparent animate-spin" />
                   Searching App Store &amp; Google Play…
                 </div>
               ) : query.trim() && results.length === 0 && !searching ? (
                 <div className="px-2 py-5 space-y-1">
-                  {iosDown && <p className="text-xs text-amber-500/80">App Store search is temporarily unavailable.</p>}
-                  <p className="text-sm text-gray-600">No results for &ldquo;{query}&rdquo;</p>
+                  {iosDown && <p className="text-xs text-amber-500/80 light:text-amber-700">App Store search is temporarily unavailable.</p>}
+                  <p className="text-sm text-gray-600 light:text-gray-400">No results for &ldquo;{query}&rdquo;</p>
                 </div>
               ) : (
                 <div className="space-y-0.5">
@@ -425,11 +428,11 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                     <button
                       key={i}
                       onClick={() => handlePickApp(r)}
-                      className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-white/[0.05] transition-colors"
+                      className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
                     >
                       <ResultIcon iconUrl={r.iconUrl} name={r.name} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{r.name}</p>
+                        <p className="text-sm font-semibold text-white light:text-gray-900 truncate">{r.name}</p>
                         <p className="text-xs text-gray-500 truncate mt-0.5 flex items-center gap-1.5">
                           <StoreBadge store={r.store} />
                           {r.developer}
@@ -445,7 +448,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
           <div className="p-6">
             <button
               onClick={handleChangeApp}
-              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors"
             >
               <ArrowLeftIcon className="size-3" />
               Change app
@@ -454,7 +457,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             <div className="mt-3 flex items-center gap-3">
               <ResultIcon iconUrl={selected?.iconUrl} name={selected?.name ?? ""} />
               <div className="min-w-0">
-                <h2 className="text-base font-semibold text-white truncate">{selected?.name}</h2>
+                <h2 className="text-base font-semibold text-white light:text-gray-900 truncate">{selected?.name}</h2>
                 <p className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
                   {selected && <StoreBadge store={selected.store} />}
                   {selected?.store === "ios" ? "App Store" : "Google Play"}
@@ -462,14 +465,14 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
               </div>
             </div>
 
-            <p className="mt-4 text-sm text-gray-400">
+            <p className="mt-4 text-sm text-gray-400 light:text-gray-600">
               Keyword research is the heart of ASO. We&apos;ve added a few AI-suggested keywords below to get you started. Remove any that don&apos;t fit, or add your own.
             </p>
 
             {addError && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400 ring-1 ring-red-500/20">
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400 light:text-red-600 ring-1 ring-red-500/20">
                 <span className="flex-1"><PlanLimitMessage message={addError} /></span>
-                <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300">
+                <button onClick={() => setAddError(null)} className="shrink-0 hover:text-red-300 light:hover:text-red-700">
                   <XMarkIcon className="size-3.5" />
                 </button>
               </div>
@@ -478,18 +481,18 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             {/* AI suggestions — tap to add */}
             <div className="mt-4">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1">
-                <span className="text-indigo-400">✦</span>
+                <span className="text-indigo-400 light:text-indigo-600">✦</span>
                 Suggested keywords
               </span>
               <div className="mt-2">
                 {suggestions === null ? (
                   <div className="flex flex-wrap gap-1.5">
                     {[...Array(10)].map((_, i) => (
-                      <div key={i} className="h-6 rounded-md bg-white/[0.04] animate-pulse" style={{ width: `${50 + (i % 5) * 12}px` }} />
+                      <div key={i} className="h-6 rounded-md bg-white/[0.04] light:bg-black/[0.05] animate-pulse" style={{ width: `${50 + (i % 5) * 12}px` }} />
                     ))}
                   </div>
                 ) : suggestions.length === 0 ? (
-                  <p className="text-xs text-gray-600">No suggestions available. Type a keyword below instead.</p>
+                  <p className="text-xs text-gray-600 light:text-gray-400">No suggestions available. Type a keyword below instead.</p>
                 ) : (
                   <div className="max-h-48 overflow-y-auto flex flex-wrap gap-1.5 pr-1">
                     {suggestions.map((term) => {
@@ -500,18 +503,21 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                           key={term}
                           onClick={() => handleToggleSuggestion(term)}
                           disabled={isPending}
-                          className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
+                          className={`group flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
                             isAdded
-                              ? "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300"
-                              : "bg-[#0d0f14] ring-1 ring-white/[0.08] text-gray-300 hover:ring-indigo-500/50 hover:text-white"
+                              ? "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-700 hover:bg-red-500/10 hover:ring-red-500/40 hover:text-red-400 light:hover:text-red-600 cursor-pointer"
+                              : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
                           } ${isPending ? "opacity-50 cursor-wait" : ""}`}
                         >
                           {isPending ? (
-                            <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
+                            <span className="size-3 rounded-full border-2 border-white/30 light:border-black/20 border-t-white light:border-t-black/60 animate-spin shrink-0" />
                           ) : isAdded ? (
-                            <CheckIcon className="size-3 text-indigo-400 shrink-0" />
+                            <>
+                              <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 shrink-0 group-hover:hidden" />
+                              <MinusIcon className="size-3 text-red-400 light:text-red-600 shrink-0 hidden group-hover:block" />
+                            </>
                           ) : (
-                            <PlusIcon className="size-3 text-gray-500 shrink-0" />
+                            <PlusIcon className="size-3 text-gray-500 group-hover:text-indigo-400 light:group-hover:text-indigo-600 transition-colors shrink-0" />
                           )}
                           {term}
                         </button>
@@ -525,14 +531,14 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             {/* Manual add */}
             <p className="mt-4 text-xs text-gray-500">Or type your own</p>
             <div className="mt-1.5 flex items-center gap-2">
-              <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] ring-1 ring-white/[0.08] focus-within:ring-indigo-500/40 px-3 py-2.5 transition-all">
+              <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2.5 transition-all">
                 <input
                   ref={keywordInputRef}
                   value={keywordInput}
                   onChange={(e) => setKeywordInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleAddKeyword()}
                   placeholder="Type a keyword…"
-                  className="flex-1 bg-transparent text-sm text-gray-200 placeholder-gray-600 outline-none"
+                  className="flex-1 bg-transparent text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 outline-none"
                 />
               </div>
               <button
@@ -550,10 +556,10 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                 {addedKeywords.map((kw) => (
                   <span
                     key={kw}
-                    className="flex items-center gap-1.5 rounded-full bg-white/[0.06] pl-3 pr-2 py-1 text-xs text-gray-300 ring-1 ring-white/[0.08]"
+                    className="flex items-center gap-1.5 rounded-full bg-white/[0.06] light:bg-gray-100 pl-3 pr-2 py-1 text-xs text-gray-300 light:text-gray-700"
                   >
                     {kw}
-                    <button onClick={() => handleRemoveKeyword(kw)} className="text-gray-600 hover:text-white transition-colors">
+                    <button onClick={() => handleRemoveKeyword(kw)} className="text-gray-600 light:text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors">
                       <XMarkIcon className="size-3" />
                     </button>
                   </span>
@@ -564,7 +570,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             <button
               onClick={handleFinish}
               disabled={!addedKeywords.length}
-              className="mt-5 w-full rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:bg-white/[0.06] disabled:text-gray-600 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+              className="mt-5 w-full rounded-lg bg-indigo-500 hover:bg-indigo-400 disabled:bg-white/[0.06] light:disabled:bg-black/[0.06] disabled:text-gray-600 light:disabled:text-gray-400 disabled:cursor-not-allowed px-4 py-2.5 text-sm font-semibold text-white transition-colors"
             >
               Continue to Keyword Research
             </button>

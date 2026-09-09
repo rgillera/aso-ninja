@@ -22,7 +22,7 @@ function DeltaBadge({ value, avg, invert = false }: { value: number; avg: number
   const up = diffPct > 0;
   const positive = invert ? !up : up;
   return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? "text-emerald-400" : "text-amber-400"}`}>
+    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${positive ? "text-emerald-400 light:text-emerald-700" : "text-amber-400 light:text-amber-700"}`}>
       {up ? <ArrowUpIcon className="size-3" /> : <ArrowDownIcon className="size-3" />}
       {Math.abs(diffPct)}% {up ? "above" : "below"} category avg
     </span>
@@ -41,12 +41,12 @@ function LengthComparisonCard({
     <BenchmarkCard title={title}>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-2xl font-bold text-white leading-none">{fmt(value)}</p>
+          <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">{fmt(value)}</p>
           <p className="mt-1 text-xs text-gray-500">your app, {unit}</p>
         </div>
         {avg != null && (
           <div>
-            <p className="text-2xl font-bold text-gray-400 leading-none">{fmt(avg)}</p>
+            <p className="text-2xl font-bold text-gray-400 light:text-gray-600 leading-none">{fmt(avg)}</p>
             <p className="mt-1 text-xs text-gray-500">category avg</p>
           </div>
         )}
@@ -65,7 +65,7 @@ function RatingCard({ rating, avgRating }: { rating?: number; avgRating: number 
     <BenchmarkCard title="App rating">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="flex items-center gap-1.5 text-2xl font-bold text-white leading-none">
+          <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
             {rating ? rating.toFixed(1) : "—"}
             <StarIcon className="size-4 text-amber-400" />
           </p>
@@ -73,7 +73,7 @@ function RatingCard({ rating, avgRating }: { rating?: number; avgRating: number 
         </div>
         {avgRating !== null && (
           <div>
-            <p className="flex items-center gap-1.5 text-2xl font-bold text-gray-400 leading-none">
+            <p className="flex items-center gap-1.5 text-2xl font-bold text-gray-400 light:text-gray-600 leading-none">
               {avgRating.toFixed(1)}
               <StarIcon className="size-4 text-gray-500" />
             </p>
@@ -92,8 +92,8 @@ function RatingCard({ rating, avgRating }: { rating?: number; avgRating: number 
 
 function BenchmarkCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#1a1d24] p-5 ring-1 ring-white/[0.08]">
-      <p className="text-sm font-medium text-gray-300 mb-4">{title}</p>
+    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#1a1d24] light:bg-white p-5">
+      <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">{title}</p>
       <div className="flex flex-1 flex-col justify-center">{children}</div>
     </div>
   );
@@ -101,11 +101,11 @@ function BenchmarkCard({ title, children }: { title: string; children: React.Rea
 
 function EmptyState({ title, message }: { title: string; message: string }) {
   return (
-    <main className="h-full flex items-center justify-center bg-[#111318] p-6">
+    <main className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8] p-6">
       <div className="text-center max-w-sm">
-        <ExclamationTriangleIcon className="size-8 text-gray-700 mx-auto mb-3" />
-        <p className="text-sm font-medium text-gray-400">{title}</p>
-        <p className="mt-1 text-xs text-gray-600">{message}</p>
+        <ExclamationTriangleIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">{title}</p>
+        <p className="mt-1 text-xs text-gray-600 light:text-gray-400">{message}</p>
       </div>
     </main>
   );
@@ -116,10 +116,10 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
 
   if (!isPlanAtLeast(planSlug, "pro")) {
     return (
-      <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
-        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07]">
+      <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+        <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
-          <p className="text-sm font-semibold text-white">{app.name}</p>
+          <p className="text-sm font-semibold text-white light:text-gray-900">{app.name}</p>
         </div>
         <FeatureLocked
           minPlan="pro"
@@ -153,18 +153,18 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
   const categoryLabel = benchmark?.genreName || storeData.primaryGenreName || "category";
 
   return (
-    <main className="flex flex-col h-full overflow-hidden bg-[#111318]">
-      <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.07]">
+    <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
         <div className="flex items-center gap-3">
           {app.icon_url ? (
             <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
           ) : (
-            <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+            <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
               <DevicePhoneMobileIcon className="size-4 text-gray-500" />
             </div>
           )}
           <div>
-            <p className="text-sm font-semibold text-white leading-tight">{app.name}</p>
+            <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">{app.name}</p>
             <p className="text-xs text-gray-500 leading-tight">
               {app.store === "ios" ? "App Store" : "Google Play"}
               {app.country && <span className="ml-1.5">&middot; {countryFlag(app.country)} {app.country.toUpperCase()}</span>}
@@ -174,13 +174,13 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
           <StoreLinkButton app={app} />
         </div>
         <div className="flex items-center gap-1.5">
-          <h1 className="text-sm font-semibold text-white">Benchmark</h1>
+          <h1 className="text-sm font-semibold text-white light:text-gray-900">Benchmark</h1>
           <InformationCircleIcon className="size-4 text-gray-500" />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <h2 className="text-xl font-semibold text-white">Metadata Benchmarks</h2>
+        <h2 className="text-xl font-semibold text-white light:text-gray-900">Metadata Benchmarks</h2>
         <p className="mt-1 text-sm text-gray-500">
           {benchmark
             ? `How ${app.name}'s metadata compares to ${benchmark.peerCount} other top ${categoryLabel} apps`
@@ -188,7 +188,7 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
         </p>
 
         {!benchmark && (
-          <p className="mt-3 text-xs text-amber-400/80">
+          <p className="mt-3 text-xs text-amber-400/80 light:text-amber-700">
             Category comparison isn&rsquo;t available for this app right now &mdash; showing its own stats only.
           </p>
         )}
@@ -231,7 +231,7 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
             />
           ) : (
             <BenchmarkCard title="Localization">
-              <p className="text-xs text-gray-600">Not available for Android apps yet.</p>
+              <p className="text-xs text-gray-600 light:text-gray-400">Not available for Android apps yet.</p>
             </BenchmarkCard>
           )}
 

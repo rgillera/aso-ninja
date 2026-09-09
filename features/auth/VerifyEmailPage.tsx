@@ -33,7 +33,7 @@ export default function VerifyEmailPage({ email, next }: { email: string; next?:
           link to activate your account.
         </p>
 
-        <div className="mt-8 bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-6">
+        <div className="mt-8 bg-gray-800/50 rounded-2xl p-6">
           {state?.error && (
             <div className="mb-4 rounded-lg bg-red-500/10 ring-1 ring-red-500/20 px-4 py-3 text-sm text-red-400">
               {state.error}

@@ -30,7 +30,7 @@ export default function PortalFooter() {
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           <div className="max-w-xs">
             <span className="flex items-center gap-2">
-              <span className="flex items-end gap-0.5 rounded-md bg-gray-900 ring-1 ring-white/10 p-1.5">
+              <span className="flex items-end gap-0.5 rounded-md bg-gray-900 p-1.5">
                 <span className="h-2.5 w-1 rounded-sm bg-indigo-500" />
                 <span className="h-4 w-1 rounded-sm bg-indigo-400" />
                 <span className="h-5 w-1 rounded-sm bg-indigo-300" />

@@ -88,7 +88,7 @@ export default async function BlogIndexPage() {
                 <Link
                   key={post.slug}
                   href={`/blog/${post.slug}`}
-                  className="block rounded-2xl bg-gray-800/50 p-8 ring-1 ring-white/10 transition-colors hover:bg-gray-800"
+                  className="block rounded-2xl bg-gray-800/50 p-8 transition-colors hover:bg-gray-800"
                 >
                   <p className="text-sm font-semibold text-indigo-400">{post.category}</p>
                   <h2 className="mt-2 text-2xl font-semibold text-white">{post.title}</h2>

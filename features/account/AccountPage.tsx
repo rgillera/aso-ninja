@@ -2,11 +2,13 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { TrophyIcon } from "@heroicons/react/24/outline";
+import { TrophyIcon, SunIcon, MoonIcon, CreditCardIcon } from "@heroicons/react/24/outline";
 import { updateProfileAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
 import type { CertificationRecord } from "@/features/certification/actions";
 import { CertificateDownload } from "@/features/certification/CertificateDownload";
+import { useTheme } from "@/features/dashboard/ThemeContext";
+import { useWorkspaceId, useWorkspaceName } from "@/features/dashboard/WorkspaceContext";
 import type { Profile } from "@/libs/contracts";
 
 type Props = {
@@ -20,11 +22,77 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
   return (
     <div className={`rounded-lg px-4 py-3 text-sm ring-1 ${
       state.error
-        ? "bg-red-500/10 text-red-400 ring-red-500/20"
+        ? "bg-red-500/10 text-red-400 light:text-red-600 ring-red-500/20"
         : "bg-green-500/10 text-green-400 ring-green-500/20"
     }`}>
       {state.error ?? state.success}
     </div>
+  );
+}
+
+// Plan/billing lives in Workspace Settings (it's scoped to the workspace,
+// not the person — see WorkspacePage's Plan section), which isn't somewhere
+// people reliably think to look for it. This is just a signpost pointing
+// there, not a duplicate of that section — no plan data is fetched here.
+function PlanShortcutSection() {
+  const workspaceId = useWorkspaceId();
+  const workspaceName = useWorkspaceName();
+  return (
+    <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-base font-semibold text-white light:text-gray-900 flex items-center gap-2">
+            <CreditCardIcon className="size-4 text-indigo-400 light:text-indigo-600" />
+            Plan &amp; billing
+          </h2>
+          <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
+            Managed per workspace. For {workspaceName || "this workspace"}, it&apos;s under Workspace Settings.
+          </p>
+        </div>
+        <Link
+          href={workspaceId ? `/dashboard/settings/workspace/${workspaceId}#plan` : "/dashboard"}
+          className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+        >
+          Manage Plan
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+function AppearanceSection() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+      <h2 className="text-base font-semibold text-white light:text-gray-900 mb-2">Appearance</h2>
+      <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
+        Choose how AppASO looks on this device. Light is the default.
+      </p>
+      <div className="inline-flex items-center gap-1 rounded-lg bg-white/[0.06] light:bg-black/[0.05] p-1">
+        <button
+          type="button"
+          onClick={() => setTheme("dark")}
+          aria-pressed={theme === "dark"}
+          className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            theme === "dark" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+          }`}
+        >
+          <MoonIcon className="size-4" />
+          Dark
+        </button>
+        <button
+          type="button"
+          onClick={() => setTheme("light")}
+          aria-pressed={theme === "light"}
+          className={`flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
+            theme === "light" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+          }`}
+        >
+          <SunIcon className="size-4" />
+          Light
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -38,43 +106,43 @@ export default function AccountPage({ email, profile, certification }: Props) {
         <div className="mb-8">
           <a
             href="/dashboard"
-            className="text-sm text-gray-500 hover:text-white transition-colors"
+            className="text-sm text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
           >
             ← Back to dashboard
           </a>
-          <h1 className="mt-4 text-2xl font-semibold text-white">Account Settings</h1>
-          <p className="mt-1 text-sm text-gray-400">{email}</p>
+          <h1 className="mt-4 text-2xl font-semibold text-white light:text-gray-900">Account Settings</h1>
+          <p className="mt-1 text-sm text-gray-400 light:text-gray-600">{email}</p>
         </div>
 
         <div className="space-y-8">
-          <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
-            <h2 className="text-base font-semibold text-white mb-5">Profile</h2>
+          <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+            <h2 className="text-base font-semibold text-white light:text-gray-900 mb-5">Profile</h2>
             <form action={formAction} className="space-y-4">
               <Alert state={state} />
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
                   Full name
                 </label>
                 <input
                   name="full_name"
                   defaultValue={profile?.full_name ?? ""}
                   required
-                  className={`w-full rounded-lg bg-[#0d0f14] border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-                    state?.error ? "border-red-500/50" : "border-white/[0.07]"
+                  className={`w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border px-4 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+                    state?.error ? "border-red-500/50" : "border-white/[0.07] light:border-black/[0.08]"
                   }`}
                   placeholder="Jane Doe"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                <label className="block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
                   Email
                 </label>
                 <input
                   value={email}
                   disabled
-                  className="w-full rounded-lg bg-[#0d0f14] border border-white/[0.07] px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
+                  className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed"
                 />
               </div>
 
@@ -90,14 +158,18 @@ export default function AccountPage({ email, profile, certification }: Props) {
             </form>
           </section>
 
-          <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
-            <h2 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
-              <TrophyIcon className="size-4 text-indigo-400" />
+          <PlanShortcutSection />
+
+          <AppearanceSection />
+
+          <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+            <h2 className="text-base font-semibold text-white light:text-gray-900 mb-2 flex items-center gap-2">
+              <TrophyIcon className="size-4 text-indigo-400 light:text-indigo-600" />
               ASO Certification
             </h2>
             {certification ? (
               <>
-                <p className="text-sm text-gray-400 mb-5">
+                <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
                   Certified on{" "}
                   {new Date(certification.issuedAt).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}.
                   Download your certificate anytime.
@@ -110,7 +182,7 @@ export default function AccountPage({ email, profile, certification }: Props) {
               </>
             ) : (
               <>
-                <p className="text-sm text-gray-400 mb-5">
+                <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
                   You haven&apos;t earned your ASO Certification yet.
                 </p>
                 <Link
@@ -123,15 +195,15 @@ export default function AccountPage({ email, profile, certification }: Props) {
             )}
           </section>
 
-          <section className="rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] shadow-lg shadow-black/20 p-6">
-            <h2 className="text-base font-semibold text-white mb-2">Sign out</h2>
-            <p className="text-sm text-gray-400 mb-5">
+          <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+            <h2 className="text-base font-semibold text-white light:text-gray-900 mb-2">Sign out</h2>
+            <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
               Sign out of your account on this device.
             </p>
             <form action={signOutAction}>
               <button
                 type="submit"
-                className="rounded-lg border border-white/[0.1] px-4 py-2 text-sm font-semibold text-gray-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-300 light:text-gray-700 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
               >
                 Sign out
               </button>

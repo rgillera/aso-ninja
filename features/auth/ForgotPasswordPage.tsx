@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
           </p>
         </div>
 
-        <div className="bg-gray-800/50 ring-1 ring-white/10 rounded-2xl p-8">
+        <div className="bg-gray-800/50 rounded-2xl p-8">
           {state?.success ? (
             <p className="text-sm text-gray-300">
               If an account exists for that email, we&apos;ve sent a link to reset your password.

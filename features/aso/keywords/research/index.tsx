@@ -23,21 +23,21 @@ import type { CompetitorApp } from "./ManageCompetitorsModal";
 
 function NoAppSelected() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318]">
+    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
-        <MagnifyingGlassIcon className="size-10 text-gray-700 mx-auto mb-4" />
-        <p className="text-sm font-medium text-gray-400">No apps yet</p>
-        <p className="mt-1 text-sm text-gray-600">Use the search bar above to find an app.</p>
+        <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
+        <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
+        <p className="mt-1 text-sm text-gray-600 light:text-gray-400">Use the search bar above to find an app.</p>
       </div>
     </div>
   );
 }
 
 export default function KeywordResearchPage() {
-  const activeApp   = useActiveApp();
+  const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const planSlug    = usePlanSlug();
-  const router      = useRouter();
+  const planSlug = usePlanSlug();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const translateLocked = !isPlanAtLeast(planSlug, "free");
   // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
@@ -86,9 +86,9 @@ export default function KeywordResearchPage() {
     setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
     return () => setSidebarTour({ active: false, onAdvance: () => {} });
   }, [tourStep, setSidebarTour]);
-  const [keywords,     setKeywords]     = useState<Keyword[]>([]);
+  const [keywords, setKeywords] = useState<Keyword[]>([]);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
-  const [competitors,  setCompetitors]  = useState<CompetitorApp[]>([]);
+  const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
   // Counts in-flight adds (fast metrics → full metrics → Supabase save) — used
   // to keep the Add button in a loading state until the keyword is actually
@@ -134,7 +134,7 @@ export default function KeywordResearchPage() {
     setCompetitors(updated);
 
     const additions = updated.filter((u) => !previous.some((p) => p.storeId === u.storeId));
-    const removals  = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
+    const removals = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
 
     for (const removed of removals) {
       if (!competitorsAppId.current) continue;
@@ -151,13 +151,13 @@ export default function KeywordResearchPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           workspaceId,
-          appId:    competitorsAppId.current,
+          appId: competitorsAppId.current,
           bundleId: activeApp?.bundle_id,
-          storeId:  activeApp?.store_id,
-          appName:  activeApp?.name,
-          iconUrl:  activeApp?.icon_url ?? undefined,
-          store:    activeApp?.store,
-          country:  activeApp?.country,
+          storeId: activeApp?.store_id,
+          appName: activeApp?.name,
+          iconUrl: activeApp?.icon_url ?? undefined,
+          store: activeApp?.store,
+          country: activeApp?.country,
           competitor: added,
         }),
       }).catch(() => null);
@@ -218,8 +218,8 @@ export default function KeywordResearchPage() {
           return true;
         });
 
-        const withMetrics    = saved.filter((s) =>  s.hasCachedMetrics);
-        const needsMetrics   = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
+        const withMetrics = saved.filter((s) => s.hasCachedMetrics);
+        const needsMetrics = saved.filter((s) => !s.hasCachedMetrics).map((s) => s.term);
         // Rows added in fast mode, or saved before this workspace's relevancy
         // pool existed, have relevancy permanently null — backfill just those
         // two columns instead of leaving them stuck. Every plan has some pool
@@ -231,17 +231,17 @@ export default function KeywordResearchPage() {
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
           withMetrics.map((s) => ({
-            keyword:     s.term,
-            volume:      s.volume,
-            diff:        s.diff,
-            chance:      s.chance,
+            keyword: s.term,
+            volume: s.volume,
+            diff: s.diff,
+            chance: s.chance,
             opportunity: s.opportunity,
-            relevancy:   s.relevancy,
-            rank:        s.rank,
-            results:     s.results,
-            starred:     starred.has(s.term.toLowerCase()),
-            loading:     false,
-            frozen:      s.frozen,
+            relevancy: s.relevancy,
+            rank: s.rank,
+            results: s.results,
+            starred: starred.has(s.term.toLowerCase()),
+            loading: false,
+            frozen: s.frozen,
             estimatedDownloads: s.estimatedDownloads,
           }))
         );
@@ -266,7 +266,7 @@ export default function KeywordResearchPage() {
     if (!fresh.length) return;
     newKeywords = fresh;
 
-    const store   = activeApp?.store ?? "ios";
+    const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
     setPendingAdds((n) => n + 1);
@@ -281,13 +281,13 @@ export default function KeywordResearchPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          terms:     newKeywords,
+          terms: newKeywords,
           workspaceId,
-          appId:     activeApp?.id,
-          bundleId:  activeApp?.bundle_id,
-          storeId:   activeApp?.store_id,
-          appName:   activeApp?.name,
-          iconUrl:   activeApp?.icon_url ?? undefined,
+          appId: activeApp?.id,
+          bundleId: activeApp?.bundle_id,
+          storeId: activeApp?.store_id,
+          appName: activeApp?.name,
+          iconUrl: activeApp?.icon_url ?? undefined,
           store,
           country,
         }),
@@ -331,7 +331,7 @@ export default function KeywordResearchPage() {
     });
 
     try {
-      const res  = await fetch(`/api/keywords/metrics?${fastParams}`);
+      const res = await fetch(`/api/keywords/metrics?${fastParams}`);
       const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null } | true> & { _rateLimited?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
 
@@ -374,7 +374,7 @@ export default function KeywordResearchPage() {
     });
 
     try {
-      const res  = await fetch(`/api/keywords/metrics?${params}`);
+      const res = await fetch(`/api/keywords/metrics?${params}`);
       const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null }> & { _rateLimited?: boolean; _aiDown?: boolean; _relevancyLimitReached?: boolean } = await res.json();
       if (data._rateLimited) setRateLimited(true);
       if (data._relevancyLimitReached) setRelevancyLimitReached(true);
@@ -394,14 +394,14 @@ export default function KeywordResearchPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            terms:     newKeywords,
+            terms: newKeywords,
             workspaceId,
-            metrics:   data,
-            appId:     activeApp?.id,
-            bundleId:  activeApp?.bundle_id,
-            storeId:   activeApp?.store_id,
-            appName:   activeApp?.name,
-            iconUrl:   activeApp?.icon_url ?? undefined,
+            metrics: data,
+            appId: activeApp?.id,
+            bundleId: activeApp?.bundle_id,
+            storeId: activeApp?.store_id,
+            appName: activeApp?.name,
+            iconUrl: activeApp?.icon_url ?? undefined,
             store,
             country,
           }),
@@ -447,7 +447,7 @@ export default function KeywordResearchPage() {
   const RELEVANCY_BACKFILL_BATCH_SIZE = 5;
 
   async function backfillRelevancy(terms: string[]) {
-    const store   = activeApp?.store ?? "ios";
+    const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
     for (let i = 0; i < terms.length; i += RELEVANCY_BACKFILL_BATCH_SIZE) {
@@ -464,7 +464,7 @@ export default function KeywordResearchPage() {
       });
 
       try {
-        const res  = await fetch(`/api/keywords/metrics?${params}`);
+        const res = await fetch(`/api/keywords/metrics?${params}`);
         const data: Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null }> & { _aiDown?: boolean } = await res.json();
 
         setKeywords((prev) =>
@@ -484,12 +484,12 @@ export default function KeywordResearchPage() {
             body: JSON.stringify({
               terms: batch,
               workspaceId,
-              metrics:   data,
-              appId:     activeApp?.id,
-              bundleId:  activeApp?.bundle_id,
-              storeId:   activeApp?.store_id,
-              appName:   activeApp?.name,
-              iconUrl:   activeApp?.icon_url ?? undefined,
+              metrics: data,
+              appId: activeApp?.id,
+              bundleId: activeApp?.bundle_id,
+              storeId: activeApp?.store_id,
+              appName: activeApp?.name,
+              iconUrl: activeApp?.icon_url ?? undefined,
               store,
               country,
             }),
@@ -564,11 +564,11 @@ export default function KeywordResearchPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <AppHeader app={activeApp ?? null} title="Keyword Research" />
 
       {rateLimited && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-400 light:text-amber-700 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1">Apple&apos;s App Store API rate limit reached. Some keywords are missing data. Wait a minute and re-add them.</span>
           <button onClick={() => setRateLimited(false)} className="shrink-0 hover:text-amber-300">
@@ -578,7 +578,7 @@ export default function KeywordResearchPage() {
       )}
 
       {saveError && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
@@ -588,7 +588,7 @@ export default function KeywordResearchPage() {
       )}
 
       {relevancyLimitReached && (
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 text-xs">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 light:text-indigo-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1">
             You&apos;ve used up your plan&apos;s relevancy &amp; opportunity scoring pool. New keywords will still be

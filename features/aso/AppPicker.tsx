@@ -28,7 +28,7 @@ export default function AppPicker({ apps, basePath }: { apps: App[]; basePath?: 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search apps…"
-          className="w-full rounded-lg bg-[#1a1d24] border border-white/[0.08] pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+          className="w-full rounded-lg bg-[#1a1d24] pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
         />
       </div>
 
@@ -42,7 +42,7 @@ export default function AppPicker({ apps, basePath }: { apps: App[]; basePath?: 
               <a
                 key={app.id}
                 href={basePath ? `/dashboard/apps/${app.id}/${basePath}` : `/dashboard/apps/${app.id}/report`}
-                className="flex items-center gap-4 rounded-2xl bg-[#1a1d24] ring-1 ring-white/[0.08] p-4 hover:bg-[#22252f] shadow-lg shadow-black/20 transition-colors"
+                className="flex items-center gap-4 rounded-2xl bg-[#1a1d24] p-4 hover:bg-[#22252f] shadow-lg shadow-black/20 transition-colors"
               >
                 {app.icon_url ? (
                   <img
