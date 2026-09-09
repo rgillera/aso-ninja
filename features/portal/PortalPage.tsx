@@ -13,7 +13,7 @@ export default async function PortalPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-gray-900">
+    <div className="bg-[#f5f6f8]">
       <PortalNav isAuthenticated={isAuthenticated} />
       <PortalHero isAuthenticated={isAuthenticated} />
       <PortalHowItWorks />

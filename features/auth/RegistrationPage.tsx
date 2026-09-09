@@ -9,32 +9,32 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
   const [state, action, pending] = useActionState(registerAction, null);
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-[#f5f6f8] flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="mt-6 text-2xl font-semibold text-white">Create your account</h1>
-          <p className="mt-2 text-sm text-gray-400">
+          <h1 className="mt-6 text-2xl font-semibold text-gray-900">Create your account</h1>
+          <p className="mt-2 text-sm text-gray-600">
             Already have an account?{" "}
             <a
               href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"}
-              className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+              className="text-indigo-600 hover:text-indigo-500 font-medium transition-colors"
             >
               Sign in
             </a>
           </p>
         </div>
 
-        <div className="bg-gray-800/50 rounded-2xl p-8">
+        <div className="bg-white rounded-2xl p-8 shadow-clay-lg ring-1 ring-black/5">
           <form action={action} className="space-y-5">
             {next && <input type="hidden" name="next" value={next} />}
             {state?.error && typeof state.error === "string" && (
-              <div className="rounded-lg bg-red-500/10 ring-1 ring-red-500/20 px-4 py-3 text-sm text-red-400">
+              <div className="rounded-lg bg-red-50 ring-1 ring-red-100 px-4 py-3 text-sm text-red-600">
                 {state.error}
               </div>
             )}
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Full name
               </label>
               <input
@@ -43,13 +43,13 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
                 type="text"
                 autoComplete="name"
                 required
-                className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="w-full rounded-lg bg-white border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-clay-inset focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 placeholder=""
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Email address
               </label>
               <input
@@ -58,13 +58,13 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full rounded-lg bg-gray-900 border border-white/10 px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                className="w-full rounded-lg bg-white border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-clay-inset focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 placeholder=""
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Password
               </label>
               <input
@@ -73,15 +73,15 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
                 type="password"
                 autoComplete="new-password"
                 required
-                className={`w-full rounded-lg bg-gray-900 border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-                  state?.field === "password" ? "border-red-500/50" : "border-white/10"
+                className={`w-full rounded-lg bg-white border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-clay-inset focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+                  state?.field === "password" ? "border-red-300" : "border-gray-200"
                 }`}
                 placeholder=""
               />
             </div>
 
             <div>
-              <label htmlFor="confirm" className="block text-sm font-medium text-gray-300 mb-1.5">
+              <label htmlFor="confirm" className="block text-sm font-medium text-gray-700 mb-1.5">
                 Confirm password
               </label>
               <input
@@ -90,8 +90,8 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
                 type="password"
                 autoComplete="new-password"
                 required
-                className={`w-full rounded-lg bg-gray-900 border px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
-                  state?.field === "confirm" ? "border-red-500/50" : "border-white/10"
+                className={`w-full rounded-lg bg-white border px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-clay-inset focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+                  state?.field === "confirm" ? "border-red-300" : "border-gray-200"
                 }`}
                 placeholder=""
               />
@@ -100,18 +100,18 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors"
+              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white transition-colors"
             >
               {pending ? "Creating your workspace…" : "Create account"}
             </button>
 
             <p className="text-center text-xs text-gray-500">
               By creating an account you agree to our{" "}
-              <a href="/terms" className="text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+              <a href="/terms" className="text-gray-600 hover:text-gray-900 transition-colors underline underline-offset-2">
                 Terms
               </a>{" "}
               and{" "}
-              <a href="/privacy" className="text-gray-400 hover:text-white transition-colors underline underline-offset-2">
+              <a href="/privacy" className="text-gray-600 hover:text-gray-900 transition-colors underline underline-offset-2">
                 Privacy Policy
               </a>
               .
@@ -119,16 +119,16 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
           </form>
 
           <div className="mt-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-gray-600">or continue with</span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-400">or continue with</span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
 
           <form action={signInWithGoogleAction}>
             {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
-              className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 ring-1 ring-black/5 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
               <svg className="size-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

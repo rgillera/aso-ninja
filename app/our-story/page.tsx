@@ -43,16 +43,16 @@ export default async function OurStoryPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <div className="bg-[#f5f6f8] min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
         <section className="pt-32 pb-16 sm:pb-24">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-            <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Our story</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Our story</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
               From growing our own apps{" "}
-              <span className="text-indigo-400">to building the tools we needed</span>
+              <span className="text-indigo-600">to building the tools we needed</span>
             </h1>
           </div>
         </section>
@@ -60,14 +60,14 @@ export default async function OurStoryPage() {
         <section className="pb-24 sm:pb-32">
           <div className="mx-auto max-w-3xl px-6 lg:px-8">
             <div className="relative">
-              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-white/10" aria-hidden="true" />
+              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-black/[0.08]" aria-hidden="true" />
               <div className="space-y-10">
                 {milestones.map((m) => (
                   <div key={m.year} className="relative pl-8">
-                    <span className="absolute left-0 top-1.5 size-3.5 rounded-full bg-indigo-400 ring-4 ring-gray-900" />
-                    <p className="text-sm font-semibold text-indigo-400">{m.year}</p>
-                    <h3 className="mt-1 text-lg font-semibold text-white">{m.title}</h3>
-                    <p className="mt-2 text-sm text-gray-400 leading-relaxed">{m.description}</p>
+                    <span className="absolute left-0 top-1.5 size-3.5 rounded-full bg-indigo-500 ring-4 ring-[#f5f6f8]" />
+                    <p className="text-sm font-semibold text-indigo-600">{m.year}</p>
+                    <h3 className="mt-1 text-lg font-semibold text-gray-900">{m.title}</h3>
+                    <p className="mt-2 text-sm text-gray-600 leading-relaxed">{m.description}</p>
                   </div>
                 ))}
               </div>

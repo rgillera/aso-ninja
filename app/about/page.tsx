@@ -38,18 +38,18 @@ export default async function AboutPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <div className="bg-[#f5f6f8] min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
         <section className="pt-32 pb-16 sm:pb-24">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-            <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">About</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">About</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
               App Store Optimization,{" "}
-              <span className="text-indigo-400">without the enterprise price tag</span>
+              <span className="text-indigo-600">without the enterprise price tag</span>
             </h1>
-            <p className="mt-6 text-lg text-gray-400">
+            <p className="mt-6 text-lg text-gray-600">
               AppASO exists because keyword tracking, metadata optimization, and competitor analysis
               shouldn&apos;t be locked behind tools priced for agencies. We built a single workspace so
               indie developers and small app teams can get the same intelligence, for free.
@@ -61,10 +61,10 @@ export default async function AboutPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
               {values.map((value) => (
-                <div key={value.name} className="rounded-2xl bg-gray-800/50 p-8">
-                  <value.icon className="size-8 text-indigo-400" aria-hidden="true" />
-                  <h3 className="mt-4 text-lg font-semibold text-white">{value.name}</h3>
-                  <p className="mt-2 text-sm text-gray-400 leading-relaxed">{value.description}</p>
+                <div key={value.name} className="rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5">
+                  <value.icon className="size-8 text-indigo-600" aria-hidden="true" />
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">{value.name}</h3>
+                  <p className="mt-2 text-sm text-gray-600 leading-relaxed">{value.description}</p>
                 </div>
               ))}
             </div>
@@ -72,7 +72,7 @@ export default async function AboutPage() {
             <div className="mt-16 text-center">
               <a
                 href="/signup"
-                className="rounded-md bg-indigo-500 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400"
+                className="rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 Create free account
               </a>

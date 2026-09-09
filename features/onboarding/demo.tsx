@@ -11,6 +11,14 @@ import { VolumeBar } from "@/features/aso/keywords/research/ui";
 
 // Shared static/illustrative visuals for the public portal's "How it works"
 // section. Everything here is fixed sample data, not a live API call.
+//
+// Rendered in the dashboard's *light* theme (data-theme="light" below,
+// matched by the `light:` custom variant from app/globals.css) since the
+// portal itself is a fixed-light page — see DashboardHeroDemo.tsx, which
+// this mirrors. This file has no other consumers (only PortalHowItWorks.tsx
+// imports it), so classes are written light-only rather than as dark-base +
+// `light:` overrides; colors still come from the real dark/light pairs in
+// DashboardSearch/KeywordTable/DashboardSidebar, not invented tones.
 
 const EXAMPLE_KEYWORDS = [
   { keyword: "instagram", volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },
@@ -35,7 +43,7 @@ const RANK_HISTORY = [
 
 export function scorePill(value: number) {
   const tone =
-    value >= 70 ? "bg-emerald-500/15 text-emerald-400" :
+    value >= 70 ? "bg-emerald-500/15 text-emerald-700" :
     value >= 40 ? "bg-yellow-500/15 text-yellow-400" :
                   "bg-gray-500/10 text-gray-500";
   return (
@@ -47,17 +55,17 @@ export function scorePill(value: number) {
 
 export function AppSearchDemo() {
   return (
-    <div className="rounded-lg bg-[#1a1d24] p-2">
+    <div className="rounded-lg bg-white shadow-sm ring-1 ring-black/[0.08] p-2">
       <div className="flex items-center gap-2 px-2 py-1.5">
-        <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
-        <span className="text-sm text-gray-200">instagram</span>
+        <MagnifyingGlassIcon className="size-4 text-gray-400 shrink-0" />
+        <span className="text-sm text-gray-800">instagram</span>
       </div>
-      <div className="flex items-center gap-4 px-2 py-2.5 rounded-md bg-white/[0.03]">
+      <div className="flex items-center gap-4 px-2 py-2.5 rounded-md bg-black/[0.03]">
         <div className="size-9 rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center shrink-0">
           <CameraIcon className="size-4 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">Instagram</p>
+          <p className="text-sm font-semibold text-gray-900 truncate">Instagram</p>
           <p className="text-xs text-gray-500 truncate mt-0.5">🇺🇸 United States · App Store</p>
         </div>
       </div>
@@ -67,52 +75,52 @@ export function AppSearchDemo() {
 
 export function KeywordTableDemo() {
   return (
-    <div className="rounded-xl bg-[#1a1d24] overflow-x-auto">
+    <div data-theme="light" className="rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08] overflow-x-auto">
       <table className="w-full min-w-[680px]">
         <thead>
-          <tr className="border-b border-white/[0.07]">
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+          <tr className="border-b border-black/[0.08]">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
               Keyword
             </th>
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
               Volume
             </th>
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
               Relevancy
             </th>
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-              <span className="flex items-center gap-1 text-gray-300">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
+              <span className="flex items-center gap-1 text-gray-700">
                 Opportunity
-                <ChevronDownIcon className="size-3 text-indigo-400" />
+                <ChevronDownIcon className="size-3 text-indigo-600" />
               </span>
             </th>
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
               Est. Downloads
             </th>
-            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
+            <th className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
               Rank
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/[0.04]">
+        <tbody className="divide-y divide-black/[0.06]">
           {EXAMPLE_KEYWORDS.map((row) => (
             <tr key={row.keyword}>
               <td className="px-4 py-2.5">
                 <div className="flex items-center gap-1.5">
-                  <StarIcon className="size-3.5 text-gray-600 shrink-0" />
-                  <span className="text-sm text-gray-200 whitespace-nowrap">{row.keyword}</span>
+                  <StarIcon className="size-3.5 text-gray-400 shrink-0" />
+                  <span className="text-sm text-gray-800 whitespace-nowrap">{row.keyword}</span>
                 </div>
               </td>
               <td className="px-4 py-2.5"><VolumeBar value={row.volume} /></td>
               <td className="px-4 py-2.5">{scorePill(row.relevancy)}</td>
               <td className="px-4 py-2.5">{scorePill(row.opportunity)}</td>
               <td className="px-4 py-2.5">
-                <span className="text-sm text-gray-300">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
+                <span className="text-sm text-gray-700">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
               </td>
               <td className="px-4 py-2.5">
                 {row.rank !== null
-                  ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300"}`}>#{row.rank}</span>
-                  : <span className="text-xs text-gray-600 italic">Unranked</span>}
+                  ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-700"}`}>#{row.rank}</span>
+                  : <span className="text-xs text-gray-400 italic">Unranked</span>}
               </td>
             </tr>
           ))}
@@ -149,26 +157,33 @@ export function PushNotificationDemo() {
 
   return (
     <div ref={ref} className="relative mx-auto h-[288px] w-[300px] overflow-hidden">
+      {/* The phone bezel and dynamic island are hardware, not app chrome —
+          they stay black regardless of theme, same as a real device. Only
+          the "screen" (wallpaper + notification banner) follows the portal's
+          light theme, using a light iOS-style frosted notification card.
+          The clock sits at the same height as (and overlaps) the island, so
+          it stays light text regardless of screen theme — its backdrop at
+          that spot is the black island, not the wallpaper. */}
       <div className="absolute inset-x-0 top-0 h-[600px] w-[300px] rounded-[3rem] bg-black p-2 shadow-2xl">
-        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-indigo-950 via-[#15171d] to-[#0c0d10]">
+        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-indigo-100 via-indigo-50 to-white">
           <div className="absolute left-1/2 top-4 h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black" />
           <span className="absolute inset-x-0 top-5 text-center text-xs font-semibold text-white/90">
             9:41
           </span>
 
           <div className={`absolute inset-x-4 top-20 ${visible ? "animate-notif-in" : "opacity-0"}`}>
-            <div className="rounded-2xl bg-[#1c1e26]/95 p-3.5 shadow-lg backdrop-blur">
+            <div className="rounded-2xl bg-white/95 p-3.5 shadow-lg ring-1 ring-black/5 backdrop-blur">
               <div className="flex items-start gap-3">
                 <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
                   <CameraIcon className="size-4 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-gray-300">AppASO Rankings</span>
+                    <span className="truncate text-xs font-semibold text-gray-600">AppASO Rankings</span>
                     <span className="shrink-0 text-[10px] text-gray-500">now</span>
                   </div>
-                  <p className="mt-0.5 text-sm font-medium text-white">Ranking changes</p>
-                  <p className="mt-0.5 text-xs leading-snug text-gray-400">
+                  <p className="mt-0.5 text-sm font-medium text-gray-900">Ranking changes</p>
+                  <p className="mt-0.5 text-xs leading-snug text-gray-600">
                     &ldquo;instagram&rdquo; moved from #18 to #12
                   </p>
                 </div>
@@ -183,14 +198,14 @@ export function PushNotificationDemo() {
 
 export function RankChartDemo() {
   return (
-    <div className="rounded-xl bg-[#1a1d24] p-4">
+    <div className="rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08] p-4">
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={RANK_HISTORY} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke="#00000012" vertical={false} />
           <XAxis
             dataKey="date"
             tick={{ fill: "#6b7280", fontSize: 11 }}
-            axisLine={{ stroke: "#ffffff1a" }}
+            axisLine={{ stroke: "#00000014" }}
             tickLine={false}
           />
           <YAxis
@@ -206,16 +221,16 @@ export function RankChartDemo() {
           />
           <Tooltip
             formatter={(value) => [`#${value}`, "Rank"]}
-            contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
-            labelStyle={{ color: "#9ca3af" }}
+            contentStyle={{ background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 12 }}
+            labelStyle={{ color: "#6b7280" }}
           />
           <Line
             type="stepAfter"
             dataKey="position"
             name="Rank"
-            stroke="#818cf8"
+            stroke="#6366f1"
             strokeWidth={2}
-            dot={{ r: 3, fill: "#818cf8", strokeWidth: 0 }}
+            dot={{ r: 3, fill: "#6366f1", strokeWidth: 0 }}
           />
         </LineChart>
       </ResponsiveContainer>

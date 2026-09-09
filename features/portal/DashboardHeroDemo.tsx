@@ -20,22 +20,31 @@ import {
   ListBulletIcon,
   TagIcon,
   TableCellsIcon,
-  RocketLaunchIcon,
+  BanknotesIcon,
+  ChartBarIcon,
+  ScaleIcon,
   BeakerIcon,
   TrophyIcon,
   ChatBubbleLeftRightIcon,
-  CreditCardIcon,
   UserCircleIcon,
   QrCodeIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
-import { scorePill } from "@/features/onboarding/demo";
 import { countryFlag } from "@/libs/countries";
 
 // A static, fully fake replica of the Keyword Research screen — same
 // approach as the onboarding/how-it-works demo components (real markup,
 // sample data, no live calls) so the marketing hero renders instead of
 // shipping a screenshot that goes stale the moment the UI changes.
+//
+// Unlike the other demo components, this one renders in the dashboard's
+// *light* theme (data-theme="light" below, matched by the `light:` custom
+// variant from app/globals.css) rather than its dark default — the portal
+// is a fixed-light page, so a dark screenshot here would be the one
+// remaining dark patch on it. Every class below mirrors the real dark/light
+// pair from DashboardShell/DashboardSidebar/KeywordTable rather than
+// inventing new tones, so this still reads as the actual product, just in
+// its light mode.
 
 const ROWS = [
   { keyword: "instagram", volume: 82, diff: 100, chance: 95, relevancy: 100, opportunity: 88, estDownloads: 482_000, rank: 1 },
@@ -67,7 +76,7 @@ function NavRow({
   return (
     <div
       className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium ${
-        active ? "bg-white/10 text-white" : "text-gray-400"
+        active ? "bg-indigo-50 text-indigo-700" : "text-gray-600"
       }`}
     >
       <Icon className="size-3.5 shrink-0" />
@@ -82,8 +91,8 @@ function NavRow({
 function SubNavRow({ icon: Icon, label, active }: { icon: typeof Squares2X2Icon; label: string; active?: boolean }) {
   return (
     <div
-      className={`ml-3 flex items-center gap-2 rounded-lg border-l border-white/[0.07] pl-2.5 py-1 text-xs font-medium ${
-        active ? "bg-white/10 text-white" : "text-gray-400"
+      className={`ml-3 flex items-center gap-2 rounded-lg border-l border-black/[0.08] pl-2.5 py-1 text-xs font-medium ${
+        active ? "bg-indigo-50 text-indigo-700" : "text-gray-600"
       }`}
     >
       <Icon className="size-3.5 shrink-0" />
@@ -98,7 +107,7 @@ function FooterRow({ icon: Icon, label, badge }: { icon: typeof Squares2X2Icon; 
       <Icon className="size-3.5 shrink-0" />
       <span className="flex-1 truncate">{label}</span>
       {badge && (
-        <span className="shrink-0 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-400">{badge}</span>
+        <span className="shrink-0 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[10px] font-medium text-indigo-700">{badge}</span>
       )}
     </div>
   );
@@ -109,8 +118,8 @@ function Chip({ label, active }: { label: string; active?: boolean }) {
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium whitespace-nowrap ${
         active
-          ? "bg-indigo-500/20 text-indigo-300 ring-1 ring-indigo-500/40"
-          : "bg-white/[0.04] text-gray-400"
+          ? "bg-indigo-500/20 text-indigo-600 ring-1 ring-indigo-500/40"
+          : "bg-black/[0.04] text-gray-600"
       }`}
     >
       {active ? <CheckIcon className="size-2.5" /> : <PlusIcon className="size-2.5" />}
@@ -121,12 +130,12 @@ function Chip({ label, active }: { label: string; active?: boolean }) {
 
 function KeywordGroup({ label, count, chips }: { label: string; count: string; chips: { label: string; active?: boolean }[] }) {
   return (
-    <div className="px-4 py-3 border-b border-white/[0.05] last:border-b-0">
+    <div className="px-4 py-3 border-b border-black/[0.04] last:border-b-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-600">
-          {label} <span className="text-gray-700 normal-case font-normal">{count}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+          {label} <span className="text-gray-400 normal-case font-normal">{count}</span>
         </span>
-        <span className="text-[11px] text-indigo-400">+ Analyze all</span>
+        <span className="text-[11px] text-indigo-600">+ Analyze all</span>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {chips.map((c) => (
@@ -139,25 +148,41 @@ function KeywordGroup({ label, count, chips }: { label: string; count: string; c
 
 function ColHead({ children, active }: { children: React.ReactNode; active?: boolean }) {
   return (
-    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 whitespace-nowrap">
-      <span className={`flex items-center gap-1 ${active ? "text-gray-200" : ""}`}>
+    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">
+      <span className={`flex items-center gap-1 ${active ? "text-gray-800" : ""}`}>
         {children}
-        {active && <ChevronDownIcon className="size-3 text-indigo-400" />}
+        {active && <ChevronDownIcon className="size-3 text-indigo-600" />}
       </span>
     </th>
   );
 }
 
+// Same score-pill tones as `scorePill` in features/onboarding/demo.tsx, but
+// with this file's light-mode text colors (that shared helper is dark-only —
+// it's also used by the still-dark "how it works" demos, so it can't just
+// grow a light variant without changing those too).
+function scorePillLight(value: number) {
+  const tone =
+    value >= 70 ? "bg-emerald-500/15 text-emerald-700" :
+    value >= 40 ? "bg-yellow-500/15 text-yellow-400" :
+                  "bg-gray-500/10 text-gray-500";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}>
+      {value}
+    </span>
+  );
+}
+
 function diffColor(v: number) {
-  return v > 60 ? "text-red-400" : v > 40 ? "text-yellow-400" : "text-emerald-400";
+  return v > 60 ? "text-red-600" : v > 40 ? "text-yellow-400" : "text-emerald-700";
 }
 
 function chanceColor(v: number) {
-  return v > 15 ? "text-emerald-400" : "text-gray-400";
+  return v > 15 ? "text-emerald-700" : "text-gray-600";
 }
 
 function rankColor(v: number) {
-  return v <= 3 ? "text-emerald-400" : v <= 10 ? "text-yellow-400" : "text-gray-300";
+  return v <= 3 ? "text-emerald-700" : v <= 10 ? "text-yellow-400" : "text-gray-700";
 }
 
 export function DashboardHeroDemo() {
@@ -192,98 +217,114 @@ export function DashboardHeroDemo() {
       style={scaled ? { height: naturalHeight * scale } : undefined}
     >
       <div ref={innerRef} style={scaled ? { width: DEMO_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" } : undefined}>
-      <div className="flex min-w-[1000px] rounded-xl bg-[#0d0f14] overflow-hidden">
+      <div data-theme="light" className="flex min-w-[1000px] rounded-xl bg-white ring-1 ring-black/[0.08] overflow-hidden">
         {/* Sidebar — mirrors features/dashboard/DashboardSidebar.tsx's structure,
             labels, and icons, collapsed to the state it'd be in on this page
             (Keywords section open, Metadata/Reviews collapsed). */}
-        <aside className="flex w-48 shrink-0 flex-col border-r border-white/[0.07] p-2.5">
-          <div className="flex items-center gap-2.5 rounded-lg px-2 py-2 mb-2">
-            <div className="flex size-6 shrink-0 items-center justify-center rounded bg-indigo-500 text-[10px] font-bold text-white">A</div>
-            <span className="flex-1 truncate text-sm font-medium text-white">AppASO Work…</span>
-            <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />
-          </div>
-
-          <div className="space-y-1">
-            <NavRow icon={Squares2X2Icon} label="My Apps" />
-          </div>
-
-          <p className="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">ASO Intelligence</p>
-          <div className="space-y-1">
-            <NavRow icon={DocumentChartBarIcon} label="Reports" />
-            <NavRow icon={RectangleStackIcon} label="Metadata" chevronOpen={false} />
-            <NavRow icon={MagnifyingGlassIcon} label="Keywords" active chevronOpen={true} />
-            <div className="space-y-0.5">
-              <SubNavRow icon={MagnifyingGlassIcon} label="Keyword Research" active />
-              <SubNavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
-              <SubNavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
-              <SubNavRow icon={ListBulletIcon} label="Ranked Keywords" />
-              <SubNavRow icon={TagIcon} label="Group by Intent" />
-              <SubNavRow icon={BeakerIcon} label="Keyword Simulator" />
+        <aside className="flex w-48 shrink-0 flex-col bg-white border-r border-black/[0.08]">
+          {/* Workspace switcher — its own bordered region, same as the real
+              sidebar (a plain margin doesn't read as a section break the way
+              a border does). */}
+          <div className="p-3 border-b border-black/[0.08]">
+            <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5">
+              <div className="flex size-6 shrink-0 items-center justify-center rounded bg-indigo-500 text-[10px] font-bold text-white">A</div>
+              <span className="flex-1 truncate text-sm font-medium text-gray-900">AppASO Work…</span>
+              <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />
             </div>
-            <NavRow icon={StarIcon} label="Reviews & Ratings" chevronOpen={false} />
           </div>
 
-          <p className="px-3 pt-4 pb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-600">Market Intelligence</p>
-          <div className="space-y-1">
-            <NavRow icon={MagnifyingGlassCircleIcon} label="App Explorer" />
-          </div>
+          <nav className="flex-1 overflow-y-auto p-2.5 space-y-1">
+            <NavRow icon={Squares2X2Icon} label="My Apps" />
 
-          <div className="mt-auto space-y-0.5 border-t border-white/[0.07] pt-3">
-            <FooterRow icon={RocketLaunchIcon} label="Onboarding steps" />
+            <div className="pt-3">
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">ASO Intelligence</p>
+              <div className="space-y-1">
+                <NavRow icon={DocumentChartBarIcon} label="Reports" />
+                <NavRow icon={RectangleStackIcon} label="Metadata" chevronOpen={false} />
+                <NavRow icon={MagnifyingGlassIcon} label="Keywords" active chevronOpen={true} />
+                <div className="space-y-0.5">
+                  <SubNavRow icon={MagnifyingGlassIcon} label="Keyword Research" active />
+                  <SubNavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
+                  <SubNavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
+                  <SubNavRow icon={TagIcon} label="Group by Intent" />
+                  <SubNavRow icon={ListBulletIcon} label="Ranked Keywords" />
+                  <SubNavRow icon={BeakerIcon} label="Keyword Simulator" />
+                </div>
+                <NavRow icon={StarIcon} label="Reviews & Ratings" chevronOpen={false} />
+              </div>
+            </div>
+
+            <div className="pt-3">
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">ASA Intelligence</p>
+              <div className="space-y-1">
+                <NavRow icon={BanknotesIcon} label="Bid Suggestions" />
+                <NavRow icon={ChartBarIcon} label="Campaign Data" chevronOpen={false} />
+              </div>
+            </div>
+
+            <div className="pt-3">
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Market Intelligence</p>
+              <div className="space-y-1">
+                <NavRow icon={MagnifyingGlassCircleIcon} label="App Explorer" />
+                <NavRow icon={ScaleIcon} label="Compare Apps" />
+              </div>
+            </div>
+          </nav>
+
+          <div className="border-t border-black/[0.08] p-2.5 space-y-0.5">
             <FooterRow icon={TrophyIcon} label="Learn & Get Certified" />
             <FooterRow icon={QrCodeIcon} label="Get mobile app" />
             <FooterRow icon={ChatBubbleLeftRightIcon} label="Chat with us 👋" />
-            <FooterRow icon={CreditCardIcon} label="Manage Plan" badge="Enterprise" />
             <FooterRow icon={UserCircleIcon} label="Account settings" />
           </div>
         </aside>
 
         {/* Main */}
-        <div className="flex-1 min-w-0 bg-[#0f1115]">
+        <div className="flex-1 min-w-0 bg-[#f5f6f8]">
           {/* Top search bar */}
-          <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.07]">
-            <MagnifyingGlassIcon className="size-4 text-gray-600 shrink-0" />
-            <span className="text-sm text-gray-600">Search for an app by name, app id or URL …</span>
+          <div className="flex items-center gap-2 px-5 py-3 border-b border-black/[0.08]">
+            <MagnifyingGlassIcon className="size-4 text-gray-400 shrink-0" />
+            <span className="text-sm text-gray-400">Search for an app by name, app id or URL …</span>
           </div>
 
           {/* App header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.07]">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.08]">
             <div className="flex items-center gap-3">
               <div className="size-8 rounded-xl bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center shrink-0">
                 <CameraIcon className="size-4 text-white" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-white leading-tight">Instagram</p>
+                <p className="text-sm font-semibold text-gray-900 leading-tight">Instagram</p>
                 <p className="text-xs text-gray-500 leading-tight flex items-center gap-1">
                   <img src="/app-store.svg" alt="" className="size-3" />
                   App Store
                   <span className="ml-1.5">&middot; {countryFlag("us")} US</span>
                 </p>
               </div>
-              <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-400 ring-1 ring-emerald-500/25 shrink-0">
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-500/25 shrink-0">
                 <CheckIcon className="size-3.5" />
                 Unfollow
               </span>
-              <span className="flex items-center gap-1.5 rounded-full bg-white/[0.06] px-3 py-1 text-xs font-medium text-gray-400 shrink-0">
+              <span className="flex items-center gap-1.5 rounded-full bg-black/[0.04] px-3 py-1 text-xs font-medium text-gray-600 shrink-0">
                 <img src="/app-store.svg" alt="" className="size-3.5" />
                 App Store
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-semibold text-white">Keyword Research</h1>
+              <h1 className="text-sm font-semibold text-gray-900">Keyword Research</h1>
               <InformationCircleIcon className="size-4 text-gray-500" />
             </div>
           </div>
 
           {/* Keyword Suggestions panel */}
-          <div className="mx-5 mt-4 rounded-xl bg-[#1a1d24] overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
-              <span className="text-sm font-semibold text-white">Keyword Suggestions</span>
+          <div className="mx-5 mt-4 rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08] overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[0.08]">
+              <span className="text-sm font-semibold text-gray-900">Keyword Suggestions</span>
               <ChevronUpIcon className="size-4 text-gray-500" />
             </div>
 
-            <div className="flex overflow-x-auto border-b border-white/[0.07]">
-              <span className="px-3.5 py-3 text-xs font-medium border-b-2 border-indigo-400 text-white shrink-0">Metadata</span>
+            <div className="flex overflow-x-auto border-b border-black/[0.08]">
+              <span className="px-3.5 py-3 text-xs font-medium border-b-2 border-indigo-400 text-gray-900 shrink-0">Metadata</span>
               <span className="px-3.5 py-3 text-xs font-medium text-gray-500 shrink-0">Competitors</span>
               <span className="flex items-center gap-1.5 px-3.5 py-3 text-xs font-medium text-gray-500 shrink-0">
                 <SparklesIcon className="size-3" />
@@ -314,17 +355,17 @@ export function DashboardHeroDemo() {
           </div>
 
           {/* Table panel */}
-          <div className="mx-5 my-4 rounded-xl bg-[#1a1d24] overflow-hidden">
-            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/[0.07] flex-wrap gap-y-2">
+          <div className="mx-5 my-4 rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08] overflow-hidden">
+            <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/[0.08] flex-wrap gap-y-2">
               {["Keyword", "Volume", "Rank", "Relevancy"].map((label) => (
-                <span key={label} className="flex items-center gap-1 rounded-lg bg-[#0d0f14] px-2.5 py-1 text-xs text-gray-400">
-                  {label === "Relevancy" && <SparklesIcon className="size-3 text-violet-400" />}
+                <span key={label} className="flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1 text-xs text-gray-600">
+                  {label === "Relevancy" && <SparklesIcon className="size-3 text-violet-700" />}
                   {label}
-                  <ChevronDownIcon className="size-3 text-gray-600" />
+                  <ChevronDownIcon className="size-3 text-gray-400" />
                 </span>
               ))}
-              <div className="flex items-center rounded-lg bg-[#0d0f14] p-0.5">
-                <span className="rounded-md bg-white/10 px-2 py-1 text-xs font-medium text-white">All</span>
+              <div className="flex items-center rounded-lg bg-gray-50 p-0.5">
+                <span className="rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">All</span>
                 <span className="rounded-md p-1 text-gray-500"><CheckIcon className="size-3.5" /></span>
                 <span className="rounded-md p-1 text-gray-500"><StarIcon className="size-3.5" /></span>
               </div>
@@ -333,27 +374,27 @@ export function DashboardHeroDemo() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.07]">
-              <div className="flex-1 rounded-lg bg-[#0d0f14] px-2.5 py-1.5 text-xs text-gray-600">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-black/[0.08]">
+              <div className="flex-1 rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs text-gray-400">
                 Enter comma-separated keywords to add…
               </div>
               <span className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white shrink-0">
                 <PlusIcon className="size-3.5" />
                 Add
               </span>
-              <span className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] px-2.5 py-1.5 text-xs text-gray-400 shrink-0">
+              <span className="flex items-center gap-1.5 rounded-lg bg-gray-50 px-2.5 py-1.5 text-xs text-gray-600 shrink-0">
                 <TableCellsIcon className="size-3.5" />
                 Edit columns
-                <ChevronDownIcon className="size-3 text-gray-600" />
+                <ChevronDownIcon className="size-3 text-gray-400" />
               </span>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.07]">
+                  <tr className="border-b border-black/[0.08]">
                     <th className="w-8 px-3 py-2">
-                      <span className="block size-3.5 rounded border border-gray-700" />
+                      <span className="block size-3.5 rounded border border-gray-300" />
                     </th>
                     <ColHead>Keywords</ColHead>
                     <ColHead>Volume</ColHead>
@@ -365,25 +406,25 @@ export function DashboardHeroDemo() {
                     <ColHead>App Rank</ColHead>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.04]">
+                <tbody className="divide-y divide-black/[0.06]">
                   {ROWS.map((row) => (
                     <tr key={row.keyword}>
                       <td className="px-3 py-2.5">
-                        <span className="block size-3.5 rounded border border-gray-700" />
+                        <span className="block size-3.5 rounded border border-gray-300" />
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex items-center gap-1.5">
-                          <StarIcon className="size-3.5 text-gray-600 shrink-0" />
-                          <span className="text-sm text-gray-200 whitespace-nowrap">{row.keyword}</span>
+                          <StarIcon className="size-3.5 text-gray-400 shrink-0" />
+                          <span className="text-sm text-gray-800 whitespace-nowrap">{row.keyword}</span>
                         </div>
                       </td>
                       <td className="px-3 py-2.5"><VolumeBar value={row.volume} /></td>
                       <td className="px-3 py-2.5"><span className={`text-sm ${diffColor(row.diff)}`}>{row.diff}</span></td>
                       <td className="px-3 py-2.5"><span className={`text-sm ${chanceColor(row.chance)}`}>{row.chance}</span></td>
-                      <td className="px-3 py-2.5">{scorePill(row.relevancy)}</td>
-                      <td className="px-3 py-2.5">{scorePill(row.opportunity)}</td>
+                      <td className="px-3 py-2.5">{scorePillLight(row.relevancy)}</td>
+                      <td className="px-3 py-2.5">{scorePillLight(row.opportunity)}</td>
                       <td className="px-3 py-2.5">
-                        <span className="text-sm text-gray-300">~{DOWNLOADS_FORMATTER.format(row.estDownloads)}</span>
+                        <span className="text-sm text-gray-700">~{DOWNLOADS_FORMATTER.format(row.estDownloads)}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <span className={`text-sm font-medium tabular-nums ${rankColor(row.rank)}`}>#{row.rank}</span>

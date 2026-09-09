@@ -32,14 +32,14 @@ const STEPS = [
 
 export default function PortalHowItWorks() {
   return (
-    <section id="how-it-works" className="bg-gray-900 py-24 sm:py-32">
+    <section id="how-it-works" className="bg-[#f5f6f8] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">How it works</p>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">How it works</p>
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             From setup to insight in minutes
           </h2>
-          <p className="mt-6 text-lg text-gray-400">
+          <p className="mt-6 text-lg text-gray-600">
             No spreadsheets, no guesswork. Here&rsquo;s what tracking a keyword actually looks like.
           </p>
         </div>
@@ -53,12 +53,16 @@ export default function PortalHowItWorks() {
                 : "grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16"}
             >
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10 ring-1 ring-indigo-500/20">
-                  <span className="text-sm font-semibold text-indigo-400">{step.n}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+                  <span className="text-sm font-semibold text-indigo-600">{step.n}</span>
                 </div>
-                <h3 className="mt-6 text-lg font-semibold text-white">{step.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-gray-400">{step.description}</p>
+                <h3 className="mt-6 text-lg font-semibold text-gray-900">{step.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-600">{step.description}</p>
               </div>
+              {/* Each demo (features/onboarding/demo.tsx) is already a self-
+                  contained light "app chrome" card — bg-white + its own
+                  ring — so it doesn't need a second card wrapped around it;
+                  that would just double the border/shadow. */}
               <div>{step.visual}</div>
             </div>
           ))}

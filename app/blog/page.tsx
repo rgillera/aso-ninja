@@ -58,7 +58,7 @@ export default async function BlogIndexPage() {
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <div className="bg-[#f5f6f8] min-h-screen">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -69,12 +69,12 @@ export default async function BlogIndexPage() {
       <main>
         <section className="pt-32 pb-16 sm:pb-24">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-            <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Blog</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+            <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Blog</p>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
               Guides to growing your{" "}
-              <span className="text-indigo-400">app</span>
+              <span className="text-indigo-600">app</span>
             </h1>
-            <p className="mt-6 text-lg text-gray-400">
+            <p className="mt-6 text-lg text-gray-600">
               Keyword research, metadata tips, feature walkthroughs, and app growth strategies to help
               indie developers and small teams get more downloads.
             </p>
@@ -88,12 +88,12 @@ export default async function BlogIndexPage() {
                 <Link
                   key={post.slug}
                   href={`/blog/${post.slug}`}
-                  className="block rounded-2xl bg-gray-800/50 p-8 transition-colors hover:bg-gray-800"
+                  className="block rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
                 >
-                  <p className="text-sm font-semibold text-indigo-400">{post.category}</p>
-                  <h2 className="mt-2 text-2xl font-semibold text-white">{post.title}</h2>
-                  <p className="mt-3 text-sm leading-relaxed text-gray-400">{post.excerpt}</p>
-                  <p className="mt-4 text-sm text-gray-500">
+                  <p className="text-sm font-semibold text-indigo-600">{post.category}</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-gray-900">{post.title}</h2>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">{post.excerpt}</p>
+                  <p className="mt-4 text-sm text-gray-400">
                     {new Date(post.date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",

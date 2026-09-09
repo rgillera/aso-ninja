@@ -23,10 +23,10 @@ export function GrowthServicesGlobe() {
   return (
     <div className="relative mx-auto mb-12 max-w-5xl px-6 lg:px-8">
       <div aria-hidden="true" className="absolute inset-0 -z-10 blur-3xl">
-        <div className="mx-auto h-full w-2/3 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-400 opacity-20" />
+        <div className="mx-auto h-full w-2/3 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-300 opacity-30" />
       </div>
 
-      <div className="relative overflow-hidden rounded-2xl bg-gray-800/40">
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-clay ring-1 ring-black/5">
         <svg
           viewBox="0 0 1000 480"
           className="block w-full h-auto"
@@ -35,7 +35,7 @@ export function GrowthServicesGlobe() {
         >
           <defs>
             <radialGradient id="gsg-sphere" cx="38%" cy="32%" r="75%">
-              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.22" />
+              <stop offset="0%" stopColor="#818cf8" stopOpacity="0.20" />
               <stop offset="60%" stopColor="#6366f1" stopOpacity="0.08" />
               <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
             </radialGradient>
@@ -46,7 +46,7 @@ export function GrowthServicesGlobe() {
 
           {/* Ambient background texture */}
           {AMBIENT_DOTS.map((d, i) => (
-            <circle key={i} cx={d.cx} cy={d.cy} r={d.r} className="fill-indigo-300/25" />
+            <circle key={i} cx={d.cx} cy={d.cy} r={d.r} className="fill-indigo-300/40" />
           ))}
 
           {/* Lit sphere fill, sits under the wireframe and landmasses */}
@@ -57,58 +57,58 @@ export function GrowthServicesGlobe() {
                 to read as "world map" rather than a bare grid */}
             <path
               d="M 405 130 C 435 118 462 135 456 165 C 476 182 470 218 448 235 C 462 262 442 292 412 284 C 388 276 390 244 396 220 C 374 202 380 168 400 150 C 397 142 399 134 405 130 Z"
-              className="fill-indigo-300/[0.09]"
+              className="fill-indigo-100"
             />
             <path
               d="M 545 160 C 590 140 645 152 668 182 C 690 200 682 228 658 236 C 674 260 654 288 626 282 C 636 306 610 326 585 312 C 562 322 546 300 554 280 C 528 264 524 230 542 206 C 528 188 534 170 545 160 Z"
-              className="fill-indigo-300/[0.11]"
+              className="fill-indigo-100/80"
             />
             {/* Latitude / longitude wireframe */}
-            <circle cx="500" cy="240" r="170" fill="none" className="stroke-indigo-400/25" strokeWidth="1.5" />
-            <ellipse cx="500" cy="240" rx="170" ry="125" fill="none" className="stroke-indigo-400/15" strokeWidth="1" />
-            <ellipse cx="500" cy="240" rx="170" ry="68" fill="none" className="stroke-indigo-400/15" strokeWidth="1" />
-            <line x1="330" y1="240" x2="670" y2="240" className="stroke-indigo-400/20" strokeWidth="1" />
-            <ellipse cx="500" cy="240" rx="125" ry="170" fill="none" className="stroke-indigo-400/15" strokeWidth="1" />
-            <ellipse cx="500" cy="240" rx="68" ry="170" fill="none" className="stroke-indigo-400/15" strokeWidth="1" />
-            <line x1="500" y1="70" x2="500" y2="410" className="stroke-indigo-400/20" strokeWidth="1" />
+            <circle cx="500" cy="240" r="170" fill="none" className="stroke-indigo-300/70" strokeWidth="1.5" />
+            <ellipse cx="500" cy="240" rx="170" ry="125" fill="none" className="stroke-indigo-300/40" strokeWidth="1" />
+            <ellipse cx="500" cy="240" rx="170" ry="68" fill="none" className="stroke-indigo-300/40" strokeWidth="1" />
+            <line x1="330" y1="240" x2="670" y2="240" className="stroke-indigo-300/50" strokeWidth="1" />
+            <ellipse cx="500" cy="240" rx="125" ry="170" fill="none" className="stroke-indigo-300/40" strokeWidth="1" />
+            <ellipse cx="500" cy="240" rx="68" ry="170" fill="none" className="stroke-indigo-300/40" strokeWidth="1" />
+            <line x1="500" y1="70" x2="500" y2="410" className="stroke-indigo-300/50" strokeWidth="1" />
 
             {/* Unlabeled dots for other locations, quiet next to the highlighted pin */}
-            <circle cx="430" cy="200" r="2" className="fill-indigo-300/40" />
-            <circle cx="560" cy="330" r="2" className="fill-indigo-300/40" />
+            <circle cx="430" cy="200" r="2" className="fill-indigo-300/60" />
+            <circle cx="560" cy="330" r="2" className="fill-indigo-300/60" />
           </g>
-          <circle cx="500" cy="240" r="170" fill="none" className="stroke-indigo-400/25" strokeWidth="1.5" />
+          <circle cx="500" cy="240" r="170" fill="none" className="stroke-indigo-300/70" strokeWidth="1.5" />
 
           {/* Route from the US marker to the Philippines pin */}
           <path
             d="M 175 185 Q 500 45 628 280"
             fill="none"
-            className="stroke-gray-500/40"
+            className="stroke-gray-400"
             strokeWidth="1.5"
             strokeDasharray="4 6"
           />
 
           {/* US marker: muted, no pulse */}
-          <circle cx="175" cy="185" r="4.5" className="fill-gray-500" />
+          <circle cx="175" cy="185" r="4.5" className="fill-gray-400" />
 
           {/* Small team dots clustered near the Philippines */}
-          <circle cx="653" cy="262" r="2.5" className="fill-indigo-300/60" />
-          <circle cx="618" cy="305" r="2.5" className="fill-indigo-300/60" />
-          <circle cx="648" cy="305" r="2" className="fill-indigo-300/50" />
+          <circle cx="653" cy="262" r="2.5" className="fill-indigo-400/80" />
+          <circle cx="618" cy="305" r="2.5" className="fill-indigo-400/80" />
+          <circle cx="648" cy="305" r="2" className="fill-indigo-400/70" />
 
           {/* Philippines pin */}
-          <circle cx="628" cy="280" r="9" fill="none" className="stroke-indigo-400/40" strokeWidth="1.5" />
-          <circle cx="628" cy="280" r="4.5" className="fill-indigo-400" />
+          <circle cx="628" cy="280" r="9" fill="none" className="stroke-indigo-400/60" strokeWidth="1.5" />
+          <circle cx="628" cy="280" r="4.5" className="fill-indigo-500" />
         </svg>
 
         <div className="pointer-events-none absolute inset-0">
           <span
-            className="absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-medium text-gray-400"
+            className="absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-500 ring-1 ring-black/5"
             style={{ left: "17.5%", top: "38.5%" }}
           >
             🇺🇸 In-house hire (US)
           </span>
           <span
-            className="absolute -translate-x-1/2 translate-y-3 whitespace-nowrap rounded-full bg-indigo-500 px-3 py-1 text-xs font-semibold text-white shadow-lg shadow-indigo-900/40"
+            className="absolute -translate-x-1/2 translate-y-3 whitespace-nowrap rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white shadow-clay-sm"
             style={{ left: "62.8%", top: "58.3%" }}
           >
             Your growth team 🇵🇭
@@ -118,12 +118,12 @@ export function GrowthServicesGlobe() {
               Positioned by percentage (not fixed spacing) so it scales down
               with the banner instead of swallowing it on narrow screens. */}
           <div
-            className="absolute max-w-[8.5rem] overflow-hidden rounded-lg bg-white shadow-2xl shadow-black/40 ring-1 ring-black/5 sm:max-w-none sm:rounded-xl"
+            className="absolute max-w-[8.5rem] overflow-hidden rounded-lg bg-white shadow-clay-lg ring-1 ring-black/10 sm:max-w-none sm:rounded-xl"
             style={{ top: "4%", right: "4%" }}
           >
             <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-400" />
             <div className="p-1.5 sm:p-4">
-              <p className="mb-0.5 text-[7px] font-semibold tracking-wider text-gray-400 uppercase sm:mb-2 sm:text-[10px]">
+              <p className="mb-0.5 text-[7px] font-semibold tracking-wider text-gray-500 uppercase sm:mb-2 sm:text-[10px]">
                 Why it works
               </p>
               {/* All points show at every size, sized down enough on narrow

@@ -94,7 +94,7 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <div className="bg-[#f5f6f8] min-h-screen">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -111,16 +111,16 @@ export default async function BlogPostPage({
         <article>
           <section className="pt-32 pb-12">
             <div className="mx-auto max-w-3xl px-6 lg:px-8">
-              <Link href="/blog" className="text-sm font-medium text-indigo-400 hover:text-indigo-300">
+              <Link href="/blog" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
                 &larr; Back to blog
               </Link>
-              <p className="mt-6 text-sm font-semibold text-indigo-400 uppercase tracking-widest">
+              <p className="mt-6 text-sm font-semibold text-indigo-600 uppercase tracking-widest">
                 {post.category}
               </p>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                 {post.title}
               </h1>
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-gray-400">
                 <time dateTime={post.date}>
                   {new Date(post.date).toLocaleDateString("en-US", {
                     year: "numeric",

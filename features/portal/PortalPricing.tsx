@@ -62,18 +62,18 @@ const cardStyles: Record<Variant, {
   badge: string;
 }> = {
   default: {
-    card: "bg-gray-800/40",
-    title: "text-gray-100",
+    card: "bg-white shadow-clay ring-1 ring-black/5",
+    title: "text-gray-900",
     subtitle: "text-gray-500",
-    price: "text-white",
-    desc: "text-gray-400",
-    check: "text-indigo-400",
-    feature: "text-gray-300",
-    cta: "bg-indigo-500 text-white hover:bg-indigo-400",
-    badge: "bg-white/10 text-gray-300",
+    price: "text-gray-900",
+    desc: "text-gray-600",
+    check: "text-indigo-600",
+    feature: "text-gray-700",
+    cta: "bg-indigo-600 text-white shadow-clay-btn hover:bg-indigo-500",
+    badge: "bg-indigo-50 text-indigo-700",
   },
   featured: {
-    card: "bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-2xl shadow-indigo-900/40",
+    card: "bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-clay-lg",
     title: "text-white",
     subtitle: "text-indigo-200",
     price: "text-white",
@@ -84,9 +84,9 @@ const cardStyles: Record<Variant, {
     badge: "bg-white/20 text-white",
   },
   premium: {
-    card: "bg-gray-900",
+    card: "bg-gradient-to-br from-gray-900 to-indigo-950 shadow-clay-lg",
     title: "text-white",
-    subtitle: "text-gray-500",
+    subtitle: "text-gray-400",
     price: "text-white",
     desc: "text-gray-400",
     check: "text-emerald-400",
@@ -100,23 +100,23 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
   const [yearly, setYearly] = useState(true);
 
   return (
-    <section id="pricing" className="bg-gray-950 py-24 sm:py-32">
+    <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-32">
       <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Pricing</p>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Pricing</p>
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Simple, transparent pricing
           </h2>
-          <p className="mt-6 text-lg text-gray-400">
+          <p className="mt-6 text-lg text-gray-600">
             Start free. Scale as you grow, from solo indie devs to global publishing teams.
           </p>
 
           {/* Billing toggle */}
-          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-gray-800/60 p-1">
+          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-white p-1 shadow-clay-inset ring-1 ring-black/5">
             <button
               onClick={() => setYearly(false)}
               className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                !yearly ? "bg-indigo-500 text-white" : "text-gray-400 hover:text-white"
+                !yearly ? "bg-indigo-600 text-white shadow-clay-sm" : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Monthly
@@ -124,11 +124,11 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             <button
               onClick={() => setYearly(true)}
               className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                yearly ? "bg-indigo-500 text-white" : "text-gray-400 hover:text-white"
+                yearly ? "bg-indigo-600 text-white shadow-clay-sm" : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Yearly
-              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-500/20 text-indigo-400"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"}`}>
                 2 months free
               </span>
             </button>
@@ -157,7 +157,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
               >
                 {plan.variant === "featured" && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-yellow-900 shadow-lg shadow-yellow-900/30">
+                    <span className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-yellow-900 shadow-clay-sm">
                       ★ Most Popular
                     </span>
                   </div>
@@ -211,15 +211,15 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
           })}
         </div>
 
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-gray-800/40 px-6 py-5 sm:flex-row">
-          <p className="text-sm text-gray-300">
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-clay ring-1 ring-black/5 sm:flex-row">
+          <p className="text-sm text-gray-700">
             Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span>
           </p>
           <a
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
             target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
             rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-white/[0.08] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/[0.13]"
+            className="shrink-0 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-clay-sm transition-colors hover:bg-gray-800"
           >
             Talk to us
           </a>

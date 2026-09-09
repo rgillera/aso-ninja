@@ -24,11 +24,11 @@ const testimonials = [
 
 export default function PortalTestimonials() {
   return (
-    <section id="testimonials" className="bg-gray-900 py-24 sm:py-32">
+    <section id="testimonials" className="bg-[#f5f6f8] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-400 uppercase tracking-widest">Testimonials</p>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Testimonials</p>
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Trusted by app teams worldwide
           </h2>
         </div>
@@ -37,17 +37,17 @@ export default function PortalTestimonials() {
           {testimonials.map((t) => (
             <figure
               key={t.name}
-              className="flex flex-col rounded-2xl bg-gray-800/50 p-8"
+              className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5"
             >
-              <blockquote className="flex-1 text-base leading-7 text-gray-300">
+              <blockquote className="flex-1 text-base leading-7 text-gray-700">
                 <p>&ldquo;{t.quote}&rdquo;</p>
               </blockquote>
               <figcaption className="mt-6 flex items-center gap-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-500/20 text-sm font-semibold text-indigo-300">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600 ring-1 ring-indigo-100">
                   {t.avatar}
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">{t.name}</div>
+                  <div className="text-sm font-semibold text-gray-900">{t.name}</div>
                   <div className="text-sm text-gray-500">{t.title}</div>
                 </div>
               </figcaption>

@@ -14,7 +14,7 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-gray-900/80 backdrop-blur-sm border-b border-white/10">
+    <header className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-black/[0.06] shadow-clay-sm">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <a href="/" className="flex items-center gap-2">
           <span className="flex items-end gap-0.5 rounded-md bg-gray-950 p-1.5">
@@ -22,14 +22,14 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
             <span className="h-4 w-1 rounded-sm bg-indigo-400" />
             <span className="h-5 w-1 rounded-sm bg-indigo-300" />
           </span>
-          <span className="text-xl font-bold text-white tracking-tight">
-            App<span className="text-indigo-400">ASO</span>
+          <span className="text-xl font-bold text-gray-900 tracking-tight">
+            App<span className="text-indigo-600">ASO</span>
           </span>
         </a>
 
         <div className="hidden lg:flex items-center gap-8">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
               {l.label}
             </a>
           ))}
@@ -39,18 +39,18 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
           {isAuthenticated ? (
             <a
               href="/dashboard"
-              className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors"
             >
               Dashboard
             </a>
           ) : (
             <>
-              <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+              <a href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                 Sign in
               </a>
               <a
                 href="/signup"
-                className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
+                className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors"
               >
                 Create free account
               </a>
@@ -59,7 +59,7 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
         </div>
 
         <button
-          className="lg:hidden text-gray-300 hover:text-white"
+          className="lg:hidden text-gray-600 hover:text-gray-900"
           onClick={() => setOpen(!open)}
         >
           {open ? <XMarkIcon className="size-6" /> : <Bars3Icon className="size-6" />}
@@ -67,21 +67,21 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
       </nav>
 
       {open && (
-        <div className="lg:hidden border-t border-white/10 bg-gray-900 px-6 py-4 flex flex-col gap-4">
+        <div className="lg:hidden border-t border-black/[0.06] bg-white px-6 py-4 flex flex-col gap-4">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-300 hover:text-white" onClick={() => setOpen(false)}>
+            <a key={l.href} href={l.href} className="text-sm font-medium text-gray-600 hover:text-gray-900" onClick={() => setOpen(false)}>
               {l.label}
             </a>
           ))}
-          <hr className="border-white/10" />
+          <hr className="border-black/[0.06]" />
           {isAuthenticated ? (
-            <a href="/dashboard" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
+            <a href="/dashboard" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white text-center shadow-clay-btn hover:bg-indigo-500">
               Dashboard
             </a>
           ) : (
             <>
-              <a href="/login" className="text-sm font-medium text-gray-300 hover:text-white">Sign in</a>
-              <a href="/signup" className="rounded-md bg-indigo-500 px-4 py-2 text-sm font-semibold text-white text-center hover:bg-indigo-400">
+              <a href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">Sign in</a>
+              <a href="/signup" className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white text-center shadow-clay-btn hover:bg-indigo-500">
                 Create free account
               </a>
             </>
