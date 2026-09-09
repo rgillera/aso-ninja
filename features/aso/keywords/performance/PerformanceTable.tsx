@@ -61,6 +61,8 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
+  onExportReport: () => void;
+  exportingReport?: boolean;
 };
 
 const PAGE_SIZE = 25;
@@ -182,6 +184,7 @@ export function PerformanceTable({
   onLiveSearch, onViewVolumeHistory, onViewRankHistory, onViewDownloadsHistory, downloadsConnection,
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
+  onExportReport, exportingReport = false,
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
@@ -326,7 +329,7 @@ export function PerformanceTable({
           </div>
           <div className="px-5 py-3.5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ranked Keywords</p>
-            <p className="text-lg font-semibold text-white mt-0.5">{ranked.length} <span className="text-sm text-gray-600 light:text-gray-400">/ {keywords.length}</span></p>
+            <p className="text-lg font-semibold text-white light:text-gray-900 mt-0.5">{ranked.length} <span className="text-sm text-gray-600 light:text-gray-400">/ {keywords.length}</span></p>
           </div>
         </div>
       )}
@@ -334,6 +337,8 @@ export function PerformanceTable({
       <PerformanceFilters
         filters={filters}
         onChange={onFiltersChange}
+        onExportReport={onExportReport}
+        exportingReport={exportingReport}
       />
 
       <CompetitorsBar

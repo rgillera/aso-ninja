@@ -13,6 +13,7 @@ import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSea
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PerformanceTable } from "./PerformanceTable";
+import { exportPerformanceReport } from "./exportReport";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { RankHistoryPanel } from "./RankHistoryPanel";
@@ -25,6 +26,7 @@ import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
+import type { PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 
 // Caps how many automatic background retries a stuck ("Unknown" rank)
@@ -467,6 +469,31 @@ export default function KeywordPerformancePage() {
     [keywords]
   );
 
+  // "Export Report": full month-by-month volume/rank history (not just
+  // prev-vs-latest) for every tracked keyword, as an Excel workbook.
+  const [exportingReport, setExportingReport] = useState(false);
+  async function handleExportReport() {
+    if (!activeApp || !trackedTerms || exportingReport) return;
+    setExportingReport(true);
+    try {
+      const params = new URLSearchParams({
+        terms: trackedTerms,
+        store: activeApp.store ?? "ios",
+        country: activeApp.country ?? "us",
+        storeId: activeApp.store_id ?? "",
+      });
+      const res = await fetch(`/api/keywords/performance-report?${params}`);
+      if (!res.ok) throw new Error("Export failed");
+      const data: PerformanceReportResult = await res.json();
+      const terms = keywords.filter((k) => !k.loading).map((k) => k.term).sort();
+      await exportPerformanceReport(activeApp.name, terms, data, planSlug);
+    } catch {
+      setSaveError("Couldn't export the report. Try again in a moment.");
+    } finally {
+      setExportingReport(false);
+    }
+  }
+
   // Bumped after a Live Search closes, so a freshly recorded rank shows up
   // without the user having to leave and re-enter the page.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
@@ -692,6 +719,8 @@ export default function KeywordPerformancePage() {
               translateToggle={translateToggle && !translateLocked}
               translateLocked={translateLocked}
               onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+              onExportReport={handleExportReport}
+              exportingReport={exportingReport}
             />
           </div>
         )}

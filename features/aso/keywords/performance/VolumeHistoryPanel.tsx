@@ -67,7 +67,14 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
     const isCurrent = index === currentIndex;
     return (
-      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
+      <text
+        x={x}
+        y={y + 12}
+        textAnchor="middle"
+        fontSize={11}
+        fontWeight={isCurrent ? 600 : 400}
+        className={isCurrent ? "fill-gray-200 light:fill-gray-800" : "fill-gray-500"}
+      >
         {formatMonth(payload.value)}
       </text>
     );

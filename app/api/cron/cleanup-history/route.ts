@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/libs/supabase/admin";
 
 export const maxDuration = 60;
 
@@ -8,16 +8,18 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Service-role client, not the anon key: keyword_rankings_history has no
+  // DELETE policy for the public role (only SELECT/INSERT/UPDATE), so an
+  // anon-key delete here silently matches and removes 0 rows — this table
+  // was never actually being pruned before this used the admin client.
+  const supabase = createAdminClient();
 
-  // Drop rankings older than 90 days
-  const { count: deletedRankings, error: e1 } = await supabase
-    .from("keyword_rankings_history")
-    .delete({ count: "exact" })
-    .lt("recorded_on", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]);
+  // Drops rankings past each keyword's plan-aware retention window (see
+  // supabase/migrations/20260909000002_plan_aware_rankings_retention.sql) —
+  // a keyword tracked by several workspaces keeps the longest window any of
+  // them is entitled to; untracked keywords age out at the Free plan's
+  // window.
+  const { data: deletedRankings, error: e1 } = await supabase.rpc("cleanup_expired_rankings");
 
   // Null out raw_apps older than 7 days (data already in keyword_rankings_history)
   const { count: nulledBlobs, error: e2 } = await supabase
