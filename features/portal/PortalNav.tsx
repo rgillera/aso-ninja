@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const links = [
@@ -12,9 +12,23 @@ const links = [
 
 export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-black/[0.06] shadow-clay-sm">
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-200 ${
+        scrolled
+          ? "bg-white/80 backdrop-blur-sm border-b border-black/[0.06] shadow-clay-sm"
+          : "bg-transparent border-b border-transparent shadow-none"
+      }`}
+    >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <a href="/" className="flex items-center gap-2">
           <span className="flex items-end gap-0.5 rounded-md bg-gray-950 p-1.5">
