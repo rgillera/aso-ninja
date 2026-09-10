@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { XMarkIcon, ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { VolumeHistoryEntry } from "@/app/api/keywords/volume-history/route";
@@ -55,11 +55,16 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
       .finally(() => setLoading(false));
   }, [term, store, country, workspaceId]);
 
-  // Locked months draw no bar at all — just the lock overlay's empty space.
-  function barShape(props: unknown) {
-    const { x, y, width, height, index } = props as { x: number; y: number; width: number; height: number; index: number };
-    if (index < lockedCount) return <></>;
-    return <rect x={x} y={y} width={width} height={Math.max(height, 0)} rx={3} fill="#818cf8" />;
+  // Real scores for locked months stay in `rows` (the tooltip still needs
+  // them to show the upgrade message at the right point) but are nulled out
+  // for the line itself here, so it doesn't draw through the locked leading
+  // stretch — connectNulls={false} then breaks the line at that gap.
+  const chartData = rows.map((r, i) => (i < lockedCount ? { ...r, score: null } : r));
+
+  function dotShape(props: unknown) {
+    const { cx, cy, payload } = props as { cx: number; cy: number; payload: { score: number | null } };
+    if (payload.score == null) return <></>;
+    return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
   }
 
   function axisTick(props: unknown) {
@@ -133,7 +138,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
             <>
               <div className="relative">
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+                  <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                     <XAxis
                       dataKey="recorded_on"
@@ -148,9 +153,9 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
                       tickLine={false}
                       width={32}
                     />
-                    <Tooltip content={tooltipContent} cursor={{ fill: "#ffffff08" }} />
-                    <Bar dataKey="score" name="Avg. Volume" shape={barShape} isAnimationActive={false} />
-                  </BarChart>
+                    <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                    <Line type="linear" dataKey="score" name="Avg. Volume" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                  </LineChart>
                 </ResponsiveContainer>
 
                 {lockedCount > 0 && (
