@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
     apps: AppSearchResult[];
     trackedApp?: { id: string; name: string; icon: string };
   };
-  if (!keyword || !apps?.length) return NextResponse.json({ ok: true });
+  if (!keyword) return NextResponse.json({ ok: true });
   const today = new Date().toISOString().split("T")[0];
   const supabase = await createClient();
-  const rows = apps.map((app) => ({
+  const rows = (apps ?? []).map((app) => ({
     keyword:     keyword.toLowerCase().trim(),
     store,
     country:     country.toLowerCase(),
@@ -38,11 +38,12 @@ export async function POST(request: NextRequest) {
     app_name:    app.name,
     app_icon:    app.icon,
   }));
-  // The tracked app not appearing anywhere in `apps` is a real, checked
-  // result (genuinely outside this search's window) — record it with a null
-  // position so it reads as "checked, unranked" rather than leaving no row
-  // at all, which is indistinguishable from "never checked" and would retry
-  // forever.
+  // The tracked app not appearing anywhere in `apps` — including when `apps`
+  // came back empty entirely (a real 0-result iTunes search) — is a real,
+  // checked result (genuinely outside this search's window) — record it with
+  // a null position so it reads as "checked, unranked" rather than leaving no
+  // row at all, which is indistinguishable from "never checked" and would
+  // retry forever.
   if (trackedApp && !rows.some((r) => r.app_id === trackedApp.id)) {
     rows.push({
       keyword:     keyword.toLowerCase().trim(),
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       app_icon:    trackedApp.icon,
     });
   }
+  if (!rows.length) return NextResponse.json({ ok: true });
   await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
   return NextResponse.json({ ok: true });
 }
