@@ -168,7 +168,7 @@ export default function ActiveBidsPage() {
                 <button
                   onClick={loadKeywords}
                   disabled={kwLoading}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
                 >
                   <ArrowPathIcon className={`size-3.5 ${kwLoading ? "animate-spin" : ""}`} />
                   {kwLoading ? "Syncing…" : "Sync now"}

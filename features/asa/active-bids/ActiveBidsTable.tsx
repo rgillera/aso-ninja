@@ -89,7 +89,7 @@ export function ActiveBidsTable({ rows }: Props) {
 
         <button
           onClick={handleExport}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
           <ArrowDownTrayIcon className="size-3.5" />
           Export CSV
