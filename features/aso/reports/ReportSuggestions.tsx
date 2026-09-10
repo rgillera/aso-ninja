@@ -81,7 +81,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
     <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
         <div className="flex items-center gap-2">
-          <h3 className="text-base font-semibold text-white">ASO Suggestions</h3>
+          <h3 className="text-base font-semibold text-white light:text-gray-900">ASO Suggestions</h3>
           <InformationCircleIcon className="size-4 text-gray-600" />
         </div>
         <button onClick={() => setExpanded((v) => !v)} className="text-gray-500 hover:text-white transition-colors" aria-label={expanded ? "Collapse" : "Expand"}>

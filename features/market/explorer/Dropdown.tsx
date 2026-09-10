@@ -13,8 +13,8 @@ export function Dropdown({ label, active, children }: { label: React.ReactNode; 
           active
             ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
             : open
-              ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white"
-              : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white"
+              ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900"
+              : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
         }`}
       >
         {label}
