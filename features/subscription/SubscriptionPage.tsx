@@ -127,12 +127,14 @@ export default function SubscriptionPage({
           </div>
         )}
 
-        <div className="mb-8 inline-flex items-center gap-1 rounded-lg bg-white/[0.06] light:bg-black/[0.05] p-1">
+        <div className="mb-8 inline-flex items-center gap-1 rounded-2xl bg-white/[0.06] light:bg-white p-1 light:shadow-sm light:ring-1 light:ring-black/5">
           <button
             type="button"
             onClick={() => setBilling("monthly")}
-            className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              billing === "monthly" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+              billing === "monthly"
+                ? "bg-indigo-500 light:bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-900"
             }`}
           >
             Monthly
@@ -140,12 +142,20 @@ export default function SubscriptionPage({
           <button
             type="button"
             onClick={() => setBilling("yearly")}
-            className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              billing === "yearly" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+              billing === "yearly"
+                ? "bg-indigo-500 light:bg-indigo-600 text-white shadow-sm"
+                : "text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-900"
             }`}
           >
             Yearly
-            <span className="rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400 light:text-emerald-700">
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                billing === "yearly"
+                  ? "bg-white/20 text-white"
+                  : "bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-600"
+              }`}
+            >
               2 months free
             </span>
           </button>
