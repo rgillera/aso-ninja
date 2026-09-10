@@ -21,16 +21,20 @@ export async function GET(req: Request) {
   // window.
   const { data: deletedRankings, error: e1 } = await supabase.rpc("cleanup_expired_rankings");
 
+  // Same plan-aware windows, applied to Volume (see
+  // supabase/migrations/20260910000002_plan_aware_volume_retention.sql).
+  const { data: deletedVolume, error: e2 } = await supabase.rpc("cleanup_expired_volume");
+
   // Null out raw_apps older than 7 days (data already in keyword_rankings_history)
-  const { count: nulledBlobs, error: e2 } = await supabase
+  const { count: nulledBlobs, error: e3 } = await supabase
     .from("keyword_volume_history")
     .update({ raw_apps: null }, { count: "exact" })
     .lt("recorded_on", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
     .not("raw_apps", "is", null);
 
-  if (e1 || e2) {
-    return NextResponse.json({ error: e1?.message ?? e2?.message }, { status: 500 });
+  if (e1 || e2 || e3) {
+    return NextResponse.json({ error: e1?.message ?? e2?.message ?? e3?.message }, { status: 500 });
   }
 
-  return NextResponse.json({ deletedRankings, nulledBlobs });
+  return NextResponse.json({ deletedRankings, deletedVolume, nulledBlobs });
 }

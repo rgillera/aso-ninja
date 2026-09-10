@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
-
-export type DailyRankEntry = {
-  recorded_on: string;   // "2026-09-03"
-  position: number | null; // null = before this keyword's first-ever snapshot, i.e. not tracked yet
-};
 
 export type WeeklyRankEntry = {
   week: string;        // Monday of that week, "2026-08-31"
@@ -15,7 +10,12 @@ export type WeeklyRankEntry = {
   position: number | null; // median of every snapshot recorded that week; null = not tracked yet
 };
 
-const WEEKS = 13; // ~3 months, matches the 90-day retention in app/api/cron/cleanup-history
+// Rank is only actually checked weekly now (see the refresh cron), so a
+// week — not a day — is this chart's real unit. ~REPORT_MONTHS months of
+// weeks, same total window Volume History and the Export Report use;
+// doesn't need to line up exactly with calendar months since this is a
+// rolling display, not a billing computation.
+const WEEKS_TOTAL = 52;
 
 // Local calendar date, not toISOString() — avoids shifting a day at UTC
 // midnight boundaries when the server's local time isn't UTC.
@@ -31,15 +31,8 @@ function weekStart(dateStr: string): string {
   return dateKey(d);
 }
 
-// Free/Basic only see today's rank; Pro and Pro+ see the last 7 days — same
-// for both, ranking no longer splits Pro vs Pro+ the way Volume History
-// does. The 3-month weekly chart is locked for Free/Basic, open for Pro+.
-function daysForPlan(planSlug: PlanSlug): number {
-  return isPlanAtLeast(planSlug, "pro") ? 7 : 1;
-}
-
 // Carries a real value forward through later gaps (we still believe the
-// rank held roughly steady on a day/week we didn't re-check) but never
+// rank held roughly steady on a week we didn't re-check) but never
 // backward — a bucket before this keyword's first-ever snapshot has no
 // data to estimate from, so it stays null rather than pretending a trend
 // existed before we started tracking it.
@@ -63,15 +56,16 @@ function median(values: number[]): number {
 
 // GET /api/keywords/rankings-history?keyword=calorie+counter&store=ios&country=us&storeId=...&workspaceId=...
 //
-// Two views of this app's real rank snapshots for this keyword: a daily bar
-// per recent day (today only on Free/Basic, the last 7 days on Pro+), and a
-// weekly bar (median position that week) over the last 3 months (locked on
-// Free/Basic).
-// A gap after tracking started is carried forward from the last known value;
-// a bucket before this keyword's first-ever snapshot comes back `null` —
-// there's nothing to estimate from before we started checking it — and
-// `firstRecordedOn` tells the panel where real history begins, so it can
-// say so instead of drawing a bar that isn't real.
+// One weekly-median rank point per week over a rolling ~52-week (≈
+// REPORT_MONTHS) window — always fetched and returned in full, same
+// "fetch broad, gate on display" split as Volume History and the Export
+// Report; `unlockedWeeks` tells the panel how many of the most recent
+// points are real vs. a locked upgrade tease, it doesn't change what's
+// fetched. A gap after tracking started is carried forward from the last
+// known value; a bucket before this keyword's first-ever snapshot comes
+// back `null` — there's nothing to estimate from before we started
+// checking it — and `firstRecordedOn` tells the panel where real history
+// begins, so it can say so instead of drawing a point that isn't real.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const keyword     = (searchParams.get("keyword") ?? "").toLowerCase().trim();
@@ -80,15 +74,15 @@ export async function GET(request: NextRequest) {
   const storeId     = searchParams.get("storeId") ?? "";
   const workspaceId = searchParams.get("workspaceId") ?? "";
 
-  if (!keyword || !storeId) return NextResponse.json({ daily: [], weekly: [], locked: false, firstRecordedOn: null });
+  if (!keyword || !storeId) return NextResponse.json({ weekly: [], unlockedWeeks: 0, unlockedMonths: 0, firstRecordedOn: null });
 
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug: PlanSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const days = daysForPlan(planSlug);
-  const locked = !isPlanAtLeast(planSlug, "pro");
+  const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
+  const unlockedWeeks = Math.round((unlockedMonths / REPORT_MONTHS) * WEEKS_TOTAL);
 
   const supabase = await createClient();
-  const since = dateKey(new Date(Date.now() - (WEEKS * 7 + 7) * 86_400_000));
+  const since = dateKey(new Date(Date.now() - (WEEKS_TOTAL * 7 + 7) * 86_400_000));
   const { data, error } = await supabase
     .from("keyword_rankings_history")
     .select("recorded_on, position")
@@ -101,39 +95,14 @@ export async function GET(request: NextRequest) {
     .gte("recorded_on", since)
     .order("recorded_on", { ascending: true });
 
-  if (error) return NextResponse.json({ daily: [], weekly: [], locked, firstRecordedOn: null }, { status: 500 });
+  if (error) return NextResponse.json({ weekly: [], unlockedWeeks, unlockedMonths, firstRecordedOn: null }, { status: 500 });
 
   const raw = (data ?? []) as { recorded_on: string; position: number }[];
-  if (raw.length === 0) return NextResponse.json({ daily: [], weekly: [], locked, firstRecordedOn: null });
+  if (raw.length === 0) return NextResponse.json({ weekly: [], unlockedWeeks, unlockedMonths, firstRecordedOn: null });
 
   const firstRecordedOn = raw[0].recorded_on; // ascending order
   const today = dateKey(new Date());
 
-  // Daily bars — last `days` calendar days ending today.
-  const byDay = new Map(raw.map((r) => [r.recorded_on, r.position]));
-  const dayKeys: string[] = [];
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(today + "T00:00:00");
-    d.setDate(d.getDate() - i);
-    dayKeys.push(dateKey(d));
-  }
-  // Seed the window with the latest value from *before* it, same as the
-  // weekly chart already effectively does by spanning 13 weeks — otherwise
-  // a keyword whose last real check predates this 7-day window has no
-  // in-window anchor to forward-fill from and renders empty here while the
-  // weekly chart (which does reach back far enough) still shows a bar for
-  // the same current week, which reads as a contradiction.
-  let carryIn: number | null = null;
-  for (const row of raw) {
-    if (row.recorded_on >= dayKeys[0]) break;
-    carryIn = row.position;
-  }
-  const dailyRaw = dayKeys.map((k) => byDay.get(k) ?? null);
-  if (dailyRaw[0] == null) dailyRaw[0] = carryIn;
-  const dailyValues = fillForward(dailyRaw);
-  const daily: DailyRankEntry[] = dayKeys.map((k, i) => ({ recorded_on: k, position: dailyValues[i] }));
-
-  // Weekly bars — median position per calendar week over the last 3 months.
   const weekPositions = new Map<string, number[]>();
   for (const row of raw) {
     const key = weekStart(row.recorded_on);
@@ -146,7 +115,7 @@ export async function GET(request: NextRequest) {
 
   const currentWeekStart = weekStart(today);
   const weekKeys: string[] = [];
-  for (let i = WEEKS - 1; i >= 0; i--) {
+  for (let i = WEEKS_TOTAL - 1; i >= 0; i--) {
     const d = new Date(currentWeekStart + "T00:00:00");
     d.setDate(d.getDate() - i * 7);
     weekKeys.push(dateKey(d));
@@ -154,5 +123,5 @@ export async function GET(request: NextRequest) {
   const weeklyValues = fillForward(weekKeys.map((k) => weekMedian.get(k) ?? null));
   const weekly: WeeklyRankEntry[] = weekKeys.map((k, i) => ({ week: k, recorded_on: k, position: weeklyValues[i] }));
 
-  return NextResponse.json({ daily, weekly, locked, firstRecordedOn });
+  return NextResponse.json({ weekly, unlockedWeeks, unlockedMonths, firstRecordedOn });
 }

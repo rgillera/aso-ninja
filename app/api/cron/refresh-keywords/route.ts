@@ -4,8 +4,21 @@ import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { getWebPushClient } from "@/libs/webpush";
 
-// Vercel: 300s on Pro, 60s on Hobby (~40 keywords/run on Hobby)
+// Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
+// small batches now — see TIME_BUDGET_MS below for why it no longer tries to
+// use the whole window.
 export const maxDuration = 300;
+
+// Refreshing every tracked keyword every day doesn't scale: at real
+// per-keyword cost (the rate limiter's own pacing gap + actual network +
+// several sequential Supabase writes) a few hundred keywords already
+// approaches 300s, and a run that runs out of time gets hard-killed by
+// Vercel with no response ever returned — invisible in any log/metric that
+// only looks at what the function reports. Bailing out early and returning
+// real numbers beats a clean-looking response that never arrives. Leaves a
+// buffer under the 300s ceiling for whatever write is in flight to finish
+// plus the final Supabase calls (notifyRankChanges, the response itself).
+const TIME_BUDGET_MS = 4.5 * 60 * 1000;
 
 type RawApp = { trackId: number; trackName: string; userRatingCount: number; artworkUrl: string };
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -160,13 +173,18 @@ export async function GET(req: Request) {
   }
 
   const supabase = createAdminClient();
-
+  const startedAt = Date.now();
   const today = new Date().toISOString().split("T")[0];
 
-  // Find keywords with historical data but no today's snapshot
-  const { data: stale, error } = await supabase.rpc("stale_keywords_today", {
-    p_today: today,
-    p_limit: 200,
+  // Volume only needs one real check per calendar month (it's a slow-moving
+  // score) and rank once a week (still enough to show a trend inside even
+  // Free/Basic's 30-day retention, and to feed the significant-rank-change
+  // push notification) — see stale_keywords_for_refresh's own comment for
+  // why "every keyword, every day" was replaced with this. A modest p_limit
+  // here is deliberate too: this cron now runs often and in small batches
+  // (vercel.json) rather than once a day trying to do everything at once.
+  const { data: stale, error } = await supabase.rpc("stale_keywords_for_refresh", {
+    p_limit: 50,
   });
 
   if (error) {
@@ -179,9 +197,11 @@ export async function GET(req: Request) {
   let refreshed = 0;
   let failed = 0;
   let rateLimited = false;
+  let timedOut = false;
   const changes: SignificantChange[] = [];
 
   for (const { term, store, country } of stale as { term: string; store: string; country: string }[]) {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) { timedOut = true; break; }
     if (rateLimited && store === "ios") continue;
 
     try {
@@ -299,10 +319,17 @@ export async function GET(req: Request) {
     refreshed,
     failed,
     rateLimited,
+    timedOut,
     total: stale.length,
     notified: changes.length,
+    // "next run" rather than "tomorrow" — this fires every 30 minutes now
+    // (vercel.json), not once a day, so whatever got skipped this pass is
+    // still near the front of stale_keywords_for_refresh's fairness order
+    // and picked up shortly, not left for 24h.
     message: rateLimited
-      ? `Rate limited after ${refreshed} keywords. Remaining will be picked up tomorrow.`
-      : `Refreshed ${refreshed}/${stale.length} keywords.`,
+      ? `Rate limited after ${refreshed} keywords. Remaining will be picked up next run.`
+      : timedOut
+        ? `Hit the time budget after ${refreshed}/${stale.length} keywords. Remaining will be picked up next run.`
+        : `Refreshed ${refreshed}/${stale.length} keywords.`,
   });
 }

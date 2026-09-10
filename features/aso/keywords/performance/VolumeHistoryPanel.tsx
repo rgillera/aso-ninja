@@ -9,8 +9,7 @@ import {
 import { XMarkIcon, ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { VolumeHistoryEntry } from "@/app/api/keywords/volume-history/route";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
-import { usePlanSlug } from "@/features/dashboard/PlanContext";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { REPORT_MONTHS, planNeededForMoreHistory } from "@/libs/keyword-report-window";
 
 type Props = {
   term: string;
@@ -26,18 +25,19 @@ function formatMonth(iso: string): string {
 
 export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
   const workspaceId = useWorkspaceId();
-  const planSlug = usePlanSlug();
   const [rows, setRows] = useState<VolumeHistoryEntry[]>([]);
-  const [locked, setLocked] = useState(false);
+  // Defaults to the full window so nothing flashes as locked before the
+  // real entitlement comes back from the API.
+  const [unlockedMonths, setUnlockedMonths] = useState(REPORT_MONTHS);
   const [loading, setLoading] = useState(true);
 
-  // Pro+ gets a full year, everyone else gets the same 6-month window — Pro
-  // sees it in full, Free/Basic only get the current month's bar; the past
-  // months are omitted entirely behind an upgrade prompt.
+  // Always a full REPORT_MONTHS window of bars; the oldest
+  // `rows.length - unlockedMonths` of them are the locked/blurred tease.
+  const lockedCount = Math.max(0, rows.length - unlockedMonths);
   const currentIndex = rows.length - 1;
-  const windowLabel = isPlanAtLeast(planSlug, "pro_plus") ? "Last 12 months"
-    : locked ? `This month · past ${currentIndex} month${currentIndex === 1 ? "" : "s"} locked`
-    : "Last 6 months";
+  const windowLabel = lockedCount === 0
+    ? `Last ${rows.length} month${rows.length === 1 ? "" : "s"}`
+    : `${unlockedMonths === 1 ? "This month" : `Last ${unlockedMonths} months`} · past ${lockedCount} month${lockedCount === 1 ? "" : "s"} locked`;
 
   useEffect(() => {
     setLoading(true);
@@ -46,20 +46,19 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
       .then((r) => r.json())
       .then((d) => {
         setRows(d.rows ?? []);
-        setLocked(!!d.locked);
+        setUnlockedMonths(typeof d.unlockedMonths === "number" ? d.unlockedMonths : REPORT_MONTHS);
       })
       .catch(() => {
         setRows([]);
-        setLocked(false);
+        setUnlockedMonths(REPORT_MONTHS);
       })
       .finally(() => setLoading(false));
   }, [term, store, country, workspaceId]);
 
-  // Past months draw no bar at all when locked — only the current month
-  // (always the last bucket) renders, under the lock overlay's empty space.
+  // Locked months draw no bar at all — just the lock overlay's empty space.
   function barShape(props: unknown) {
     const { x, y, width, height, index } = props as { x: number; y: number; width: number; height: number; index: number };
-    if (locked && index !== currentIndex) return <></>;
+    if (index < lockedCount) return <></>;
     return <rect x={x} y={y} width={width} height={Math.max(height, 0)} rx={3} fill="#818cf8" />;
   }
 
@@ -87,7 +86,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     if (!active || !payload || !payload.length) return null;
     const entry = payload[0].payload;
     const index = rows.findIndex((r) => r.month === entry.month);
-    const isLockedBar = locked && index !== currentIndex;
+    const isLockedBar = index < lockedCount;
     return (
       <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
         <p className="text-gray-400 light:text-gray-600">{formatMonth(entry.recorded_on)}</p>
@@ -154,18 +153,18 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
                   </BarChart>
                 </ResponsiveContainer>
 
-                {locked && rows.length > 1 && (
-                  <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(currentIndex / rows.length) * 100}%` }}>
+                {lockedCount > 0 && (
+                  <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / rows.length) * 100}%` }}>
                     <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
-                    <p className="text-sm font-semibold text-white light:text-gray-900">{currentIndex} month{currentIndex === 1 ? "" : "s"} locked</p>
+                    <p className="text-sm font-semibold text-white light:text-gray-900">{lockedCount} month{lockedCount === 1 ? "" : "s"} locked</p>
                     <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
-                      Upgrade to Pro to see this keyword&apos;s volume trend beyond this month.
+                      Upgrade to {planNeededForMoreHistory(unlockedMonths)} to see this keyword&apos;s volume trend further back.
                     </p>
                     <Link
                       href="/dashboard/subscription"
                       className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
                     >
-                      Upgrade to Pro
+                      Upgrade to {planNeededForMoreHistory(unlockedMonths)}
                     </Link>
                   </div>
                 )}

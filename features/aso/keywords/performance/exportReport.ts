@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { formatRank } from "./types";
-import { REPORT_MONTHS, REPORT_MONTHS_BY_PLAN } from "@/libs/keyword-report-window";
+import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN, planNeededForMoreHistory } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
 import type { MonthlyKeywordStats, PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
 
@@ -57,17 +57,10 @@ function prevMonthKey(monthKey: string): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// The lowest plan tier that reaches a given month index (0 = current month)
-// — REPORT_MONTHS_BY_PLAN only has two thresholds above Free/Basic's 1
-// month, so this is just "which side of each threshold is i on".
-function planNeededForMonthIndex(i: number): string {
-  return i < REPORT_MONTHS_BY_PLAN.pro ? "Pro" : "Pro+";
-}
-
 // Builds and downloads the "Export Report" workbook: one tab per month —
 // always a full year (current month plus the 11 before it), regardless of
 // plan. Months beyond what planSlug is entitled to (see
-// REPORT_MONTHS_BY_PLAN) render as a locked, upgrade-prompt tab instead of
+// HISTORY_MONTHS_BY_PLAN) render as a locked, upgrade-prompt tab instead of
 // data — this is an entitlement gate, not a data-availability check, so it
 // applies even if some data for that month happens to still exist. Every
 // unlocked month shows average volume, highest (best/lowest-number) rank,
@@ -76,7 +69,7 @@ function planNeededForMonthIndex(i: number): string {
 export async function exportPerformanceReport(
   appName: string, terms: string[], report: PerformanceReportResult, planSlug: PlanSlug
 ) {
-  const unlockedMonths = REPORT_MONTHS_BY_PLAN[planSlug] ?? REPORT_MONTHS_BY_PLAN.free;
+  const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "ASO Ninja";
@@ -87,7 +80,7 @@ export async function exportPerformanceReport(
     const month = months[i];
 
     if (i >= unlockedMonths) {
-      const requiredPlan = planNeededForMonthIndex(i);
+      const requiredPlan = planNeededForMoreHistory(i);
       const sheet = wb.addWorksheet(sheetName(`${monthLabel(month)} 🔒`), {
         views: [{ state: "frozen", ySplit: 1 }],
       });

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
 
 export type VolumeHistoryEntry = {
@@ -10,14 +10,6 @@ export type VolumeHistoryEntry = {
   score: number;       // average of every snapshot recorded that month
 };
 
-// Pro+ gets a full year, everyone else gets the same 6-month window Pro sees
-// — but Free/Basic get it back `locked: true` so the panel can render the
-// real trend blurred behind an upgrade prompt instead of hiding it outright.
-// Tiering matches Metadata Timeline (app/api/metadata/timeline).
-function windowMonthsForPlan(planSlug: PlanSlug): number {
-  return isPlanAtLeast(planSlug, "pro_plus") ? 12 : 6;
-}
-
 function monthKey(recordedOn: string): string {
   return recordedOn.slice(0, 7); // "YYYY-MM"
 }
@@ -25,10 +17,14 @@ function monthKey(recordedOn: string): string {
 // GET /api/keywords/volume-history?term=calorie+counter&store=ios&country=us&workspaceId=...
 //
 // Every real Volume snapshot we have for this keyword, rolled up into one
-// averaged point per calendar month, over the window the caller's plan
-// allows. Months with no snapshot at all are filled from the nearest month
-// that does have one, so a keyword with a single snapshot still draws as a
-// flat line across the whole window instead of a lone dot.
+// averaged point per calendar month, always over the full REPORT_MONTHS
+// (12-month) window regardless of plan — same "fetch broad, gate on
+// display" split as the Export Report and Rank History: `unlockedMonths`
+// tells the panel how many of the most recent months are real and how many
+// are a blurred upgrade tease, it doesn't change what's fetched. Months
+// with no snapshot at all are filled from the nearest month that does have
+// one, so a keyword with a single snapshot still draws as a flat line
+// across the whole window instead of a lone dot.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const term        = (searchParams.get("term") ?? "").toLowerCase().trim();
@@ -40,8 +36,8 @@ export async function GET(request: NextRequest) {
 
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug: PlanSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const months = windowMonthsForPlan(planSlug);
-  const locked = !isPlanAtLeast(planSlug, "pro");
+  const months = REPORT_MONTHS;
+  const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -55,7 +51,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ rows: [] }, { status: 500 });
 
   const raw = (data ?? []) as { recorded_on: string; score: number }[];
-  if (raw.length === 0) return NextResponse.json({ rows: [], locked });
+  if (raw.length === 0) return NextResponse.json({ rows: [], unlockedMonths });
 
   // Average every snapshot down to one score per calendar month.
   const totals = new Map<string, { sum: number; count: number }>();
@@ -95,5 +91,5 @@ export async function GET(request: NextRequest) {
     score: values[i] ?? overallAverage,
   }));
 
-  return NextResponse.json({ rows, locked });
+  return NextResponse.json({ rows, unlockedMonths });
 }
