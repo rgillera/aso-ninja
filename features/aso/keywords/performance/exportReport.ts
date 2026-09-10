@@ -108,14 +108,23 @@ export async function exportPerformanceReport(
     sheet.properties.tabColor = { argb: HEADER_FILL };
 
     if (!hasData) {
+      // Reaching export always means at least one keyword is already tracked
+      // (the caller bails out before this if none are) — so an empty month
+      // just predates that tracking, not a missing setup step. Same
+      // reassurance RankHistoryPanel gives for the same situation.
       sheet.columns = [{ width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }];
-      sheet.mergeCells("A1:D1");
+      sheet.mergeCells("A1:D2");
       const cell = sheet.getCell("A1");
-      cell.value = "No data yet";
+      cell.value =
+        `No data recorded for ${monthLabel(month)} yet\n` +
+        (terms.length === 1
+          ? "More will fill in as this keyword keeps being tracked."
+          : "More will fill in as these keywords keep being tracked.");
       cell.font = { italic: true, color: { argb: MUTED_TEXT }, size: 12 };
-      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ROW_ALT_FILL } };
-      sheet.getRow(1).height = 32;
+      sheet.getRow(1).height = 24;
+      sheet.getRow(2).height = 24;
       continue;
     }
 

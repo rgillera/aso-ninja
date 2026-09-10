@@ -46,11 +46,11 @@ function isRecentlyActive(lastSignInAt: string | null): boolean {
 }
 
 const PLAN_BADGE_CLASSES: Record<string, string> = {
-  free: "bg-white/[0.06] text-gray-400",
-  basic: "bg-sky-500/10 text-sky-400",
-  pro: "bg-indigo-500/10 text-indigo-400",
-  pro_plus: "bg-violet-500/10 text-violet-400",
-  enterprise: "bg-amber-500/10 text-amber-400",
+  free: "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600",
+  basic: "bg-sky-500/10 text-sky-400 light:text-sky-700",
+  pro: "bg-indigo-500/10 text-indigo-400 light:text-indigo-700",
+  pro_plus: "bg-violet-500/10 text-violet-400 light:text-violet-700",
+  enterprise: "bg-amber-500/10 text-amber-400 light:text-amber-700",
 };
 
 function formatDate(iso: string | null): string {
@@ -123,11 +123,11 @@ export default function AdminUsersPage({ users }: Props) {
     <div className="p-6">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06]">
-            <UsersIcon className="size-4.5 text-gray-300" />
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] light:bg-black/[0.05]">
+            <UsersIcon className="size-4.5 text-gray-300 light:text-gray-700" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-white">Super Admin · Users</h1>
+            <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Users</h1>
             <p className="text-xs text-gray-500">
               {users.length.toLocaleString()} total users · {activeCount.toLocaleString()} active in last {ACTIVE_WINDOW_DAYS} days
             </p>
@@ -135,13 +135,15 @@ export default function AdminUsersPage({ users }: Props) {
         </div>
 
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24]">
+          <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] light:bg-white">
             {(["all", "active", "inactive"] as StatusFilter[]).map((status) => (
               <button
                 key={status}
                 onClick={() => { setStatusFilter(status); setPage(0); }}
                 className={`capitalize rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                  statusFilter === status ? "bg-white/10 text-white" : "text-gray-500 hover:text-gray-300"
+                  statusFilter === status
+                    ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                    : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
                 }`}
               >
                 {status}
@@ -149,27 +151,27 @@ export default function AdminUsersPage({ users }: Props) {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] px-3 py-2.5">
+          <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
               placeholder="Search by email…"
-              className="bg-transparent text-xs text-white placeholder-gray-600 outline-none w-64"
+              className="bg-transparent text-xs text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none w-64"
             />
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-white/[0.07] text-left text-[10px] font-semibold tracking-widest text-gray-600 uppercase">
+                <tr className="border-b border-white/[0.07] light:border-black/[0.08] text-left text-[10px] font-semibold tracking-widest text-gray-600 light:text-gray-400 uppercase">
                   {SORT_COLUMNS.map((col) => (
                     <th key={col.key} className="px-5 py-3 font-semibold">
                       <button
                         onClick={() => handleSort(col.key)}
-                        className={`flex items-center gap-1 hover:text-gray-300 transition-colors ${col.align === "right" ? "ml-auto flex-row-reverse" : ""}`}
+                        className={`flex items-center gap-1 hover:text-gray-300 light:hover:text-gray-700 transition-colors ${col.align === "right" ? "ml-auto flex-row-reverse" : ""}`}
                       >
                         {col.label}
                         {sortKey === col.key ? (
@@ -179,21 +181,21 @@ export default function AdminUsersPage({ users }: Props) {
                             <ChevronDownIcon className="size-3" />
                           )
                         ) : (
-                          <ChevronUpDownIcon className="size-3 text-gray-700" />
+                          <ChevronUpDownIcon className="size-3 text-gray-700 light:text-gray-300" />
                         )}
                       </button>
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.07]">
+              <tbody className="divide-y divide-white/[0.07] light:divide-black/[0.08]">
                 {pageUsers.map((u) => {
                   const active = isRecentlyActive(u.lastSignInAt);
                   return (
-                    <tr key={u.id} className="hover:bg-white/[0.03] transition-colors">
-                      <td className="px-5 py-3.5 text-white truncate max-w-xs">{u.email}</td>
+                    <tr key={u.id} className="hover:bg-white/[0.03] light:hover:bg-black/[0.02] transition-colors">
+                      <td className="px-5 py-3.5 text-white light:text-gray-900 truncate max-w-xs">{u.email}</td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${active ? "text-emerald-400" : "text-gray-500"}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${active ? "text-emerald-400 light:text-emerald-700" : "text-gray-500"}`}>
                           <span className={`size-1.5 rounded-full ${active ? "bg-emerald-400" : "bg-gray-600"}`} />
                           {active ? "Active" : "Inactive"}
                         </span>
@@ -201,16 +203,16 @@ export default function AdminUsersPage({ users }: Props) {
                       <td className="px-5 py-3.5">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${
-                            PLAN_BADGE_CLASSES[u.planSlug] ?? "bg-white/[0.06] text-gray-400"
+                            PLAN_BADGE_CLASSES[u.planSlug] ?? "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600"
                           }`}
                         >
                           {u.planName}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-right text-gray-300">{u.appCount.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-right text-gray-300">{u.keywordCount.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-400">{formatDate(u.createdAt)}</td>
-                      <td className="px-5 py-3.5 text-gray-400">{formatDate(u.lastSignInAt)}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.appCount.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.keywordCount.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.createdAt)}</td>
+                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.lastSignInAt)}</td>
                     </tr>
                   );
                 })}
@@ -219,26 +221,26 @@ export default function AdminUsersPage({ users }: Props) {
           </div>
 
           {sorted.length === 0 && (
-            <div className="px-5 py-10 text-center text-sm text-gray-600">No users match your search.</div>
+            <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">No users match your search.</div>
           )}
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.07] text-xs text-gray-500">
+            <div className="flex items-center justify-between px-5 py-3 border-t border-white/[0.07] light:border-black/[0.08] text-xs text-gray-500">
               <span>
                 {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, sorted.length)} of {sorted.length.toLocaleString()}
               </span>
               <div className="flex items-center gap-1">
-                <button onClick={() => setPage(0)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                <button onClick={() => setPage(0)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
                   <ChevronDoubleLeftIcon className="size-3.5" />
                 </button>
-                <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
                   <ChevronLeftIcon className="size-3.5" />
                 </button>
                 <span className="px-2">{page + 1} / {totalPages}</span>
-                <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                <button onClick={() => setPage((p) => p + 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
                   <ChevronRightIcon className="size-3.5" />
                 </button>
-                <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] disabled:opacity-30 disabled:cursor-default transition-colors">
+                <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} className="p-1.5 rounded hover:bg-white/[0.06] light:hover:bg-black/[0.05] disabled:opacity-30 disabled:cursor-default transition-colors">
                   <ChevronDoubleRightIcon className="size-3.5" />
                 </button>
               </div>

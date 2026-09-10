@@ -65,37 +65,37 @@ export default function AdminKeywordsPage() {
     <div className="p-6">
       <div className="mx-auto max-w-4xl">
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06]">
-            <TagIcon className="size-4.5 text-gray-300" />
+          <div className="flex size-9 items-center justify-center rounded-xl bg-white/[0.06] light:bg-black/[0.05]">
+            <TagIcon className="size-4.5 text-gray-300 light:text-gray-700" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-white">Super Admin · Keywords</h1>
+            <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Keywords</h1>
             <p className="text-xs text-gray-500">Force-refresh rankings + volume history for a specific keyword</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] px-3 py-2.5 mb-5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 mb-5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by keyword term…"
-            className="bg-transparent text-sm text-white placeholder-gray-600 outline-none w-full"
+            className="bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none w-full"
             autoFocus
           />
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           {tooShort ? (
-            <div className="px-5 py-10 text-center text-sm text-gray-600">Type at least 2 characters to search.</div>
+            <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">Type at least 2 characters to search.</div>
           ) : isStale || searchPending ? (
-            <div className="px-5 py-10 text-center text-sm text-gray-600">Searching…</div>
+            <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">Searching…</div>
           ) : results.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-gray-600">
+            <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">
               No tracked keyword matches “{trimmed}”.
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.07]">
+            <div className="divide-y divide-white/[0.07] light:divide-black/[0.08]">
               {results.map((group) => {
                 const key = groupKey(group);
                 const state = refreshState[key];
@@ -104,9 +104,9 @@ export default function AdminKeywordsPage() {
                     <div className="shrink-0">{group.store === "ios" ? <IosIcon /> : <AndroidIcon />}</div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
+                      <p className="text-sm font-semibold text-white light:text-gray-900 truncate flex items-center gap-1.5">
                         {group.term}
-                        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] px-1.5 py-px text-[10px] font-medium text-gray-400">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-1.5 py-px text-[10px] font-medium text-gray-400 light:text-gray-600">
                           <span className="text-xs leading-none">{countryFlag(group.country)}</span>
                           {COUNTRY_MAP[group.country] ?? group.country}
                         </span>
@@ -115,7 +115,7 @@ export default function AdminKeywordsPage() {
                         {group.workspaceNames.length} workspace{group.workspaceNames.length === 1 ? "" : "s"} · {group.appNames.join(", ")}
                       </p>
                       {state?.result && (
-                        <p className={`text-xs mt-1 ${state.result.ok ? "text-emerald-400" : "text-red-400"}`}>
+                        <p className={`text-xs mt-1 ${state.result.ok ? "text-emerald-400 light:text-emerald-700" : "text-red-400 light:text-red-600"}`}>
                           {state.result.ok
                             ? `Refreshed just now — ${state.result.resultsCount.toLocaleString()} results recorded`
                             : state.result.error}
@@ -126,7 +126,7 @@ export default function AdminKeywordsPage() {
                     <button
                       onClick={() => handleRefresh(group)}
                       disabled={state?.pending}
-                      className="shrink-0 flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-medium text-gray-300 hover:bg-white/[0.10] hover:text-white disabled:opacity-50 disabled:cursor-default transition-colors"
+                      className="shrink-0 flex items-center gap-1.5 rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:bg-white/[0.10] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 disabled:opacity-50 disabled:cursor-default transition-colors"
                     >
                       <ArrowPathIcon className={`size-3.5 ${state?.pending ? "animate-spin" : ""}`} />
                       {state?.pending ? "Refreshing…" : "Refresh"}

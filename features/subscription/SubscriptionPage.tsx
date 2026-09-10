@@ -132,7 +132,7 @@ export default function SubscriptionPage({
             type="button"
             onClick={() => setBilling("monthly")}
             className={`rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              billing === "monthly" ? "bg-white/10 text-white light:text-gray-900" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+              billing === "monthly" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
             }`}
           >
             Monthly
@@ -141,7 +141,7 @@ export default function SubscriptionPage({
             type="button"
             onClick={() => setBilling("yearly")}
             className={`flex items-center gap-2 rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              billing === "yearly" ? "bg-white/10 text-white light:text-gray-900" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
+              billing === "yearly" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"
             }`}
           >
             Yearly
