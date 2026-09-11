@@ -67,9 +67,20 @@ function prevMonthKey(monthKey: string): string {
 // and rank change vs. the prior calendar month (matches the in-app "Change"
 // column: positive = improved, colored green; a decline is colored red).
 export async function exportPerformanceReport(
-  appName: string, terms: string[], report: PerformanceReportResult, planSlug: PlanSlug
+  appName: string, terms: string[], report: PerformanceReportResult, planSlug: PlanSlug,
+  // apps.created_at — when this app was first followed. keyword_volume_history
+  // has no app_id (one score shared platform-wide per term/store/country, see
+  // 20260910000002_plan_aware_volume_retention.sql), so a generic keyword this
+  // app just started tracking can already have another workspace's older
+  // volume rows sitting in `report`. Left to itself that reads as "we have
+  // July data but nothing for August" for this app, when really this app
+  // wasn't tracking it in either month. Any month before this date gets
+  // forced into the same empty-month tab as a month with no data at all,
+  // rather than showing that borrowed, pre-tracking data.
+  appTrackedSince?: string
 ) {
   const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
+  const trackedSinceMonth = appTrackedSince ? appTrackedSince.slice(0, 7) : null;
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "ASO Ninja";
@@ -101,7 +112,8 @@ export async function exportPerformanceReport(
     }
 
     const prevMonth = prevMonthKey(month);
-    const hasData = terms.some((t) => report[t]?.[month]);
+    const beforeTracking = trackedSinceMonth !== null && month < trackedSinceMonth;
+    const hasData = !beforeTracking && terms.some((t) => report[t]?.[month]);
     const sheet = wb.addWorksheet(sheetName(monthLabel(month)), {
       views: [{ state: "frozen", ySplit: 1 }],
     });
@@ -111,7 +123,11 @@ export async function exportPerformanceReport(
       // Reaching export always means at least one keyword is already tracked
       // (the caller bails out before this if none are) — so an empty month
       // just predates that tracking, not a missing setup step. Same
-      // reassurance RankHistoryPanel gives for the same situation.
+      // reassurance RankHistoryPanel gives for the same situation. Also
+      // covers beforeTracking: a month this app wasn't followed in yet gets
+      // the same message even if `report` happens to carry another
+      // workspace's older shared-volume rows for these terms (see
+      // appTrackedSince above) — that data predates this app too.
       sheet.columns = [{ width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }];
       sheet.mergeCells("A1:D2");
       const cell = sheet.getCell("A1");

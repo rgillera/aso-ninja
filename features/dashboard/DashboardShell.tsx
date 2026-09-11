@@ -412,6 +412,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         bundle_id: bundleId,
         store_id: sp.get("storeId") ?? undefined,
         name, icon_url: sp.get("icon") ?? null, store, country,
+        created_at: matched?.created_at,
       };
     })();
     // On the preview route itself: always show the currently previewed app
@@ -420,11 +421,13 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     if (savedPreview) return previewApp ?? (lastTrackedApp ? {
       id: lastTrackedApp.id, bundle_id: lastTrackedApp.bundle_id, store_id: lastTrackedApp.store_id,
       name: lastTrackedApp.name, icon_url: lastTrackedApp.icon_url, store: lastTrackedApp.store, country: lastTrackedApp.country,
+      created_at: lastTrackedApp.created_at,
     } : undefined);
     // No savedPreview = tracked app is more recent (or only tracked apps exist)
     return lastTrackedApp ? {
       id: lastTrackedApp.id, bundle_id: lastTrackedApp.bundle_id, store_id: lastTrackedApp.store_id,
       name: lastTrackedApp.name, icon_url: lastTrackedApp.icon_url, store: lastTrackedApp.store, country: lastTrackedApp.country,
+      created_at: lastTrackedApp.created_at,
     } : previewApp;
   })();
 
