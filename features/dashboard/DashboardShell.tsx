@@ -20,7 +20,7 @@ import { saveRecentEntry, loadRecent } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { WorkspaceFrozen } from "@/features/workspace/WorkspaceFrozen";
-import type { App, PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 // Paths that manage the account/plan itself, not a specific workspace's
 // content — stay reachable even when the active workspace is frozen, since
@@ -82,6 +82,7 @@ type Props = {
   lastPreview?: string;
   lastWorkspaceId?: string;
   accessByWorkspace: Record<string, WorkspaceAccess[]>;
+  roleByWorkspace: Record<string, WorkspaceRole>;
   initialPlanSlug?: PlanSlug;
   initialWorkspaceLimit?: number | null;
   initialTheme: Theme;
@@ -90,7 +91,7 @@ type Props = {
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialTheme, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialTheme, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -278,6 +279,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     : undefined;
 
   const currentAccess = accessByWorkspace[activeWorkspaceId ?? ""] ?? [];
+  const currentRole = roleByWorkspace[activeWorkspaceId ?? ""];
 
   const activeWorkspace = workspaces.find(w => w.id === activeWorkspaceId);
   const isFreezeExemptPath = WORKSPACE_FREEZE_EXEMPT_PREFIXES.some(p => pathname.startsWith(p));
@@ -445,6 +447,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           metaOverrideHref={metaOverrideHref}
           activePreviewPage={activePreviewPage}
           access={currentAccess}
+          role={currentRole}
           planSlug={planSlug}
           workspaceLimit={workspaceLimit}
           isMobileOpen={mobileNavOpen}

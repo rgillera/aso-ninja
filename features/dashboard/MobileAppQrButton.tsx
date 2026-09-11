@@ -6,9 +6,11 @@ import { QRCodeSVG } from "qrcode.react";
 import { QrCodeIcon } from "@heroicons/react/24/outline";
 import { isMobileUserAgent } from "@/libs/user-agent";
 
-// Shared by the My Apps header (variant="pill") and the sidebar footer
-// (variant="row" — @/features/dashboard/DashboardSidebar.tsx) so the QR/URL
-// logic can't drift between the two.
+// Shared by the My Apps header and the Account Settings page (both
+// variant="pill" — @/features/account/AccountPage.tsx) so the QR/URL logic
+// can't drift between the two. variant="row" is kept for a denser list
+// context (it used to live in DashboardSidebar's footer) but has no current
+// caller.
 type Props = { variant?: "pill" | "row" };
 
 export function MobileAppQrButton({ variant = "pill" }: Props) {

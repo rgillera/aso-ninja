@@ -2,13 +2,13 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { TrophyIcon, SunIcon, MoonIcon, CreditCardIcon } from "@heroicons/react/24/outline";
+import { TrophyIcon, SunIcon, MoonIcon, QrCodeIcon } from "@heroicons/react/24/outline";
 import { updateProfileAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
 import type { CertificationRecord } from "@/features/certification/actions";
 import { CertificateDownload } from "@/features/certification/CertificateDownload";
 import { useTheme } from "@/features/dashboard/ThemeContext";
-import { useWorkspaceId, useWorkspaceName } from "@/features/dashboard/WorkspaceContext";
+import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
 import type { Profile } from "@/libs/contracts";
 
 type Props = {
@@ -30,31 +30,23 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
   );
 }
 
-// Plan/billing lives in Workspace Settings (it's scoped to the workspace,
-// not the person — see WorkspacePage's Plan section), which isn't somewhere
-// people reliably think to look for it. This is just a signpost pointing
-// there, not a duplicate of that section — no plan data is fetched here.
-function PlanShortcutSection() {
-  const workspaceId = useWorkspaceId();
-  const workspaceName = useWorkspaceName();
+// Was a row in DashboardSidebar's footer — moved here since it's a per-device
+// convenience, not a nav destination, and account settings is that quiet
+// utility drawer for things that don't belong in the main nav.
+function MobileAppSection() {
   return (
     <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="text-base font-semibold text-white light:text-gray-900 flex items-center gap-2">
-            <CreditCardIcon className="size-4 text-indigo-400 light:text-indigo-600" />
-            Plan &amp; billing
+            <QrCodeIcon className="size-4 text-indigo-400 light:text-indigo-600" />
+            Mobile app
           </h2>
           <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
-            Managed per workspace. For {workspaceName || "this workspace"}, it&apos;s under Workspace Settings.
+            Scan the QR code to track rankings and get push notifications on your phone.
           </p>
         </div>
-        <Link
-          href={workspaceId ? `/dashboard/settings/workspace/${workspaceId}#plan` : "/dashboard"}
-          className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 transition-colors"
-        >
-          Manage Plan
-        </Link>
+        <MobileAppQrButton />
       </div>
     </section>
   );
@@ -158,9 +150,9 @@ export default function AccountPage({ email, profile, certification }: Props) {
             </form>
           </section>
 
-          <PlanShortcutSection />
-
           <AppearanceSection />
+
+          <MobileAppSection />
 
           <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
             <h2 className="text-base font-semibold text-white light:text-gray-900 mb-2 flex items-center gap-2">

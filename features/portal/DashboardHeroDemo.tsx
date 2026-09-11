@@ -27,7 +27,7 @@ import {
   TrophyIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
-  QrCodeIcon,
+  CreditCardIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { countryFlag } from "@/libs/countries";
@@ -273,8 +273,8 @@ export function DashboardHeroDemo() {
 
           <div className="border-t border-black/[0.08] p-2.5 space-y-0.5">
             <FooterRow icon={TrophyIcon} label="Learn & Get Certified" />
-            <FooterRow icon={QrCodeIcon} label="Get mobile app" />
             <FooterRow icon={ChatBubbleLeftRightIcon} label="Chat with us 👋" />
+            <FooterRow icon={CreditCardIcon} label="Manage Plan" badge="Enterprise" />
             <FooterRow icon={UserCircleIcon} label="Account settings" />
           </div>
         </aside>

@@ -27,18 +27,18 @@ import {
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
   UserCircleIcon,
+  CreditCardIcon,
   LockClosedIcon,
   BeakerIcon,
   TrophyIcon,
   MapIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
-import { MobileAppQrButton } from "@/features/dashboard/MobileAppQrButton";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { TourTooltip } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
-import type { PlanSlug, Workspace, WorkspaceAccess } from "@/libs/contracts";
+import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
   basic: { label: "Basic", className: "bg-emerald-500/10 text-emerald-500 light:text-emerald-700" },
@@ -106,6 +106,8 @@ type Props = {
   activePreviewPage?: string;
   /** Which product areas the current member has access to in the active workspace */
   access: WorkspaceAccess[];
+  /** The current member's role in the active workspace — only owners can manage billing */
+  role?: WorkspaceRole;
   planSlug?: PlanSlug;
   /** Max workspaces the current user may own under their plan; null = unlimited */
   workspaceLimit?: number | null;
@@ -127,11 +129,14 @@ export default function DashboardSidebar({
   metaOverrideHref,
   activePreviewPage,
   access,
+  role,
   planSlug = "free",
   workspaceLimit,
   isMobileOpen = false,
   onMobileClose,
 }: Props) {
+  const planBadge = PLAN_BADGE[planSlug];
+  const canManagePlan = role === "owner";
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
   const hasMarketIntelligence = access.includes("market_intelligence");
@@ -639,7 +644,6 @@ export default function DashboardSidebar({
           <TrophyIcon className="size-4 shrink-0" />
           Learn &amp; Get Certified
         </a>
-        <MobileAppQrButton variant="row" />
         <button
           type="button"
           onClick={() => window.Tawk_API?.maximize?.()}
@@ -648,6 +652,29 @@ export default function DashboardSidebar({
           <ChatBubbleLeftRightIcon className="size-4 shrink-0" />
           Chat with us 👋
         </button>
+        {canManagePlan ? (
+          <a
+            href="/dashboard/subscription"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+          >
+            <CreditCardIcon className="size-4 shrink-0" />
+            <span className="flex-1">Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
+              {planBadge.label}
+            </span>
+          </a>
+        ) : (
+          <div
+            title="Only the workspace owner can manage the plan"
+            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-600 cursor-not-allowed"
+          >
+            <CreditCardIcon className="size-4 shrink-0" />
+            <span className="flex-1">Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${planBadge.className}`}>
+              {planBadge.label}
+            </span>
+          </div>
+        )}
         <a
           href="/dashboard/settings/account"
           className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
