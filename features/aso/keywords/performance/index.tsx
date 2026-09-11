@@ -477,16 +477,25 @@ export default function KeywordPerformancePage() {
     if (!activeApp || !trackedTerms || exportingReport) return;
     setExportingReport(true);
     try {
-      const params = new URLSearchParams({
-        terms: trackedTerms,
-        store: activeApp.store ?? "ios",
-        country: activeApp.country ?? "us",
-        storeId: activeApp.store_id ?? "",
+      const terms = keywords.filter((k) => !k.loading).map((k) => k.term).sort();
+      // POST with terms in the body, not a query string — tracked-keyword
+      // count is uncapped on every paid plan (20260721000001_unlimited_paid_
+      // keywords.sql), and a query string carrying thousands of keywords
+      // blows past request-line/header size limits well before it blows
+      // past anything about actual keyword volume (verified: a GET here
+      // started failing outright somewhere between 800-1000 real keywords).
+      const res = await fetch("/api/keywords/performance-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms,
+          store: activeApp.store ?? "ios",
+          country: activeApp.country ?? "us",
+          storeId: activeApp.store_id ?? "",
+        }),
       });
-      const res = await fetch(`/api/keywords/performance-report?${params}`);
       if (!res.ok) throw new Error("Export failed");
       const data: PerformanceReportResult & { _catchingUp?: string[] } = await res.json();
-      const terms = keywords.filter((k) => !k.loading).map((k) => k.term).sort();
       await exportPerformanceReport(activeApp.name, terms, data, planSlug);
 
       // A handful of keywords had nothing for this month yet at the moment

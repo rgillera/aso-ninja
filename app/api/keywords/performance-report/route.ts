@@ -130,48 +130,74 @@ export type MonthlyKeywordStats = {
 // volume or rank data for.
 export type PerformanceReportResult = Record<string, Record<string, MonthlyKeywordStats>>;
 
-// GET /api/keywords/performance-report?terms=a,b&store=ios&country=us&storeId=123456
-//
-// Powers the "Export Report" button on Keyword Performance. Rolls the full
-// volume/rank history for each tracked keyword up to one entry per calendar
-// month (see MonthlyKeywordStats for why it's the month's best value, not its
-// last). The client turns this into one Excel tab per month (a fixed rolling
-// window — see exportReport.ts), each showing that month's rank change vs.
-// the month before it.
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const termsParam = searchParams.get("terms") ?? "";
-  const store    = searchParams.get("store") ?? "ios";
-  const country  = (searchParams.get("country") ?? "us").toLowerCase();
-  const ourAppId = searchParams.get("storeId") ?? "";
+// Keeps each batch's PostgREST `in.(...)` filter well under the ~16KB
+// URL/header ceiling both Next.js and PostgREST enforce on the request line
+// (verified directly: a single unbatched `.in()` call started failing with
+// a plain 414/431 somewhere between 800-1000 real-length keywords, nowhere
+// close to what an unlimited-keyword paid plan can actually reach — see
+// 20260721000001_unlimited_paid_keywords.sql). 250 keeps even long
+// multi-word phrases far under that regardless of how many batches it takes.
+const QUERY_BATCH_SIZE = 250;
 
-  // Each term arrives percent-encoded (see the client's encodeURIComponent
-  // before joining) so a literal comma inside a keyword survives as %2C
-  // instead of being mistaken for the between-terms delimiter.
-  const terms = [...new Set(termsParam.split(",").map((t) => decodeURIComponent(t.trim()).toLowerCase()).filter(Boolean))];
+function chunk<T>(arr: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+// POST /api/keywords/performance-report — body: { terms: string[], store, country, storeId }
+//
+// Powers the "Export Report" button on Keyword Performance. POST + a JSON
+// body rather than GET + query string specifically because terms is
+// unbounded (paid plans track keywords with no cap — see
+// 20260721000001_unlimited_paid_keywords.sql) and a query string carrying
+// thousands of keywords blows past request-line/header size limits long
+// before it blows past anything about actual keyword volume.
+//
+// Rolls the full volume/rank history for each tracked keyword up to one
+// entry per calendar month (see MonthlyKeywordStats for why it's the
+// month's best value, not its last). The client turns this into one Excel
+// tab per month (a fixed rolling window — see exportReport.ts), each
+// showing that month's rank change vs. the month before it.
+export async function POST(request: NextRequest) {
+  const body = await request.json().catch(() => null) as { terms?: string[]; store?: string; country?: string; storeId?: string } | null;
+  const store    = body?.store ?? "ios";
+  const country  = (body?.country ?? "us").toLowerCase();
+  const ourAppId = body?.storeId ?? "";
+
+  const terms = [...new Set((body?.terms ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))];
   if (!terms.length) return NextResponse.json({});
 
   const supabase = await createClient();
+  const termBatches = chunk(terms, QUERY_BATCH_SIZE);
 
-  const [volRes, rankRes] = await Promise.all([
-    supabase
-      .from("keyword_volume_history")
-      .select("term, score, recorded_on")
-      .in("term", terms)
-      .eq("store", store)
-      .eq("country", country),
+  const [volRows, rankRows] = await Promise.all([
+    Promise.all(
+      termBatches.map((batch) =>
+        supabase
+          .from("keyword_volume_history")
+          .select("term, score, recorded_on")
+          .in("term", batch)
+          .eq("store", store)
+          .eq("country", country)
+      )
+    ).then((results) => results.flatMap((r) => r.data ?? [])),
     // Only our own app's rank belongs in this report — skip the query
     // entirely when we don't have a store_id to filter on (a
     // previewed-but-not-yet-tracked app).
     ourAppId
-      ? supabase
-          .from("keyword_rankings_history")
-          .select("keyword, recorded_on, position")
-          .in("keyword", terms)
-          .eq("store", store)
-          .eq("country", country)
-          .eq("app_id", ourAppId)
-      : Promise.resolve({ data: [] as { keyword: string; recorded_on: string; position: number | null }[] }),
+      ? Promise.all(
+          termBatches.map((batch) =>
+            supabase
+              .from("keyword_rankings_history")
+              .select("keyword, recorded_on, position")
+              .in("keyword", batch)
+              .eq("store", store)
+              .eq("country", country)
+              .eq("app_id", ourAppId)
+          )
+        ).then((results) => results.flatMap((r) => r.data ?? []))
+      : Promise.resolve([] as { keyword: string; recorded_on: string; position: number | null }[]),
   ]);
 
   const monthOf = (recordedOn: string) => recordedOn.slice(0, 7); // "YYYY-MM"
@@ -184,7 +210,7 @@ export async function GET(request: NextRequest) {
   const accum: Record<string, Record<string, Accum>> = {};
   for (const term of terms) accum[term] = {};
 
-  for (const row of volRes.data ?? []) {
+  for (const row of volRows) {
     const bucket = accum[row.term] ?? (accum[row.term] = {});
     const month = monthOf(row.recorded_on);
     const entry = bucket[month] ?? (bucket[month] = { volSum: 0, volCount: 0, bestRank: null });
@@ -194,7 +220,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  for (const row of rankRes.data ?? []) {
+  for (const row of rankRows) {
     // A null position is the "checked, not found in results" marker — no
     // numeric rank to compare, so it can't set a month's best.
     if (row.position == null) continue;
