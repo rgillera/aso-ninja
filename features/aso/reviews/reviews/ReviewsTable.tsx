@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StarIcon } from "@heroicons/react/24/solid";
 import {
   ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon,
@@ -29,6 +29,10 @@ type Props = { reviews: ReviewItem[] };
 export function ReviewsTable({ reviews }: Props) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
+
+  // A new date range or app swaps in a different `reviews` array — if the
+  // reader was on page 3 of the old list, don't strand them on a now-empty page.
+  useEffect(() => setPage(0), [reviews]);
 
   const pageCount = Math.max(1, Math.ceil(reviews.length / PAGE_SIZE));
   const pageRows = useMemo(

@@ -116,6 +116,7 @@ export default function RatingsDashboardPage() {
 
             <div className="rounded-xl bg-[#1a1d24] light:bg-white">
               <RatingsGainedChart
+                key={activeApp.id}
                 series={result?.series ?? []}
                 hasStarBreakdown={!!result?.current.ratingHistogram}
               />

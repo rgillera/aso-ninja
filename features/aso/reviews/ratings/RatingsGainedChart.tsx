@@ -119,6 +119,9 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
         ))}
       </div>
 
+      {rows.length === 0 ? (
+        <p className="px-5 py-16 text-center text-xs text-gray-600 light:text-gray-400">No ratings history in this date range.</p>
+      ) : (
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
@@ -156,6 +159,7 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
           )}
         </ComposedChart>
       </ResponsiveContainer>
+      )}
     </div>
   );
 }
