@@ -168,7 +168,7 @@ export function ExplorerTable({ apps, loading, country }: Props) {
                             </span>
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm text-gray-200 light:text-gray-800 group-hover:text-white truncate">{app.name}</p>
+                            <p className="text-sm text-gray-200 light:text-gray-800 group-hover:text-white light:group-hover:text-gray-900 truncate">{app.name}</p>
                             <p className="text-xs text-gray-600 light:text-gray-400 truncate">{app.developer}</p>
                           </div>
                         </a>
