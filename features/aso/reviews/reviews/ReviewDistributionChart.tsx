@@ -50,8 +50,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
             value={from}
             max={to || undefined}
             onChange={(e) => onFromChange(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
-            style={{ colorScheme: "dark" }}
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none [color-scheme:dark] light:[color-scheme:light]"
           />
           <span className="text-gray-600 light:text-gray-400">–</span>
           <input
@@ -59,8 +58,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
             value={to}
             min={from || undefined}
             onChange={(e) => onToChange(e.target.value)}
-            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none"
-            style={{ colorScheme: "dark" }}
+            className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none [color-scheme:dark] light:[color-scheme:light]"
           />
         </div>
       </div>
