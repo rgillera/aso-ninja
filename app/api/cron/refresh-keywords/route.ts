@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
 
 // Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
@@ -22,31 +23,6 @@ const TIME_BUDGET_MS = 4.5 * 60 * 1000;
 
 type RawApp = { trackId: number; trackName: string; userRatingCount: number; artworkUrl: string };
 type AdminClient = ReturnType<typeof createAdminClient>;
-
-function computeIosVolumeAndDiff(apps: RawApp[], term: string) {
-  const kwTokens = term.split(/\s+/).filter(Boolean);
-  const titleApps = apps.filter((a) =>
-    kwTokens.every((w) => a.trackName.toLowerCase().includes(w))
-  );
-  const avgTitleRatings =
-    titleApps.length === 0
-      ? 0
-      : titleApps.reduce((s, a) => s + a.userRatingCount, 0) / titleApps.length;
-  const volume =
-    avgTitleRatings < 1_000
-      ? 5
-      : Math.min(Math.round((Math.log10(avgTitleRatings) / Math.log10(10_000_000)) * 100), 100);
-
-  const top5 = apps.slice(0, 5);
-  const avgRatings =
-    top5.length > 0 ? top5.reduce((s, r) => s + r.userRatingCount, 0) / top5.length : 0;
-  const diff =
-    avgRatings < 10
-      ? 0
-      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(10_000_000)) * 100), 100);
-
-  return { volume, diff };
-}
 
 // One entry per keyword whose rank moved enough to be worth a push — fed to
 // notifyRankChanges() once the whole cron run is done, so a user tracking

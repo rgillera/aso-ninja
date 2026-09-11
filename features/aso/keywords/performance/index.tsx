@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -85,6 +85,7 @@ export default function KeywordPerformancePage() {
   // users don't refresh mid-add and lose it.
   const [pendingAdds, setPendingAdds] = useState(0);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
   const { setGuardMessage } = useNavigationGuard();
   useEffect(() => {
     setGuardMessage(pendingAdds > 0 ? "A keyword is still being added. Leaving now may lose it." : null);
@@ -484,9 +485,20 @@ export default function KeywordPerformancePage() {
       });
       const res = await fetch(`/api/keywords/performance-report?${params}`);
       if (!res.ok) throw new Error("Export failed");
-      const data: PerformanceReportResult = await res.json();
+      const data: PerformanceReportResult & { _catchingUp?: string[] } = await res.json();
       const terms = keywords.filter((k) => !k.loading).map((k) => k.term).sort();
       await exportPerformanceReport(activeApp.name, terms, data, planSlug);
+
+      // A handful of keywords had nothing for this month yet at the moment
+      // of export — they're being filled in behind the scenes now, kept in
+      // plain, non-technical terms for the user.
+      setExportNotice(
+        data._catchingUp?.length
+          ? data._catchingUp.length === 1
+            ? `"${data._catchingUp[0]}" is still catching up — export again in a bit for the full picture.`
+            : `${data._catchingUp.length} keywords are still catching up — export again in a bit for the full picture.`
+          : null
+      );
     } catch {
       setSaveError("Couldn't export the report. Try again in a moment.");
     } finally {
@@ -655,6 +667,16 @@ export default function KeywordPerformancePage() {
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
           <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+            <XMarkIcon className="size-4" />
+          </button>
+        </div>
+      )}
+
+      {exportNotice && (
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-400 light:text-indigo-600 text-xs">
+          <InformationCircleIcon className="size-4 shrink-0" />
+          <span className="flex-1">{exportNotice}</span>
+          <button onClick={() => setExportNotice(null)} className="shrink-0 hover:text-indigo-300">
             <XMarkIcon className="size-4" />
           </button>
         </div>

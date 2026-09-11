@@ -1,5 +1,113 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { createAdminClient } from "@/libs/supabase/admin";
+import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
+import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
+
+// Lets the background catch-up pass below (kicked off via `after()`) keep
+// running past a normal request's lifetime — same ceiling refresh-keywords
+// uses, since this does the same kind of work (a live Apple/Play search per
+// term, paced by the same rate limiter).
+export const maxDuration = 300;
+
+// A single Export Report click might be missing this month's data for
+// several terms at once (e.g. right after stale_keywords_for_refresh
+// started covering never-checked keywords — see that migration). Doesn't
+// block the response (see the `after()` call in GET below) — it runs once
+// the report has already been sent back, so exporting stays exactly as
+// fast as it is today; the payoff is the *next* export (or page load)
+// having this month filled in instead of waiting for these terms' turn in
+// the cron's fairness queue. A generous but finite budget, same idea as
+// refresh-keywords' TIME_BUDGET_MS, so a large gap list can't run forever.
+const BACKFILL_BUDGET_MS = 4 * 60 * 1000;
+
+async function backfillCurrentMonth(terms: string[], store: string, country: string, today: string) {
+  const supabase = createAdminClient();
+  const startedAt = Date.now();
+
+  for (const term of terms) {
+    if (Date.now() - startedAt > BACKFILL_BUDGET_MS) break;
+
+    try {
+      if (store === "ios") {
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const res = await enqueueAppleRequest(() => fetch(url, { cache: "no-store" } as any));
+        if (!res.ok) {
+          // A 403 means Apple is throttling us globally right now, not
+          // just for this term — stop rather than burning the rest of the
+          // budget on more guaranteed 403s. Any other bad response just
+          // skips this one term; it stays "No data yet" until the refresh
+          // cron's own retry/backoff (refresh-keywords) picks it up.
+          if (res.status === 403) break;
+          continue;
+        }
+
+        const json = await res.json();
+        const apps: { trackId: number; trackName: string; userRatingCount: number; artworkUrl: string }[] =
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (json.results ?? []).map((a: any) => ({
+          trackId: a.trackId ?? 0,
+          trackName: a.trackName ?? "",
+          userRatingCount: a.userRatingCount ?? 0,
+          artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
+        }));
+
+        const { volume, diff } = computeIosVolumeAndDiff(apps, term);
+
+        await supabase.from("keyword_volume_history").upsert(
+          { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
+          { onConflict: "term,store,country,recorded_on" }
+        );
+        if (apps.length) {
+          await supabase.from("keyword_rankings_history").upsert(
+            apps.map((a, i) => ({
+              keyword: term, store: "ios", country, recorded_on: today,
+              position: i + 1, app_id: String(a.trackId || a.trackName),
+              app_name: a.trackName, app_icon: a.artworkUrl,
+            })),
+            { onConflict: "keyword,store,country,recorded_on,app_id" }
+          );
+        }
+      } else if (store === "android") {
+        const gplay = await import("google-play-scraper");
+        const api = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
+
+        const count = apps.length;
+        const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
+        const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
+        const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
+        const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+
+        // Skips the diff calc (needs a per-app detail lookup the cron pays
+        // for — see refresh-keywords) since the Export Report never reads
+        // it; this pass exists only to close the report's volume/rank gap.
+        await supabase.from("keyword_volume_history").upsert(
+          { term, store: "android", country, score: volume, recorded_on: today },
+          { onConflict: "term,store,country,recorded_on" }
+        );
+        if (apps.length) {
+          await supabase.from("keyword_rankings_history").upsert(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            apps.map((a: any, i: number) => ({
+              keyword: term, store: "android", country, recorded_on: today,
+              position: i + 1, app_id: a.appId ?? a.title, app_name: a.title, app_icon: a.icon,
+            })),
+            { onConflict: "keyword,store,country,recorded_on,app_id" }
+          );
+        }
+      }
+    } catch {
+      // Best-effort — this pass never needs to be complete, it just gives
+      // the next export (or page load) a head start over waiting for the
+      // cron's next tick.
+    }
+  }
+}
 
 export type MonthlyKeywordStats = {
   // Average search volume score across this keyword's daily readings this
@@ -67,6 +175,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   const monthOf = (recordedOn: string) => recordedOn.slice(0, 7); // "YYYY-MM"
+  const today = new Date().toISOString().split("T")[0];
 
   // Accumulates a running sum/count per term+month so the average can be
   // taken once at the end, rather than trying to maintain a running average
@@ -108,5 +217,31 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json(result);
+  // Terms this export would show as either "No data yet" (no entry at all
+  // this month) or "-" (an entry exists — e.g. rank got checked — but
+  // avgVolume specifically is null because no volume row landed this
+  // month) in exportReport.ts. bestRank being null does NOT belong here:
+  // that's "checked, genuinely unranked" — a real, complete answer
+  // (rendered "Unranked"), not a gap — so a term with a volume score and a
+  // null rank is left alone rather than re-fetched for no reason. Only
+  // meaningful when we have an app to rank against; without ourAppId
+  // there's no "our own rank" to fill in regardless.
+  const currentMonth = monthOf(today);
+  const catchingUp = ourAppId
+    ? terms.filter((t) => {
+        const stats = result[t]?.[currentMonth];
+        return !stats || stats.avgVolume === null;
+      })
+    : [];
+  if (catchingUp.length) {
+    after(() => backfillCurrentMonth(catchingUp, store, country, today));
+  }
+
+  return NextResponse.json({
+    ...result,
+    // Same "_"-prefixed sideband convention as /api/keywords/metrics
+    // (_rateLimited, _aiDown) — lets the client show a plain-language
+    // heads-up without it being mistaken for a real month's data.
+    ...(catchingUp.length ? { _catchingUp: catchingUp } : {}),
+  });
 }
