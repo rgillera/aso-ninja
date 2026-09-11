@@ -65,6 +65,21 @@ function isSignificantRankChange(previousRank: number | null, rank: number | nul
   return (previousRank > 10 && rank <= 10) || (previousRank <= 10 && rank > 10);
 }
 
+// Backs a chronically-failing term off (see the migration adding this RPC
+// for why) instead of letting it hammer the same broken query every run.
+// Best-effort — a failure to log the failure must not fail the refresh
+// itself.
+async function recordCheckFailure(supabase: AdminClient, term: string, store: string, country: string) {
+  await supabase.rpc("record_keyword_refresh_failure", { p_term: term, p_store: store, p_country: country }).then(() => {}, () => {});
+}
+
+// Clears any backoff state on an actual success, so a term that recovers
+// goes straight back to the normal monthly/weekly cadence instead of
+// serving out a backoff window it no longer needs.
+async function clearCheckFailure(supabase: AdminClient, term: string, store: string, country: string) {
+  await supabase.from("keyword_refresh_failures").delete().eq("term", term).eq("store", store).eq("country", country).then(() => {}, () => {});
+}
+
 // Refreshes rank + chance for every app already tracking `term` in this
 // store/country, using the result names this run just fetched — no extra
 // network calls. Skips volume/diff/relevancy/opportunity entirely (no AI,
@@ -213,6 +228,7 @@ export async function GET(req: Request) {
         if (!res.ok) {
           if (res.status === 403) { rateLimited = true; continue; }
           failed++;
+          await recordCheckFailure(supabase, term, store, country);
           continue;
         }
 
@@ -245,6 +261,7 @@ export async function GET(req: Request) {
 
         await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
         refreshed++;
+        await clearCheckFailure(supabase, term, store, country);
       } else if (store === "android") {
         const gplay = await import("google-play-scraper");
         const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -307,9 +324,11 @@ export async function GET(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
         refreshed++;
+        await clearCheckFailure(supabase, term, store, country);
       }
     } catch {
       failed++;
+      await recordCheckFailure(supabase, term, store, country);
     }
   }
 
