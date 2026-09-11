@@ -186,7 +186,7 @@ export default function SubscriptionPage({
               >
                 {isPopular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="rounded-full bg-violet-400 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-violet-900/30">
+                    <span className="rounded-full bg-violet-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-violet-900/40">
                       ★ Most Popular
                     </span>
                   </div>
