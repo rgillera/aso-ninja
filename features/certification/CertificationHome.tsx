@@ -49,7 +49,7 @@ export default function CertificationHome({ holderName = "", certification }: Pr
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <Link
             href="/dashboard/certification/learn"
-            className="group rounded-2xl bg-white/5 light:bg-black/[0.04] p-5 transition-colors hover:bg-white/[0.07] hover:ring-indigo-500/40"
+            className="group rounded-2xl bg-white/5 light:bg-black/[0.04] p-5 ring-1 ring-transparent transition-colors hover:bg-white/[0.1] light:hover:bg-black/[0.07] hover:ring-indigo-500/40"
           >
             <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/15">
               <BookOpenIcon className="size-5 text-indigo-400 light:text-indigo-600" />
@@ -58,14 +58,14 @@ export default function CertificationHome({ holderName = "", certification }: Pr
             <p className="mt-1.5 text-xs leading-relaxed text-gray-400 light:text-gray-600">
               {CERTIFICATION_MODULES.length} short lessons across {CERTIFICATION_LEVEL_ORDER.length} levels, from what ASO is up to building an ongoing strategy.
             </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 light:text-indigo-600 group-hover:text-indigo-300 light:hover:text-indigo-600">
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 light:text-indigo-600 group-hover:text-indigo-300 light:group-hover:text-indigo-700">
               Start learning →
             </span>
           </Link>
 
           <Link
             href="/dashboard/certification/exam"
-            className="group rounded-2xl bg-white/5 light:bg-black/[0.04] p-5 transition-colors hover:bg-white/[0.07] hover:ring-indigo-500/40"
+            className="group rounded-2xl bg-white/5 light:bg-black/[0.04] p-5 ring-1 ring-transparent transition-colors hover:bg-white/[0.1] light:hover:bg-black/[0.07] hover:ring-indigo-500/40"
           >
             <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/15">
               <PencilSquareIcon className="size-5 text-indigo-400 light:text-indigo-600" />
@@ -74,10 +74,16 @@ export default function CertificationHome({ holderName = "", certification }: Pr
             <p className="mt-1.5 text-xs leading-relaxed text-gray-400 light:text-gray-600">
               {MAX_EXAM_QUESTIONS} questions, timed, drawn at random so every retake is different. Score {passPercent}% or higher to earn your certification.
             </p>
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 light:text-indigo-600 group-hover:text-indigo-300 light:hover:text-indigo-600">
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 light:text-indigo-600 group-hover:text-indigo-300 light:group-hover:text-indigo-700">
               Start exam →
             </span>
           </Link>
+        </div>
+
+        <div className="mt-6 rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20 px-4 py-3 text-sm text-amber-300 light:text-amber-700">
+          These lessons are a quick overview from basics to advanced, not a deep dive. The exam is practical and
+          situational, so before you take the test, read further ASO books or articles and get hands-on experience
+          optimizing a real app store listing.
         </div>
 
         <div className="mt-10">
