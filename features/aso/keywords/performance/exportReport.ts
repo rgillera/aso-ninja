@@ -63,7 +63,7 @@ function prevMonthKey(monthKey: string): string {
 // HISTORY_MONTHS_BY_PLAN) render as a locked, upgrade-prompt tab instead of
 // data — this is an entitlement gate, not a data-availability check, so it
 // applies even if some data for that month happens to still exist. Every
-// unlocked month shows average volume, highest (best/lowest-number) rank,
+// unlocked month shows volume, highest (best/lowest-number) rank,
 // and rank change vs. the prior calendar month (matches the in-app "Change"
 // column: positive = improved, colored green; a decline is colored red).
 export async function exportPerformanceReport(
@@ -130,7 +130,7 @@ export async function exportPerformanceReport(
 
     sheet.columns = [
       { header: "Keyword", key: "keyword", width: 28 },
-      { header: "Average Volume", key: "volume", width: 18 },
+      { header: "Volume", key: "volume", width: 18 },
       { header: "Highest Ranking", key: "ranking", width: 18 },
       { header: "Change", key: "change", width: 14 },
     ];
