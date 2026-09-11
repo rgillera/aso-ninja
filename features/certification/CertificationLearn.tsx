@@ -136,6 +136,12 @@ export default function CertificationLearn() {
 
         {/* Article */}
         <div className="flex-1 min-w-0 overflow-y-auto px-10 py-8">
+          <div className="mb-6 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm leading-relaxed text-amber-800">
+            These lessons are a quick overview from basics to advanced, not a deep dive. The exam is practical and
+            situational, so before you take the test, read further ASO books or articles and get hands-on experience
+            optimizing a real app store listing.
+          </div>
+
           <div className="flex items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-widest text-black/40">{LEVEL_LABEL[current.level]}</p>
             <p className="text-xs text-black/30">
