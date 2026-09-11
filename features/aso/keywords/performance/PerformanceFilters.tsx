@@ -162,12 +162,12 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
           onClick={onExportReport}
           disabled={exportingReport}
           title="Export a monthly volume/ranking report as an Excel file"
-          className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 ring-1 ring-white/[0.08] light:ring-black/[0.08] disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
+          className="ml-auto flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors"
         >
           {exportingReport
-            ? <span className="size-3 rounded-full border-2 border-gray-500/40 border-t-gray-300 animate-spin" />
+            ? <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
             : <ArrowDownTrayIcon className="size-3.5" />}
-          {exportingReport ? "Exporting…" : "Export Report"}
+          {exportingReport ? "Exporting…" : "Export Keyword Report"}
         </button>
 
         {!isFiltersDefault(filters) && (
