@@ -14,17 +14,22 @@ import type { AsaCredential, AsaKeywordRow } from "./types";
 //   HIGH   — OAuth2 client-credentials token exchange (TOKEN_URL, JWT
 //            shape, grant_type/scope). Same Apple ID OAuth infra the
 //            legacy API already used for years; multiple independent
-//            sources agree on this part.
-//   MEDIUM — API_BASE, the X-AP-Context header name/value
-//            (adAccountId=...), and GET /acls for account discovery.
-//            Confirmed by one third-party source describing v1
-//            specifically.
-//   LOW    — Exact paths for campaigns/adgroups/targetingkeywords/reports.
-//            Built by mirroring the legacy v4/v5 resource model (which
-//            Apple's own docs describe v1 as having "direct equivalents"
-//            to) onto the new base URL. Not verified against a live call.
+//            sources agree on this part. Also HIGH now: API_BASE, the
+//            X-AP-Context header name/value (adAccountId=...), GET /acls
+//            for account discovery, and its response envelope — all
+//            confirmed against a live call on 2026-09-12:
+//            {result: {acls: [{roles, adAccount: {id, name, orgId}}]}}.
+//            That envelope is {result: {...}}, NOT the legacy API's
+//            {data: ...} — asaFetch below unwraps both.
+//   MEDIUM — Exact paths and response sub-keys for
+//            campaigns/adgroups/targetingkeywords/reports. Built by
+//            mirroring the legacy v4/v5 resource model (which Apple's own
+//            docs describe v1 as having "direct equivalents" to) onto the
+//            new base URL, with each one now also trying a
+//            resource-named sub-key (e.g. {campaigns: [...]}) matching
+//            the confirmed /acls pattern. Paths themselves still not
+//            verified against a live call.
 //
-// No test credentials were available to verify any of this end-to-end.
 // Every function below throws with Apple's actual HTTP status + response
 // body on failure rather than swallowing it, so a wrong guess here fails
 // loudly and specifically — check the thrown error message first.
@@ -69,8 +74,9 @@ async function getAccessToken(credential: AsaCredential): Promise<string> {
 
 // Thin wrapper: attaches auth + org-context headers, throws with Apple's
 // actual status/body on any non-2xx so callers never have to guess why a
-// request failed. Unwraps the common {data: ...} envelope Apple's APIs use,
-// but falls back to the raw JSON if a response isn't wrapped that way.
+// request failed. Unwraps Apple's envelope — confirmed against a live /acls
+// call to be {result: {...}} on v1, not the legacy API's {data: ...} — but
+// falls back to the raw JSON if a response isn't wrapped either way.
 async function asaFetch(token: string, adAccountId: string | null, path: string, init?: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -89,20 +95,31 @@ async function asaFetch(token: string, adAccountId: string | null, path: string,
   }
 
   const json = await res.json();
-  return json?.data ?? json;
+  return json?.data ?? json?.result ?? json;
 }
 
 async function resolveAdAccountId(token: string): Promise<string> {
-  const acls = await asaFetch(token, null, "/acls");
-  const list = Array.isArray(acls) ? acls : [];
-  const accountId = list[0]?.orgId ?? list[0]?.adAccountId ?? list[0]?.id;
+  const body = await asaFetch(token, null, "/acls");
+  // Confirmed live shape: {result: {acls: [{roles, adAccount: {id, name, orgId}}]}}
+  // — asaFetch above already unwraps `result`, so `body` here is {acls: [...]}.
+  const list: Array<{ adAccount?: { id?: string | number; orgId?: string | number; name?: string } }> = Array.isArray(body?.acls)
+    ? body.acls
+    : Array.isArray(body)
+      ? body
+      : [];
+
+  // Orgs that have ever touched Search Ads Basic carry an extra pseudo
+  // ad-account named "Search Ads Basic" alongside their real Advanced one,
+  // both sharing the same orgId. The org's primary/Advanced account is the
+  // one whose adAccount.id equals its own orgId — prefer that when there's
+  // more than one entry, since campaigns for most apps live there.
+  const primary = list.find((a) => a.adAccount?.id != null && String(a.adAccount.id) === String(a.adAccount.orgId));
+  const chosen = primary ?? list[0];
+  const accountId = chosen?.adAccount?.id ?? chosen?.adAccount?.orgId;
+
   if (!accountId) {
-    // Surface the raw payload rather than just "not found" — this call's response
-    // shape is only MEDIUM-confidence (see the note at the top of this file), so
-    // when this fires we need to see what Apple actually sent back to tell a real
-    // "no accounts on this credential" apart from us reading the wrong field/envelope.
     throw new Error(
-      `Apple's /acls response didn't include an account id — no Apple Search Ads accounts on this credential? Raw response: ${JSON.stringify(acls).slice(0, 1000)}`
+      `Apple's /acls response didn't include an account id — no Apple Search Ads accounts on this credential? Raw response: ${JSON.stringify(body).slice(0, 1000)}`
     );
   }
   return String(accountId);
@@ -112,20 +129,24 @@ type ApiCampaign = { id: string | number; name: string; adamId: string | number 
 type ApiAdGroup = { id: string | number; name: string };
 type ApiTargetingKeyword = { id: string | number; text: string; matchType: string; status: string; bidAmount?: { amount?: string; currency?: string } };
 
+// Each of these tries a bare array first, then falls back to the resource-named
+// sub-key the confirmed /acls shape uses (result.acls) — still an unverified
+// guess for these specific endpoints (see the MEDIUM-confidence note above), but
+// consistent with the one shape we've actually confirmed live.
 async function fetchCampaignsForApp(token: string, adAccountId: string, adamId: string): Promise<ApiCampaign[]> {
-  const campaigns = await asaFetch(token, adAccountId, "/campaigns");
-  const list: ApiCampaign[] = Array.isArray(campaigns) ? campaigns : [];
+  const body = await asaFetch(token, adAccountId, "/campaigns");
+  const list: ApiCampaign[] = Array.isArray(body) ? body : Array.isArray(body?.campaigns) ? body.campaigns : [];
   return list.filter((c) => String(c.adamId) === String(adamId));
 }
 
 async function fetchAdGroups(token: string, adAccountId: string, campaignId: string | number): Promise<ApiAdGroup[]> {
-  const groups = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups`);
-  return Array.isArray(groups) ? groups : [];
+  const body = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups`);
+  return Array.isArray(body) ? body : Array.isArray(body?.adGroups) ? body.adGroups : [];
 }
 
 async function fetchTargetingKeywords(token: string, adAccountId: string, campaignId: string | number, adGroupId: string | number): Promise<ApiTargetingKeyword[]> {
-  const keywords = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups/${adGroupId}/targetingkeywords`);
-  return Array.isArray(keywords) ? keywords : [];
+  const body = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups/${adGroupId}/targetingkeywords`);
+  return Array.isArray(body) ? body : Array.isArray(body?.targetingKeywords) ? body.targetingKeywords : [];
 }
 
 // Keyword-level spend/impressions/taps/installs for the last 30 days. Kept
