@@ -3,6 +3,10 @@ import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
+import { computeWeight } from "@/libs/keyword-downloads-apportionment";
+import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { REPORT_MONTHS } from "@/libs/keyword-report-window";
 
 // Lets the background catch-up pass below (kicked off via `after()`) keep
 // running past a normal request's lifetime — same ceiling refresh-keywords
@@ -124,6 +128,16 @@ export type MonthlyKeywordStats = {
   // was ever recorded this month (every check that month came back
   // "unranked").
   bestRank: number | null;
+  // This app's modeled share of its real total downloads that month,
+  // apportioned across every tracked keyword by that month's own volume +
+  // rank (see libs/keyword-downloads-apportionment.ts — same formula the
+  // live Est. Downloads column uses, but weighted by THIS month's numbers
+  // rather than today's, since a past month gets printed into a static
+  // file with no chance to re-weight later). null when unranked that month
+  // (no share to attribute), or when there's no real download total for
+  // that month at all (below Pro, no connection yet, or not synced) —
+  // never a bare 0, which would misread as "confirmed zero downloads."
+  estimatedDownloads: number | null;
 };
 
 // Keyed by term, then by "YYYY-MM" for every month that term has any real
@@ -145,7 +159,50 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return out;
 }
 
-// POST /api/keywords/performance-report — body: { terms: string[], store, country, storeId }
+// Resolves whether this export is entitled to Est. Downloads (Pro and up,
+// same gate the live column uses — see app/api/keywords/list/route.ts) and,
+// if so, this app's real download totals summed to one number per calendar
+// month. appId is the internal apps.id (not storeId, which identifies the
+// app on the store, not in our own DB) — absent for a previewed-but-not-
+// yet-tracked app, which can't have downloads to apportion anyway.
+//
+// Uses the request-scoped (RLS'd) client, not the admin client: a caller
+// passing an appId from a workspace they don't belong to just gets no app
+// row back rather than needing an explicit membership check here.
+async function loadDownloadsAccess(
+  supabase: Awaited<ReturnType<typeof createClient>>, appId: string
+): Promise<{ hasAccess: boolean; monthlyTotals: Record<string, number> }> {
+  if (!appId) return { hasAccess: false, monthlyTotals: {} };
+
+  const { data: app } = await supabase.from("apps").select("workspace_id").eq("id", appId).maybeSingle();
+  if (!app) return { hasAccess: false, monthlyTotals: {} };
+
+  const planState = await getWorkspacePlanState(app.workspace_id);
+  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
+  const hasAccess = isPlanAtLeast(planSlug, "pro");
+  if (!hasAccess) return { hasAccess: false, monthlyTotals: {} };
+
+  const since = new Date();
+  since.setMonth(since.getMonth() - REPORT_MONTHS);
+  const { data: downloadRows } = await supabase
+    .from("app_download_history")
+    .select("recorded_on, downloads")
+    .eq("app_id", appId)
+    .gte("recorded_on", since.toISOString().split("T")[0]);
+
+  // Rows come back empty (not an error) for a Pro workspace that's simply
+  // never connected a store account, or connected but not synced yet —
+  // monthlyTotals stays {} either way, which the caller already reads as
+  // "no real total for this month" per keyword, same as a genuine gap.
+  const monthlyTotals: Record<string, number> = {};
+  for (const row of downloadRows ?? []) {
+    const month = row.recorded_on.slice(0, 7);
+    monthlyTotals[month] = (monthlyTotals[month] ?? 0) + row.downloads;
+  }
+  return { hasAccess, monthlyTotals };
+}
+
+// POST /api/keywords/performance-report — body: { terms: string[], store, country, storeId, appId }
 //
 // Powers the "Export Report" button on Keyword Performance. POST + a JSON
 // body rather than GET + query string specifically because terms is
@@ -160,10 +217,12 @@ function chunk<T>(arr: T[], size: number): T[][] {
 // tab per month (a fixed rolling window — see exportReport.ts), each
 // showing that month's rank change vs. the month before it.
 export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => null) as { terms?: string[]; store?: string; country?: string; storeId?: string } | null;
+  const body = await request.json().catch(() => null) as
+    { terms?: string[]; store?: string; country?: string; storeId?: string; appId?: string } | null;
   const store    = body?.store ?? "ios";
   const country  = (body?.country ?? "us").toLowerCase();
   const ourAppId = body?.storeId ?? "";
+  const appId    = body?.appId ?? "";
 
   const terms = [...new Set((body?.terms ?? []).map((t) => t.trim().toLowerCase()).filter(Boolean))];
   if (!terms.length) return NextResponse.json({});
@@ -171,7 +230,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const termBatches = chunk(terms, QUERY_BATCH_SIZE);
 
-  const [volRows, rankRows] = await Promise.all([
+  const [volRows, rankRows, downloadsAccess] = await Promise.all([
     Promise.all(
       termBatches.map((batch) =>
         supabase
@@ -198,6 +257,7 @@ export async function POST(request: NextRequest) {
           )
         ).then((results) => results.flatMap((r) => r.data ?? []))
       : Promise.resolve([] as { keyword: string; recorded_on: string; position: number | null }[]),
+    loadDownloadsAccess(supabase, appId),
   ]);
 
   const monthOf = (recordedOn: string) => recordedOn.slice(0, 7); // "YYYY-MM"
@@ -239,7 +299,36 @@ export async function POST(request: NextRequest) {
       result[term][month] = {
         avgVolume: entry.volCount ? Math.round(entry.volSum / entry.volCount) : null,
         bestRank: entry.bestRank,
+        estimatedDownloads: null, // filled in below, per month, once every term's entry exists
       };
+    }
+  }
+
+  // Splits each month's real download total across every term ranked that
+  // month, weighted by that month's own volume + rank — never today's, since
+  // a keyword's current ranking can be nothing like what it was in a month
+  // this report is about to print as fixed, final numbers (see
+  // MonthlyKeywordStats.estimatedDownloads). Skipped entirely off-Pro or
+  // with no download rows for a given month.
+  if (downloadsAccess.hasAccess) {
+    const monthsSeen = new Set<string>();
+    for (const term of terms) for (const month of Object.keys(result[term])) monthsSeen.add(month);
+
+    for (const month of monthsSeen) {
+      const monthlyTotal = downloadsAccess.monthlyTotals[month];
+      if (monthlyTotal == null) continue; // no real download total recorded for this month at all
+
+      const weights = terms.map((term) => {
+        const stats = result[term][month];
+        return stats ? computeWeight({ volume: stats.avgVolume ?? 0, rank: stats.bestRank }) : 0;
+      });
+      const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+      if (totalWeight <= 0) continue; // nothing ranked this month — no share to attribute
+
+      terms.forEach((term, i) => {
+        if (weights[i] <= 0) return; // unranked this month — no share
+        result[term][month].estimatedDownloads = Math.round(monthlyTotal * (weights[i] / totalWeight));
+      });
     }
   }
 
@@ -269,5 +358,10 @@ export async function POST(request: NextRequest) {
     // (_rateLimited, _aiDown) — lets the client show a plain-language
     // heads-up without it being mistaken for a real month's data.
     ...(catchingUp.length ? { _catchingUp: catchingUp } : {}),
+    // Tells exportReport.ts whether to render the Est. Downloads column at
+    // all — a below-Pro workspace gets no column rather than one full of
+    // dashes (entitlement was already checked server-side above; this is
+    // just what the client renders, not a second gate).
+    _downloadsAccess: downloadsAccess.hasAccess,
   });
 }

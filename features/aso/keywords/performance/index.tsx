@@ -492,11 +492,12 @@ export default function KeywordPerformancePage() {
           store: activeApp.store ?? "ios",
           country: activeApp.country ?? "us",
           storeId: activeApp.store_id ?? "",
+          appId: activeApp.id ?? "",
         }),
       });
       if (!res.ok) throw new Error("Export failed");
-      const data: PerformanceReportResult & { _catchingUp?: string[] } = await res.json();
-      await exportPerformanceReport(activeApp.name, terms, data, planSlug, activeApp.created_at);
+      const data: PerformanceReportResult & { _catchingUp?: string[]; _downloadsAccess?: boolean } = await res.json();
+      await exportPerformanceReport(activeApp.name, terms, data, planSlug, activeApp.created_at, data._downloadsAccess);
 
       // A handful of keywords had nothing for this month yet at the moment
       // of export — they're being filled in behind the scenes now, kept in

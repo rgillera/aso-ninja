@@ -77,10 +77,18 @@ export async function exportPerformanceReport(
   // wasn't tracking it in either month. Any month before this date gets
   // forced into the same empty-month tab as a month with no data at all,
   // rather than showing that borrowed, pre-tracking data.
-  appTrackedSince?: string
+  appTrackedSince?: string,
+  // report._downloadsAccess from the server (Pro and up — see
+  // app/api/keywords/performance-report/route.ts's loadDownloadsAccess).
+  // Gates whether the Est. Downloads column renders at all: a below-Pro
+  // workspace gets no column rather than one that's just dashes down the
+  // whole sheet.
+  downloadsAccess?: boolean
 ) {
   const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
   const trackedSinceMonth = appTrackedSince ? appTrackedSince.slice(0, 7) : null;
+  const showDownloads = !!downloadsAccess;
+  const lastCol = showDownloads ? "E" : "D";
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "ASO Ninja";
@@ -96,8 +104,10 @@ export async function exportPerformanceReport(
         views: [{ state: "frozen", ySplit: 1 }],
       });
       sheet.properties.tabColor = { argb: LOCKED_TAB };
-      sheet.columns = [{ width: 10 }, { width: 24 }, { width: 24 }, { width: 20 }];
-      sheet.mergeCells("A1:D3");
+      sheet.columns = showDownloads
+        ? [{ width: 10 }, { width: 24 }, { width: 24 }, { width: 20 }, { width: 18 }]
+        : [{ width: 10 }, { width: 24 }, { width: 24 }, { width: 20 }];
+      sheet.mergeCells(`A1:${lastCol}3`);
       const cell = sheet.getCell("A1");
       cell.value =
         `🔒 Upgrade to ${requiredPlan} to unlock ${monthLabel(month)}\n` +
@@ -128,8 +138,10 @@ export async function exportPerformanceReport(
       // the same message even if `report` happens to carry another
       // workspace's older shared-volume rows for these terms (see
       // appTrackedSince above) — that data predates this app too.
-      sheet.columns = [{ width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }];
-      sheet.mergeCells("A1:D2");
+      sheet.columns = showDownloads
+        ? [{ width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }, { width: 18 }]
+        : [{ width: 10 }, { width: 20 }, { width: 20 }, { width: 20 }];
+      sheet.mergeCells(`A1:${lastCol}2`);
       const cell = sheet.getCell("A1");
       cell.value =
         `No data recorded for ${monthLabel(month)} yet\n` +
@@ -149,8 +161,9 @@ export async function exportPerformanceReport(
       { header: "Volume", key: "volume", width: 18 },
       { header: "Highest Ranking", key: "ranking", width: 18 },
       { header: "Change", key: "change", width: 14 },
+      ...(showDownloads ? [{ header: "Est. Downloads", key: "downloads", width: 18 }] : []),
     ];
-    sheet.autoFilter = "A1:D1";
+    sheet.autoFilter = `A1:${lastCol}1`;
 
     const headerRow = sheet.getRow(1);
     headerRow.height = 20;
@@ -159,6 +172,17 @@ export async function exportPerformanceReport(
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
       cell.alignment = { horizontal: "left", vertical: "middle" };
     });
+    if (showDownloads) {
+      // A modeled share, not a measured one — no store attributes downloads
+      // to specific keywords, even to the app's own owner (see
+      // libs/keyword-downloads-apportionment.ts). This note travels with the
+      // column since, unlike the in-app version, an exported cell has no
+      // hover tooltip to carry that caveat.
+      headerRow.getCell("downloads").note =
+        "Modeled estimate: splits this app's real total downloads across tracked keywords by that " +
+        "month's own search-volume and rank. No store attributes downloads to specific keywords, even " +
+        "to the app's own owner — treat this as a directional split of a real number, not a measurement.";
+    }
 
     terms.forEach((term, rowIndex) => {
       const stats: MonthlyKeywordStats | undefined = report[term]?.[month];
@@ -174,6 +198,9 @@ export async function exportPerformanceReport(
         volume: noData ? "No data yet" : stats!.avgVolume ?? "-",
         ranking: noData ? "No data yet" : rankLabel(stats!.bestRank),
         change: changeLabel,
+        ...(showDownloads
+          ? { downloads: noData ? "No data yet" : stats!.estimatedDownloads ?? "-" }
+          : {}),
       });
       row.height = 18;
 
@@ -183,7 +210,9 @@ export async function exportPerformanceReport(
       });
 
       if (noData) {
-        [row.getCell("volume"), row.getCell("ranking")].forEach((cell) => {
+        const emptyCells = [row.getCell("volume"), row.getCell("ranking")];
+        if (showDownloads) emptyCells.push(row.getCell("downloads"));
+        emptyCells.forEach((cell) => {
           cell.font = { italic: true, color: { argb: MUTED_TEXT } };
         });
       } else if (rawChange !== null && rawChange !== 0) {
