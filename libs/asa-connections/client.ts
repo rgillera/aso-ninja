@@ -96,7 +96,15 @@ async function resolveAdAccountId(token: string): Promise<string> {
   const acls = await asaFetch(token, null, "/acls");
   const list = Array.isArray(acls) ? acls : [];
   const accountId = list[0]?.orgId ?? list[0]?.adAccountId ?? list[0]?.id;
-  if (!accountId) throw new Error("Apple's /acls response didn't include an account id — no Apple Search Ads accounts on this credential?");
+  if (!accountId) {
+    // Surface the raw payload rather than just "not found" — this call's response
+    // shape is only MEDIUM-confidence (see the note at the top of this file), so
+    // when this fires we need to see what Apple actually sent back to tell a real
+    // "no accounts on this credential" apart from us reading the wrong field/envelope.
+    throw new Error(
+      `Apple's /acls response didn't include an account id — no Apple Search Ads accounts on this credential? Raw response: ${JSON.stringify(acls).slice(0, 1000)}`
+    );
+  }
   return String(accountId);
 }
 
