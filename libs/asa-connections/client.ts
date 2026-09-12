@@ -5,34 +5,41 @@ import type { AsaCredential, AsaKeywordRow } from "./types";
 // CONFIDENCE NOTE — read this before debugging a failed call here.
 //
 // Apple is mid-migration from the legacy, well-documented Campaign
-// Management API (api.searchads.apple.com, sunsetting Jan 26, 2027) to a
-// new Platform API (api.ads.apple.com/v1). This client targets the new v1
-// API by request, but as of writing, developer.apple.com's docs for it are
-// JS-rendered (not fetchable by this session's tools) and third-party
-// coverage of v1 specifically is thin. Confidence per piece:
+// Management API (api.searchads.apple.com, sunsetting Jan 26, 2027) to the
+// new Apple Ads Platform API (api.ads.apple.com/v1). This client targets
+// the new v1 API by request. developer.apple.com's docs for it are
+// JS-rendered in a normal browser, but every symbol page there also has a
+// plain-markdown twin at the same path with ".md" appended (e.g.
+// /documentation/Apple-Ads-Platform-API/campaigns-endpoints.md) that isn't
+// JS-rendered — used to pull the real endpoint list, filter fields, and
+// example payloads below directly from Apple's docs on 2026-09-12.
 //
-//   HIGH   — OAuth2 client-credentials token exchange (TOKEN_URL, JWT
-//            shape, grant_type/scope). Same Apple ID OAuth infra the
-//            legacy API already used for years; multiple independent
-//            sources agree on this part. Also HIGH now: API_BASE, the
-//            X-AP-Context header name/value (adAccountId=...), GET /acls
-//            for account discovery, and its response envelope — all
-//            confirmed against a live call on 2026-09-12:
-//            {result: {acls: [{roles, adAccount: {id, name, orgId}}]}}.
-//            That envelope is {result: {...}}, NOT the legacy API's
-//            {data: ...} — asaFetch below unwraps both.
-//   MEDIUM — Exact paths and response sub-keys for
-//            campaigns/adgroups/targetingkeywords/reports. Built by
-//            mirroring the legacy v4/v5 resource model (which Apple's own
-//            docs describe v1 as having "direct equivalents" to) onto the
-//            new base URL, with each one now also trying a
-//            resource-named sub-key (e.g. {campaigns: [...]}) matching
-//            the confirmed /acls pattern. Paths themselves still not
-//            verified against a live call.
+// Confirmed against official docs + one live /acls call:
+//   - Auth: OAuth2 client-credentials JWT (ES256), same appleid.apple.com
+//     infra the legacy API also uses.
+//   - Response envelope: {result: object|array, pagination, error} — NOT
+//     the legacy API's {data: [...]}. asaFetch unwraps `result` (and
+//     `data`, harmlessly, in case any endpoint still uses it).
+//   - There is no bare GET list endpoint for any resource. Every "list X"
+//     operation is POST /v1/<resource>/query with a {filters, sorting,
+//     pagination} body — a flat, filter-based model, not the legacy API's
+//     nested /campaigns/{id}/adgroups/{id}/... paths. That's what the
+//     "404 for /campaigns" bug was: that path doesn't exist in v1 at all.
+//   - Campaigns identify their promoted app via promotedObjectType
+//     ("APPSTORE_APP") + promotedObjectId (the adamId as a string) —
+//     there's no top-level `adamId` field like the legacy API had.
+//   - Keyword bid lives at `bid: {amount, currency}`, not `bidAmount`.
+//   - Keyword reports are POST /v1/reports/apps/keywords/query, returning
+//     {rows: [{metadata: {id, ...}, totalMetrics: {...}}]} — install counts
+//     are `tapInstalls`/`totalInstalls`, not `installs`.
 //
-// Every function below throws with Apple's actual HTTP status + response
-// body on failure rather than swallowing it, so a wrong guess here fails
-// loudly and specifically — check the thrown error message first.
+// Not verified against a live call beyond /acls (no test campaign data was
+// available at write time) — filter/field names above come from Apple's
+// docs, not a live response, so a subtly wrong enum value or filter
+// combination could still surface as a 400. Every function below throws
+// with Apple's actual HTTP status + response body on failure rather than
+// swallowing it, so a wrong guess here fails loudly and specifically —
+// check the thrown error message first.
 // ─────────────────────────────────────────────────────────────────────────
 
 const TOKEN_URL = "https://appleid.apple.com/auth/oauth2/token";
@@ -74,9 +81,9 @@ async function getAccessToken(credential: AsaCredential): Promise<string> {
 
 // Thin wrapper: attaches auth + org-context headers, throws with Apple's
 // actual status/body on any non-2xx so callers never have to guess why a
-// request failed. Unwraps Apple's envelope — confirmed against a live /acls
-// call to be {result: {...}} on v1, not the legacy API's {data: ...} — but
-// falls back to the raw JSON if a response isn't wrapped either way.
+// request failed. Unwraps the {result: ...} envelope confirmed above (the
+// sibling `pagination`/`error` fields are dropped here — fine for how this
+// client uses single-page queryList calls below, see its comment).
 async function asaFetch(token: string, adAccountId: string | null, path: string, init?: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -125,28 +132,46 @@ async function resolveAdAccountId(token: string): Promise<string> {
   return String(accountId);
 }
 
-type ApiCampaign = { id: string | number; name: string; adamId: string | number };
+type QueryFilter = { field: string; operator: string; value: string | number | boolean | Array<string | number> };
+type ApiCampaign = { id: string | number; name: string };
 type ApiAdGroup = { id: string | number; name: string };
-type ApiTargetingKeyword = { id: string | number; text: string; matchType: string; status: string; bidAmount?: { amount?: string; currency?: string } };
+type ApiKeyword = { id: string | number; text: string; matchType: string; status: string; bid?: { amount?: string; currency?: string } };
 
-// Each of these tries a bare array first, then falls back to the resource-named
-// sub-key the confirmed /acls shape uses (result.acls) — still an unverified
-// guess for these specific endpoints (see the MEDIUM-confidence note above), but
-// consistent with the one shape we've actually confirmed live.
+// The v1 API has no bare GET list endpoint for anything — every "list X" op is
+// POST /v1/<resource>/query with {filters, pagination}, returning
+// {result: [...], pagination: {totalCount, ...}}. asaFetch already unwraps
+// `result`, so this only ever sees one page. Fine for the volumes this
+// feature deals with (pageSize below is the documented per-call cap), but an
+// account with 1000+ campaigns/ad groups/keywords under one filter would
+// silently truncate — worth adding real offset-based pagination if that
+// turns out to matter in practice.
+async function queryList(token: string, adAccountId: string, path: string, filters: QueryFilter[]) {
+  const body = await asaFetch(token, adAccountId, path, {
+    method: "POST",
+    body: JSON.stringify({ filters, pagination: { offset: 0, pageSize: 1000 } }),
+  });
+  return Array.isArray(body) ? body : [];
+}
+
+// adamId: the app's numeric App Store ID (apps.store_id for iOS). Campaigns
+// carry it as `promotedObjectId` (a string) alongside `promotedObjectType:
+// "APPSTORE_APP"` — there's no separate top-level `adamId` field in v1.
 async function fetchCampaignsForApp(token: string, adAccountId: string, adamId: string): Promise<ApiCampaign[]> {
-  const body = await asaFetch(token, adAccountId, "/campaigns");
-  const list: ApiCampaign[] = Array.isArray(body) ? body : Array.isArray(body?.campaigns) ? body.campaigns : [];
-  return list.filter((c) => String(c.adamId) === String(adamId));
+  const list = await queryList(token, adAccountId, "/campaigns/query", [
+    { field: "promotedObjectType", operator: "EQUALS", value: "APPSTORE_APP" },
+    { field: "promotedObjectId", operator: "EQUALS", value: String(adamId) },
+  ]);
+  return list as ApiCampaign[];
 }
 
 async function fetchAdGroups(token: string, adAccountId: string, campaignId: string | number): Promise<ApiAdGroup[]> {
-  const body = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups`);
-  return Array.isArray(body) ? body : Array.isArray(body?.adGroups) ? body.adGroups : [];
+  const list = await queryList(token, adAccountId, "/adgroups/query", [{ field: "campaignId", operator: "EQUALS", value: Number(campaignId) }]);
+  return list as ApiAdGroup[];
 }
 
-async function fetchTargetingKeywords(token: string, adAccountId: string, campaignId: string | number, adGroupId: string | number): Promise<ApiTargetingKeyword[]> {
-  const body = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/adgroups/${adGroupId}/targetingkeywords`);
-  return Array.isArray(body) ? body : Array.isArray(body?.targetingKeywords) ? body.targetingKeywords : [];
+async function fetchKeywords(token: string, adAccountId: string, adGroupId: string | number): Promise<ApiKeyword[]> {
+  const list = await queryList(token, adAccountId, "/keywords/query", [{ field: "adGroupId", operator: "EQUALS", value: Number(adGroupId) }]);
+  return list as ApiKeyword[];
 }
 
 // Keyword-level spend/impressions/taps/installs for the last 30 days. Kept
@@ -154,32 +179,40 @@ async function fetchTargetingKeywords(token: string, adAccountId: string, campai
 // non-fatal by fetchAppKeywords below — if this endpoint's exact shape is
 // wrong, the keyword list + bids still come through, just without
 // performance numbers, rather than failing the whole page.
-type KeywordReportRow = { keywordId: string | number; impressions?: number; taps?: number; installs?: number; localSpend?: { amount?: string } };
-
 async function fetchKeywordReport(token: string, adAccountId: string, campaignId: string | number): Promise<Map<string, { spend: number; impressions: number; taps: number; installs: number }>> {
   const end = new Date();
   const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
   const iso = (d: Date) => d.toISOString().split("T")[0];
 
-  const body = await asaFetch(token, adAccountId, `/campaigns/${campaignId}/reports/keywords`, {
+  const body = await asaFetch(token, adAccountId, "/reports/apps/keywords/query", {
     method: "POST",
-    body: JSON.stringify({ startTime: iso(start), endTime: iso(end), granularity: "DAILY" }),
+    body: JSON.stringify({
+      pagination: { offset: 0, pageSize: 1000 },
+      filters: [{ field: "campaignId", operator: "EQUALS", value: String(campaignId) }],
+      // "ORTZ" is Apple's own literal example value for timeZone in their docs
+      // (the ad account's configured reporting time zone) — used verbatim.
+      timeRange: { start: iso(start), end: iso(end), timeZone: "ORTZ", granularity: "DAILY" },
+    }),
   });
 
-  // Best-effort extraction across a couple of plausible envelope shapes —
-  // see the LOW-confidence note at the top of this file.
-  const rows: KeywordReportRow[] =
-    body?.reportingDataResponse?.row?.map((r: { metadata?: { keywordId: string | number }; total?: KeywordReportRow }) => ({ keywordId: r.metadata?.keywordId, ...r.total })) ??
-    (Array.isArray(body) ? body : []);
+  const rows: Array<{
+    metadata?: { id?: string | number };
+    totalMetrics?: { localSpend?: { amount?: string }; impressions?: number; taps?: number; tapInstalls?: number; totalInstalls?: number };
+  }> = Array.isArray(body?.rows) ? body.rows : [];
 
   const byKeyword = new Map<string, { spend: number; impressions: number; taps: number; installs: number }>();
   for (const row of rows) {
-    if (row.keywordId === undefined) continue;
-    byKeyword.set(String(row.keywordId), {
-      spend: parseFloat(row.localSpend?.amount ?? "0") || 0,
-      impressions: row.impressions ?? 0,
-      taps: row.taps ?? 0,
-      installs: row.installs ?? 0,
+    const keywordId = row.metadata?.id;
+    if (keywordId === undefined) continue;
+    const m = row.totalMetrics;
+    byKeyword.set(String(keywordId), {
+      spend: parseFloat(m?.localSpend?.amount ?? "0") || 0,
+      impressions: m?.impressions ?? 0,
+      taps: m?.taps ?? 0,
+      // totalInstalls includes view-through installs; tapInstalls is the
+      // narrower tap-attributed count. Prefer the broader total, falling
+      // back if a report ever omits it.
+      installs: m?.totalInstalls ?? m?.tapInstalls ?? 0,
     });
   }
   return byKeyword;
@@ -222,7 +255,7 @@ export async function fetchAppKeywords(credential: AsaCredential, adAccountId: s
       }
 
       for (const group of adGroups) {
-        const keywords = await fetchTargetingKeywords(token, adAccountId, campaign.id, group.id);
+        const keywords = await fetchKeywords(token, adAccountId, group.id);
         for (const kw of keywords) {
           const perf = reportByKeyword.get(String(kw.id));
           rows.push({
@@ -234,8 +267,8 @@ export async function fetchAppKeywords(credential: AsaCredential, adAccountId: s
             text: kw.text,
             matchType: kw.matchType,
             status: kw.status,
-            bidAmount: kw.bidAmount?.amount != null ? parseFloat(kw.bidAmount.amount) : null,
-            currency: kw.bidAmount?.currency ?? null,
+            bidAmount: kw.bid?.amount != null ? parseFloat(kw.bid.amount) : null,
+            currency: kw.bid?.currency ?? null,
             spend: perf?.spend ?? null,
             impressions: perf?.impressions ?? null,
             taps: perf?.taps ?? null,
