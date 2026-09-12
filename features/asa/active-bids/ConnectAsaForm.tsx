@@ -107,7 +107,7 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
-            Generated alongside the Client ID/Team ID/Key ID above. Only downloadable once, so save the file.
+            The private-key.pem file you generated yourself in step 2 — never uploaded to Apple, so paste or upload your own copy here.
           </p>
         </div>
 
@@ -131,9 +131,19 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
       <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3">
         <p className="text-[11px] font-medium text-gray-400 light:text-gray-600 mb-1.5">Before connecting</p>
         <ol className="text-[11px] text-gray-500 list-decimal list-inside space-y-1.5">
-          <li>In Apple Search Ads, go to Account Settings → API.</li>
-          <li>Generate a certificate/key pair for API access, following Apple&apos;s OAuth setup steps for the Search Ads API.</li>
-          <li>Copy the Client ID, Team ID, and Key ID shown there, and download the private key. Apple only allows the download once, so save it somewhere safe.</li>
+          <li>You need to be the Apple Search Ads Account Owner. Account Admin can see the API tab but can&apos;t generate a key from it — ask whoever holds Account Owner to do this part, or to grant your user the API role first.</li>
+          <li>
+            Generate a key pair yourself (Apple doesn&apos;t create one for you) — run:
+            <br />
+            <code className="text-[10px] bg-black/30 light:bg-black/5 px-1 py-0.5 rounded">openssl ecparam -genkey -name prime256v1 -noout -out private-key.pem</code>
+            <br />
+            <code className="text-[10px] bg-black/30 light:bg-black/5 px-1 py-0.5 rounded">openssl ec -in private-key.pem -pubout -out public-key.pem</code>
+          </li>
+          <li>
+            Run <code className="text-[10px] bg-black/30 light:bg-black/5 px-1 py-0.5 rounded">cat public-key.pem</code> and copy the output.
+          </li>
+          <li>In Apple Search Ads, go to Account Settings → API → Generate API Key, paste that public key text into the textbox there, and submit.</li>
+          <li>Apple shows you the Client ID, Team ID, and Key ID for the key you just created — copy those. Your private key never goes to Apple, so there&apos;s nothing to download from them; keep the private-key.pem file you generated in step 2.</li>
           <li>One connection covers every app your Apple Search Ads account runs campaigns for — you won&apos;t need to reconnect per app.</li>
         </ol>
       </div>
