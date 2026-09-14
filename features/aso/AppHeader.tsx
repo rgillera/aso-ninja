@@ -169,7 +169,7 @@ export function StoreLinkButton({ app }: { app: ActiveApp }) {
       target="_blank"
       rel="noopener noreferrer"
       title={app.store === "ios" ? "View on App Store" : "View on Google Play"}
-      className="flex items-center gap-1.5 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-3 py-1 text-xs font-medium text-gray-400 light:text-gray-600 hover:bg-white/[0.10] hover:text-white transition-colors shrink-0"
+      className="flex items-center gap-1.5 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-3 py-1 text-xs font-medium text-gray-400 light:text-gray-600 hover:bg-white/[0.10] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
     >
       {app.store === "ios" ? (
         <img src="/app-store.svg" alt="" className="size-3.5" />
