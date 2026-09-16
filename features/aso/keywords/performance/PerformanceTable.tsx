@@ -31,6 +31,7 @@ import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import type { TourStep } from "@/features/onboarding/tour";
 
 type Props = {
   keywords: PerformanceKeyword[];
@@ -63,6 +64,8 @@ type Props = {
   onTranslateToggle: () => void;
   onExportReport: () => void;
   exportingReport?: boolean;
+  tourStep?: TourStep | null;
+  onAdvanceTour?: () => void;
 };
 
 const PAGE_SIZE = 25;
@@ -185,6 +188,7 @@ export function PerformanceTable({
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
   onExportReport, exportingReport = false,
+  tourStep = null, onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
@@ -339,6 +343,8 @@ export function PerformanceTable({
         onChange={onFiltersChange}
         onExportReport={onExportReport}
         exportingReport={exportingReport}
+        tourStep={tourStep}
+        onAdvanceTour={onAdvanceTour}
       />
 
       <CompetitorsBar

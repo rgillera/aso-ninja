@@ -11,7 +11,11 @@ type Props = {
   total: number;
   icon: ReactNode;
   message: ReactNode;
-  buttonLabel: string;
+  /** Omit for a step with no skip button — e.g. one meant to require the
+   * instruction actually be completed (clicking through to another page)
+   * rather than offering a free pass past it. Outside-click dismiss still
+   * applies either way; this only removes the explicit button. */
+  buttonLabel?: string;
   onAdvance: () => void;
   /** Other elements a click inside shouldn't count as "outside" — e.g. a step whose own instruction is clicking something other than `targetRef`. */
   ignoreRefs?: RefObject<HTMLElement | null>[];
@@ -27,6 +31,26 @@ type Props = {
    */
   anchor?: "top" | "bottom" | "right";
 };
+
+// A small pulsing ring laid over a step's actual click target — the static
+// ring/background highlight each call site already draws says "look here";
+// this adds motion on top of it that specifically reads as "click this",
+// for steps whose own instruction is completing an action (typing a
+// keyword, sorting a column, following a link) rather than just reading a
+// section. Skipped on steps that highlight a whole passive section instead
+// of one clickable element. Needs `position: relative` on whatever wraps
+// it — every call site already has (or needs) that for its own highlight
+// styling — and rounds to match via `rounded-[inherit]` instead of a fixed
+// radius, since call sites range from a button to a table header cell to a
+// full-width input box.
+export function TourPulse() {
+  return (
+    <span
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 rounded-[inherit] ring-2 ring-indigo-400 animate-tour-pulse"
+    />
+  );
+}
 
 // The floating bubble shared by every step of the onboarding coach mark that
 // runs across Keywords Research and the sidebar right after the onboarding
@@ -57,7 +81,18 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
     }
     position();
     window.addEventListener("resize", position);
-    return () => window.removeEventListener("resize", position);
+    // Also re-measure on a short poll, not just resize: a step whose target
+    // sits below content that's still loading (e.g. the Export button, below
+    // the Performance page's summary stats card which only mounts once
+    // keyword data arrives) can shift position after this effect's first
+    // measurement, with nothing that fires a "resize" for it. Cheap and
+    // self-correcting regardless of what caused the shift; stops as soon as
+    // the step ends (this effect's cleanup on `active` flipping false).
+    const poll = setInterval(position, 200);
+    return () => {
+      window.removeEventListener("resize", position);
+      clearInterval(poll);
+    };
   }, [active, targetRef, anchor]);
 
   // Second pass, once the bubble itself is in the DOM: pull it back up if
@@ -103,12 +138,14 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
           <p className="text-xs text-gray-200 light:text-gray-800 leading-relaxed">{message}</p>
           <div className="mt-2.5 flex items-center justify-between">
             <span className="text-[10px] font-medium text-gray-600 light:text-gray-400 tabular-nums">{step} of {total}</span>
-            <button
-              onClick={onAdvance}
-              className="rounded-md bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"
-            >
-              {buttonLabel}
-            </button>
+            {buttonLabel && (
+              <button
+                onClick={onAdvance}
+                className="rounded-md bg-indigo-500 hover:bg-indigo-400 px-2.5 py-1 text-[11px] font-semibold text-white transition-colors"
+              >
+                {buttonLabel}
+              </button>
+            )}
           </div>
         </div>
       </div>

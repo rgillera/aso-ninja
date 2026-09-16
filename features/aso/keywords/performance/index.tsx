@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -23,6 +24,7 @@ import {
   type Filters, type PerformanceKeyword, type TermSnapshot, type VisibilityHistoryResult,
 } from "./types";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
@@ -51,8 +53,35 @@ export default function KeywordPerformancePage() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug = usePlanSlug();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const isLocked = !isPlanAtLeast(planSlug, "free");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
+  // DashboardSidebar's Keyword Performance link appends `?tip=tour-export`
+  // while the onboarding tour's "sidebar" step is active — see the
+  // TOUR_STEPS comment for why this last step's handoff travels via a query
+  // param (a full page navigation, not client-side routing) rather than
+  // in-memory state. Captured via a lazy initializer, same reasoning as
+  // KeywordResearchPage's own `tourStep`: a prop/value derived straight from
+  // searchParams would fight this step's own dismiss logic on every render.
+  const [tourStep, setTourStep] = useState<TourStep | null>(() =>
+    searchParams.get("tip") === "tour-export" ? "exportReport" : null
+  );
+  useEffect(() => {
+    if (searchParams.get("tip") !== "tour-export") return;
+    const params = new URLSearchParams(searchParams);
+    params.delete("tip");
+    const qs = params.toString();
+    router.replace(qs ? `/dashboard/keywords/performance?${qs}` : "/dashboard/keywords/performance", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  function advanceTour() {
+    setTourStep((step) => {
+      if (!step) return null;
+      const next = TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1];
+      return next ?? null;
+    });
+  }
   const [keywords, setKeywords] = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -753,6 +782,8 @@ export default function KeywordPerformancePage() {
               onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
               onExportReport={handleExportReport}
               exportingReport={exportingReport}
+              tourStep={tourStep}
+              onAdvanceTour={advanceTour}
             />
           </div>
         )}

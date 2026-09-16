@@ -36,7 +36,7 @@ import {
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
-import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
@@ -338,19 +338,9 @@ export default function DashboardSidebar({
           icon={<MapIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
           message={
             <>
-              That&apos;s the walkthrough! Explore other tools here in the sidebar, like Metadata, Reports, and Market Intelligence, or{" "}
-              <a
-                href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
-                target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
-                rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-                className="font-semibold text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:text-indigo-300 light:hover:text-indigo-700 hover:no-underline"
-              >
-                book a demo
-              </a>{" "}
-              with our team anytime.
+              One more step: click <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> below to see how your tracked keywords rank over time and export a full report.
             </>
           }
-          buttonLabel="Got it"
           onAdvance={onAdvanceTour}
           anchor="right"
         />
@@ -465,13 +455,19 @@ export default function DashboardSidebar({
                 {keywordLinks.map((link) => (
                   <a
                     key={link.href}
-                    href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                    // Carries the tour's handoff into the next page load while the
+                    // "sidebar" step is active and this is the link it's pointing at —
+                    // see the TOUR_STEPS comment on why this is a query param rather
+                    // than in-memory state (this is a full page navigation, not a
+                    // client-side route change).
+                    href={tourActive && link.href === "/dashboard/keywords/performance" ? `${link.href}?tip=tour-export` : link.href}
+                    className={`relative flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
                         ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
                         : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-                    }`}
+                    } ${tourActive && link.href === "/dashboard/keywords/performance" ? "ring-1 ring-indigo-400/70" : ""}`}
                   >
+                    {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
                     <link.icon className="size-4 shrink-0" />
                     <span className="flex-1 whitespace-nowrap">{link.label}</span>
                     {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (

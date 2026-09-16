@@ -29,7 +29,7 @@ import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
-import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { Keyword, DownloadsConnection } from "./types";
 
@@ -774,10 +774,11 @@ export function KeywordTable({
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <div
           ref={addKeywordBoxRef}
-          className={`flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
+          className={`relative flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
             tourStep === "addKeyword" ? "ring-2 ring-indigo-400/70 bg-indigo-500/5" : "light:ring-black/[0.08]"
           }`}
         >
+          {tourStep === "addKeyword" && <TourPulse />}
           <input
             value={keywordInput}
             onChange={(e) => {
@@ -968,8 +969,9 @@ export function KeywordTable({
                         // itself — treat it as "got it" and advance the tour.
                         if (col.key === "opportunity" && tourStep === "opportunity") onAdvanceTour();
                       }}
-                      className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
+                      className={`relative flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
                     >
+                      {col.key === "opportunity" && tourStep === "opportunity" && <TourPulse />}
                       {col.tableLabel ?? col.label}
                       <SortIcon colKey={col.key} />
                     </button>

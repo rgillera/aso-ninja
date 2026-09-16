@@ -10,12 +10,16 @@ import {
   ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import { DEFAULT_FILTERS, isFiltersDefault, type Filters } from "./types";
+import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 
 type Props = {
   filters: Filters;
   onChange: (patch: Partial<Filters>) => void;
   onExportReport: () => void;
   exportingReport?: boolean;
+  tourStep?: TourStep | null;
+  onAdvanceTour?: () => void;
 };
 
 function Dropdown({ label, active, children }: { label: string; active?: boolean; children: React.ReactNode }) {
@@ -81,9 +85,10 @@ function RangeFields({
   );
 }
 
-export function PerformanceFilters({ filters, onChange, onExportReport, exportingReport = false }: Props) {
+export function PerformanceFilters({ filters, onChange, onExportReport, exportingReport = false, tourStep = null, onAdvanceTour = () => {} }: Props) {
   const volumeActive = filters.volumeMin !== DEFAULT_FILTERS.volumeMin || filters.volumeMax !== DEFAULT_FILTERS.volumeMax;
   const rankActive = filters.rankMin !== DEFAULT_FILTERS.rankMin || filters.rankMax !== DEFAULT_FILTERS.rankMax;
+  const exportBtnRef = useRef<HTMLButtonElement>(null);
 
   return (
     <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
@@ -159,16 +164,34 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
         </Dropdown>
 
         <button
-          onClick={onExportReport}
+          ref={exportBtnRef}
+          onClick={() => {
+            onExportReport();
+            if (tourStep === "exportReport") onAdvanceTour();
+          }}
           disabled={exportingReport}
           title="Export a monthly volume/ranking report as an Excel file"
-          className="ml-auto flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors"
+          className={`relative ml-auto flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors ${
+            tourStep === "exportReport" ? "ring-2 ring-offset-2 ring-offset-[#1a1d24] ring-indigo-400/70" : ""
+          }`}
         >
+          {tourStep === "exportReport" && <TourPulse />}
           {exportingReport
             ? <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
             : <ArrowDownTrayIcon className="size-3.5" />}
           {exportingReport ? "Exporting…" : "Export Keyword Report"}
         </button>
+
+        <TourTooltip
+          targetRef={exportBtnRef}
+          active={tourStep === "exportReport"}
+          step={TOUR_STEPS.indexOf("exportReport") + 1}
+          total={TOUR_STEPS.length}
+          icon={<ArrowDownTrayIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+          message="Last one: export a full monthly volume &amp; rank report for every tracked keyword as an Excel file."
+          buttonLabel="Got it"
+          onAdvance={onAdvanceTour}
+        />
 
         {!isFiltersDefault(filters) && (
           <button
