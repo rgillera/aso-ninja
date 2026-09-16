@@ -9,6 +9,7 @@ export type Plan = {
   description: string;
   badge: string | null;
   features: string[];
+  trialDays?: number;
 };
 
 export const PLANS: Plan[] = [
@@ -53,7 +54,8 @@ export const PLANS: Plan[] = [
     priceMonthlyCents: 8040,
     priceYearlyCents: 80400,
     description: "Metadata timeline & benchmarking, AI keyword suggestions, review tracking, and relevancy & opportunity scoring (up to 700 keywords) across unlimited apps.",
-    badge: null,
+    badge: "Free for 7 days",
+    trialDays: 7,
     features: [
       "Includes all in Basic plan, plus:",
       "3 competitors per app",

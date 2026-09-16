@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowTrendingUpIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "./PlanContext";
 
 function dismissKey(workspaceId: string) {
@@ -20,21 +20,21 @@ export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
   if (dismissed || planSlug !== "free") return null;
 
   return (
-    <div className="mx-6 mt-6 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 ring-1 ring-indigo-500/20 px-5 py-4">
+    <div className="mx-6 mt-6 mb-4 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 ring-1 ring-indigo-500/20 px-5 py-4">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
-        <ArrowTrendingUpIcon className="size-5 text-indigo-400 light:text-indigo-600" />
+        <SparklesIcon className="size-5 text-indigo-400 light:text-indigo-600" />
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white light:text-gray-900">Don&apos;t leave downloads on the table</p>
-        <p className="text-xs text-gray-400 light:text-gray-600">Track unlimited keywords, monitor your rankings around the clock, and outrank the competition.</p>
+        <p className="text-sm font-semibold text-white light:text-gray-900">Try Pro free for 7 days</p>
+        <p className="text-xs text-gray-400 light:text-gray-600">Stop leaving downloads on the table. See exactly what's holding your rankings back before competitors pull further ahead. No charge until your trial ends.</p>
       </div>
 
       <Link
         href="/dashboard/subscription"
         className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-400"
       >
-        See plans
+        Start free trial
       </Link>
 
       <button

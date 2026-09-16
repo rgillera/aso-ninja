@@ -5,6 +5,7 @@ import { usePathname, useParams, useSearchParams, useRouter } from "next/navigat
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
+import { UpgradeBanner } from "./UpgradeBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider } from "./PlanContext";
 import { ThemeProvider, type Theme } from "./ThemeContext";
@@ -470,6 +471,9 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
               {activeWorkspace?.name ?? "My Workspace"}
             </span>
           </div>
+          {activeWorkspaceId && !pathname.startsWith("/dashboard/subscription") && (
+            <UpgradeBanner workspaceId={activeWorkspaceId} />
+          )}
           <DashboardSearch
             apps={activeWorkspaceApps}
             workspaceId={activeWorkspaceId ?? ""}

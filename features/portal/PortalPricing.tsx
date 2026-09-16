@@ -44,7 +44,8 @@ const plans = PLANS.filter((plan) => plan.id !== "enterprise").map((plan) => {
     description: plan.description,
     badge: plan.badge,
     features: plan.features,
-    signupCta: isFree ? "Create free account" : "Upgrade now",
+    trialDays: plan.trialDays,
+    signupCta: isFree ? "Create free account" : plan.trialDays ? `Try free for ${plan.trialDays} days` : "Upgrade now",
     variant: variantByPlan[plan.id],
     contactSales: false,
   };
@@ -148,7 +149,9 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             const cta = isAuthenticated
               ? isFree
                 ? "Go to dashboard"
-                : "Upgrade now"
+                : plan.trialDays
+                  ? `Try free for ${plan.trialDays} days`
+                  : "Upgrade now"
               : plan.signupCta;
             return (
               <div

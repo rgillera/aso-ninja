@@ -12,6 +12,7 @@ type Props = {
   isDowngrade: boolean;
   billing: "monthly" | "yearly";
   initialScheduledFor?: string | null;
+  trialDays?: number;
 };
 
 function formatDate(iso: string) {
@@ -25,6 +26,7 @@ export function UpgradeButton({
   isDowngrade,
   billing,
   initialScheduledFor,
+  trialDays,
 }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,9 @@ export function UpgradeButton({
             : "Redirecting…"
           : isDowngrade
             ? "Downgrade"
-            : "Upgrade"}
+            : trialDays
+              ? `Try free for ${trialDays} days`
+              : "Upgrade"}
       </button>
       {error && <p className="mt-2 text-xs text-red-400 light:text-red-600">{error}</p>}
 
