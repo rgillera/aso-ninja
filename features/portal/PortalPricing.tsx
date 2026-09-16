@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon } from "@heroicons/react/20/solid";
+import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
 import { PLANS, type PlanId } from "@/features/subscription/plans";
+import PortalEyebrow from "./PortalEyebrow";
 
 type Variant = "default" | "featured" | "premium";
 
@@ -101,10 +102,10 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
   const [yearly, setYearly] = useState(true);
 
   return (
-    <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-32">
+    <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-28">
       <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Pricing</p>
+          <PortalEyebrow>Pricing</PortalEyebrow>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Simple, transparent pricing
           </h2>
@@ -160,8 +161,9 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
               >
                 {plan.variant === "featured" && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="rounded-full bg-yellow-400 px-4 py-1.5 text-xs font-bold text-yellow-900 shadow-clay-sm">
-                      ★ Most Popular
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-4 py-1.5 text-xs font-bold text-indigo-600 shadow-clay-sm ring-1 ring-black/5">
+                      <SparklesIcon className="size-3.5" />
+                      Most Popular
                     </span>
                   </div>
                 )}
@@ -216,7 +218,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-clay ring-1 ring-black/5 sm:flex-row">
           <p className="text-sm text-gray-700">
-            Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span>
+            Need a hands-on team? <span className="text-gray-500">We also offer a dedicated growth manager and ASO specialist to manage it all for you.</span>
           </p>
           <a
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}

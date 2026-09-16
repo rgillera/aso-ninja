@@ -6,6 +6,7 @@ import {
   GlobeAltIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
+import PortalEyebrow from "./PortalEyebrow";
 
 const features = [
   {
@@ -48,10 +49,10 @@ const features = [
 
 export default function PortalFeature() {
   return (
-    <section id="features" className="bg-[#f5f6f8] py-24 sm:py-32">
+    <section id="features" className="bg-[#f5f6f8] py-24 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Everything you need</p>
+          <PortalEyebrow>Everything you need</PortalEyebrow>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Full ASO intelligence, one workspace
           </h2>
@@ -60,14 +61,14 @@ export default function PortalFeature() {
           </p>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:mt-20 lg:max-w-none lg:grid-cols-3">
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-5 sm:mt-20 lg:max-w-none lg:grid-cols-3">
           {features.map((f) => (
             <div
               key={f.name}
-              className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
+              className="group flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg hover:ring-indigo-200"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-                <f.icon className="size-5 text-indigo-600" aria-hidden="true" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm transition-transform group-hover:scale-105">
+                <f.icon className="size-5 text-white" aria-hidden="true" />
               </div>
               <h3 className="mt-6 text-lg font-semibold text-gray-900">{f.name}</h3>
               <p className="mt-3 text-sm leading-6 text-gray-600 flex-1">{f.description}</p>

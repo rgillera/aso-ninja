@@ -1,3 +1,5 @@
+import PortalEyebrow from "./PortalEyebrow";
+
 const testimonials = [
   {
     quote:
@@ -24,26 +26,29 @@ const testimonials = [
 
 export default function PortalTestimonials() {
   return (
-    <section id="testimonials" className="bg-[#f5f6f8] py-24 sm:py-32">
+    <section id="testimonials" className="bg-[#f5f6f8] py-24 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Testimonials</p>
+          <PortalEyebrow>Testimonials</PortalEyebrow>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Trusted by app teams worldwide
           </h2>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 lg:max-w-none lg:grid-cols-3">
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-6 lg:max-w-none lg:grid-cols-3">
           {testimonials.map((t) => (
             <figure
               key={t.name}
-              className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5"
+              className="relative flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5"
             >
+              <span aria-hidden="true" className="-mb-6 font-serif text-8xl font-bold leading-none text-indigo-100">
+                &ldquo;
+              </span>
               <blockquote className="flex-1 text-base leading-7 text-gray-700">
-                <p>&ldquo;{t.quote}&rdquo;</p>
+                <p>{t.quote}</p>
               </blockquote>
               <figcaption className="mt-6 flex items-center gap-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-sm font-semibold text-indigo-600 ring-1 ring-indigo-100">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 text-sm font-semibold text-white">
                   {t.avatar}
                 </div>
                 <div>

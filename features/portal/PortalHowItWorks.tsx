@@ -1,4 +1,5 @@
-import { AppSearchDemo, KeywordTableDemo, RankChartDemo, PushNotificationDemo } from "@/features/onboarding/demo";
+import { AppSearchDemo, KeywordTableDemo, RankChartDemo, SpreadsheetExportDemo } from "@/features/onboarding/demo";
+import PortalEyebrow from "./PortalEyebrow";
 
 const STEPS = [
   {
@@ -19,23 +20,23 @@ const STEPS = [
   {
     n: 3,
     title: "See exactly where you stand",
-    description: "We check your rank daily and plot the history, so you always know whether you're climbing, falling, or holding steady.",
+    description: "We check your rank weekly and plot the history, so you always know whether you're climbing, falling, or holding steady.",
     visual: <RankChartDemo />,
   },
   {
     n: 4,
-    title: "Never miss a big move",
-    description: "Install the rankings monitor to your home screen and get a push notification the moment a keyword jumps — up or down.",
-    visual: <PushNotificationDemo />,
+    title: "Your rankings, archived every month",
+    description: "Every month's snapshot exports to Excel or Google Sheets in one click, ready for client reports or your own analysis.",
+    visual: <SpreadsheetExportDemo />,
   },
 ];
 
 export default function PortalHowItWorks() {
   return (
-    <section id="how-it-works" className="bg-[#f5f6f8] py-24 sm:py-32">
+    <section id="how-it-works" className="bg-[#f5f6f8] py-24 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">How it works</p>
+          <PortalEyebrow>How it works</PortalEyebrow>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             From setup to insight in minutes
           </h2>
@@ -53,8 +54,8 @@ export default function PortalHowItWorks() {
                 : "grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16"}
             >
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-                  <span className="text-sm font-semibold text-indigo-600">{step.n}</span>
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm">
+                  <span className="text-sm font-bold text-white">{step.n}</span>
                 </div>
                 <h3 className="mt-6 text-lg font-semibold text-gray-900">{step.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-gray-600">{step.description}</p>

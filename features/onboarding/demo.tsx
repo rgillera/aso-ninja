@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   MagnifyingGlassIcon, StarIcon, ChevronDownIcon, CameraIcon,
 } from "@heroicons/react/24/outline";
@@ -39,6 +39,66 @@ const RANK_HISTORY = [
   { date: "Jan 29", position: 22 },
   { date: "Feb 5", position: 18 },
   { date: "Feb 12", position: 12 },
+];
+
+// Same example keywords as KeywordTableDemo above, just carried through to
+// what an exported sheet of them looks like — reads as the same app's data
+// flowing through the product, not a different unrelated example. One entry
+// per exported month (newest first, matching the sheet tabs below), each
+// with its own highest ranking + change so switching tabs shows an actual
+// different snapshot instead of just relabeling the same numbers. Volume and
+// est. downloads stay fixed per keyword across months — only ranking moves.
+const EXPORT_HISTORY = [
+  {
+    month: "Sep 2026",
+    rows: [
+      { keyword: "instagram", volume: 98, highestRank: 4, change: 14, estimatedDownloads: 412_000 },
+      { keyword: "photo editor", volume: 76, highestRank: 12, change: 7, estimatedDownloads: 96_000 },
+      { keyword: "reels video", volume: 64, highestRank: 19, change: -3, estimatedDownloads: 58_000 },
+      { keyword: "story maker", volume: 58, highestRank: 27, change: 9, estimatedDownloads: 31_000 },
+      { keyword: "social media", volume: 89, highestRank: 41, change: -6, estimatedDownloads: 12_000 },
+    ],
+  },
+  {
+    month: "Aug 2026",
+    rows: [
+      { keyword: "instagram", volume: 98, highestRank: 18, change: 9, estimatedDownloads: 412_000 },
+      { keyword: "photo editor", volume: 76, highestRank: 19, change: 5, estimatedDownloads: 96_000 },
+      { keyword: "reels video", volume: 64, highestRank: 16, change: 8, estimatedDownloads: 58_000 },
+      { keyword: "story maker", volume: 58, highestRank: 36, change: 7, estimatedDownloads: 31_000 },
+      { keyword: "social media", volume: 89, highestRank: 35, change: 10, estimatedDownloads: 12_000 },
+    ],
+  },
+  {
+    month: "Jul 2026",
+    rows: [
+      { keyword: "instagram", volume: 98, highestRank: 27, change: 6, estimatedDownloads: 412_000 },
+      { keyword: "photo editor", volume: 76, highestRank: 24, change: 4, estimatedDownloads: 96_000 },
+      { keyword: "reels video", volume: 64, highestRank: 24, change: 5, estimatedDownloads: 58_000 },
+      { keyword: "story maker", volume: 58, highestRank: 43, change: 6, estimatedDownloads: 31_000 },
+      { keyword: "social media", volume: 89, highestRank: 45, change: 8, estimatedDownloads: 12_000 },
+    ],
+  },
+  {
+    month: "Jun 2026",
+    rows: [
+      { keyword: "instagram", volume: 98, highestRank: 33, change: 5, estimatedDownloads: 412_000 },
+      { keyword: "photo editor", volume: 76, highestRank: 28, change: 3, estimatedDownloads: 96_000 },
+      { keyword: "reels video", volume: 64, highestRank: 29, change: 4, estimatedDownloads: 58_000 },
+      { keyword: "story maker", volume: 58, highestRank: 49, change: 5, estimatedDownloads: 31_000 },
+      { keyword: "social media", volume: 89, highestRank: 53, change: 7, estimatedDownloads: 12_000 },
+    ],
+  },
+  {
+    month: "May 2026",
+    rows: [
+      { keyword: "instagram", volume: 98, highestRank: 38, change: 4, estimatedDownloads: 412_000 },
+      { keyword: "photo editor", volume: 76, highestRank: 31, change: 2, estimatedDownloads: 96_000 },
+      { keyword: "reels video", volume: 64, highestRank: 33, change: 3, estimatedDownloads: 58_000 },
+      { keyword: "story maker", volume: 58, highestRank: 54, change: 4, estimatedDownloads: 31_000 },
+      { keyword: "social media", volume: 89, highestRank: 60, change: 5, estimatedDownloads: 12_000 },
+    ],
+  },
 ];
 
 export function scorePill(value: number) {
@@ -130,67 +190,67 @@ export function KeywordTableDemo() {
   );
 }
 
-export function PushNotificationDemo() {
-  // Only the top portion of the phone is shown (h-[288px] wrapper clipping a
-  // 600px-tall frame) — reads as the device peeking into frame, not a full
-  // mockup. The banner only starts its --animate-notif-in entrance once
-  // scrolled into view — a plain mount-time animation would already be over
-  // by the time anyone scrolls down to step 4, since this section renders
-  // (off-screen) with the rest of the page on load.
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        setVisible(true);
-        observer.disconnect();
-      },
-      { threshold: 0.4 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+export function SpreadsheetExportDemo() {
+  const [activeMonth, setActiveMonth] = useState(0);
+  const rows = EXPORT_HISTORY[activeMonth].rows;
 
   return (
-    <div ref={ref} className="relative mx-auto h-[288px] w-[300px] overflow-hidden">
-      {/* The phone bezel and dynamic island are hardware, not app chrome —
-          they stay black regardless of theme, same as a real device. Only
-          the "screen" (wallpaper + notification banner) follows the portal's
-          light theme, using a light iOS-style frosted notification card.
-          The clock sits at the same height as (and overlaps) the island, so
-          it stays light text regardless of screen theme — its backdrop at
-          that spot is the black island, not the wallpaper. */}
-      <div className="absolute inset-x-0 top-0 h-[600px] w-[300px] rounded-[3rem] bg-black p-2 shadow-2xl">
-        <div className="relative h-full w-full overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-indigo-100 via-indigo-50 to-white">
-          <div className="absolute left-1/2 top-4 h-[27px] w-[112px] -translate-x-1/2 rounded-full bg-black" />
-          <span className="absolute inset-x-0 top-5 text-center text-xs font-semibold text-white/90">
-            9:41
-          </span>
+    <div className="rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08] overflow-hidden">
+      {/* Toolbar — just enough spreadsheet chrome (cell reference + formula
+          bar) to read as "this opened in Sheets/Excel", not a pixel-accurate
+          clone of either. */}
+      <div className="flex items-center gap-2 border-b border-black/[0.08] px-3 py-2">
+        <span className="rounded border border-black/[0.08] px-2 py-0.5 text-[11px] font-medium text-gray-600">A1</span>
+        <span className="text-xs italic text-gray-400">fx</span>
+        <span className="text-xs text-gray-500">Keyword</span>
+      </div>
 
-          <div className={`absolute inset-x-4 top-20 ${visible ? "animate-notif-in" : "opacity-0"}`}>
-            <div className="rounded-2xl bg-white/95 p-3.5 shadow-lg ring-1 ring-black/5 backdrop-blur">
-              <div className="flex items-start gap-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
-                  <CameraIcon className="size-4 text-white" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate text-xs font-semibold text-gray-600">AppASO Rankings</span>
-                    <span className="shrink-0 text-[10px] text-gray-500">now</span>
-                  </div>
-                  <p className="mt-0.5 text-sm font-medium text-gray-900">Ranking changes</p>
-                  <p className="mt-0.5 text-xs leading-snug text-gray-600">
-                    &ldquo;instagram&rdquo; moved from #18 to #12
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[420px]">
+          <thead>
+            <tr className="bg-indigo-600">
+              <th className="px-3 py-2 text-left text-[11px] font-semibold text-white whitespace-nowrap">Keyword</th>
+              <th className="px-3 py-2 text-left text-[11px] font-semibold text-white whitespace-nowrap">Volume</th>
+              <th className="px-3 py-2 text-left text-[11px] font-semibold text-white whitespace-nowrap">Highest Ranking</th>
+              <th className="px-3 py-2 text-left text-[11px] font-semibold text-white whitespace-nowrap">Change</th>
+              <th className="px-3 py-2 text-left text-[11px] font-semibold text-white whitespace-nowrap">Est. Downloads</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-black/[0.06]">
+            {rows.map((row, i) => (
+              <tr key={row.keyword} className={i % 2 === 1 ? "bg-gray-50/70" : undefined}>
+                <td className="px-3 py-2 text-sm text-gray-800 whitespace-nowrap">{row.keyword}</td>
+                <td className="px-3 py-2 text-sm text-gray-700 tabular-nums">{row.volume}</td>
+                <td className="px-3 py-2 text-sm text-gray-700 tabular-nums">#{row.highestRank}</td>
+                <td className={`px-3 py-2 text-sm font-medium tabular-nums ${row.change >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                  {row.change >= 0 ? "+" : ""}{row.change}
+                </td>
+                <td className="px-3 py-2 text-sm text-gray-700 tabular-nums whitespace-nowrap">
+                  ~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Sheet tabs — one per month of exported history. Clicking one swaps
+          the table above to that month's own snapshot, same as switching
+          sheets in Excel/Sheets actually would. */}
+      <div className="flex items-center gap-1 overflow-x-auto border-t border-black/[0.08] bg-gray-50 px-2 py-1.5">
+        <span className="shrink-0 px-1.5 text-sm text-gray-400">+</span>
+        {EXPORT_HISTORY.map((entry, i) => (
+          <button
+            key={entry.month}
+            type="button"
+            onClick={() => setActiveMonth(i)}
+            className={`shrink-0 rounded px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+              i === activeMonth ? "bg-indigo-600 text-white" : "text-gray-500 hover:bg-black/[0.04] hover:text-gray-700"
+            }`}
+          >
+            {entry.month}
+          </button>
+        ))}
       </div>
     </div>
   );
