@@ -76,9 +76,9 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
     <div className="relative" ref={ref}>
       <button
         onClick={handleClick}
-        className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white ring-1 px-3 py-2.5 text-xs transition-colors ${open ? "text-white light:text-gray-900 ring-indigo-500/50" : "ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-gray-200 light:hover:text-gray-800"}`}
+        className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors ${open ? "bg-indigo-600" : "bg-indigo-500 hover:bg-indigo-400"}`}
       >
-        <QrCodeIcon className="size-3.5" />
+        <QrCodeIcon className="size-4" />
         Get mobile app
       </button>
       {open && popover}
