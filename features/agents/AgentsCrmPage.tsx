@@ -14,6 +14,8 @@ import {
   ChevronDownIcon,
   ChevronUpDownIcon,
   XMarkIcon,
+  ClipboardIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 import {
   CRM_STATUSES,
@@ -81,11 +83,13 @@ function EditableText({
   placeholder,
   onSave,
   className,
+  autoWidth,
 }: {
   value: string;
   placeholder?: string;
   onSave: (next: string) => void;
   className?: string;
+  autoWidth?: boolean;
 }) {
   const [draft, setDraft] = useState(value);
   const [focused, setFocused] = useState(false);
@@ -105,7 +109,8 @@ function EditableText({
         setFocused(false);
         if (draft !== value) onSave(draft);
       }}
-      className={`w-full bg-transparent outline-none placeholder-gray-600 light:placeholder-gray-400 focus:bg-white/[0.05] light:focus:bg-black/[0.03] rounded px-1.5 py-1 -mx-1.5 transition-colors ${className ?? ""}`}
+      style={autoWidth ? { width: `${Math.max(shown.length, 10) + 2}ch` } : undefined}
+      className={`bg-transparent outline-none placeholder-gray-600 light:placeholder-gray-400 focus:bg-white/[0.05] light:focus:bg-black/[0.03] rounded px-1.5 py-1 -mx-1.5 transition-colors ${autoWidth ? "" : "w-full"} ${className ?? ""}`}
     />
   );
 }
@@ -126,6 +131,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [addName, setAddName] = useState("");
@@ -142,6 +148,12 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
 
   function displayContact(c: CrmContact): CrmContact {
     return { ...c, ...overrides[c.id] };
+  }
+
+  function copyAppName(id: string, appName: string) {
+    navigator.clipboard.writeText(appName);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
   }
 
   async function saveField<K extends keyof ContactPatch>(contact: CrmContact, field: K, value: ContactPatch[K]) {
@@ -560,7 +572,21 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                         </td>
                       )}
                       <td className="px-4 py-2.5 min-w-[11rem]">
-                        <EditableText value={c.appName} onSave={(v) => v.trim() && saveField(raw, "appName", v.trim())} className="text-white light:text-gray-900 font-medium" />
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => copyAppName(c.id, c.appName)}
+                            className="inline-flex items-center justify-center rounded-full p-1.5 shrink-0 text-gray-500 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-gray-300 light:hover:text-gray-700 transition-colors"
+                            title="Copy app name"
+                            aria-label={`Copy ${c.appName}`}
+                          >
+                            {copiedId === c.id ? (
+                              <ClipboardDocumentCheckIcon className="size-3.5 text-emerald-400 light:text-emerald-700" />
+                            ) : (
+                              <ClipboardIcon className="size-3.5" />
+                            )}
+                          </button>
+                          <EditableText value={c.appName} onSave={(v) => v.trim() && saveField(raw, "appName", v.trim())} className="text-white light:text-gray-900 font-medium" />
+                        </div>
                       </td>
 
                       <td className="px-4 py-2.5">
@@ -588,7 +614,13 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                       </td>
 
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <EditableText value={c.email ?? ""} placeholder="—" onSave={(v) => saveField(raw, "email", v.trim().toLowerCase() || null)} className="text-gray-300 light:text-gray-700 w-48" />
+                        <EditableText
+                          value={c.email ?? ""}
+                          placeholder="—"
+                          onSave={(v) => saveField(raw, "email", v.trim().toLowerCase() || null)}
+                          className="text-gray-300 light:text-gray-700"
+                          autoWidth
+                        />
                       </td>
 
                       <td className="px-4 py-2.5">
