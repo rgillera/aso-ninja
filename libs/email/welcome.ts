@@ -14,10 +14,9 @@ export function renderWelcomeEmailHtml() {
   </p>
   <p>With AppASO, you can:</p>
   <ul>
-    <li>Research long tail keywords</li>
-    <li>Track your keyword rankings</li>
-    <li>Monitor keyword performance over time</li>
-    <li>Discover opportunities to improve your app's visibility</li>
+    <li>Find keywords worth chasing, scored for Relevancy and Opportunity</li>
+    <li>See exactly where you rank, with a weekly history so you know if you're climbing or falling</li>
+    <li>Export your rankings to Excel or Google Sheets every month</li>
   </ul>
   <p>If you'd like a personalized walkthrough, we're here to help.</p>
   <p>
@@ -39,10 +38,9 @@ Welcome to AppASO! We're excited to have you on board.
 You're all set to start tracking and monitoring your app keywords. Here's a quick look at how it works: ${siteUrl}/how-it-works.png
 
 With AppASO, you can:
-- Research long tail keywords
-- Track your keyword rankings
-- Monitor keyword performance over time
-- Discover opportunities to improve your app's visibility
+- Find keywords worth chasing, scored for Relevancy and Opportunity
+- See exactly where you rank, with a weekly history so you know if you're climbing or falling
+- Export your rankings to Excel or Google Sheets every month
 
 If you'd like a personalized walkthrough, we're here to help. Book a free 15-minute demo: ${demoUrl}
 
