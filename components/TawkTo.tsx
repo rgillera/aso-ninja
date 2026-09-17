@@ -23,9 +23,9 @@ declare global {
 // persists across client-side navigation, so the widget (once loaded) is
 // toggled via Tawk's own show/hideWidget API rather than mounted/unmounted,
 // which wouldn't undo its already-injected DOM. /admin (super-admin only,
-// see app/admin/layout.tsx) has no support-chat use case at all, so it's
-// excluded the same way.
-const EXCLUDED_PATH_PREFIXES = ["/dashboard", "/mobile", "/admin"];
+// see app/admin/layout.tsx) and /agents have no support-chat use case at
+// all, so they're excluded the same way.
+const EXCLUDED_PATH_PREFIXES = ["/dashboard", "/mobile", "/admin", "/agents"];
 
 export function TawkTo() {
   const pathname = usePathname();
