@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
+import { resolveActiveWorkspaceId } from "@/libs/workspace";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import type { Theme } from "@/features/dashboard/ThemeContext";
@@ -37,11 +38,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     (memberships ?? []).map((m) => [m.workspace_id, m.role as WorkspaceRole])
   );
 
-  // Best-guess active workspace for the initial paint — mirrors the fallback
-  // chain in DashboardShell (saved workspace, then first workspace) closely
-  // enough to avoid a free->real-plan flicker on first load.
-  const initialWorkspaceId =
-    (workspaces ?? []).find((w) => w.id === lastWorkspaceId)?.id ?? workspaces?.[0]?.id;
+  // Best-guess active workspace for the initial paint, to avoid a
+  // free->real-plan flicker on first load. Layouts don't receive
+  // searchParams, so this can't see an explicit ?ws= switch — DashboardShell
+  // reconciles that client-side once it mounts.
+  const initialWorkspaceId = resolveActiveWorkspaceId(workspaces ?? [], undefined, lastWorkspaceId);
   const initialPlanState = initialWorkspaceId
     ? await getWorkspacePlanState(initialWorkspaceId)
     : undefined;

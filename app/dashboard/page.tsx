@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
 import DashboardPage from "@/features/dashboard/DashboardPage";
+import { resolveActiveWorkspaceId } from "@/libs/workspace";
 import type { App, Workspace } from "@/libs/contracts";
 
 type PageProps = { searchParams: Promise<{ ws?: string }> };
@@ -7,10 +9,12 @@ type PageProps = { searchParams: Promise<{ ws?: string }> };
 export default async function Page({ searchParams }: PageProps) {
   const { ws: wsParam } = await searchParams;
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
 
   const { data: workspaces } = await supabase.from("workspaces").select("*").order("created_at", { ascending: true });
   const allWorkspaces = (workspaces ?? []) as Workspace[];
-  const activeWorkspaceId = allWorkspaces.find((w) => w.id === wsParam)?.id ?? allWorkspaces[0]?.id;
+  const activeWorkspaceId = resolveActiveWorkspaceId(allWorkspaces, wsParam, lastWorkspaceId);
 
   const { data: apps } = activeWorkspaceId
     ? await supabase.from("apps").select("*").eq("workspace_id", activeWorkspaceId).order("created_at", { ascending: false })
