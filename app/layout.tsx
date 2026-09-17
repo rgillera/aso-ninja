@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import MaintenancePage from "@/components/MaintenancePage";
 import { TawkTo } from "@/components/TawkTo";
 // @ts-ignore: Allow side-effect CSS import without type declarations
@@ -122,6 +123,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}
         {isLiveProduction ? <TawkTo /> : null}
+        <Analytics />
       </body>
     </html>
   );
