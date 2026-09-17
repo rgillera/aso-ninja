@@ -194,6 +194,7 @@ const HEADER_ALIASES: Record<string, keyof ImportRow> = {
   company: "appName",
   companyname: "appName",
   appname: "appName",
+  name: "appName",
   phone: "phone",
   phonenumber: "phone",
   email: "email",
