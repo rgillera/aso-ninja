@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { getAgentEmails } from "@/libs/agents/is-agent-email";
 import AgentsSummaryPage from "@/features/agents/AgentsSummaryPage";
@@ -29,7 +30,11 @@ export default async function Page({ searchParams }: PageProps) {
   const agentEmails = getAgentEmails();
 
   const [{ data: contactRows, error }, { data: callRows }, { data: statusRows }] = await Promise.all([
-    admin.from("crm_contacts").select("*"),
+    // Unranged .select() truncates at PostgREST's max_rows (1000, see
+    // supabase/config.toml) — same fix as app/agents/page.tsx.
+    fetchAllRows<CrmContactRow>((from, to) =>
+      admin.from("crm_contacts").select("*").order("id", { ascending: true }).range(from, to)
+    ),
     admin.from("crm_call_log").select("agent_email").gte("called_at", dateStartIso).lt("called_at", dateEndIso),
     admin
       .from("crm_contacts")
