@@ -609,7 +609,24 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                               {countryFlag(phoneCc)}
                             </span>
                           )}
-                          <EditableText value={c.phone ?? ""} placeholder="—" onSave={(v) => saveField(raw, "phone", v.trim() || null)} className="text-gray-300 light:text-gray-700 w-32" />
+                          <EditableText value={c.phone ?? ""} placeholder="—" onSave={(v) => saveField(raw, "phone", v.trim() || null)} className="text-gray-300 light:text-gray-700" autoWidth />
+                          {c.phone && (
+                            <a
+                              href={telHref(c.phone)}
+                              onClick={() => {
+                                // Fire-and-forget: logs the call for the "Calls
+                                // Today" metric and bumps Last Contact to today,
+                                // without delaying the tel: hand-off.
+                                logCallAction(raw.id);
+                                saveField(raw, "lastContactAt", todayIso());
+                              }}
+                              className="inline-flex p-1.5 rounded text-emerald-400 light:text-emerald-700 hover:bg-emerald-500/10 transition-colors shrink-0"
+                              aria-label={`Call ${c.appName}`}
+                              title={`Call ${c.phone}`}
+                            >
+                              <PhoneIcon className="size-3.5" />
+                            </a>
+                          )}
                         </div>
                       </td>
 
@@ -650,27 +667,6 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                       </td>
 
                       <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                        {c.phone ? (
-                          <a
-                            href={telHref(c.phone)}
-                            onClick={() => {
-                              // Fire-and-forget: logs the call for the "Calls
-                              // Today" metric and bumps Last Contact to today,
-                              // without delaying the tel: hand-off.
-                              logCallAction(raw.id);
-                              saveField(raw, "lastContactAt", todayIso());
-                            }}
-                            className="inline-flex p-1.5 rounded text-emerald-400 light:text-emerald-700 hover:bg-emerald-500/10 transition-colors"
-                            aria-label={`Call ${c.appName}`}
-                            title={`Call ${c.phone}`}
-                          >
-                            <PhoneIcon className="size-3.5" />
-                          </a>
-                        ) : (
-                          <span className="inline-flex p-1.5 text-gray-700 light:text-gray-300 cursor-default" title="No phone number">
-                            <PhoneIcon className="size-3.5" />
-                          </span>
-                        )}
                         {canManage && (
                           <button
                             onClick={() => setDeleteTarget(raw)}
