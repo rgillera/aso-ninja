@@ -95,10 +95,12 @@ export const PLANS: Plan[] = [
     name: "Enterprise",
     priceMonthlyCents: 179640,
     priceYearlyCents: 1796400,
-    description: "Everything in Pro+, plus a dedicated growth manager and ASO specialist to manage it all for you.",
+    description: "Everything in Pro+, plus unlimited workspaces, a bigger keyword pool, and a dedicated growth manager and ASO specialist to manage it all for you.",
     badge: null,
     features: [
       "Includes all in Pro+ plan, plus:",
+      "Unlimited workspaces",
+      "Bigger relevancy & opportunity scoring pool",
       "1 dedicated growth manager",
       "1 dedicated ASO specialist",
       "Access to all features",

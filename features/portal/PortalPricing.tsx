@@ -218,7 +218,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
         <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-clay ring-1 ring-black/5 sm:flex-row">
           <p className="text-sm text-gray-700">
-            Need a hands-on team? <span className="text-gray-500">We also offer a dedicated growth manager and ASO specialist to manage it all for you.</span>
+            Running an agency, or need a hands-on team? <span className="text-gray-500">We offer unlimited workspaces, bigger keyword pools, and a dedicated growth manager and ASO specialist to manage it all for you.</span>
           </p>
           <a
             href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}

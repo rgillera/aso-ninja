@@ -262,7 +262,7 @@ export default function SubscriptionPage({
             {currentPlanId === "enterprise" ? (
               <>You&apos;re on <span className="text-indigo-400 light:text-indigo-600 font-medium">Enterprise</span>.</>
             ) : (
-              <>Need more seats or a hands-on team? <span className="text-gray-500">Enterprise adds a dedicated growth manager and ASO specialist.</span></>
+              <>Running an agency, or need a hands-on team? <span className="text-gray-500">Enterprise adds unlimited workspaces, bigger keyword pools, and a dedicated growth manager and ASO specialist.</span></>
             )}
           </p>
           <a
