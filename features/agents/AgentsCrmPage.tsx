@@ -25,6 +25,8 @@ import {
   type CrmStatus,
   type AgentDailyMetrics,
 } from "@/features/agents/types";
+import { countryFlag } from "@/libs/countries";
+import { phoneCountryCode } from "@/libs/phone-country";
 import {
   updateContactAction,
   createContactAction,
@@ -539,6 +541,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                   const isDeleting = deletingIds.has(c.id);
                   const overdue = c.nextFollowUpAt !== null && c.nextFollowUpAt < today;
                   const dueToday = c.nextFollowUpAt === today;
+                  const phoneCc = c.phone ? phoneCountryCode(c.phone) : null;
 
                   return (
                     <tr
@@ -574,7 +577,14 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                       </td>
 
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <EditableText value={c.phone ?? ""} placeholder="—" onSave={(v) => saveField(raw, "phone", v.trim() || null)} className="text-gray-300 light:text-gray-700 w-36" />
+                        <div className="flex items-center gap-1.5">
+                          {phoneCc && (
+                            <span className="text-xs shrink-0" title={phoneCc}>
+                              {countryFlag(phoneCc)}
+                            </span>
+                          )}
+                          <EditableText value={c.phone ?? ""} placeholder="—" onSave={(v) => saveField(raw, "phone", v.trim() || null)} className="text-gray-300 light:text-gray-700 w-32" />
+                        </div>
                       </td>
 
                       <td className="px-4 py-2.5 whitespace-nowrap">
