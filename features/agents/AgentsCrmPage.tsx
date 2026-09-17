@@ -29,6 +29,7 @@ import {
   updateContactAction,
   createContactAction,
   deleteContactAction,
+  deleteContactsAction,
   importContactsAction,
   logCallAction,
   type ContactPatch,
@@ -118,6 +119,9 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<CrmContact | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -185,6 +189,34 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
     // On success, the row disappears once the server action's refresh() lands
     // fresh props — deletingIds stays set in the meantime so it reads as
     // "removing…" rather than snapping back before that happens.
+  }
+
+  async function handleBulkDelete() {
+    const ids = [...selectedIds];
+    setShowBulkDeleteConfirm(false);
+    setBulkDeleting(true);
+    setDeletingIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.add(id));
+      return next;
+    });
+    setError(null);
+
+    const result = await deleteContactsAction(ids);
+    setBulkDeleting(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+      return;
+    }
+    // Rows disappear once refresh() lands fresh props, same as a single
+    // delete — clear the selection now so the bulk-actions bar goes away.
+    setSelectedIds(new Set());
   }
 
   function handleAddSubmit() {
@@ -276,6 +308,28 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
   const clampedPage = Math.min(page, totalPages - 1);
   const pageContacts = sorted.slice(clampedPage * PAGE_SIZE, (clampedPage + 1) * PAGE_SIZE);
 
+  const pageIds = useMemo(() => pageContacts.map((c) => c.id), [pageContacts]);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
+  const someOnPageSelected = pageIds.some((id) => selectedIds.has(id));
+
+  function toggleSelectAllOnPage() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }
+
+  function toggleSelectRow(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const today = todayIso();
   const followUpTodayOrOverdue = useMemo(
     () => contacts.filter((c) => c.nextFollowUpAt && c.nextFollowUpAt <= today).length,
@@ -302,14 +356,14 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
           <div className="ml-auto flex items-center gap-2">
             {canManage && (
               <>
-                <input ref={fileInputRef} type="file" accept=".xlsx" onChange={handleImportFile} className="hidden" />
+                <input ref={fileInputRef} type="file" accept=".xlsx,.csv" onChange={handleImportFile} className="hidden" />
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={importState.pending}
                   className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:bg-white/[0.10] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 disabled:opacity-50 transition-colors"
                 >
                   <ArrowUpTrayIcon className="size-3.5" />
-                  {importState.pending ? "Importing…" : "Import from Excel"}
+                  {importState.pending ? "Importing…" : "Import from Excel/CSV"}
                 </button>
                 <button
                   onClick={() => setShowAddForm((v) => !v)}
@@ -428,6 +482,28 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
               <option key={s} value={s}>{CRM_STATUS_LABELS[s]}</option>
             ))}
           </select>
+
+          {canManage && selectedIds.size > 0 && (
+            <div className="flex items-center gap-2 ml-auto rounded-lg bg-red-500/10 px-3 py-2">
+              <span className="text-xs font-medium text-red-400 light:text-red-700">
+                {selectedIds.size.toLocaleString()} selected
+              </span>
+              <button
+                onClick={() => setShowBulkDeleteConfirm(true)}
+                disabled={bulkDeleting}
+                className="flex items-center gap-1.5 rounded-lg bg-red-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-red-400 disabled:opacity-50 transition-colors"
+              >
+                <TrashIcon className="size-3.5" />
+                {bulkDeleting ? "Deleting…" : "Delete selected"}
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-xs font-medium text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
@@ -435,6 +511,18 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.07] light:border-black/[0.08] text-left text-[10px] font-semibold tracking-widest text-gray-600 light:text-gray-400 uppercase">
+                  {canManage && (
+                    <th className="px-4 py-3 font-semibold w-8">
+                      <input
+                        type="checkbox"
+                        checked={allOnPageSelected}
+                        ref={(el) => { if (el) el.indeterminate = !allOnPageSelected && someOnPageSelected; }}
+                        onChange={toggleSelectAllOnPage}
+                        aria-label="Select all contacts on this page"
+                        className="size-3.5 rounded cursor-pointer accent-indigo-500"
+                      />
+                    </th>
+                  )}
                   {SORT_COLUMNS.map((col) => renderSortableHeader(col))}
                   <th className="px-4 py-3 font-semibold whitespace-nowrap">Phone</th>
                   <th className="px-4 py-3 font-semibold whitespace-nowrap">Email</th>
@@ -457,6 +545,17 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                       key={c.id}
                       className={`hover:bg-white/[0.03] light:hover:bg-black/[0.02] transition-colors ${isDeleting ? "opacity-40 pointer-events-none" : ""}`}
                     >
+                      {canManage && (
+                        <td className="px-4 py-2.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(c.id)}
+                            onChange={() => toggleSelectRow(c.id)}
+                            aria-label={`Select ${c.appName}`}
+                            className="size-3.5 rounded cursor-pointer accent-indigo-500"
+                          />
+                        </td>
+                      )}
                       <td className="px-4 py-2.5 min-w-[11rem]">
                         <EditableText value={c.appName} onSave={(v) => v.trim() && saveField(raw, "appName", v.trim())} className="text-white light:text-gray-900 font-medium" />
                       </td>
@@ -594,6 +693,37 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget)}
+                className="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-400 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setShowBulkDeleteConfirm(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-[#1a1d24] light:bg-white p-5 shadow-xl"
+          >
+            <h2 className="text-sm font-semibold text-white light:text-gray-900">Remove {selectedIds.size.toLocaleString()} contacts?</h2>
+            <p className="mt-2 text-sm text-gray-400 light:text-gray-600">
+              This cannot be undone.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                className="rounded-lg px-3 py-2 text-xs font-medium text-gray-400 hover:text-white light:hover:text-gray-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDelete}
                 className="rounded-lg bg-red-500 px-3 py-2 text-xs font-medium text-white hover:bg-red-400 transition-colors"
               >
                 Remove

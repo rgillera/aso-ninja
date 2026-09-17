@@ -1,6 +1,7 @@
 "use server";
 
 import ExcelJS from "exceljs";
+import { Readable } from "stream";
 import { revalidatePath, refresh } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
@@ -172,6 +173,18 @@ export async function deleteContactAction(id: string): Promise<{ ok: true } | { 
   return { ok: true };
 }
 
+export async function deleteContactsAction(ids: string[]): Promise<{ ok: true; deleted: number } | { ok: false; error: string }> {
+  await requireAgentAdmin();
+  if (ids.length === 0) return { ok: true, deleted: 0 };
+
+  const admin = createAdminClient();
+  const { error, count } = await admin.from("crm_contacts").delete({ count: "exact" }).in("id", ids);
+  if (error) return { ok: false, error: error.message };
+
+  refreshAgentsPage();
+  return { ok: true, deleted: count ?? ids.length };
+}
+
 // Header aliases we recognize on import, matched case-insensitively after
 // stripping everything but letters — keeps common variants ("App / Company",
 // "Company Name", "Email Address") working without a strict header contract.
@@ -244,11 +257,24 @@ export async function importContactsAction(formData: FormData): Promise<ImportSu
   if (!(file instanceof File)) return { ok: false, error: "No file provided." };
 
   const buffer = await file.arrayBuffer();
+  const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
   const workbook = new ExcelJS.Workbook();
   try {
-    await workbook.xlsx.load(buffer);
+    if (isCsv) {
+      // Keep every cell as the raw string — fast-csv's default map()
+      // coerces numeric-looking values to JS numbers, which would strip
+      // leading zeros from phone numbers (e.g. "0917...") on import.
+      await workbook.csv.read(Readable.from(Buffer.from(buffer)), { map: (value: string) => value });
+    } else {
+      await workbook.xlsx.load(buffer);
+    }
   } catch {
-    return { ok: false, error: "Couldn't read that file — expected an .xlsx spreadsheet." };
+    return {
+      ok: false,
+      error: isCsv
+        ? "Couldn't read that file — expected a .csv file."
+        : "Couldn't read that file — expected an .xlsx spreadsheet.",
+    };
   }
 
   const sheet = workbook.worksheets[0];
