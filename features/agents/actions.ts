@@ -5,6 +5,7 @@ import { Readable } from "stream";
 import { revalidatePath, refresh } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { isAgentEmail } from "@/libs/agents/is-agent-email";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { getResendClient } from "@/libs/resend";
@@ -305,11 +306,16 @@ export async function importContactsAction(formData: FormData): Promise<ImportSu
   if (parsedRows.length === 0) return { ok: false, error: "No rows with an App / Company name were found." };
 
   const admin = createAdminClient();
-  const { data: existing, error: fetchError } = await admin.from("crm_contacts").select("email, app_name");
+  // Paginated: an unranged .select() truncates at PostgREST's max_rows
+  // (1000, see supabase/config.toml), which would silently let every
+  // contact past the first 1000 look "new" and re-import as a duplicate.
+  const { data: existing, error: fetchError } = await fetchAllRows<{ email: string | null; app_name: string }>((from, to) =>
+    admin.from("crm_contacts").select("email, app_name").order("id", { ascending: true }).range(from, to)
+  );
   if (fetchError) return { ok: false, error: fetchError.message };
 
-  const existingEmails = new Set((existing ?? []).filter((row) => row.email).map((row) => row.email!.toLowerCase()));
-  const existingAppNames = new Set((existing ?? []).map((row) => row.app_name.toLowerCase().trim()));
+  const existingEmails = new Set(existing.filter((row) => row.email).map((row) => row.email!.toLowerCase()));
+  const existingAppNames = new Set(existing.map((row) => row.app_name.toLowerCase().trim()));
 
   let skipped = 0;
   const toInsert: Record<string, unknown>[] = [];

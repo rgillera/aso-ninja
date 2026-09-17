@@ -1,5 +1,6 @@
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import AgentsCrmPage from "@/features/agents/AgentsCrmPage";
 import { DAILY_ACTIVITY_STATUSES, fromRow, type AgentDailyMetrics, type CrmContactRow, type CrmStatus } from "@/features/agents/types";
@@ -18,7 +19,17 @@ export default async function Page() {
   const todayStartIso = todayStart.toISOString();
 
   const [{ data, error }, { count: callsToday }, { data: statusRows }] = await Promise.all([
-    admin.from("crm_contacts").select("*").order("created_at", { ascending: false }),
+    // A single bulk import inserts every row in one transaction, so they can
+    // all share the exact same created_at (from now()) — order() needs the
+    // id tiebreaker too, or range()'s page cursor isn't stable across calls.
+    fetchAllRows<CrmContactRow>((from, to) =>
+      admin
+        .from("crm_contacts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: true })
+        .range(from, to)
+    ),
     admin.from("crm_call_log").select("id", { count: "exact", head: true }).eq("agent_email", agentEmail).gte("called_at", todayStartIso),
     // Proxy for "moved into this status today": currently in one of the
     // daily-activity statuses and this agent's most recent touch was today.
