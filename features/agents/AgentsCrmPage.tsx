@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ChangeEvent } from "react";
 import {
   MagnifyingGlassIcon,
   UserGroupIcon,
@@ -13,6 +13,8 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
+  CheckIcon,
+  GlobeAltIcon,
   XMarkIcon,
   ClipboardIcon,
   ClipboardDocumentCheckIcon,
@@ -27,7 +29,7 @@ import {
   type CrmStatus,
   type AgentDailyMetrics,
 } from "@/features/agents/types";
-import { countryFlag } from "@/libs/countries";
+import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
 import { phoneCountryCode } from "@/libs/phone-country";
 import {
   updateContactAction,
@@ -118,6 +120,10 @@ function EditableText({
 export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<CrmStatus | "all">("all");
+  const [countryFilter, setCountryFilter] = useState<string | "all">("all");
+  const [countryQuery, setCountryQuery] = useState("");
+  const [showCountryFilter, setShowCountryFilter] = useState(false);
+  const countryFilterRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("nextFollowUpAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -145,6 +151,17 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
     isError: false,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (countryFilterRef.current && !countryFilterRef.current.contains(e.target as Node)) {
+        setShowCountryFilter(false);
+        setCountryQuery("");
+      }
+    }
+    if (showCountryFilter) document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [showCountryFilter]);
 
   function displayContact(c: CrmContact): CrmContact {
     return { ...c, ...overrides[c.id] };
@@ -301,6 +318,29 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
     );
   }
 
+  // Countries present in the current contact list, derived from each phone's
+  // dial code (see libs/phone-country) — only what's actually in the data,
+  // not the full COUNTRY_MAP, since most of that would never match anything.
+  const countryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const c of contacts) {
+      const cc = c.phone ? phoneCountryCode(c.phone) : null;
+      if (cc) counts.set(cc, (counts.get(cc) ?? 0) + 1);
+    }
+    return counts;
+  }, [contacts]);
+
+  const availableCountries = useMemo(
+    () => [...countryCounts.keys()].sort((a, b) => (COUNTRY_MAP[a] ?? a).localeCompare(COUNTRY_MAP[b] ?? b)),
+    [countryCounts]
+  );
+
+  const countryOptions = useMemo(() => {
+    const q = countryQuery.trim().toLowerCase();
+    if (!q) return availableCountries;
+    return availableCountries.filter((code) => `${COUNTRY_MAP[code] ?? ""} ${code}`.toLowerCase().includes(q));
+  }, [availableCountries, countryQuery]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return contacts.filter((c) => {
@@ -309,9 +349,10 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
         if (!haystack.includes(q)) return false;
       }
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
+      if (countryFilter !== "all" && (c.phone ? phoneCountryCode(c.phone) : null) !== countryFilter) return false;
       return true;
     });
-  }, [contacts, search, statusFilter]);
+  }, [contacts, search, statusFilter, countryFilter]);
 
   const sorted = useMemo(() => {
     const factor = sortDirection === "asc" ? 1 : -1;
@@ -496,6 +537,74 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
               <option key={s} value={s}>{CRM_STATUS_LABELS[s]}</option>
             ))}
           </select>
+
+          <div className="relative" ref={countryFilterRef}>
+            <button
+              onClick={() => setShowCountryFilter((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs transition-colors ${
+                countryFilter !== "all"
+                  ? "text-white light:text-indigo-700 ring-1 ring-indigo-500/50"
+                  : "text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900"
+              }`}
+            >
+              {countryFilter !== "all" ? (
+                <span className="text-sm leading-none">{countryFlag(countryFilter)}</span>
+              ) : (
+                <GlobeAltIcon className="size-3.5 text-gray-500" />
+              )}
+              {countryFilter !== "all" ? COUNTRY_MAP[countryFilter] ?? countryFilter : "All countries"}
+              <ChevronDownIcon className={`size-3 text-gray-600 light:text-gray-400 transition-transform ${showCountryFilter ? "rotate-180" : ""}`} />
+            </button>
+
+            {showCountryFilter && (
+              <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-white/[0.07] light:border-black/[0.08] px-3 py-2">
+                  <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
+                  <input
+                    autoFocus
+                    value={countryQuery}
+                    onChange={(e) => setCountryQuery(e.target.value)}
+                    placeholder="Search country…"
+                    className="bg-transparent text-xs text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none w-full"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1">
+                  <button
+                    onClick={() => { setCountryFilter("all"); setCountryQuery(""); setShowCountryFilter(false); setPage(0); }}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
+                  >
+                    <span className={countryFilter === "all" ? "font-medium text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"}>
+                      All countries
+                    </span>
+                    {countryFilter === "all" && <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600 ml-auto shrink-0" />}
+                  </button>
+                  {countryOptions.length === 0 ? (
+                    <p className="px-3 py-4 text-center text-xs text-gray-600 light:text-gray-400">No countries found.</p>
+                  ) : (
+                    countryOptions.map((code) => {
+                      const active = countryFilter === code;
+                      return (
+                        <button
+                          key={code}
+                          onClick={() => { setCountryFilter(code); setCountryQuery(""); setShowCountryFilter(false); setPage(0); }}
+                          className="flex items-center gap-2.5 w-full px-3 py-2 text-xs text-left hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
+                        >
+                          <span className="text-sm leading-none shrink-0">{countryFlag(code)}</span>
+                          <span className={`truncate ${active ? "font-medium text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"}`}>
+                            {COUNTRY_MAP[code] ?? code}
+                          </span>
+                          <span className="ml-auto flex items-center gap-1.5 shrink-0 text-gray-600 light:text-gray-400">
+                            {countryCounts.get(code)}
+                            {active && <CheckIcon className="size-3 text-indigo-400 light:text-indigo-600" />}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {canManage && selectedIds.size > 0 && (
             <div className="flex items-center gap-2 ml-auto rounded-lg bg-red-500/10 px-3 py-2">
