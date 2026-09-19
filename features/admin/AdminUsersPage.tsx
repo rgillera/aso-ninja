@@ -11,8 +11,10 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   ChevronUpDownIcon,
+  ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
 import type { AdminUserRow } from "@/features/admin/types";
+import { downloadCsv } from "@/features/aso/keywords/csvExport";
 
 type Props = {
   users: AdminUserRow[];
@@ -96,6 +98,14 @@ export default function AdminUsersPage({ users }: Props) {
 
   const activeCount = useMemo(() => users.filter((u) => isRecentlyActive(u.lastSignInAt)).length, [users]);
 
+  function handleExportEmails() {
+    downloadCsv(
+      "all-users-emails.csv",
+      ["Email"],
+      users.map((u) => [u.email])
+    );
+  }
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
@@ -160,6 +170,14 @@ export default function AdminUsersPage({ users }: Props) {
               className="bg-transparent text-xs text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none w-64"
             />
           </div>
+
+          <button
+            onClick={handleExportEmails}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
+          >
+            <ArrowDownTrayIcon className="size-3.5" />
+            Export all emails
+          </button>
         </div>
 
         <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
