@@ -156,7 +156,7 @@ function PhoneFrame({
   const isAndroid = store === "android";
   return (
     <div
-      className={`relative shrink-0 bg-black shadow-2xl ${isAndroid ? "rounded-[2rem]" : "rounded-[3rem]"}`}
+      className={`relative shrink-0 bg-black shadow-2xl mb-8 ${isAndroid ? "rounded-[2rem]" : "rounded-[3rem]"}`}
       style={{ width: 390, height: 780, boxShadow: "0 0 0 9px #1e1e1e, 0 0 0 11px #111, 0 30px 80px rgba(0,0,0,0.5)" }}
     >
       {/* Side buttons */}

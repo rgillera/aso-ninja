@@ -1035,14 +1035,14 @@ export function KeywordTable({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     >
                       <MagnifyingGlassIcon className="size-3" />
                       Live search
                     </button>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}
-                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
+                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                     >
                       <XMarkIcon className="size-3" />
                     </button>

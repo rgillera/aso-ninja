@@ -576,14 +576,14 @@ export function PerformanceTable({
                         <button
                           onClick={() => onLiveSearch(k.term)}
                           title="Live search"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
                         >
                           <MagnifyingGlassIcon className="size-3" />
                         </button>
                         <button
                           onClick={() => onRemoveKeyword(k.term)}
                           title="Remove keyword"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                         >
                           <XMarkIcon className="size-3" />
                         </button>
