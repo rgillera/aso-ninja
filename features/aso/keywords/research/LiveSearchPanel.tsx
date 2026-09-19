@@ -156,8 +156,12 @@ function PhoneFrame({
   const isAndroid = store === "android";
   return (
     <div
-      className={`relative shrink-0 bg-black shadow-2xl mb-8 ${isAndroid ? "rounded-[2rem]" : "rounded-[3rem]"}`}
-      style={{ width: 390, height: 780, boxShadow: "0 0 0 9px #1e1e1e, 0 0 0 11px #111, 0 30px 80px rgba(0,0,0,0.5)" }}
+      className={`relative bg-black shadow-2xl ${isAndroid ? "rounded-[2rem]" : "rounded-[3rem]"}`}
+      style={{
+        height: "min(780px, calc(90vh - 200px))",
+        aspectRatio: "390 / 780",
+        boxShadow: "0 0 0 9px #1e1e1e, 0 0 0 11px #111, 0 30px 80px rgba(0,0,0,0.5)",
+      }}
     >
       {/* Side buttons */}
       <div className="absolute -left-2.5 top-20 w-1.5 h-8 bg-[#2a2a2a] rounded-l-sm" />
@@ -421,7 +425,7 @@ export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitor
         )}
 
         {/* Body */}
-        <div className="flex justify-center p-8 overflow-auto">
+        <div className="flex justify-center items-center p-6">
           <PhoneFrame
             keyword={keyword}
             apps={apps}
