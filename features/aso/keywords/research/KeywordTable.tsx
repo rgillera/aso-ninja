@@ -621,7 +621,7 @@ export function KeywordTable({
         {/* Keyword search */}
         <button
           onClick={(e) => toggleFilterDropdown("keyword", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "keyword" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "keyword" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           <MagnifyingGlassIcon className="size-3.5" />
           {kwSearch ? `"${kwSearch}"` : "Keyword"}
@@ -631,7 +631,7 @@ export function KeywordTable({
         {/* Volume filter */}
         <button
           onClick={(e) => toggleFilterDropdown("volume", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "volume" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "volume" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {volumeFilter !== "any" ? `Volume: ${volumeFilter.charAt(0).toUpperCase() + volumeFilter.slice(1)}` : "Volume"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
@@ -640,7 +640,7 @@ export function KeywordTable({
         {/* Rank filter */}
         <button
           onClick={(e) => toggleFilterDropdown("rank", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? "Unranked" : rankFilter === "top3" ? "Top 3" : "Top 10"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
@@ -649,7 +649,7 @@ export function KeywordTable({
         {/* Relevancy filter — every plan has some relevancy pool now, so this is never locked */}
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           <SparklesIcon className="size-3 text-violet-400 light:text-violet-700" />
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
