@@ -88,6 +88,7 @@ export const PLANS: Plan[] = [
       "1 year historical data",
       "Ranked keywords view",
       "Keyword simulator",
+      "AI Visibility",
     ],
   },
   {

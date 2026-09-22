@@ -39,6 +39,7 @@ const ASO_INTELLIGENCE_PREFIXES = [
   "/dashboard/apps",
   "/dashboard/keywords",
   "/dashboard/reviews",
+  "/dashboard/ai-visibility",
 ];
 const MARKET_INTELLIGENCE_PREFIXES = ["/dashboard/market"];
 const ASA_INTELLIGENCE_PREFIXES = ["/dashboard/asa"];
@@ -54,7 +55,7 @@ function requiredAccessFor(pathname: string): WorkspaceAccess | undefined {
 // navigating: app-agnostic ASO Intelligence tools that just swap their active
 // app in place. Every other page (My Apps, App Explorer, Analytics, Settings,
 // ...) — including the app-scoped ones above — navigates to the app's Report.
-const STAY_IN_PLACE_PREFIXES = ["/dashboard/keywords", "/dashboard/reviews"];
+const STAY_IN_PLACE_PREFIXES = ["/dashboard/keywords", "/dashboard/reviews", "/dashboard/ai-visibility"];
 
 type MetaSection = "report" | "preview" | "timeline" | "benchmark" | "settings";
 

@@ -12,6 +12,7 @@ import {
   StarIcon,
   ChatBubbleLeftEllipsisIcon,
   TagIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import type { PlanSlug } from "@/libs/contracts";
 
@@ -340,6 +341,38 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "Cross-check any spike or dip against Timeline's update history to find the likely cause",
         ],
         goodToKnow: ["Requires the Basic plan or above"],
+      },
+    ],
+  },
+  {
+    id: "ai-visibility",
+    label: "AI Visibility",
+    icon: SparklesIcon,
+    topics: [
+      {
+        id: "ai-visibility",
+        label: "AI Visibility",
+        icon: SparklesIcon,
+        minPlan: "pro_plus",
+        description:
+          "AI Visibility tracks how your app shows up when someone asks an AI assistant like ChatGPT or Gemini for an app recommendation — a discovery channel Apple and Google don't expose an API for, so this tool simulates it directly by asking the same kind of question and checking whether your app gets mentioned.",
+        benefits: [
+          "See whether your app actually gets recommended for the questions real users ask an AI assistant, not just how it ranks in App Store search",
+          "Spot which competitors show up alongside — or instead of — you for the same question",
+          "Track whether your visibility is improving over time as you change your listing and online presence",
+        ],
+        howToUse: [
+          "Track a handful of discovery-style questions a real user might ask — the AI-suggested prompts on the page are a good starting point, or write your own",
+          "Tracking a prompt runs its first check automatically; click Check again any time afterward to get a fresh read",
+          "When you're not mentioned, look at what was mentioned instead — those are the apps currently winning the answer, and their listings are worth studying",
+          "A clear, specific App Store description of what your app actually does tends to matter more here than keyword-stuffed marketing copy — AI assistants favor natural language that answers the question directly",
+          "Strong ratings and reviews, and being mentioned in third-party \"best of\" articles, comparison blogs, and forum threads (Reddit, Quora, etc.), are signals that carry over from general web content models are trained on or can browse",
+        ],
+        goodToKnow: [
+          "This uses an AI model as a stand-in for AI-powered discovery generally — Apple and Google don't expose a public API for their own AI search ranking, so no tool (including this one) can query that directly",
+          "There's no automatic recurring re-check — a prompt only gets checked when it's first tracked and whenever you click Check again, so cost tracks how much you actually use it, not how many prompts you've ever added",
+          "Requires Pro+",
+        ],
       },
     ],
   },

@@ -7,6 +7,7 @@ export type { StoreData, CategoryBenchmark } from "./app/store-data";
 export type { ChartApp } from "./app/chart";
 export type { Keyword, AppKeyword } from "./keyword";
 export type { KeywordRank } from "./keyword/rank";
+export type { AiVisibilityPrompt, AppAiVisibilityPrompt, AiVisibilityCheck, MentionedApp } from "./aiVisibility";
 export type { MetadataStatus, MetadataDraft } from "./metadata";
 export type { Review } from "./review";
 export type { AlertCondition, RankAlert } from "./rank-alert";

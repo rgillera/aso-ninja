@@ -26,6 +26,7 @@ import {
   AdjustmentsHorizontalIcon,
   ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
+  SparklesIcon,
   UserCircleIcon,
   CreditCardIcon,
   LockClosedIcon,
@@ -523,6 +524,22 @@ export default function DashboardSidebar({
                 ))}
               </div>
             )}
+
+            {/* AI Visibility — top-level link, same "just needs an app" simplicity
+                as Bid Suggestions below: no connected account or extra setup, so
+                it doesn't need a collapsible parent of its own. */}
+            <a
+              href="/dashboard/ai-visibility"
+              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                currentPath.startsWith("/dashboard/ai-visibility")
+                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                  : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
+              }`}
+            >
+              <SparklesIcon className="size-4 shrink-0" />
+              <span className="flex-1">AI Visibility</span>
+              {!isPlanAtLeast(planSlug, "pro_plus") && <PlanLockBadge minPlan="pro_plus" />}
+            </a>
           </div>
         </div>
         )}

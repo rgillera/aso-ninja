@@ -1,0 +1,11 @@
+-- The daily refresh-ai-visibility cron re-checked every distinct tracked
+-- prompt once a day forever, regardless of whether anyone was still looking
+-- at it — unlike a keyword rank scrape, each check is a real paid AI call,
+-- so that cost scaled with total prompts ever tracked, not with actual
+-- usage. Removed in favor of checks running only when a user asks for one:
+-- the one-time check a prompt gets when it's first tracked (see
+-- /api/ai-visibility/save), plus "Check again" on demand
+-- (/api/ai-visibility/check). The app/api/cron/refresh-ai-visibility route
+-- itself and its vercel.json entry are removed in the same change; this
+-- drops the now-unused staleness RPC it was the only caller of.
+drop function if exists public.stale_ai_visibility_prompts_for_refresh(int);

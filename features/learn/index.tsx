@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { LEARN_GROUPS, DEFAULT_LEARN_TOPIC_ID, findLearnTopic } from "./content";
 import type { PlanSlug } from "@/libs/contracts";
 
@@ -11,7 +12,13 @@ const PLAN_LABEL: Partial<Record<PlanSlug, string>> = {
 };
 
 export default function LearnPage() {
-  const [topicId, setTopicId] = useState(DEFAULT_LEARN_TOPIC_ID);
+  // Lets a feature page link straight to its own article (e.g.
+  // /dashboard/learn?topic=ai-visibility) instead of always opening on
+  // Introduction and making the user hunt for it in the sidebar. Read once
+  // as the initial state rather than synced via an effect — this page
+  // doesn't need to react to the URL changing after mount, only on load.
+  const searchParams = useSearchParams();
+  const [topicId, setTopicId] = useState(() => searchParams.get("topic") ?? DEFAULT_LEARN_TOPIC_ID);
   const current = findLearnTopic(topicId) ?? findLearnTopic(DEFAULT_LEARN_TOPIC_ID)!;
   const { topic } = current;
   const planLabel = topic.minPlan ? PLAN_LABEL[topic.minPlan] : undefined;
