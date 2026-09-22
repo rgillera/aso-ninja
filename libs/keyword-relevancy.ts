@@ -195,8 +195,15 @@ function collisionNote(collisions: SubstringCollision[]): string {
 function getBrandTokens(appName: string): string[] {
   const separators = /[:\-–—|]/;
   const segments = appName.split(separators).map((segment) => segment.trim()).filter(Boolean);
-  const brandPart = segments[0] ?? appName;
-  return wordTokens(brandPart);
+  // No separator means the title is one continuous descriptive phrase, not a
+  // distinct brand name plus a generic descriptor tagline (e.g. "Capoeira
+  // Instruments & Lyrics" has no brand segment to isolate). Returning the
+  // whole title's words as "brand tokens" here would make any keyword built
+  // from a subset of them — e.g. "lyrics" alone — match as a brand search,
+  // even though it's really just a generic word that happens to appear in
+  // the title. Only a genuine multi-segment title has a real brand part.
+  if (segments.length < 2) return [];
+  return wordTokens(segments[0]);
 }
 
 export function isBrandKeyword(keyword: string, appName: string): boolean {
