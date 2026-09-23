@@ -5,7 +5,7 @@ import PortalHowItWorks from "./PortalHowItWorks";
 import PortalFeature from "./PortalFeature";
 import PortalPricing from "./PortalPricing";
 import PortalTestimonials from "./PortalTestimonials";
-import PortalGrowthSprint from "./PortalGrowthSprint";
+import PortalGrowthAssistant from "./PortalGrowthAssistant";
 import PortalFooter from "./PortalFooter";
 
 export default async function PortalPage() {
@@ -21,7 +21,7 @@ export default async function PortalPage() {
       <PortalFeature />
       <PortalPricing isAuthenticated={isAuthenticated} />
       <PortalTestimonials />
-      <PortalGrowthSprint />
+      <PortalGrowthAssistant />
       <PortalFooter />
     </div>
   );

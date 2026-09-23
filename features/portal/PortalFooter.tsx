@@ -13,7 +13,7 @@ const links = {
   Company: [
     { label: "About", href: "/about" },
     { label: "Our Story", href: "/our-story" },
-    { label: "90-Day ASO Growth Sprint", href: "/growth-sprint" },
+    { label: "App Growth Assistant", href: "/growth-assistant" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
   ],
