@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
-import { TrophyIcon, SunIcon, MoonIcon, QrCodeIcon } from "@heroicons/react/24/outline";
-import { updateProfileAction } from "./actions";
+import { TrophyIcon, SunIcon, MoonIcon, QrCodeIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { updateProfileAction, deleteAccountAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
 import type { CertificationRecord } from "@/features/certification/actions";
 import { CertificateDownload } from "@/features/certification/CertificateDownload";
@@ -48,6 +48,74 @@ function MobileAppSection() {
         </div>
         <MobileAppQrButton />
       </div>
+    </section>
+  );
+}
+
+function DeleteAccountSection() {
+  const [state, formAction, pending] = useActionState(deleteAccountAction, null);
+  const [open, setOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+
+  return (
+    <section className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6 ring-1 ring-red-500/20">
+      <h2 className="text-base font-semibold text-red-400 light:text-red-600 mb-2 flex items-center gap-2">
+        <ExclamationTriangleIcon className="size-4" />
+        Delete account
+      </h2>
+      <p className="text-sm text-gray-400 light:text-gray-600 mb-5">
+        Permanently delete your account and all of its data, including every workspace you own
+        and its apps, keywords, rankings, reviews and connections. Any paid subscription is
+        canceled immediately. You will be removed from workspaces you were invited to. This
+        cannot be undone.
+      </p>
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-lg bg-red-500/10 light:bg-red-50 px-4 py-2 text-sm font-semibold text-red-400 light:text-red-600 ring-1 ring-red-500/30 hover:bg-red-500/20 light:hover:bg-red-100 transition-colors"
+        >
+          Delete my account
+        </button>
+      ) : (
+        <form action={formAction} className="space-y-4">
+          <Alert state={state} />
+          <div>
+            <label htmlFor="delete-confirmation" className="block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
+              Type <span className="font-mono font-semibold text-red-400 light:text-red-600">DELETE</span> to confirm
+            </label>
+            <input
+              id="delete-confirmation"
+              name="confirmation"
+              value={confirmation}
+              onChange={(e) => setConfirmation(e.target.value)}
+              autoComplete="off"
+              autoFocus
+              className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] px-4 py-2.5 text-sm text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setOpen(false);
+                setConfirmation("");
+              }}
+              className="rounded-lg bg-white/10 light:bg-gray-200 px-4 py-2 text-sm font-semibold text-white light:text-gray-900 hover:bg-white/15 light:hover:bg-gray-300 disabled:opacity-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={pending || confirmation.trim() !== "DELETE"}
+              className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {pending ? "Deleting…" : "Permanently delete account"}
+            </button>
+          </div>
+        </form>
+      )}
     </section>
   );
 }
@@ -201,6 +269,8 @@ export default function AccountPage({ email, profile, certification }: Props) {
               </button>
             </form>
           </section>
+
+          <DeleteAccountSection />
         </div>
       </div>
     </main>

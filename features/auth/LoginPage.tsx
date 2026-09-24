@@ -3,9 +3,9 @@
 import { useActionState } from "react";
 import { loginAction, signInWithGoogleAction } from "./actions";
 
-type LoginPageProps = { next?: string };
+type LoginPageProps = { next?: string; accountDeleted?: boolean };
 
-export default function LoginPage({ next }: LoginPageProps) {
+export default function LoginPage({ next, accountDeleted }: LoginPageProps) {
   const [state, action, pending] = useActionState(loginAction, null);
 
   return (
@@ -27,6 +27,11 @@ export default function LoginPage({ next }: LoginPageProps) {
         <div className="bg-white rounded-2xl p-8 shadow-clay-lg ring-1 ring-black/5">
           <form action={action} className="space-y-5">
             {next && <input type="hidden" name="next" value={next} />}
+            {accountDeleted && !state?.error && (
+              <div className="rounded-lg bg-green-50 ring-1 ring-green-100 px-4 py-3 text-sm text-green-700">
+                Your account and all of its data have been deleted.
+              </div>
+            )}
             {state?.error && typeof state.error === "string" && (
               <div className="rounded-lg bg-red-50 ring-1 ring-red-100 px-4 py-3 text-sm text-red-600">
                 {state.error}
@@ -85,6 +90,11 @@ export default function LoginPage({ next }: LoginPageProps) {
 
           <form action={signInWithGoogleAction}>
             {next && <input type="hidden" name="next" value={next} />}
+            {accountDeleted && !state?.error && (
+              <div className="rounded-lg bg-green-50 ring-1 ring-green-100 px-4 py-3 text-sm text-green-700">
+                Your account and all of its data have been deleted.
+              </div>
+            )}
             <button
               type="submit"
               className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 ring-1 ring-black/5 hover:bg-gray-100 hover:text-gray-900 transition-colors"

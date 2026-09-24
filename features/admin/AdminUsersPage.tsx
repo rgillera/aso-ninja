@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useTransition } from "react";
 import {
   MagnifyingGlassIcon,
   UsersIcon,
@@ -12,9 +12,12 @@ import {
   ChevronDownIcon,
   ChevronUpDownIcon,
   ArrowDownTrayIcon,
+  TrashIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import type { AdminUserRow } from "@/features/admin/types";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import { deleteUserAction } from "@/features/admin/actions";
 
 type Props = {
   users: AdminUserRow[];
@@ -60,6 +63,91 @@ function formatDate(iso: string | null): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+// What the admin has to type to confirm: the email, or the id for the rare
+// account with none (page.tsx renders those as "(no email)").
+function confirmationFor(u: AdminUserRow): string {
+  return u.email === "(no email)" ? u.id : u.email;
+}
+
+function DeleteUserDialog({ user, onClose, onDeleted }: { user: AdminUserRow; onClose: () => void; onDeleted: (id: string) => void }) {
+  const [confirmation, setConfirmation] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const expected = confirmationFor(user);
+  const matches = confirmation.trim().toLowerCase() === expected.toLowerCase();
+
+  function handleDelete() {
+    setError(null);
+    startTransition(async () => {
+      const result = await deleteUserAction(user.id, confirmation);
+      if (result.ok) onDeleted(user.id);
+      else setError(result.error);
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" onClick={pending ? undefined : onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-user-title"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md rounded-2xl bg-[#1a1d24] light:bg-white p-6 shadow-xl ring-1 ring-red-500/20"
+      >
+        <h2 id="delete-user-title" className="flex items-center gap-2 text-base font-semibold text-red-400 light:text-red-600">
+          <ExclamationTriangleIcon className="size-4" />
+          Delete user
+        </h2>
+        <p className="mt-3 text-sm text-gray-300 light:text-gray-700 break-all">{user.email}</p>
+        <ul className="mt-3 space-y-1 text-sm text-gray-400 light:text-gray-600 list-disc pl-5">
+          <li>
+            {user.workspaceCount.toLocaleString()} owned {user.workspaceCount === 1 ? "workspace" : "workspaces"} with{" "}
+            {user.appCount.toLocaleString()} apps and {user.keywordCount.toLocaleString()} keywords will be deleted
+          </li>
+          {user.planSlug !== "free" && <li>Their {user.planName} subscription will be canceled immediately</li>}
+          <li>They will be removed from any workspaces they were invited to</li>
+        </ul>
+        <p className="mt-3 text-sm text-gray-400 light:text-gray-600">This cannot be undone.</p>
+
+        <label htmlFor="delete-user-confirmation" className="mt-5 block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5">
+          Type <span className="font-mono font-semibold text-red-400 light:text-red-600 break-all">{expected}</span> to confirm
+        </label>
+        <input
+          id="delete-user-confirmation"
+          value={confirmation}
+          onChange={(e) => setConfirmation(e.target.value)}
+          autoComplete="off"
+          autoFocus
+          className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] px-4 py-2.5 text-sm text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+        />
+
+        {error && (
+          <div className="mt-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400 light:text-red-600 ring-1 ring-red-500/20">{error}</div>
+        )}
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            className="rounded-lg bg-white/10 light:bg-gray-200 px-4 py-2 text-sm font-semibold text-white light:text-gray-900 hover:bg-white/15 light:hover:bg-gray-300 disabled:opacity-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={pending || !matches}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {pending ? "Deleting…" : "Delete user and data"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function compareValues(a: AdminUserRow, b: AdminUserRow, key: SortKey): number {
   switch (key) {
     case "email":
@@ -85,6 +173,10 @@ export default function AdminUsersPage({ users }: Props) {
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("email");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [deleting, setDeleting] = useState<AdminUserRow | null>(null);
+  // Hides a deleted row immediately; revalidatePath in deleteUserAction
+  // brings the server-rendered list (and totals) in line on the next render.
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -109,12 +201,13 @@ export default function AdminUsersPage({ users }: Props) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((u) => {
+      if (deletedIds.has(u.id)) return false;
       if (q && !u.email.toLowerCase().includes(q)) return false;
       if (statusFilter === "active" && !isRecentlyActive(u.lastSignInAt)) return false;
       if (statusFilter === "inactive" && isRecentlyActive(u.lastSignInAt)) return false;
       return true;
     });
-  }, [users, search, statusFilter]);
+  }, [users, search, statusFilter, deletedIds]);
 
   const sorted = useMemo(() => {
     const factor = sortDirection === "asc" ? 1 : -1;
@@ -204,6 +297,7 @@ export default function AdminUsersPage({ users }: Props) {
                       </button>
                     </th>
                   ))}
+                  <th className="px-5 py-3"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.07] light:divide-black/[0.08]">
@@ -231,6 +325,18 @@ export default function AdminUsersPage({ users }: Props) {
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.keywordCount.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.createdAt)}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.lastSignInAt)}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        {!u.isSuperAdmin && (
+                          <button
+                            onClick={() => setDeleting(u)}
+                            title="Delete user"
+                            aria-label={`Delete ${u.email}`}
+                            className="p-1.5 rounded text-gray-500 hover:text-red-400 light:hover:text-red-600 hover:bg-red-500/10 transition-colors"
+                          >
+                            <TrashIcon className="size-4" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -266,6 +372,17 @@ export default function AdminUsersPage({ users }: Props) {
           )}
         </div>
       </div>
+
+      {deleting && (
+        <DeleteUserDialog
+          user={deleting}
+          onClose={() => setDeleting(null)}
+          onDeleted={(id) => {
+            setDeletedIds((prev) => new Set(prev).add(id));
+            setDeleting(null);
+          }}
+        />
+      )}
     </div>
   );
 }

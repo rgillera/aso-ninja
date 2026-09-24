@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/libs/supabase/admin";
 import AdminUsersPage from "@/features/admin/AdminUsersPage";
 import type { AdminUserRow } from "@/features/admin/types";
+import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 
 type AuthUserSummary = {
   id: string;
@@ -136,6 +137,8 @@ export default async function Page() {
       email: u.email,
       createdAt: u.createdAt,
       lastSignInAt: u.lastSignInAt,
+      isSuperAdmin: isSuperAdminEmail(u.email),
+      workspaceCount: workspaceIds.length,
       appCount,
       keywordCount,
       planSlug: plan.slug,
