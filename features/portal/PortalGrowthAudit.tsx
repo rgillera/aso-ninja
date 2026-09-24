@@ -32,7 +32,7 @@ export default function PortalGrowthAudit() {
                 >
                   Explore the audit
                 </a>
-                <span className="text-sm text-gray-400">60 minutes &middot; 1-week turnaround &middot; $200 per store</span>
+                <span className="text-sm text-gray-400">60 minutes &middot; 1-week turnaround &middot; $300 per store</span>
               </div>
             </div>
 

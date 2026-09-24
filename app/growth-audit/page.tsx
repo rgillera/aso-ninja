@@ -27,7 +27,7 @@ const paymentUrl = process.env.NEXT_PUBLIC_GROWTH_AUDIT_PAYMENT_URL;
 
 const stats = [
   { label: "Session", value: "60 minutes" },
-  { label: "Investment", value: "$200 per store" },
+  { label: "Investment", value: "$300 per store" },
   { label: "Turnaround", value: "1 week" },
   { label: "You get", value: "Metadata plan" },
 ];
@@ -176,7 +176,7 @@ export default async function GrowthAuditPage() {
             <div className="mx-auto mt-16 flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-clay ring-1 ring-black/5 sm:p-10">
               <p className="text-sm font-semibold text-gray-500">ASO Growth Audit</p>
               <div className="mt-4 flex items-baseline gap-x-2">
-                <span className="text-5xl font-bold tracking-tight text-gray-900">$200</span>
+                <span className="text-5xl font-bold tracking-tight text-gray-900">$300</span>
                 <span className="text-sm text-gray-500">one-time, per store</span>
               </div>
               <ul className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-x-8 gap-y-3 text-left sm:grid-cols-2">
