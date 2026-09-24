@@ -13,6 +13,7 @@ const links = {
   Company: [
     { label: "About", href: "/about" },
     { label: "Our Story", href: "/our-story" },
+    { label: "ASO Growth Audit", href: "/growth-audit" },
     { label: "App Growth Assistant", href: "/growth-assistant" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
