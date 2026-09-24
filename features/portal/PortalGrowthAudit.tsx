@@ -3,7 +3,6 @@ import PortalEyebrow from "./PortalEyebrow";
 
 const highlights = [
   "A 60-minute live session with an ASO specialist",
-  "An analysis of your app store conversion funnel",
   "The biggest opportunities holding back growth",
   "Personalized metadata recommendations",
   "The reasoning behind every change we suggest",
