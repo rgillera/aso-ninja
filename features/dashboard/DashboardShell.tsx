@@ -27,6 +27,14 @@ import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@
 // content — stay reachable even when the active workspace is frozen, since
 // they're how a user actually fixes the situation (or checks another
 // workspace's settings).
+// Pages that aren't app-scoped, where the app search and upgrade banner are
+// just noise.
+const NO_SEARCH_OR_BANNER_PREFIXES = [
+  "/dashboard/settings",
+  "/dashboard/subscription",
+  "/dashboard/learn",
+  "/dashboard/certification",
+];
 const WORKSPACE_FREEZE_EXEMPT_PREFIXES = ["/dashboard/settings", "/dashboard/subscription"];
 
 // Route prefixes gated behind each access area — mirrors the "ASO Intelligence"
@@ -107,6 +115,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const params = { id: pathname.startsWith("/dashboard/apps/") ? rawParams.id : undefined };
 
   const isOnPreview = pathname === "/dashboard/preview";
+  const hideSearchAndBanner = NO_SEARCH_OR_BANNER_PREFIXES.some((p) => pathname.startsWith(p));
   const wsParam = searchParams.get("ws");
   const rawSearch = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
   const rawSearchClean = (() => {
@@ -472,16 +481,18 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
               {activeWorkspace?.name ?? "My Workspace"}
             </span>
           </div>
-          {activeWorkspaceId && !pathname.startsWith("/dashboard/subscription") && (
+          {activeWorkspaceId && !hideSearchAndBanner && (
             <UpgradeBanner workspaceId={activeWorkspaceId} />
           )}
-          <DashboardSearch
-            apps={activeWorkspaceApps}
-            workspaceId={activeWorkspaceId ?? ""}
-            stayInPlace={staysInPlace}
-            onSelectApp={selectApp}
-            hrefForApp={hrefForApp}
-          />
+          {!hideSearchAndBanner && (
+            <DashboardSearch
+              apps={activeWorkspaceApps}
+              workspaceId={activeWorkspaceId ?? ""}
+              stayInPlace={staysInPlace}
+              onSelectApp={selectApp}
+              hrefForApp={hrefForApp}
+            />
+          )}
           <div className="flex-1 min-h-0 overflow-hidden">
             {isWorkspaceFrozen && activeWorkspace
               ? <WorkspaceFrozen workspaceName={activeWorkspace.name} />
