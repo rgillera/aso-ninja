@@ -21,7 +21,7 @@ import PortalFooter from "@/features/portal/PortalFooter";
 export const metadata: Metadata = {
   title: "App Growth Assistant",
   description:
-    "A dedicated growth assistant for your mobile app, trained on mobile app growth workflows and guided by a Senior App Growth Specialist. 40 hours a week, without hiring, training, or managing one yourself.",
+    "A dedicated growth assistant for your mobile app, trained in mobile app growth fundamentals and guided by a Senior App Growth Specialist who sets the strategy. 40 hours a week, without hiring, training, or managing one yourself.",
   alternates: {
     canonical: "/growth-assistant",
   },
@@ -45,7 +45,7 @@ const genericVaCons = [
 ];
 
 const assistantPros = [
-  "Trained specifically on mobile app growth workflows",
+  "Trained in app growth fundamentals (ASO, reviews, analytics)",
   "Guided day to day by a Senior App Growth Specialist",
   "Recruitment, training, supervision, and QA handled for you",
   "Dedicated to your app, 40 hours a week",
@@ -58,7 +58,7 @@ const offerFeatures = [
   "You set the preferred working hours",
   "Direct communication with your assistant",
   "A private workspace for your team",
-  "Trained in mobile app workflows",
+  "Trained in mobile app growth fundamentals",
   "Guided by a Senior App Growth Specialist",
   "We handle recruitment, training, supervision, QA, and replacement",
 ];
@@ -104,12 +104,12 @@ export default async function GrowthAssistantPage() {
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">App Growth Assistant</p>
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-              Not a generic VA. <span className="text-indigo-600">A specialist for mobile apps.</span>
+              Not a generic VA. <span className="text-indigo-600">Expert-guided help for your app.</span>
             </h1>
             <p className="mt-6 text-lg text-gray-600">
               Get a dedicated app growth assistant without hiring, training, or managing one
-              yourself. Your assistant is trained specifically on how mobile apps work, and
-              guided day to day by a Senior App Growth Specialist.
+              yourself. Your assistant is trained in mobile app growth fundamentals, and
+              guided day to day by a Senior App Growth Specialist who sets the strategy.
             </p>
             <div className="mt-8">
               <a

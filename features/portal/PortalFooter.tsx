@@ -10,11 +10,13 @@ const links = {
     { label: "Testimonials", href: "/#testimonials" },
     ...(calendlyUrl ? [{ label: "Book a Demo", href: calendlyUrl }] : []),
   ],
+  Services: [
+    { label: "Growth Audit", href: "/growth-audit" },
+    { label: "Growth Assistant", href: "/growth-assistant" },
+  ],
   Company: [
     { label: "About", href: "/about" },
     { label: "Our Story", href: "/our-story" },
-    { label: "ASO Growth Audit", href: "/growth-audit" },
-    { label: "App Growth Assistant", href: "/growth-assistant" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
   ],
@@ -89,7 +91,7 @@ export default function PortalFooter() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:w-fit lg:gap-x-12">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-4 lg:w-fit lg:gap-x-12">
             {Object.entries(links).map(([group, items]) => (
               <div key={group}>
                 <h4 className="text-sm font-semibold text-gray-900">{group}</h4>
