@@ -13,6 +13,7 @@ const links = {
   Services: [
     { label: "Growth Audit", href: "/growth-audit" },
     { label: "Growth Assistant", href: "/growth-assistant" },
+    { label: "Growth Sprint", href: "/growth-sprint" },
   ],
   Company: [
     { label: "About", href: "/about" },
