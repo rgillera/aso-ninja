@@ -221,10 +221,15 @@ export function isBrandKeyword(keyword: string, appName: string): boolean {
   const brandTokens = getBrandTokens(appName);
   const brandTokenSet = new Set(brandTokens);
 
-  // Keyword includes the brand portion and otherwise only contains terms from the app name.
+  // Keyword includes the whole brand portion and otherwise only contains terms
+  // from the app name. Matching on *any* brand token isn't enough: a
+  // multi-word brand often contains a generic word ("Home" in "Thikr Home"),
+  // and a search for just "home" isn't a brand search. Partial matches fall
+  // through to normal relevancy scoring instead of an automatic 100.
   if (brandTokens.length > 0) {
-    const hasBrandToken = kwWords.some((w) => brandTokenSet.has(w));
-    if (hasBrandToken && kwWords.every((w) => appWordSet.has(w) || brandTokenSet.has(w))) return true;
+    const kwWordSet = new Set(kwWords);
+    const hasFullBrand = brandTokens.every((w) => kwWordSet.has(w));
+    if (hasFullBrand && kwWords.every((w) => appWordSet.has(w) || brandTokenSet.has(w))) return true;
 
     const kwCompact = normalizedKeyword;
     const appCompact = appWords.join("");
