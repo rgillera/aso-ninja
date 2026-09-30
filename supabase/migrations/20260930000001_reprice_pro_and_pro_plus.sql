@@ -2,10 +2,10 @@
 -- features/subscription/plans.ts. Yearly prices are picked so the per-month
 -- yearly figure is round ($29 / $79).
 --
--- Stripe prices are immutable, so this points both tiers at NEW price IDs.
--- Replace the four REPLACE_ME values below with the live-mode price IDs
--- created in Stripe before pushing; the guard at the bottom aborts the
--- migration if any placeholder is left in.
+-- Stripe prices are immutable, so this points both tiers at NEW live-mode
+-- price IDs. Like 20260721000019_wire_pro_and_pro_plus_stripe_ids.sql, they
+-- belong to the live Stripe account and are taken on trust from whoever
+-- created them, not verified against the Stripe API.
 --
 -- Existing subscribers stay on their old Stripe price until moved in Stripe.
 -- The webhook only overwrites plan_id when the price ID matches a plan, so an
@@ -14,26 +14,15 @@
 update plans set
   price_monthly_cents    = 3900,
   price_yearly_cents     = 34800,
-  stripe_price_id        = 'price_REPLACE_ME_pro_monthly',
-  stripe_price_id_yearly = 'price_REPLACE_ME_pro_yearly',
+  stripe_price_id        = 'price_1ULQgBDSqc9sbFVhev1Rbk5T',
+  stripe_price_id_yearly = 'price_1ULQh6DSqc9sbFVhSdbb6zcu',
   updated_at             = now()
 where slug = 'pro';
 
 update plans set
   price_monthly_cents    = 9900,
   price_yearly_cents     = 94800,
-  stripe_price_id        = 'price_REPLACE_ME_pro_plus_monthly',
-  stripe_price_id_yearly = 'price_REPLACE_ME_pro_plus_yearly',
+  stripe_price_id        = 'price_1ULQiqDSqc9sbFVh2cJebsVl',
+  stripe_price_id_yearly = 'price_1ULQjQDSqc9sbFVhbICvF9eM',
   updated_at             = now()
 where slug = 'pro_plus';
-
-do $$
-begin
-  if exists (
-    select 1 from plans
-    where slug in ('pro', 'pro_plus')
-      and (stripe_price_id like '%REPLACE_ME%' or stripe_price_id_yearly like '%REPLACE_ME%')
-  ) then
-    raise exception 'Fill in the new Stripe price IDs in 20260930000001_reprice_pro_and_pro_plus.sql before pushing';
-  end if;
-end $$;
