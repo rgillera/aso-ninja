@@ -26,15 +26,15 @@ export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white light:text-gray-900">Try Pro free for 7 days</p>
-        <p className="text-xs text-gray-400 light:text-gray-600">Stop leaving downloads on the table. See exactly what's holding your rankings back before competitors pull further ahead. No charge until your trial ends.</p>
+        <p className="text-sm font-semibold text-white light:text-gray-900">Upgrade to Pro from $29/mo</p>
+        <p className="text-xs text-gray-400 light:text-gray-600">Stop leaving downloads on the table. See exactly what's holding your rankings back before competitors pull further ahead.</p>
       </div>
 
       <Link
         href="/dashboard/subscription"
         className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-400"
       >
-        Start free trial
+        See plans
       </Link>
 
       <button

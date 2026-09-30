@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckIcon } from "@heroicons/react/20/solid";
-import { PLANS, type PlanId } from "./plans";
-import { UpgradeButton } from "./UpgradeButton";
+import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
+import { PLANS, SELLABLE_PLANS, type PlanId } from "./plans";
+import { UpgradeButton, type CardTone } from "./UpgradeButton";
 import type { WorkspaceUsage } from "@/libs/contracts";
 
 // Stripe redirects back here as soon as checkout completes, but the plan
@@ -41,13 +41,58 @@ type Props = {
 
 type Billing = "monthly" | "yearly";
 
-function nameColor(planId: PlanId) {
-  if (planId === "basic") return "text-emerald-500 light:text-emerald-700";
-  if (planId === "pro") return "text-violet-400 light:text-violet-700";
-  if (planId === "pro_plus") return "text-amber-500 light:text-amber-700";
-  if (planId === "enterprise") return "text-indigo-400 light:text-indigo-600";
-  return "text-white light:text-gray-900";
-}
+// Same three card treatments as the marketing pricing cards (PortalPricing.tsx),
+// with dark-theme counterparts since the dashboard defaults to dark. Text
+// sizes stay dashboard-sized; only the colors carry over.
+const toneByPlan: Record<PlanId, CardTone> = {
+  free: "default",
+  basic: "default",
+  pro: "featured",
+  pro_plus: "default",
+  enterprise: "premium",
+};
+
+const cardStyles: Record<CardTone, {
+  card: string;
+  title: string;
+  subtitle: string;
+  desc: string;
+  check: string;
+  feature: string;
+  badge: string;
+  divider: string;
+}> = {
+  default: {
+    card: "bg-[#1a1d24] light:bg-white ring-1 ring-white/[0.08] light:ring-black/5 light:shadow-sm",
+    title: "text-white light:text-gray-900",
+    subtitle: "text-gray-500",
+    desc: "text-gray-400 light:text-gray-600",
+    check: "text-indigo-400 light:text-indigo-600",
+    feature: "text-gray-300 light:text-gray-700",
+    badge: "bg-indigo-500/15 text-indigo-300 light:bg-indigo-50 light:text-indigo-700",
+    divider: "border-white/[0.08] light:border-black/[0.08]",
+  },
+  featured: {
+    card: "bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-lg shadow-indigo-900/30",
+    title: "text-white",
+    subtitle: "text-indigo-200",
+    desc: "text-indigo-100",
+    check: "text-white",
+    feature: "text-indigo-50",
+    badge: "bg-white/20 text-white",
+    divider: "border-white/20",
+  },
+  premium: {
+    card: "bg-gradient-to-br from-gray-900 to-indigo-950 ring-1 ring-white/[0.08] shadow-lg",
+    title: "text-white",
+    subtitle: "text-gray-400",
+    desc: "text-gray-400",
+    check: "text-emerald-400",
+    feature: "text-gray-300",
+    badge: "bg-white/10 text-gray-300",
+    divider: "border-white/10",
+  },
+};
 
 // Whole-dollar amounts drop the decimals ("$149" not "$149.00"); anything
 // with cents keeps two decimal places ("$12.49").
@@ -58,21 +103,21 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function UsageBar({ label, used, limit, frozen }: { label: string; used: number; limit: number | null; frozen?: number }) {
+function UsageBar({ label, used, limit, frozen, onColor }: { label: string; used: number; limit: number | null; frozen?: number; onColor?: boolean }) {
   const pct = limit === null ? 0 : Math.min(100, (used / Math.max(limit, 1)) * 100);
   return (
     <div>
-      <div className="flex items-center justify-between text-xs text-gray-400 light:text-gray-600">
+      <div className={`flex items-center justify-between text-xs ${onColor ? "text-indigo-100" : "text-gray-400 light:text-gray-600"}`}>
         <span>{label}</span>
         <span>
           {limit === null ? used.toLocaleString() : `${used.toLocaleString()} / ${limit.toLocaleString()}`}
           {!!frozen && <span className="ml-1.5 text-amber-500 light:text-amber-700">({frozen.toLocaleString()} paused)</span>}
         </span>
       </div>
-      <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06] light:bg-black/[0.05]">
+      <div className={`mt-1.5 h-1.5 rounded-full ${onColor ? "bg-white/20" : "bg-white/[0.06] light:bg-black/[0.05]"}`}>
         {limit !== null && (
           <div
-            className="h-full rounded-full bg-indigo-500"
+            className={`h-full rounded-full ${onColor ? "bg-white" : "bg-indigo-500"}`}
             style={{ width: `${pct}%` }}
           />
         )}
@@ -93,10 +138,10 @@ export default function SubscriptionPage({
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
-  // Enterprise is a done-for-you service, not a self-serve tier — it gets a
-  // "talk to us" banner below the grid instead of a card (see PortalPricing.tsx,
-  // which does the same thing on the marketing pricing page).
-  const sellablePlans = PLANS.filter((plan) => plan.id !== "enterprise");
+  // A retired plan (Basic) only shows up for a workspace still subscribed to it.
+  const sellablePlans = PLANS.filter(
+    (plan) => SELLABLE_PLANS.includes(plan) || (plan.retired && plan.id === currentPlanId)
+  );
   const frozenTotal = usage
     ? usage.keyword_frozen_count + usage.app_frozen_count + usage.member_frozen_count
     : 0;
@@ -127,11 +172,11 @@ export default function SubscriptionPage({
           </div>
         )}
 
-        <div className="mb-8 inline-flex items-center gap-1 rounded-2xl bg-white/[0.06] light:bg-white p-1 light:shadow-sm light:ring-1 light:ring-black/5">
+        <div className="mb-8 inline-flex items-center gap-1 rounded-full bg-white/[0.06] light:bg-white p-1 light:shadow-sm light:ring-1 light:ring-black/5">
           <button
             type="button"
             onClick={() => setBilling("monthly")}
-            className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               billing === "monthly"
                 ? "bg-indigo-500 light:bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-900"
@@ -142,7 +187,7 @@ export default function SubscriptionPage({
           <button
             type="button"
             onClick={() => setBilling("yearly")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               billing === "yearly"
                 ? "bg-indigo-500 light:bg-indigo-600 text-white shadow-sm"
                 : "text-gray-400 light:text-gray-500 hover:text-gray-200 light:hover:text-gray-900"
@@ -156,16 +201,16 @@ export default function SubscriptionPage({
                   : "bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-600"
               }`}
             >
-              2 months free
+              Save up to 25%
             </span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: "1rem" }}>
-          {sellablePlans.map((plan, index) => {
+        <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 ${sellablePlans.length > 4 ? "xl:grid-cols-5" : ""}`} style={{ paddingTop: "1rem" }}>
+          {sellablePlans.map((plan) => {
             const isCurrent = plan.id === currentPlanId;
             const isPopular = plan.id === "pro";
-            const isDowngrade = index < currentPlanIndex;
+            const isDowngrade = PLANS.indexOf(plan) < currentPlanIndex;
             const isFree = plan.priceMonthlyCents === 0;
             const displayCents = isFree
               ? 0
@@ -173,68 +218,70 @@ export default function SubscriptionPage({
                 ? Math.round(plan.priceYearlyCents / 12)
                 : plan.priceMonthlyCents;
 
+            const tone = toneByPlan[plan.id];
+            const c = cardStyles[tone];
+
             return (
               <div
                 key={plan.id}
-                className={`relative flex flex-col rounded-2xl p-6 ring-1 ${
-                  isCurrent
-                    ? "bg-[#1a1d24] light:bg-white ring-indigo-500/40"
-                    : isPopular
-                      ? "bg-[#1a1d24] light:bg-white ring-indigo-500/40"
-                      : "bg-[#1a1d24] light:bg-white ring-white/[0.08] light:ring-black/[0.08]"
+                className={`relative flex flex-col rounded-2xl p-6 ${c.card} ${
+                  isCurrent && tone === "default" ? "!ring-indigo-500/60" : ""
                 }`}
               >
                 {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <div className="rounded-full bg-violet-600 px-4 py-1.5 text-xs font-bold text-white shadow-lg shadow-violet-900/40">
-                      ★ Most Popular
-                    </div>
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-600 shadow-sm ring-1 ring-black/5">
+                      <SparklesIcon className="size-3.5" />
+                      Most Popular
+                    </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between gap-2">
-                  <h2 className={`text-base font-semibold ${nameColor(plan.id)}`}>{plan.name}</h2>
+                  <h2 className={`text-base font-semibold ${c.title}`}>{plan.name.replace(/ Plan$/, "")}</h2>
                   {plan.badge && (
-                    <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-medium text-gray-300 light:text-gray-700">
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
                       {plan.badge}
                     </span>
                   )}
                 </div>
 
                 <div className="mt-3 flex items-baseline gap-1.5">
-                  <span className="text-3xl font-bold text-white light:text-gray-900">
-                    {isFree ? "Free" : formatPrice(displayCents)}
+                  <span className={`text-3xl font-bold ${c.title}`}>
+                    {plan.contactSales ? "Custom" : isFree ? "Free" : formatPrice(displayCents)}
                   </span>
-                  {!isFree && <span className="text-xs text-gray-500">/ mo</span>}
+                  {!isFree && !plan.contactSales && (
+                    <span className={`text-xs ${c.subtitle}`}>/ mo{billing === "yearly" && " · billed yearly"}</span>
+                  )}
                 </div>
-                {!isFree && billing === "yearly" && (
-                  <p className="mt-1 text-xs text-gray-500">
-                    billed annually as {formatPrice(plan.priceYearlyCents)}
+                {!isFree && !plan.contactSales && billing === "yearly" && (
+                  <p className={`mt-1 text-xs font-semibold ${c.subtitle}`}>
+                    Save {formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents)} a year
                   </p>
                 )}
 
-                <p className="mt-3 text-sm text-gray-400 light:text-gray-600 leading-relaxed">{plan.description}</p>
+                <p className={`mt-3 text-sm leading-relaxed ${c.desc}`}>{plan.description}</p>
 
                 <ul className="mt-5 flex-1 space-y-2.5">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-2.5">
-                      <CheckIcon className="size-4 shrink-0 mt-0.5 text-indigo-400 light:text-indigo-600" aria-hidden="true" />
-                      <span className="text-xs text-gray-300 light:text-gray-700">{f}</span>
+                      <CheckIcon className={`size-4 shrink-0 mt-0.5 ${c.check}`} aria-hidden="true" />
+                      <span className={`text-xs ${c.feature}`}>{f}</span>
                     </li>
                   ))}
                 </ul>
 
                 {isCurrent && usage && (
-                  <div className="mt-5 space-y-3 border-t border-white/[0.08] light:border-black/[0.08] pt-5">
-                    <UsageBar label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
-                    <UsageBar label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
-                    <UsageBar label="Members" used={usage.member_count} limit={usage.member_limit} frozen={usage.member_frozen_count} />
-                    <UsageBar label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
+                  <div className={`mt-5 space-y-3 border-t pt-5 ${c.divider}`}>
+                    <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
+                    <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
+                    <UsageBar onColor={tone !== "default"} label="Members" used={usage.member_count} limit={usage.member_limit} frozen={usage.member_frozen_count} />
+                    <UsageBar onColor={tone !== "default"} label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
                   </div>
                 )}
 
                 {isCurrent && pendingCancellation && (
-                  <p className="mt-4 text-xs text-amber-400 light:text-amber-700">
+                  <p className={`mt-4 text-xs ${tone === "default" ? "text-amber-400 light:text-amber-700" : "text-amber-200"}`}>
                     {pendingCancellation.currentPeriodEnd
                       ? `Switches to Free on ${formatDate(pendingCancellation.currentPeriodEnd)}`
                       : "Switches to Free at the end of your billing period"}
@@ -248,6 +295,7 @@ export default function SubscriptionPage({
                   isDowngrade={isDowngrade}
                   billing={billing}
                   trialDays={plan.trialDays}
+                  tone={tone}
                   initialScheduledFor={
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }
@@ -255,24 +303,6 @@ export default function SubscriptionPage({
               </div>
             );
           })}
-        </div>
-
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-[#1a1d24] light:bg-white px-6 py-5 sm:flex-row">
-          <p className="text-sm text-gray-300 light:text-gray-700">
-            {currentPlanId === "enterprise" ? (
-              <>You&apos;re on <span className="text-indigo-400 light:text-indigo-600 font-medium">Enterprise</span>.</>
-            ) : (
-              <>Running an agency, or need a hands-on team? <span className="text-gray-500">Enterprise adds unlimited workspaces, bigger keyword pools, and a dedicated growth manager and ASO specialist.</span></>
-            )}
-          </p>
-          <a
-            href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
-            target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
-            rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
-          >
-            {currentPlanId === "enterprise" ? "Book a call" : "Talk to us"}
-          </a>
         </div>
       </div>
     </main>

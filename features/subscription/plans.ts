@@ -4,12 +4,19 @@ export type Plan = {
   id: PlanId;
   name: string;
   priceMonthlyCents: number;
-  // Already discounted (10x monthly, i.e. 2 months free) — not derived at render time.
+  // Already discounted, and picked so the per-month yearly price is a round
+  // number ($29 / $79) — not derived at render time.
   priceYearlyCents: number;
   description: string;
   badge: string | null;
   features: string[];
   trialDays?: number;
+  // No longer sold. Kept so existing subscribers still resolve to a plan
+  // name/price, but hidden from every pricing grid.
+  retired?: boolean;
+  // Priced per deal: cards show "Custom" and the CTA books a call instead of
+  // going to Stripe checkout.
+  contactSales?: boolean;
 };
 
 export const PLANS: Plan[] = [
@@ -18,21 +25,16 @@ export const PLANS: Plan[] = [
     name: "Free Plan",
     priceMonthlyCents: 0,
     priceYearlyCents: 0,
-    description: "100 keywords, keyword research, and metadata optimization across unlimited apps — free forever.",
+    description: "For trying it out on your own app. Free forever.",
     badge: "Always free",
     features: [
-      "1 workspace",
       "Unlimited apps (iOS & Android)",
-      "1 competitor per app",
-      "100 keywords",
-      "Relevancy & opportunity scoring (up to 20 keywords)",
-      "Metadata optimization",
-      "Keyword research",
-      "Keyword & ranking monitoring",
-      "1 month historical data",
+      "100 tracked keywords",
+      "Keyword research & ranking tracking",
+      "ASO reports & metadata optimization",
+      "Relevancy & opportunity scoring (20 keywords)",
       "Keyword translations",
-      "Installable mobile app (with keyword ranking push notifications)",
-      "Live chat & email support",
+      "1 month of history",
     ],
   },
   {
@@ -42,6 +44,7 @@ export const PLANS: Plan[] = [
     priceYearlyCents: 16800,
     description: "Unlimited keywords, keyword & ranking monitoring, and metadata optimization across unlimited apps.",
     badge: null,
+    retired: true,
     features: [
       "Includes all in Free plan, plus:",
       "Unlimited keywords",
@@ -51,44 +54,36 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    priceMonthlyCents: 8040,
-    priceYearlyCents: 80400,
-    description: "Metadata timeline & benchmarking, AI keyword suggestions, review tracking, and relevancy & opportunity scoring (up to 700 keywords) across unlimited apps.",
-    badge: "Free for 7 days",
-    trialDays: 7,
+    priceMonthlyCents: 3900,
+    priceYearlyCents: 34800,
+    description: "For indie developers and small teams growing their apps.",
+    badge: null,
     features: [
-      "Includes all in Basic plan, plus:",
-      "3 competitors per app",
-      "Est. downloads per keyword",
-      "Relevancy & opportunity scoring (up to 700 keywords)",
+      "Includes all in Free plan, plus:",
+      "Unlimited keywords",
+      "Relevancy & opportunity scoring (700 keywords)",
       "AI keyword suggestions",
-      "Long tail keyword tool",
-      "Group by intent",
-      "ASO Suggestions",
-      "6 months historical data",
-      "Metadata timeline & version history",
-      "Metadata benchmark vs. category",
-      "Reviews & ratings tracking",
-      "ASA Intelligence",
-      "Market Intelligence",
+      "Long tail keywords & intent grouping",
+      "Est. downloads per keyword",
+      "3 competitors per app",
+      "ASA & Market Intelligence",
+      "6 months of history",
     ],
   },
   {
     id: "pro_plus",
     name: "Pro+",
-    priceMonthlyCents: 23640,
-    priceYearlyCents: 236400,
-    description: "Everything in Pro, plus long tail keyword tools, ranked keywords, keyword simulator, and a bigger relevancy & opportunity scoring pool across unlimited apps.",
+    priceMonthlyCents: 9900,
+    priceYearlyCents: 94800,
+    description: "For studios managing a portfolio of apps.",
     badge: null,
     features: [
       "Includes all in Pro plan, plus:",
       "4 workspaces",
+      "Relevancy & opportunity scoring (4,000 keywords)",
+      "Ranked keywords & keyword simulator",
       "5 competitors per app",
-      "Relevancy & opportunity scoring (up to 4,000 keywords)",
-      "1 year historical data",
-      "Ranked keywords view",
-      "Keyword simulator",
-      "AI Visibility",
+      "1 year of history",
     ],
   },
   {
@@ -96,16 +91,20 @@ export const PLANS: Plan[] = [
     name: "Enterprise",
     priceMonthlyCents: 179640,
     priceYearlyCents: 1796400,
-    description: "Everything in Pro+, plus unlimited workspaces, a bigger keyword pool, and a dedicated growth manager and ASO specialist to manage it all for you.",
+    description: "For large publishers, global brands & agencies.",
     badge: null,
+    contactSales: true,
     features: [
       "Includes all in Pro+ plan, plus:",
-      "Unlimited workspaces",
-      "Bigger relevancy & opportunity scoring pool",
-      "1 dedicated growth manager",
-      "1 dedicated ASO specialist",
-      "Access to all features",
-      "Live chat & email support",
+      "Custom number of keywords",
+      "Custom relevancy & opportunity scoring",
+      "Custom workspaces",
+      "Custom seats",
+      "Custom number of competitors",
+      "Custom history",
     ],
   },
 ];
+
+// What the pricing grids show: every plan still on sale.
+export const SELLABLE_PLANS = PLANS.filter((plan) => !plan.retired);

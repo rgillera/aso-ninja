@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
-import { PLANS, type PlanId } from "@/features/subscription/plans";
+import { SELLABLE_PLANS, type PlanId } from "@/features/subscription/plans";
 import PortalEyebrow from "./PortalEyebrow";
 
 type Variant = "default" | "featured" | "premium";
@@ -24,12 +24,9 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// Enterprise isn't one of the 4 fast-choice cards below — it's a
-// done-for-you service staffed by an actual specialist, not a self-serve
-// tier, so it gets a single "talk to us" banner beneath the grid instead
-// (see UpgradeButton.tsx, which does the same thing for the logged-in
-// /dashboard/subscription page).
-const plans = PLANS.filter((plan) => plan.id !== "enterprise").map((plan) => {
+const salesUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
+
+const plans = SELLABLE_PLANS.map((plan) => {
   const isFree = plan.priceMonthlyCents === 0;
   return {
     id: plan.id,
@@ -42,13 +39,14 @@ const plans = PLANS.filter((plan) => plan.id !== "enterprise").map((plan) => {
       price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
       signupHref: `/signup?plan=${plan.id}&billing=yearly&next=/dashboard/subscription`,
     },
+    yearlySavings: isFree ? null : formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents),
     description: plan.description,
     badge: plan.badge,
     features: plan.features,
     trialDays: plan.trialDays,
     signupCta: isFree ? "Create free account" : plan.trialDays ? `Try free for ${plan.trialDays} days` : "Upgrade now",
     variant: variantByPlan[plan.id],
-    contactSales: false,
+    contactSales: !!plan.contactSales,
   };
 });
 
@@ -131,7 +129,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             >
               Yearly
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"}`}>
-                2 months free
+                Save up to 25%
               </span>
             </button>
           </div>
@@ -142,12 +140,18 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
             const isFree = plan.name === "Free";
-            const href = isAuthenticated
+            // Enterprise is priced per deal, so it books a call instead of
+            // signing up (UpgradeButton.tsx does the same in the dashboard).
+            const href = plan.contactSales
+              ? salesUrl ?? "mailto:hello@appaso.io"
+              : isAuthenticated
               ? isFree
                 ? "/dashboard"
                 : "/dashboard/subscription"
               : billing.signupHref;
-            const cta = isAuthenticated
+            const cta = plan.contactSales
+              ? "Talk to us"
+              : isAuthenticated
               ? isFree
                 ? "Go to dashboard"
                 : plan.trialDays
@@ -179,7 +183,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
                 <div className="mt-4 flex items-baseline gap-x-2">
                   {plan.contactSales ? (
-                    <span className={`text-2xl font-bold tracking-tight ${s.price}`}>Contact sales</span>
+                    <span className={`text-4xl font-bold tracking-tight ${s.price}`}>Custom</span>
                   ) : (
                     <>
                       <span className={`text-4xl font-bold tracking-tight ${s.price}`}>
@@ -193,6 +197,9 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                     </>
                   )}
                 </div>
+                {yearly && plan.yearlySavings && !plan.contactSales && (
+                  <p className={`mt-1 text-xs font-semibold ${s.subtitle}`}>Save {plan.yearlySavings} a year</p>
+                )}
 
                 <p className={`mt-4 text-sm leading-relaxed ${s.desc}`}>{plan.description}</p>
 
@@ -207,6 +214,8 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
                 <a
                   href={href}
+                  target={plan.contactSales && salesUrl ? "_blank" : undefined}
+                  rel={plan.contactSales && salesUrl ? "noopener noreferrer" : undefined}
                   className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
                 >
                   {cta}
@@ -214,20 +223,6 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
               </div>
             );
           })}
-        </div>
-
-        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center justify-between gap-3 rounded-2xl bg-white px-6 py-5 shadow-clay ring-1 ring-black/5 sm:flex-row">
-          <p className="text-sm text-gray-700">
-            Running an agency, or need a hands-on team? <span className="text-gray-500">We offer unlimited workspaces, bigger keyword pools, and a dedicated growth manager and ASO specialist to manage it all for you.</span>
-          </p>
-          <a
-            href={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ?? "mailto:hello@appaso.io"}
-            target={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "_blank" : undefined}
-            rel={process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL ? "noopener noreferrer" : undefined}
-            className="shrink-0 rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-clay-sm transition-colors hover:bg-gray-800"
-          >
-            Talk to us
-          </a>
         </div>
       </div>
     </section>

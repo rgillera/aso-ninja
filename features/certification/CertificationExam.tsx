@@ -133,12 +133,12 @@ export default function CertificationExam({ holderName = "" }: Props) {
             {isLocked ? (
               <Link
                 href="/dashboard/subscription"
-                title="Requires the Basic plan or above"
+                title="Requires the Pro plan or above"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 light:bg-black/[0.06] px-5 py-2.5 text-sm font-semibold text-gray-300 light:text-gray-700 hover:bg-white/15 light:hover:bg-black/[0.08]"
               >
                 <LockClosedIcon className="size-4" />
                 Start exam
-                <span className="rounded-full bg-emerald-500/10 px-1.5 py-px text-[10px] font-semibold text-emerald-500 light:text-emerald-700">Basic</span>
+                <span className="rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 light:text-violet-700">Pro</span>
               </Link>
             ) : (
               <button

@@ -14,7 +14,7 @@ import {
   CameraIcon,
   Squares2X2Icon,
   DocumentChartBarIcon,
-  RectangleStackIcon,
+  EyeIcon,
   PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
@@ -88,22 +88,9 @@ function NavRow({
   );
 }
 
-function SubNavRow({ icon: Icon, label, active }: { icon: typeof Squares2X2Icon; label: string; active?: boolean }) {
-  return (
-    <div
-      className={`ml-3 flex items-center gap-2 rounded-lg border-l border-black/[0.08] pl-2.5 py-1 text-xs font-medium ${
-        active ? "bg-indigo-50 text-indigo-700" : "text-gray-600"
-      }`}
-    >
-      <Icon className="size-3.5 shrink-0" />
-      <span className="flex-1 truncate">{label}</span>
-    </div>
-  );
-}
-
 function FooterRow({ icon: Icon, label, badge }: { icon: typeof Squares2X2Icon; label: string; badge?: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-gray-500">
+    <div className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500">
       <Icon className="size-3.5 shrink-0" />
       <span className="flex-1 truncate">{label}</span>
       {badge && (
@@ -219,8 +206,8 @@ export function DashboardHeroDemo() {
       <div ref={innerRef} style={scaled ? { width: DEMO_WIDTH, transform: `scale(${scale})`, transformOrigin: "top left" } : undefined}>
       <div data-theme="light" className="flex min-w-[1000px] rounded-xl bg-white ring-1 ring-black/[0.08] overflow-hidden">
         {/* Sidebar — mirrors features/dashboard/DashboardSidebar.tsx's structure,
-            labels, and icons, collapsed to the state it'd be in on this page
-            (Keywords section open, Metadata/Reviews collapsed). */}
+            labels, and icons as they'd show on this page (Keyword Research
+            active; Campaign Data collapsed). */}
         <aside className="flex w-48 shrink-0 flex-col bg-white border-r border-black/[0.08]">
           {/* Workspace switcher — its own bordered region, same as the real
               sidebar (a plain margin doesn't read as a section break the way
@@ -236,26 +223,23 @@ export function DashboardHeroDemo() {
           <nav className="flex-1 overflow-y-auto p-2.5 space-y-1">
             <NavRow icon={Squares2X2Icon} label="My Apps" />
 
+            <NavRow icon={DocumentChartBarIcon} label="Reports" />
+            <NavRow icon={EyeIcon} label="Metadata" />
+
             <div className="pt-3">
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">ASO Intelligence</p>
+              <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-gray-400">Keyword Intelligence</p>
               <div className="space-y-1">
-                <NavRow icon={DocumentChartBarIcon} label="Reports" />
-                <NavRow icon={RectangleStackIcon} label="Metadata" chevronOpen={false} />
-                <NavRow icon={MagnifyingGlassIcon} label="Keywords" active chevronOpen={true} />
-                <div className="space-y-0.5">
-                  <SubNavRow icon={MagnifyingGlassIcon} label="Keyword Research" active />
-                  <SubNavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
-                  <SubNavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
-                  <SubNavRow icon={TagIcon} label="Group by Intent" />
-                  <SubNavRow icon={ListBulletIcon} label="Ranked Keywords" />
-                  <SubNavRow icon={BeakerIcon} label="Keyword Simulator" />
-                </div>
-                <NavRow icon={StarIcon} label="Reviews & Ratings" chevronOpen={false} />
+                <NavRow icon={MagnifyingGlassIcon} label="Keyword Research" active />
+                <NavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
+                <NavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
+                <NavRow icon={TagIcon} label="Group by Intent" />
+                <NavRow icon={ListBulletIcon} label="Ranked Keywords" />
+                <NavRow icon={BeakerIcon} label="Keyword Simulator" />
               </div>
             </div>
 
             <div className="pt-3">
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">ASA Intelligence</p>
+              <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-gray-400">ASA Intelligence</p>
               <div className="space-y-1">
                 <NavRow icon={BanknotesIcon} label="Bid Suggestions" />
                 <NavRow icon={ChartBarIcon} label="Campaign Data" chevronOpen={false} />
@@ -263,7 +247,7 @@ export function DashboardHeroDemo() {
             </div>
 
             <div className="pt-3">
-              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-400">Market Intelligence</p>
+              <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-gray-400">Market Intelligence</p>
               <div className="space-y-1">
                 <NavRow icon={MagnifyingGlassCircleIcon} label="App Explorer" />
                 <NavRow icon={ScaleIcon} label="Compare Apps" />

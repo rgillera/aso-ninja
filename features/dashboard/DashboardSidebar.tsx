@@ -4,35 +4,29 @@ import { useState, useRef, useEffect } from "react";
 import {
   ChevronDownIcon,
   Squares2X2Icon,
-  ChartBarIcon,
   MagnifyingGlassIcon,
-  StarIcon,
-  GlobeAltIcon,
   PlusIcon,
   CheckIcon,
   Cog6ToothIcon,
-  RectangleStackIcon,
   DocumentChartBarIcon,
   EyeIcon,
-  ClockIcon,
   PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
   TagIcon,
-  MagnifyingGlassCircleIcon,
-  ScaleIcon,
-  BanknotesIcon,
-  LightBulbIcon,
-  AdjustmentsHorizontalIcon,
-  ChatBubbleLeftEllipsisIcon,
   ChatBubbleLeftRightIcon,
-  SparklesIcon,
   UserCircleIcon,
   CreditCardIcon,
   LockClosedIcon,
   BeakerIcon,
   TrophyIcon,
   MapIcon,
+  ChartBarIcon,
+  LightBulbIcon,
+  AdjustmentsHorizontalIcon,
+  MagnifyingGlassCircleIcon,
+  ScaleIcon,
+  BanknotesIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
@@ -60,12 +54,6 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
   );
 }
 
-const metadataLinks: { label: string; appPath: string; fallback: string; previewPage: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Preview", appPath: "preview", fallback: "/dashboard/metadata/preview", previewPage: "preview", icon: EyeIcon },
-  { label: "Timeline", appPath: "timeline", fallback: "/dashboard/metadata/timeline", previewPage: "timeline", icon: ClockIcon, minPlan: "pro" },
-  { label: "Benchmark", appPath: "benchmark", fallback: "/dashboard/metadata/benchmark", previewPage: "benchmark", icon: ChartBarIcon, minPlan: "pro" },
-];
-
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
   { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
@@ -91,17 +79,12 @@ const asaAccountLinks: { label: string; href: string; icon: typeof MagnifyingGla
   { label: "Efficiency", href: "/dashboard/asa/efficiency", icon: AdjustmentsHorizontalIcon, minPlan: "pro" },
 ];
 
-const reviewLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
-  { label: "Ratings", href: "/dashboard/reviews/ratings", icon: StarIcon, minPlan: "pro" },
-  { label: "Reviews", href: "/dashboard/reviews/reviews", icon: ChatBubbleLeftEllipsisIcon, minPlan: "pro" },
-];
-
 type Props = {
   currentPath?: string;
   workspaces: Workspace[];
   activeWorkspaceId?: string;
   activeAppId?: string;
-  /** When set, every metadata nav link uses this href instead of building /apps/[id]/... */
+  /** When set, the Reports and Metadata links use this href instead of building /apps/[id]/... */
   metaOverrideHref?: string;
   /** Which preview sub-page is currently active ("" = report, "timeline", etc.) */
   activePreviewPage?: string;
@@ -147,28 +130,17 @@ export default function DashboardSidebar({
     currentPath.startsWith("/dashboard/report") ||
     currentPath.endsWith("/report") ||
     (isOnPreviewRoute && (activePreviewPage === "report" || activePreviewPage === ""));
-  const isOnMetadata =
+  const isOnMetadataPreview =
     !isOnReport && (
-      (isOnPreviewRoute && activePreviewPage !== "" && activePreviewPage !== "report") ||
-      metadataLinks.some((l) => currentPath.startsWith(l.fallback)) ||
-      metadataLinks.some((l) => l.appPath && currentPath.endsWith(`/${l.appPath}`))
+      (isOnPreviewRoute && activePreviewPage === "preview") ||
+      currentPath.startsWith("/dashboard/metadata/preview") ||
+      (!isOnPreviewRoute && currentPath.endsWith("/preview"))
     );
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
-  const [metaOpen, setMetaOpen] = useState(isOnMetadata);
-  const [keywordsOpen, setKeywordsOpen] = useState(
-    currentPath.startsWith("/dashboard/keywords")
-  );
-  const [reviewsOpen, setReviewsOpen] = useState(
-    currentPath.startsWith("/dashboard/reviews")
-  );
   const [asaAccountOpen, setAsaAccountOpen] = useState(
     asaAccountLinks.some((l) => currentPath.startsWith(l.href))
   );
-
-  useEffect(() => {
-    if (isOnReport) setMetaOpen(false);
-  }, [currentPath]);
 
   function reportHref() {
     if (metaOverrideHref) return `${metaOverrideHref}&page=report`;
@@ -176,15 +148,12 @@ export default function DashboardSidebar({
     return activeWorkspaceId ? `/dashboard/report?ws=${activeWorkspaceId}` : "/dashboard/report";
   }
 
-  function metaHref(link: typeof metadataLinks[number]) {
-    if (metaOverrideHref) {
-      return link.previewPage ? `${metaOverrideHref}&page=${link.previewPage}` : metaOverrideHref;
-    }
-    if (activeAppId) {
-      return link.appPath ? `/dashboard/apps/${activeAppId}/${link.appPath}` : `/dashboard/apps/${activeAppId}`;
-    }
-    return activeWorkspaceId ? `${link.fallback}?ws=${activeWorkspaceId}` : link.fallback;
+  function metadataPreviewHref() {
+    if (metaOverrideHref) return `${metaOverrideHref}&page=preview`;
+    if (activeAppId) return `/dashboard/apps/${activeAppId}/preview`;
+    return activeWorkspaceId ? `/dashboard/metadata/preview?ws=${activeWorkspaceId}` : "/dashboard/metadata/preview";
   }
+
   const ref = useRef<HTMLDivElement>(null);
   const { active: tourActive, onAdvance: onAdvanceTour } = useSidebarTour();
   const navRef = useRef<HTMLElement>(null);
@@ -347,201 +316,73 @@ export default function DashboardSidebar({
         />
         <a
           href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
-          className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
             currentPath === "/dashboard"
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
-          <Squares2X2Icon className="size-4 shrink-0" />
+          <Squares2X2Icon className="size-5 shrink-0" />
           My Apps
         </a>
 
         {hasAsoIntelligence && (
+        <>
+        <a
+          href={reportHref()}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            isOnReport
+              ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+              : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
+          }`}
+        >
+          <DocumentChartBarIcon className="size-5 shrink-0" />
+          Reports
+        </a>
+
+        <a
+          href={metadataPreviewHref()}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            isOnMetadataPreview
+              ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+              : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
+          }`}
+        >
+          <EyeIcon className="size-5 shrink-0" />
+          Metadata
+        </a>
+
         <div className="pt-3">
           <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
-            ASO Intelligence
+            Keyword Intelligence
           </p>
           <div className="space-y-0.5">
-            {/* Report — top-level link */}
-            <a
-              href={reportHref()}
-              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                isOnReport
-                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                  : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-              }`}
-            >
-              <DocumentChartBarIcon className="size-4 shrink-0" />
-              Reports
-            </a>
-
-            {/* Metadata — collapsible */}
-            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
-              isOnMetadata ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-            }`}>
+            {keywordLinks.map((link) => (
               <a
-                href={metaHref(metadataLinks[0])}
-                className="flex flex-1 items-center gap-3 px-3 py-1.5"
+                key={link.href}
+                // Carries the tour's handoff into the next page load while the
+                // "sidebar" step is active and this is the link it's pointing at —
+                // see the TOUR_STEPS comment on why this is a query param rather
+                // than in-memory state (this is a full page navigation, not a
+                // client-side route change).
+                href={tourActive && link.href === "/dashboard/keywords/performance" ? `${link.href}?tip=tour-export` : link.href}
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  currentPath.startsWith(link.href)
+                    ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                    : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
+                } ${tourActive && link.href === "/dashboard/keywords/performance" ? "ring-1 ring-indigo-400/70" : ""}`}
               >
-                <RectangleStackIcon className="size-4 shrink-0" />
-                Metadata
+                {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
+                <link.icon className="size-5 shrink-0" />
+                <span className="flex-1 whitespace-nowrap">{link.label}</span>
+                {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                  <PlanLockBadge minPlan={link.minPlan} />
+                )}
               </a>
-              <button
-                type="button"
-                onClick={() => setMetaOpen((v) => !v)}
-                className="pr-3 py-1.5"
-              >
-                <ChevronDownIcon
-                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${metaOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-
-            {metaOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
-                {metadataLinks.map((link) => {
-                  const href = metaHref(link);
-                  const isActive =
-                    currentPath === href ||
-                    currentPath.startsWith(link.fallback) ||
-                    (isOnPreviewRoute && activePreviewPage === link.previewPage);
-                  return (
-                    <a
-                      key={link.fallback}
-                      href={href}
-                      className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                        isActive
-                          ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
-                          : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-                      }`}
-                    >
-                      <link.icon className="size-4 shrink-0" />
-                      <span className="flex-1">{link.label}</span>
-                      {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
-                        <PlanLockBadge minPlan={link.minPlan} />
-                      )}
-                    </a>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Keywords — collapsible */}
-            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
-              currentPath.startsWith("/dashboard/keywords")
-                ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-            }`}>
-              <a
-                href="/dashboard/keywords/research"
-                className="flex flex-1 items-center gap-3 px-3 py-1.5"
-              >
-                <MagnifyingGlassIcon className="size-4 shrink-0" />
-                Keywords
-              </a>
-              <button
-                type="button"
-                onClick={() => setKeywordsOpen((v) => !v)}
-                className="pr-3 py-1.5"
-              >
-                <ChevronDownIcon
-                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${keywordsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-
-            {keywordsOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
-                {keywordLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    // Carries the tour's handoff into the next page load while the
-                    // "sidebar" step is active and this is the link it's pointing at —
-                    // see the TOUR_STEPS comment on why this is a query param rather
-                    // than in-memory state (this is a full page navigation, not a
-                    // client-side route change).
-                    href={tourActive && link.href === "/dashboard/keywords/performance" ? `${link.href}?tip=tour-export` : link.href}
-                    className={`relative flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                      currentPath.startsWith(link.href)
-                        ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
-                        : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-                    } ${tourActive && link.href === "/dashboard/keywords/performance" ? "ring-1 ring-indigo-400/70" : ""}`}
-                  >
-                    {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
-                    <link.icon className="size-4 shrink-0" />
-                    <span className="flex-1 whitespace-nowrap">{link.label}</span>
-                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
-                      <PlanLockBadge minPlan={link.minPlan} />
-                    )}
-                  </a>
-                ))}
-              </div>
-            )}
-
-            {/* Reviews & Ratings — collapsible */}
-            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
-              currentPath.startsWith("/dashboard/reviews")
-                ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-            }`}>
-              <a
-                href="/dashboard/reviews/ratings"
-                className="flex flex-1 items-center gap-3 px-3 py-1.5"
-              >
-                <StarIcon className="size-4 shrink-0" />
-                Reviews &amp; Ratings
-              </a>
-              <button
-                type="button"
-                onClick={() => setReviewsOpen((v) => !v)}
-                className="pr-3 py-1.5"
-              >
-                <ChevronDownIcon
-                  className={`size-3.5 text-gray-500 transition-transform duration-150 ${reviewsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-
-            {reviewsOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
-                {reviewLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                      currentPath.startsWith(link.href)
-                        ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
-                        : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-                    }`}
-                  >
-                    <link.icon className="size-4 shrink-0" />
-                    <span className="flex-1">{link.label}</span>
-                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
-                      <PlanLockBadge minPlan={link.minPlan} />
-                    )}
-                  </a>
-                ))}
-              </div>
-            )}
-
-            {/* AI Visibility — top-level link, same "just needs an app" simplicity
-                as Bid Suggestions below: no connected account or extra setup, so
-                it doesn't need a collapsible parent of its own. */}
-            <a
-              href="/dashboard/ai-visibility"
-              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
-                currentPath.startsWith("/dashboard/ai-visibility")
-                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                  : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-              }`}
-            >
-              <SparklesIcon className="size-4 shrink-0" />
-              <span className="flex-1">AI Visibility</span>
-              {!isPlanAtLeast(planSlug, "pro_plus") && <PlanLockBadge minPlan="pro_plus" />}
-            </a>
+            ))}
           </div>
         </div>
+        </>
         )}
 
         {hasAsaIntelligence && (
@@ -552,13 +393,13 @@ export default function DashboardSidebar({
           <div className="space-y-0.5">
             <a
               href="/dashboard/asa/bids"
-              className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                 currentPath.startsWith("/dashboard/asa/bids")
                   ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                   : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
               }`}
             >
-              <BanknotesIcon className="size-4 shrink-0" />
+              <BanknotesIcon className="size-5 shrink-0" />
               <span className="flex-1">Bid Suggestions</span>
               {!isPlanAtLeast(planSlug, "pro") && <PlanLockBadge minPlan="pro" />}
             </a>
@@ -571,15 +412,15 @@ export default function DashboardSidebar({
             }`}>
               <a
                 href="/dashboard/asa/active-bids"
-                className="flex flex-1 items-center gap-3 px-3 py-1.5"
+                className="flex flex-1 items-center gap-3 px-3 py-2"
               >
-                <ChartBarIcon className="size-4 shrink-0" />
+                <ChartBarIcon className="size-5 shrink-0" />
                 Campaign Data
               </a>
               <button
                 type="button"
                 onClick={() => setAsaAccountOpen((v) => !v)}
-                className="pr-3 py-1.5"
+                className="pr-3 py-2"
               >
                 <ChevronDownIcon
                   className={`size-3.5 text-gray-500 transition-transform duration-150 ${asaAccountOpen ? "rotate-180" : ""}`}
@@ -593,13 +434,13 @@ export default function DashboardSidebar({
                   <a
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       currentPath.startsWith(link.href)
                         ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
                         : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                     }`}
                   >
-                    <link.icon className="size-4 shrink-0" />
+                    <link.icon className="size-5 shrink-0" />
                     <span className="flex-1 whitespace-nowrap">{link.label}</span>
                     {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
                       <PlanLockBadge minPlan={link.minPlan} />
@@ -624,13 +465,13 @@ export default function DashboardSidebar({
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-1 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                       : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                   }`}
                 >
-                  <link.icon className="size-4 shrink-0" />
+                  <link.icon className="size-5 shrink-0" />
                   <span className="flex-1">{link.label}</span>
                   {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
                     <PlanLockBadge minPlan={link.minPlan} />
@@ -641,36 +482,35 @@ export default function DashboardSidebar({
           </div>
         </div>
         )}
-
       </nav>
 
       {/* Account footer */}
       <div className="border-t border-white/[0.07] light:border-black/[0.08] p-2.5 space-y-0.5">
         <a
           href="/dashboard/certification"
-          className={`flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm transition-colors ${
+          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
             currentPath.startsWith("/dashboard/certification")
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
-          <TrophyIcon className="size-4 shrink-0" />
+          <TrophyIcon className="size-5 shrink-0" />
           Learn &amp; Get Certified
         </a>
         <button
           type="button"
           onClick={() => window.Tawk_API?.maximize?.()}
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
-          <ChatBubbleLeftRightIcon className="size-4 shrink-0" />
+          <ChatBubbleLeftRightIcon className="size-5 shrink-0" />
           Chat with us 👋
         </button>
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
           >
-            <CreditCardIcon className="size-4 shrink-0" />
+            <CreditCardIcon className="size-5 shrink-0" />
             <span className="flex-1">Manage Plan</span>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
               {planBadge.label}
@@ -679,9 +519,9 @@ export default function DashboardSidebar({
         ) : (
           <div
             title="Only the workspace owner can manage the plan"
-            className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-600 cursor-not-allowed"
+            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-600 cursor-not-allowed"
           >
-            <CreditCardIcon className="size-4 shrink-0" />
+            <CreditCardIcon className="size-5 shrink-0" />
             <span className="flex-1">Manage Plan</span>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${planBadge.className}`}>
               {planBadge.label}
@@ -690,9 +530,9 @@ export default function DashboardSidebar({
         )}
         <a
           href="/dashboard/settings/account"
-          className="flex items-center gap-2 w-full rounded-lg px-3 py-1.5 text-left text-sm text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+          className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
-          <UserCircleIcon className="size-4 shrink-0" />
+          <UserCircleIcon className="size-5 shrink-0" />
           Account settings
         </a>
       </div>

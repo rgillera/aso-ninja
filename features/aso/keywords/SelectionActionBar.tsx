@@ -96,7 +96,7 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
         exportLocked ? (
           <Link
             href="/dashboard/subscription"
-            title="Upgrade to Basic to export to CSV"
+            title="Upgrade to Pro to export to CSV"
             className="flex items-center justify-center size-8 rounded-full text-gray-600 light:text-gray-400 hover:text-emerald-400 light:hover:text-emerald-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
           >
             <LockClosedIcon className="size-4" />
