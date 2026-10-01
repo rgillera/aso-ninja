@@ -110,7 +110,8 @@ export default function GrowthSprintTermsPage() {
         </p>
         <p>
           Fees exclude taxes, which you are responsible for where applicable. Fees are non-refundable once
-          paid, except as described in Term &amp; Commitment above or where required by law.
+          paid, except as described in Term &amp; Commitment and Satisfaction Guarantee, or where required
+          by law.
         </p>
       </section>
 
@@ -125,21 +126,53 @@ export default function GrowthSprintTermsPage() {
       </section>
 
       <section>
+        <h2>Satisfaction Guarantee</h2>
+        <p>
+          If you believe a deliverable listed in the Engagement Overview was not provided, notify us in
+          writing at <a href="mailto:hello@appaso.io">hello@appaso.io</a> within 7 days of when it was
+          due. We will:
+        </p>
+        <ul>
+          <li>Review your concern, and</li>
+          <li>Fix or re-deliver the item promptly.</li>
+        </ul>
+        <p>
+          If a deliverable still cannot be fulfilled after correction, you may be eligible for a partial
+          refund, limited to the value of the undelivered work.
+        </p>
+        <p>
+          This guarantee covers the delivery of the work, not performance results such as installs,
+          revenue, rankings, or return on investment.
+        </p>
+      </section>
+
+      <section>
+        <h2>Scope Protection</h2>
+        <p>
+          Requests outside the scope listed in the Engagement Overview, such as extra creatives, additional
+          channels, apps, stores, or regions, extra revisions, or ongoing support, are not included. They
+          require our written approval and additional fees before we start the work.
+        </p>
+      </section>
+
+      <section>
         <h2>Your Responsibilities</h2>
-        <p>The Sprint moves on a fixed timeline, so we rely on you to:</p>
+        <p>The Sprint moves on a fixed timeline, so you agree to:</p>
         <ul>
           <li>
-            Provide timely access to your app store consoles, analytics, ad accounts, and creative assets,
-            using roles with the least privilege needed.
+            Provide timely access to the tools and accounts we need, such as your app store consoles,
+            analytics, ad accounts, and creative assets, using roles with the least privilege needed.
           </li>
-          <li>Name one decision maker who can review and approve changes, usually within 3 working days.</li>
+          <li>Respond to our requests and approvals within a reasonable timeframe, usually 3 working days.</li>
+          <li>Name one decision maker who can review and approve changes.</li>
           <li>Approve listing changes, A/B tests, and ad budgets before they go live.</li>
           <li>Keep your app compliant with App Store and Google Play policies.</li>
         </ul>
         <p>
-          The Sprint runs on its original schedule even if we are waiting on you for access, assets, or
-          approvals. We will keep working on what we can, but work that depends on delayed items may be
-          reduced in scope, and delays on your side do not extend the Sprint or entitle you to a refund.
+          Delays caused by missing access or feedback may impact results. The Sprint runs on its original
+          schedule even if we are waiting on you, and while we will keep working on what we can, work that
+          depends on delayed items may be reduced in scope. Delays on your side do not extend the Sprint or
+          entitle you to a refund.
         </p>
       </section>
 
@@ -154,22 +187,32 @@ export default function GrowthSprintTermsPage() {
       </section>
 
       <section>
-        <h2>No Guaranteed Results</h2>
+        <h2>No Results Guarantee</h2>
         <p>
-          We will perform the Sprint with reasonable skill and care, and report results honestly. App
-          store rankings, conversion, and campaign performance depend on many factors outside our control,
-          including app store algorithms, competitors, and your product, so we do not guarantee any
-          specific ranking, conversion, download, or revenue outcome.
+          We do not guarantee any specific level of installs, revenue, rankings, organic visibility,
+          return on ad spend (ROAS), or other business outcomes. These results depend on factors beyond our
+          control, including market conditions, competition, platform algorithms, advertising performance,
+          pricing, product quality, and decisions on your side.
+        </p>
+        <p>
+          We do guarantee professional, diligent, and timely execution of the Sprint, including delivery
+          of the services listed in the Engagement Overview. We will provide expert strategies, actionable
+          recommendations, ongoing optimization, performance monitoring, and clear reporting designed to
+          give you the best practical foundation for sustainable app growth.
+        </p>
+        <p>
+          Our commitment is to the quality and execution of the work, not to a guaranteed business
+          outcome.
         </p>
       </section>
 
       <section>
         <h2>Ownership of Work</h2>
         <p>
-          Once the relevant fees are paid, you own the deliverables we create specifically for you,
-          including your audit, roadmap, listing copy, test results, reports, and handoff playbook. You can
-          keep and use them after the Sprint ends, with or without us. We keep ownership of our own tools,
-          templates, methods, and know-how, and of AppASO itself.
+          Once the Sprint fee is paid, you own the deliverables we create specifically for you, including
+          your audit, roadmap, listing copy, ad creatives, test results, reports, and handoff playbook. You
+          can keep and use them after the Sprint ends, with or without us. We keep ownership of our own
+          tools, templates, methods, and know-how, and of AppASO itself.
         </p>
       </section>
 
@@ -177,33 +220,79 @@ export default function GrowthSprintTermsPage() {
         <h2>Included AppASO Pro Plan</h2>
         <p>
           Your Sprint includes one year of AppASO Pro at no extra cost, starting on Day 1, and it continues
-          for the full year after the Sprint ends. Your use of AppASO
-          is governed by our <Link href="/terms">Terms of Service</Link>, and when the included plan ends,
-          your workspace moves to the Free plan unless you subscribe to a paid plan.
+          for the full year after the Sprint ends. Your use of AppASO is governed by our{" "}
+          <Link href="/terms">Terms of Service</Link>, and when the included plan ends, your workspace moves
+          to the Free plan unless you subscribe to a paid plan.
         </p>
       </section>
 
       <section>
-        <h2>Confidentiality</h2>
+        <h2>Case Studies &amp; Confidentiality</h2>
         <p>
-          We will keep your non-public information, including your analytics, revenue, and campaign data,
-          confidential, use it only to deliver the Sprint, and not share it with other clients or third
-          parties, except our service providers bound by similar obligations or where required by law.
+          We will not publicly disclose, reference, or share any information about you or the Sprint
+          without your prior written approval. This includes, but is not limited to:
+        </p>
+        <ul>
+          <li>Your name, company name, logo, or brand.</li>
+          <li>Your app name, screenshots, or other identifying materials.</li>
+          <li>Campaigns, strategies, methodologies, or performance data.</li>
+          <li>Results, insights, metrics, revenue, or other business information.</li>
+          <li>Any other information that could identify you or reveal details of the Sprint.</li>
+        </ul>
+        <p>
+          No case studies, testimonials, portfolio materials, marketing content, or public references will
+          be created or published without your prior written consent.
         </p>
         <p>
-          When the Sprint ends, we will remove our access to your accounts and you should revoke any access
-          you granted. We will delete or return your confidential information on request, except where we
-          must keep it by law.
+          We will use your non-public information only to deliver the Sprint and will not share it with
+          other clients or third parties, except our service providers bound by similar obligations or
+          where required by law. When the Sprint ends, we will remove our access to your accounts, and you
+          should revoke any access you granted. We will delete or return your confidential information on
+          request, except where we must keep it by law.
         </p>
       </section>
 
       <section>
         <h2>Limitation of Liability</h2>
+        <p>We are not responsible for:</p>
+        <ul>
+          <li>Actions taken by Apple, Google, or other app stores, such as app rejections, removals, or ranking changes.</li>
+          <li>Ad platform issues, such as account restrictions, disapproved ads, outages, or billing errors.</li>
+          <li>Lost revenue, lost profits, or indirect damages.</li>
+        </ul>
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, APPASO SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
           SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS, REVENUE, DATA, OR
           ADVERTISING SPEND, ARISING FROM THE SPRINT. OUR TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF THE
-          SPRINT SHALL NOT EXCEED THE SPRINT FEES YOU PAID.
+          SPRINT SHALL NOT EXCEED THE SPRINT FEE YOU PAID.
+        </p>
+      </section>
+
+      <section>
+        <h2>Post-Sprint Options</h2>
+        <p>After the 90 days, you may choose to:</p>
+        <ul>
+          <li>
+            <strong>Continue with a Growth Assistant:</strong> keep working with a dedicated{" "}
+            <Link href="/growth-assistant">App Growth Assistant</Link> for up to 40 hours per week, on your
+            preferred working hours, guided directly by our Senior App Growth Specialist.
+          </li>
+          <li>
+            <strong>Customize the engagement:</strong> move into a custom engagement tailored to your
+            evolving growth goals, priorities, and resources.
+          </li>
+          <li>
+            <strong>Scale or adjust support:</strong> increase, reduce, or redefine the scope of support
+            based on your app&apos;s needs and growth stage.
+          </li>
+          <li>
+            <strong>End the engagement:</strong> finish when the Sprint ends, with no further obligation.
+          </li>
+        </ul>
+        <p>
+          Any continued engagement is governed by its own terms, such as our{" "}
+          <Link href="/growth-assistant/terms">App Growth Assistant Terms</Link>, or a separate written
+          agreement.
         </p>
       </section>
 
