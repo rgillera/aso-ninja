@@ -270,6 +270,12 @@ export default async function GrowthSprintPage() {
                 >
                   Book a call for details
                 </a>
+                <p className="mt-4 text-xs text-gray-500">
+                  Fixed 90 days, paid upfront.{" "}
+                  <Link href="/growth-sprint/terms" className="text-indigo-600 hover:underline">
+                    See the terms
+                  </Link>
+                </p>
               </div>
 
               <div className="flex flex-col rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-clay-lg ring-1 ring-indigo-400/40 sm:p-10 lg:col-span-2">

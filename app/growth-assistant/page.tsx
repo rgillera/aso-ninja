@@ -216,6 +216,12 @@ export default async function GrowthAssistantPage() {
               >
                 Get your dedicated assistant
               </a>
+              <p className="mt-4 text-xs text-gray-500">
+                Month to month, cancel anytime.{" "}
+                <Link href="/growth-assistant/terms" className="text-indigo-600 hover:underline">
+                  See the terms
+                </Link>
+              </p>
             </div>
           </div>
         </section>
