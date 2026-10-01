@@ -28,6 +28,7 @@ export const PLANS: Plan[] = [
     description: "For trying it out on your own app. Free forever.",
     badge: "Always free",
     features: [
+      "1 seat",
       "Unlimited apps (iOS & Android)",
       "100 tracked keywords",
       "Keyword research & ranking tracking",
@@ -60,6 +61,8 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Free plan, plus:",
+      "2 workspaces",
+      "3 seats per workspace",
       "Unlimited keywords",
       "Relevancy & opportunity scoring (700 keywords)",
       "AI keyword suggestions",
@@ -80,6 +83,7 @@ export const PLANS: Plan[] = [
     features: [
       "Includes all in Pro plan, plus:",
       "4 workspaces",
+      "6 seats per workspace",
       "Relevancy & opportunity scoring (4,000 keywords)",
       "Ranked keywords & keyword simulator",
       "5 competitors per app",
