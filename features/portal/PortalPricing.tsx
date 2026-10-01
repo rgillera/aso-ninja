@@ -26,6 +26,13 @@ function formatPrice(cents: number) {
 
 const salesUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
+// Year-end sale ribbon. Hides itself once SALE_ENDS passes, so it can stay
+// in the code after the promo without anyone remembering to pull it.
+const SALE_ENDS = new Date("2027-01-01T00:00:00Z");
+const SALE_TITLE = "Year-End Sale";
+const SALE_OFFER = "Save more: more keywords, less cost";
+const saleActive = Date.now() < SALE_ENDS.getTime();
+
 const plans = SELLABLE_PLANS.map((plan) => {
   const isFree = plan.priceMonthlyCents === 0;
   return {
@@ -103,6 +110,29 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
     <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-28">
       <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
+          {saleActive && (
+            <div className="mb-10 flex justify-center">
+              <div className="relative">
+                {/* Ribbon tails, tucked behind the band */}
+                <span
+                  aria-hidden="true"
+                  className="absolute top-2 -left-6 h-full w-10 bg-rose-700"
+                  style={{ clipPath: "polygon(0 0, 100% 0, 100% 100%, 0 100%, 35% 50%)" }}
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute top-2 -right-6 h-full w-10 bg-rose-700"
+                  style={{ clipPath: "polygon(0 0, 100% 0, 65% 50%, 100% 100%, 0 100%)" }}
+                />
+                <div className="relative flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 px-6 py-2.5 text-sm text-white shadow-clay-sm">
+                  <SparklesIcon className="size-4" aria-hidden="true" />
+                  <span className="font-bold uppercase tracking-wider">{SALE_TITLE}</span>
+                  <span className="hidden h-4 w-px bg-white/40 sm:block" aria-hidden="true" />
+                  <span className="font-medium">{SALE_OFFER}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <PortalEyebrow>Pricing</PortalEyebrow>
           <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Simple, transparent pricing
