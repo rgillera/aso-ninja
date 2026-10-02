@@ -13,14 +13,7 @@ const testimonials = [
       "Keyword research told us which terms to go after, and keyword combinations surfaced long-tail variants we would've never thought to search for. Adding them for tracking is very convenient.",
     name: "Rex Torres",
     title: "Founder, NutriSnap",
-    avatar: "DT",
-  },
-  {
-    quote:
-      "The workspace model is perfect for our agency. Each client gets their own space and we manage everything from one dashboard.",
-    name: "Erik Baring",
-    title: "ASO Manager, ASO Ninja",
-    avatar: "SK",
+    avatar: "RT",
   },
 ];
 
@@ -35,7 +28,7 @@ export default function PortalTestimonials() {
           </h2>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-6 lg:max-w-none lg:grid-cols-3">
+        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-6 lg:max-w-5xl lg:grid-cols-2">
           {testimonials.map((t) => (
             <figure
               key={t.name}

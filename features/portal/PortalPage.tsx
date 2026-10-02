@@ -3,6 +3,7 @@ import PortalNav from "./PortalNav";
 import PortalHero from "./PortalHero";
 import PortalHowItWorks from "./PortalHowItWorks";
 import PortalFeature from "./PortalFeature";
+import PortalCertification from "./PortalCertification";
 import PortalPricing from "./PortalPricing";
 import PortalTestimonials from "./PortalTestimonials";
 import PortalGrowthAudit from "./PortalGrowthAudit";
@@ -19,6 +20,7 @@ export default async function PortalPage() {
       <PortalHero isAuthenticated={isAuthenticated} />
       <PortalHowItWorks />
       <PortalFeature />
+      <PortalCertification isAuthenticated={isAuthenticated} />
       <PortalPricing isAuthenticated={isAuthenticated} />
       <PortalTestimonials />
       <PortalGrowthAudit />
