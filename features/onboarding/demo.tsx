@@ -21,11 +21,11 @@ import { VolumeBar } from "@/features/aso/keywords/research/ui";
 // DashboardSearch/KeywordTable/DashboardSidebar, not invented tones.
 
 const EXAMPLE_KEYWORDS = [
-  { keyword: "instagram", volume: 98, relevancy: 92, opportunity: 88, estimatedDownloads: 412_000, rank: 4 },
+  { keyword: "instagram", volume: 82, relevancy: 100, opportunity: 88, estimatedDownloads: 482_000, rank: 1 },
   { keyword: "photo editor", volume: 76, relevancy: 81, opportunity: 74, estimatedDownloads: 96_000, rank: 12 },
   { keyword: "reels video", volume: 64, relevancy: 77, opportunity: 69, estimatedDownloads: 58_000, rank: 19 },
   { keyword: "story maker", volume: 58, relevancy: 68, opportunity: 61, estimatedDownloads: 31_000, rank: 27 },
-  { keyword: "social media", volume: 89, relevancy: 42, opportunity: 38, estimatedDownloads: 12_000, rank: null },
+  { keyword: "social media", volume: 57, relevancy: 68, opportunity: 34, estimatedDownloads: 51_000, rank: 1 },
   { keyword: "filters camera", volume: 45, relevancy: 55, opportunity: 33, estimatedDownloads: 6_400, rank: 41 },
 ];
 
@@ -52,51 +52,51 @@ const EXPORT_HISTORY = [
   {
     month: "Sep 2026",
     rows: [
-      { keyword: "instagram", volume: 98, highestRank: 4, change: 14, estimatedDownloads: 412_000 },
+      { keyword: "instagram", volume: 82, highestRank: 1, change: 3, estimatedDownloads: 482_000 },
       { keyword: "photo editor", volume: 76, highestRank: 12, change: 7, estimatedDownloads: 96_000 },
       { keyword: "reels video", volume: 64, highestRank: 19, change: -3, estimatedDownloads: 58_000 },
       { keyword: "story maker", volume: 58, highestRank: 27, change: 9, estimatedDownloads: 31_000 },
-      { keyword: "social media", volume: 89, highestRank: 41, change: -6, estimatedDownloads: 12_000 },
+      { keyword: "social media", volume: 57, highestRank: 1, change: 4, estimatedDownloads: 51_000 },
     ],
   },
   {
     month: "Aug 2026",
     rows: [
-      { keyword: "instagram", volume: 98, highestRank: 18, change: 9, estimatedDownloads: 412_000 },
+      { keyword: "instagram", volume: 82, highestRank: 4, change: 14, estimatedDownloads: 482_000 },
       { keyword: "photo editor", volume: 76, highestRank: 19, change: 5, estimatedDownloads: 96_000 },
       { keyword: "reels video", volume: 64, highestRank: 16, change: 8, estimatedDownloads: 58_000 },
       { keyword: "story maker", volume: 58, highestRank: 36, change: 7, estimatedDownloads: 31_000 },
-      { keyword: "social media", volume: 89, highestRank: 35, change: 10, estimatedDownloads: 12_000 },
+      { keyword: "social media", volume: 57, highestRank: 5, change: 7, estimatedDownloads: 51_000 },
     ],
   },
   {
     month: "Jul 2026",
     rows: [
-      { keyword: "instagram", volume: 98, highestRank: 27, change: 6, estimatedDownloads: 412_000 },
+      { keyword: "instagram", volume: 82, highestRank: 18, change: 9, estimatedDownloads: 482_000 },
       { keyword: "photo editor", volume: 76, highestRank: 24, change: 4, estimatedDownloads: 96_000 },
       { keyword: "reels video", volume: 64, highestRank: 24, change: 5, estimatedDownloads: 58_000 },
       { keyword: "story maker", volume: 58, highestRank: 43, change: 6, estimatedDownloads: 31_000 },
-      { keyword: "social media", volume: 89, highestRank: 45, change: 8, estimatedDownloads: 12_000 },
+      { keyword: "social media", volume: 57, highestRank: 12, change: 6, estimatedDownloads: 51_000 },
     ],
   },
   {
     month: "Jun 2026",
     rows: [
-      { keyword: "instagram", volume: 98, highestRank: 33, change: 5, estimatedDownloads: 412_000 },
+      { keyword: "instagram", volume: 82, highestRank: 27, change: 6, estimatedDownloads: 482_000 },
       { keyword: "photo editor", volume: 76, highestRank: 28, change: 3, estimatedDownloads: 96_000 },
       { keyword: "reels video", volume: 64, highestRank: 29, change: 4, estimatedDownloads: 58_000 },
       { keyword: "story maker", volume: 58, highestRank: 49, change: 5, estimatedDownloads: 31_000 },
-      { keyword: "social media", volume: 89, highestRank: 53, change: 7, estimatedDownloads: 12_000 },
+      { keyword: "social media", volume: 57, highestRank: 18, change: 5, estimatedDownloads: 51_000 },
     ],
   },
   {
     month: "May 2026",
     rows: [
-      { keyword: "instagram", volume: 98, highestRank: 38, change: 4, estimatedDownloads: 412_000 },
+      { keyword: "instagram", volume: 82, highestRank: 33, change: 5, estimatedDownloads: 482_000 },
       { keyword: "photo editor", volume: 76, highestRank: 31, change: 2, estimatedDownloads: 96_000 },
       { keyword: "reels video", volume: 64, highestRank: 33, change: 3, estimatedDownloads: 58_000 },
       { keyword: "story maker", volume: 58, highestRank: 54, change: 4, estimatedDownloads: 31_000 },
-      { keyword: "social media", volume: 89, highestRank: 60, change: 5, estimatedDownloads: 12_000 },
+      { keyword: "social media", volume: 57, highestRank: 23, change: 4, estimatedDownloads: 51_000 },
     ],
   },
 ];

@@ -24,14 +24,14 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
       />
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
+        <div className="mx-auto max-w-5xl text-center">
           <PortalEyebrow>Built for App Store &amp; Google Play</PortalEyebrow>
-          <h1 className="mt-6 text-balance text-5xl font-bold tracking-tight text-gray-900 sm:text-7xl">
-            Rank higher.
-            <span className="block text-indigo-600">Grow faster.</span>
+          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+            <span className="text-indigo-600">Pro-level ASO data,</span>{" "}
+            <span className="sm:block">without the $299 price tag.</span>
           </h1>
-          <p className="mt-6 text-balance text-lg font-medium text-gray-600 sm:text-xl">
-            Climb the App Store and Google Play charts, turn more searches into installs, and stay a step ahead of your competitors.
+          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg font-medium text-gray-600 sm:text-xl">
+            Start free. Upgrade from <span className="font-bold text-gray-900">$29/mo</span>. Keyword rankings, relevancy scores and download estimates for the App Store and Google Play.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-y-4 gap-x-6 sm:flex-row">
             <a
@@ -45,9 +45,16 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
             </a>
           </div>
           {!isAuthenticated && (
-            <p className="mt-4 text-sm text-gray-500">
-              Free for indie developers and small teams. No credit card required.
-            </p>
+            <ul className="mt-5 flex flex-col items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-700 sm:flex-row sm:text-base">
+              {["Free for indie developers and small teams", "No credit card required"].map((item) => (
+                <li key={item} className="flex items-center gap-2">
+                  <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="size-5 text-emerald-500">
+                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 

@@ -24,8 +24,11 @@ export default async function Image() {
         <div style={{ display: "flex", fontSize: 96, fontWeight: 700, color: "white" }}>
           App<span style={{ color: "#818cf8" }}>ASO</span>
         </div>
-        <div style={{ display: "flex", marginTop: 24, fontSize: 32, color: "#9ca3af" }}>
-          Rank higher. Grow faster.
+        <div style={{ display: "flex", marginTop: 24, fontSize: 40, fontWeight: 600, color: "white" }}>
+          Pro-level ASO data, without the $299 price tag.
+        </div>
+        <div style={{ display: "flex", marginTop: 12, fontSize: 30, color: "#9ca3af" }}>
+          Start free. Upgrade from $29/mo.
         </div>
       </div>
     ),

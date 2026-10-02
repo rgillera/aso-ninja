@@ -27,7 +27,7 @@ const values = [
   {
     name: "Move fast",
     description:
-      "Daily rank snapshots, quick metadata iteration, and a workspace that gets out of your way so you can ship changes and see what actually moves the needle.",
+      "Weekly rank snapshots, quick metadata iteration, and a workspace that gets out of your way so you can ship changes and see what actually moves the needle.",
     icon: BoltIcon,
   },
 ];

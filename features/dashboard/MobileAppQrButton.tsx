@@ -51,7 +51,7 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
         <QRCodeSVG value={mobileUrl} size={144} />
       </div>
       <p className="mt-3 text-center text-xs text-gray-400 light:text-gray-600">
-        Scan with your phone to track rankings and get push notifications the moment they change.
+        Scan with your phone to track rankings and get push notifications when they change.
       </p>
     </div>
   );

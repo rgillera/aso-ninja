@@ -3,7 +3,7 @@ import PortalEyebrow from "./PortalEyebrow";
 const testimonials = [
   {
     quote:
-      "AppASO cut our keyword research time in half, and tracking daily rank changes told us exactly which terms were actually moving the needle.",
+      "AppASO cut our keyword research time in half, and tracking weekly rank changes told us exactly which terms were actually moving the needle.",
     name: "Mia Chen",
     title: "Growth Lead, Lumio Apps",
     avatar: "MC",

@@ -12,7 +12,7 @@ const features = [
   {
     name: "Never lose your ranking edge",
     description:
-      "Unlimited keyword tracking across App Store and Google Play, with daily snapshots so you know the moment your rank moves — up or down.",
+      "Unlimited keyword tracking across App Store and Google Play, with weekly rank checks so you can see every move, up or down.",
     icon: MagnifyingGlassIcon,
   },
   {
