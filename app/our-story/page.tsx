@@ -44,7 +44,8 @@ const chapters: { title: string; paragraphs: string[] }[] = [
     title: "Why we built AppASO",
     paragraphs: [
       "Running ASO for clients showed us where the real gap was: the data. Keyword rankings, relevancy scores, and download estimates were locked behind tools priced for big brands, out of reach for the indie developers we wanted to help.",
-      "So we moved to AppASO.io, to give indie developers, startups, and agencies the same data without the cost of the big ASO brands. We've been collecting App Store and Google Play data ever since.",
+      "In June 2025 we started building our own internal ASO tool. The data was limited at first, so we focused on collecting it, tracking keywords, rankings, and search results across the App Store and Google Play.",
+      "By July 2026 we had built up a large base of store data, so we turned the internal tool into AppASO.io, giving indie developers, startups, and agencies the same data without the cost of the big ASO brands.",
     ],
   },
 ];
@@ -67,6 +68,11 @@ const milestones: { date: string; title: string; description: string; certificat
       "A team of four running done-for-you ASO for app teams, later layering in Meta Ads and Apple Search Ads to scale growth beyond organic.",
   },
   {
+    date: "June 2025",
+    title: "Building our internal ASO tool",
+    description: "An in-house tool for our client work. The data was limited at first, so we started collecting it.",
+  },
+  {
     date: "Oct 2025",
     title: "AppTweak Certified",
     description: "Every ASO Ninja specialist passed the ASO with AppTweak certification exam.",
@@ -74,9 +80,9 @@ const milestones: { date: string; title: string; description: string; certificat
   },
   {
     date: "July 2026",
-    title: "AppASO launches",
+    title: "From internal tool to AppASO",
     description:
-      "Our keyword research and metadata tooling, opened up as a self-serve workspace. We still take on select clients one-on-one.",
+      "With a large base of App Store and Google Play data collected, we opened our internal tool to everyone as AppASO. We still take on select clients one-on-one.",
   },
 ];
 
@@ -181,14 +187,16 @@ export default async function OurStoryPage() {
               </div>
             </div>
 
-            <div className="mt-20 text-center">
-              <a
-                href={isAuthenticated ? "/dashboard" : "/signup"}
-                className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                {isAuthenticated ? "Go to dashboard" : "Create free account"}
-              </a>
-            </div>
+            {!isAuthenticated && (
+              <div className="mt-20 text-center">
+                <a
+                  href="/signup"
+                  className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                >
+                  Create free account
+                </a>
+              </div>
+            )}
           </div>
         </section>
       </main>
