@@ -16,10 +16,8 @@ const links = {
     { label: "Growth Sprint", href: "/growth-sprint" },
   ],
   Company: [
-    { label: "About", href: "/about" },
     { label: "Our Story", href: "/our-story" },
     { label: "Blog", href: "/blog" },
-    { label: "Contact", href: "/contact" },
   ],
   Legal: [
     { label: "Privacy", href: "/privacy" },
