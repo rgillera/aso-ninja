@@ -2,7 +2,7 @@ import {
   MagnifyingGlassIcon,
   DocumentTextIcon,
   ChartBarIcon,
-  StarIcon,
+  SparklesIcon,
   GlobeAltIcon,
   UsersIcon,
 } from "@heroicons/react/24/outline";
@@ -34,10 +34,10 @@ const features = [
     icon: ChartBarIcon,
   },
   {
-    name: "Protect your rating before it slips",
+    name: "Know which keywords are worth chasing",
     description:
-      "Catch reviews the moment they land, synced daily and filtered by rating, locale, and version, so nothing critical goes unanswered.",
-    icon: StarIcon,
+      "Get AI keyword suggestions for your app, scored for relevancy and opportunity with estimated downloads, so you spend effort where it pays off.",
+    icon: SparklesIcon,
   },
   {
     name: "Keep your whole team moving together",
