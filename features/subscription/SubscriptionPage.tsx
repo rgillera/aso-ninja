@@ -145,8 +145,12 @@ export default function SubscriptionPage({
   const frozenTotal = usage
     ? usage.keyword_frozen_count + usage.app_frozen_count + usage.member_frozen_count
     : 0;
-  const [billing, setBilling] = useState<Billing>("yearly");
   const searchParams = useSearchParams();
+  // Carry over the toggle the visitor picked on the public pricing grid
+  // (PortalPricing links through signup with ?billing=yearly|monthly).
+  const [billing, setBilling] = useState<Billing>(
+    searchParams.get("billing") === "yearly" ? "yearly" : "monthly"
+  );
   useRefreshUntilUpgraded(searchParams.get("success") === "1");
 
   return (
@@ -201,7 +205,7 @@ export default function SubscriptionPage({
                   : "bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-600"
               }`}
             >
-              Save up to 25%
+              -20%
             </span>
           </button>
         </div>

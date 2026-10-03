@@ -33,11 +33,11 @@ const plans = SELLABLE_PLANS.map((plan) => {
     name: plan.name.replace(/ Plan$/, ""),
     monthly: {
       price: isFree ? "Free" : formatPrice(plan.priceMonthlyCents),
-      signupHref: `/signup?plan=${plan.id}&billing=monthly&next=/dashboard/subscription`,
+      signupHref: `/signup?plan=${plan.id}&next=${encodeURIComponent("/dashboard/subscription?billing=monthly")}`,
     },
     yearly: {
       price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
-      signupHref: `/signup?plan=${plan.id}&billing=yearly&next=/dashboard/subscription`,
+      signupHref: `/signup?plan=${plan.id}&next=${encodeURIComponent("/dashboard/subscription?billing=yearly")}`,
     },
     yearlySavings: isFree ? null : formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents),
     description: plan.description,
@@ -97,7 +97,7 @@ const cardStyles: Record<Variant, {
 };
 
 export default function PortalPricing({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const [yearly, setYearly] = useState(true);
+  const [yearly, setYearly] = useState(false);
 
   return (
     <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-28">
@@ -129,7 +129,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             >
               Yearly
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"}`}>
-                Save up to 25%
+                -20%
               </span>
             </button>
           </div>
