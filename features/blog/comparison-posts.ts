@@ -20,9 +20,9 @@ const APPASO_PLANS_TABLE = {
   type: "table" as const,
   headers: ["AppASO plan", "Price", "Tracked keywords", "Apps", "History", "Highlights"],
   rows: [
-    ["Free", "$0", "100", "Unlimited", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 20 keywords"],
-    ["Pro", "$39/mo, or $29/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (700 keywords), est. downloads per keyword, AI keyword suggestions, 3 competitors per app, 3 seats"],
-    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (4,000 keywords), keyword simulator, 5 competitors per app"],
+    ["Free", "$0", "100", "Unlimited", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 40 keywords"],
+    ["Pro", "$39/mo, or $29/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, AI keyword suggestions, 3 competitors per app, 3 seats"],
+    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), keyword simulator, 5 competitors per app"],
     ["Enterprise", "Custom", "Custom", "Unlimited", "Custom", "Custom limits for publishers and agencies"],
   ],
 };
@@ -119,7 +119,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "faq",
         items: [
           { question: "How much does AppTweak cost?", answer: "As of October 2026, AppTweak's ASO plans are Essential at $79/mo (500 keywords, 5 apps), Grow at $249/mo (1,500 keywords, 10 apps), Grow Plus at $499/mo (3,000 keywords, 15 apps), and a custom Enterprise plan." },
-          { question: "Is there a free alternative to AppTweak?", answer: "Yes. AppASO has a free plan with 100 tracked keywords across unlimited iOS and Android apps, including keyword research, rank tracking, metadata optimization, and relevancy scoring for 20 keywords." },
+          { question: "Is there a free alternative to AppTweak?", answer: "Yes. AppASO has a free plan with 100 tracked keywords across unlimited iOS and Android apps, including keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords." },
           { question: "Does AppASO show downloads per keyword like AppTweak?", answer: "Yes, on Pro. AppASO estimates downloads per keyword by splitting your real total downloads from App Store Connect or Google Play Console across the keywords you rank for. AppTweak includes organic installs per keyword from its $249/mo Grow plan." },
         ],
       },
@@ -514,7 +514,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "1. AppASO" },
       {
         type: "paragraph",
-        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords across unlimited apps, with keyword research, rank tracking, metadata optimization, and relevancy scoring for 20 keywords. Pro ($39/mo, or $29/mo billed yearly) removes the keyword cap and adds relevancy scoring for 700 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
+        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords across unlimited apps, with keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords. Pro ($39/mo, or $29/mo billed yearly) removes the keyword cap and adds relevancy scoring for 1,000 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
       },
       {
         type: "paragraph",

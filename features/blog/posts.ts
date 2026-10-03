@@ -195,7 +195,7 @@ export const BLOG_POSTS: BlogPost[] = [
         items: [
           "Relevancy scoring and estimated downloads per keyword included on Pro, from $29/mo billed yearly",
           "Unlimited keyword tracking on Pro, covering Android as well as iOS",
-          "A genuinely free plan to start on: 100 tracked keywords, metadata optimization, and relevancy scoring for 20 keywords across unlimited apps, no credit card required",
+          "A genuinely free plan to start on: 100 tracked keywords, metadata optimization, and relevancy scoring for 40 keywords across unlimited apps, no credit card required",
           "One workspace for keyword research, AI keyword suggestions, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
           "An ASO certification exam included with Pro, alongside a free overview course",
           "Transparent, published self-serve pricing — no sales calls or annual contracts required just to find out what it costs, unlike Sensor Tower",
