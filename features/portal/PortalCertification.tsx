@@ -65,8 +65,9 @@ export default function PortalCertification({ isAuthenticated }: { isAuthenticat
           </div>
 
           {/* Mirrors the real PDF (features/certification/certificate.ts):
-              dark background, double border, AppASO mark, name, ID and date. */}
-          <div className="relative">
+              dark background, double border, AppASO mark, name, ID and date.
+              Hidden on phones, where its small print can't be read anyway. */}
+          <div className="relative hidden sm:block">
             <div
               aria-hidden="true"
               className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-indigo-200/60 via-violet-200/40 to-transparent blur-2xl"
