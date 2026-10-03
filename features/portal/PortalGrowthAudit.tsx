@@ -26,6 +26,11 @@ export default function PortalGrowthAudit() {
                 Book audit now
               </a>
               <span className="text-sm text-gray-400">It&apos;s free &middot; 15 minutes</span>
+              <p className="mt-4 rounded-lg bg-white/5 px-4 py-3 text-sm leading-6 text-gray-300 ring-1 ring-white/10">
+                <span className="font-semibold text-white">Tip:</span>{" "}
+                When booking, add your app name or App Store link in the &ldquo;Please share anything that will help prepare
+                for our meeting&rdquo; field so our specialist can review it beforehand.
+              </p>
             </div>
           </div>
         </div>
