@@ -1,7 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { deleteUserAndData } from "@/libs/account/delete-user";
 
 export type AccountState = { error?: string; success?: string } | null;
@@ -10,6 +11,7 @@ export async function updateProfileAction(
   _prev: AccountState,
   formData: FormData
 ): Promise<AccountState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const fullName = (formData.get("full_name") as string)?.trim();
   if (!fullName) return { error: "Name is required." };
 
@@ -34,6 +36,7 @@ export async function deleteAccountAction(
   _prev: AccountState,
   formData: FormData
 ): Promise<AccountState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const confirmation = (formData.get("confirmation") as string)?.trim();
   if (confirmation !== "DELETE") {
     return { error: "Type DELETE to confirm." };

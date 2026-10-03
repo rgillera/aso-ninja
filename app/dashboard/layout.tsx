@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, getImpersonation } from "@/libs/supabase/server";
+import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { resolveActiveWorkspaceId } from "@/libs/workspace";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
@@ -14,6 +15,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const impersonation = await getImpersonation();
   const cookieStore = await cookies();
   const lastAppId = cookieStore.get("lastAppId")?.value;
   // cookies().get().value is already url-decoded by Next's cookie parser —
@@ -84,6 +86,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           {children}
         </DashboardShell>
       </Suspense>
+      {impersonation && <ImpersonationBanner email={impersonation.targetEmail} expiresAt={impersonation.expiresAt} />}
     </>
   );
 }

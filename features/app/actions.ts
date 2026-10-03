@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath, refresh } from "next/cache";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { syncAppDownloads } from "@/libs/store-connections/sync";
 import type { AppStore } from "@/libs/contracts";
@@ -12,6 +13,7 @@ export async function createAppAction(
   _prev: AppState,
   formData: FormData
 ): Promise<AppState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const workspaceId = formData.get("workspace_id") as string;
   const name = (formData.get("name") as string)?.trim();
   const store = formData.get("store") as AppStore;
@@ -44,6 +46,7 @@ export async function createAppAction(
 }
 
 export async function deleteAppAction(appId: string): Promise<void> {
+  if (await isImpersonating()) return;
   const supabase = await createClient();
   await supabase.from("apps").delete().eq("id", appId);
   revalidatePath("/dashboard");
@@ -67,6 +70,7 @@ export type FollowAppInput = {
 export async function followAppAction(
   input: FollowAppInput
 ): Promise<{ id: string } | { error: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
   // Upsert instead of insert: if the row already exists (e.g. the UI's
   // followed-state was stale), this just returns its id and resyncs the

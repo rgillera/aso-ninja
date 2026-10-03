@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createStripeClient } from "@/libs/stripe/server";
 import type { Plan, WorkspaceUsage, PlanSlug } from "@/libs/contracts";
 
@@ -49,6 +50,7 @@ export async function cancelSubscriptionAction(
   reason: string,
   recommendation?: string
 ): Promise<{ currentPeriodEnd: string | null } | { error: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
   const {
     data: { user },
@@ -95,6 +97,7 @@ export async function createCheckoutSessionAction(
   workspaceId: string,
   billing: "monthly" | "yearly" = "monthly"
 ): Promise<{ url: string } | { error: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
   const {
     data: { user },

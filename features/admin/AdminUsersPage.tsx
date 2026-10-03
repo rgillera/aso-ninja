@@ -14,10 +14,11 @@ import {
   ArrowDownTrayIcon,
   TrashIcon,
   ExclamationTriangleIcon,
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 import type { AdminUserRow } from "@/features/admin/types";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
-import { deleteUserAction } from "@/features/admin/actions";
+import { deleteUserAction, startImpersonationAction } from "@/features/admin/actions";
 
 type Props = {
   users: AdminUserRow[];
@@ -177,6 +178,25 @@ export default function AdminUsersPage({ users }: Props) {
   // Hides a deleted row immediately; revalidatePath in deleteUserAction
   // brings the server-rendered list (and totals) in line on the next render.
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [viewingAsId, setViewingAsId] = useState<string | null>(null);
+  const [viewAsError, setViewAsError] = useState<string | null>(null);
+  const [, startViewAs] = useTransition();
+
+  function handleViewAs(u: AdminUserRow) {
+    setViewAsError(null);
+    setViewingAsId(u.id);
+    startViewAs(async () => {
+      const result = await startImpersonationAction(u.id);
+      if (result.ok) {
+        // Full reload so the dashboard renders fresh as this user, with none
+        // of the admin's own client-side state carried over.
+        window.location.assign("/dashboard");
+      } else {
+        setViewAsError(`${u.email}: ${result.error}`);
+        setViewingAsId(null);
+      }
+    });
+  }
 
   function handleSort(key: SortKey) {
     if (key === sortKey) {
@@ -273,6 +293,12 @@ export default function AdminUsersPage({ users }: Props) {
           </button>
         </div>
 
+        {viewAsError && (
+          <div className="mb-4 rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-400 light:text-red-600 ring-1 ring-red-500/20">
+            Couldn&apos;t view as {viewAsError}
+          </div>
+        )}
+
         <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -327,6 +353,16 @@ export default function AdminUsersPage({ users }: Props) {
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.lastSignInAt)}</td>
                       <td className="px-5 py-3.5 text-right">
                         {!u.isSuperAdmin && (
+                          <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => handleViewAs(u)}
+                            disabled={viewingAsId !== null}
+                            title="View as this user (view only)"
+                            aria-label={`View as ${u.email}`}
+                            className="p-1.5 rounded text-gray-500 hover:text-amber-400 light:hover:text-amber-600 hover:bg-amber-500/10 disabled:opacity-40 transition-colors"
+                          >
+                            <EyeIcon className={`size-4 ${viewingAsId === u.id ? "animate-pulse text-amber-400" : ""}`} />
+                          </button>
                           <button
                             onClick={() => setDeleting(u)}
                             title="Delete user"
@@ -335,6 +371,7 @@ export default function AdminUsersPage({ users }: Props) {
                           >
                             <TrashIcon className="size-4" />
                           </button>
+                          </div>
                         )}
                       </td>
                     </tr>

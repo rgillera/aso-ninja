@@ -1,12 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createClient } from "@/libs/supabase/server";
+import { createRealUserClient, getImpersonation } from "@/libs/supabase/server";
+import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { AdminShell } from "@/features/admin/AdminShell";
 import { ThemeProvider, type Theme } from "@/features/dashboard/ThemeContext";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
+  const supabase = await createRealUserClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   if (!isSuperAdminEmail(user.email)) notFound();
@@ -14,6 +15,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Same account-level preference the dashboard reads (features/dashboard/ThemeContext.tsx)
   // — the admin panel is a separate layout tree, so it needs its own read of
   // the cookie rather than inheriting whatever DashboardShell set up.
+  const impersonation = await getImpersonation();
   const cookieStore = await cookies();
   const initialTheme: Theme = cookieStore.get("theme")?.value === "dark" ? "dark" : "light";
 
@@ -28,6 +30,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <ThemeProvider initialTheme={initialTheme}>
         <AdminShell>{children}</AdminShell>
       </ThemeProvider>
+      {impersonation && <ImpersonationBanner email={impersonation.targetEmail} expiresAt={impersonation.expiresAt} />}
     </>
   );
 }

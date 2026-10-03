@@ -1,7 +1,10 @@
 "use server";
 
-import { createClient } from "@/libs/supabase/server";
+import { createRealUserClient } from "@/libs/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { IMPERSONATION_COOKIE, type Impersonation } from "@/libs/admin/impersonation";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
@@ -14,7 +17,7 @@ type AdminClient = ReturnType<typeof createAdminClient>;
 // endpoint regardless of which page rendered the button that calls it — the
 // /admin/* pages' notFound() gate does not protect this file on its own.
 async function requireSuperAdmin() {
-  const supabase = await createClient();
+  const supabase = await createRealUserClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user || !isSuperAdminEmail(user.email)) throw new Error("Not authorized");
   return user;
@@ -275,4 +278,67 @@ export async function deleteUserAction(userId: string, confirmation: string): Pr
 
   revalidatePath("/admin");
   return { ok: true };
+}
+
+// Starts a read-only "view as" session for userId (see
+// libs/admin/impersonation.ts). Mints a real session for the target via a
+// magic link the admin API generates and verifies on the spot (no email is
+// sent), but only its access token is kept, in a separate cookie: the
+// admin's own session is untouched and comes back the moment it's cleared.
+// Side effect: this counts as a sign-in for the target, so their
+// last_sign_in_at (the admin table's "Last login") moves to now.
+export async function startImpersonationAction(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const me = await requireSuperAdmin();
+  if (userId === me.id) return { ok: false, error: "That's your own account." };
+
+  const admin = createAdminClient();
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error || !data.user) return { ok: false, error: error?.message ?? "User not found." };
+
+  const target = data.user;
+  if (!target.email) return { ok: false, error: "This account has no email to sign in with." };
+  if (isSuperAdminEmail(target.email)) return { ok: false, error: "Super admin accounts can't be viewed as." };
+  // Verifying a magic link confirms the email as a side effect — don't
+  // quietly confirm an account its owner never verified.
+  if (!target.email_confirmed_at) return { ok: false, error: "This account hasn't confirmed its email yet." };
+
+  const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: "magiclink", email: target.email });
+  if (linkErr || !link.properties?.hashed_token) return { ok: false, error: linkErr?.message ?? "Could not create a session." };
+
+  const anon = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: verified, error: verifyErr } = await anon.auth.verifyOtp({
+    type: "magiclink",
+    token_hash: link.properties.hashed_token,
+  });
+  const session = verified.session;
+  if (verifyErr || !session?.expires_at) return { ok: false, error: verifyErr?.message ?? "Could not create a session." };
+
+  const payload: Impersonation = {
+    adminId: me.id,
+    targetId: target.id,
+    targetEmail: target.email,
+    accessToken: session.access_token,
+    expiresAt: session.expires_at,
+  };
+
+  const cookieStore = await cookies();
+  cookieStore.set(IMPERSONATION_COOKIE, JSON.stringify(payload), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    expires: new Date(session.expires_at * 1000),
+  });
+
+  console.info(`[admin] ${me.email} started view-only session as ${target.email}`);
+  return { ok: true };
+}
+
+// Not gated on requireSuperAdmin: ending a view-only session should always
+// work, including after the admin's own session has lapsed.
+export async function stopImpersonationAction(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(IMPERSONATION_COOKIE);
 }

@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createAdminClient } from "@/libs/supabase/admin";
 import type { WorkspaceAccess, WorkspaceUsage } from "@/libs/contracts";
 
@@ -12,6 +13,7 @@ export async function updateWorkspaceAction(
   _prev: WorkspaceState,
   formData: FormData
 ): Promise<WorkspaceState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
@@ -33,6 +35,7 @@ export async function inviteMemberAction(
   _prev: WorkspaceState,
   formData: FormData
 ): Promise<WorkspaceState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const workspaceId = formData.get("workspace_id") as string;
   const email = (formData.get("email") as string).trim().toLowerCase();
   const access = formData.getAll("access") as WorkspaceAccess[];
@@ -99,6 +102,7 @@ export async function removeMemberAction(
   workspaceId: string,
   userId: string
 ): Promise<void> {
+  if (await isImpersonating()) return;
   const supabase = await createClient();
   await supabase
     .from("workspace_members")
@@ -111,6 +115,7 @@ export async function createWorkspaceAction(
   _prev: WorkspaceState,
   formData: FormData
 ): Promise<WorkspaceState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const name = (formData.get("name") as string)?.trim();
   if (!name) return { error: "Workspace name is required." };
 
@@ -125,6 +130,7 @@ export async function createWorkspaceAction(
 }
 
 export async function deleteWorkspaceAction(workspaceId: string): Promise<void> {
+  if (await isImpersonating()) return;
   const supabase = await createClient();
 
   const { count } = await supabase

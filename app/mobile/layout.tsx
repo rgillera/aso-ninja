@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, getImpersonation } from "@/libs/supabase/server";
+import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { InstallBanner } from "@/features/mobile/InstallBanner";
 
 // Deliberately not nested under app/dashboard/layout.tsx — this route never
@@ -22,11 +23,13 @@ export default async function MobileLayout({ children }: { children: React.React
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const impersonation = await getImpersonation();
 
   return (
     <div className="min-h-full overscroll-y-contain bg-[#111318] text-gray-300">
       <InstallBanner />
       {children}
+      {impersonation && <ImpersonationBanner email={impersonation.targetEmail} expiresAt={impersonation.expiresAt} />}
     </div>
   );
 }

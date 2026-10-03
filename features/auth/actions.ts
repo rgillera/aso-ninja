@@ -1,8 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { createClient } from "@/libs/supabase/server";
+import { cookies, headers } from "next/headers";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { IMPERSONATION_COOKIE, VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { isMobileUserAgent } from "@/libs/user-agent";
 import type { AuthState } from "@/libs/contracts";
 
@@ -143,6 +144,7 @@ export async function resetPasswordAction(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;
 
@@ -177,6 +179,12 @@ export async function signInWithGoogleAction(formData: FormData): Promise<void> 
 }
 
 export async function signOutAction() {
+  // While viewing as another user, "Sign out" just ends that view — it must
+  // never sign out the admin, let alone revoke the target user's sessions.
+  if (await isImpersonating()) {
+    (await cookies()).delete(IMPERSONATION_COOKIE);
+    redirect("/admin");
+  }
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect("/login");
@@ -186,6 +194,7 @@ export async function setPasswordAction(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const name = formData.get("name") as string;
   const password = formData.get("password") as string;
   const confirm = formData.get("confirm") as string;

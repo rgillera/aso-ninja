@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
+import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { Plan } from "@/libs/contracts";
 
@@ -25,6 +26,7 @@ export async function recordCertificationAction(input: {
   score: number;
   total: number;
 }): Promise<{ record: CertificationRecord } | { error: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
   const {
     data: { user },
