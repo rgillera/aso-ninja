@@ -317,8 +317,13 @@ export async function startImpersonationAction(userId: string): Promise<{ ok: tr
 
   // Verifying the link counted as a sign-in for the target — put their real
   // last_sign_in_at back so the Users table doesn't show the admin's visit.
-  const bumpedAt = verified.user?.last_sign_in_at;
-  if (bumpedAt) {
+  // Read the value back from auth.users rather than trusting the verify
+  // response's copy: the function only rewinds on an exact match, and the
+  // response's timestamp isn't guaranteed to carry the same precision as
+  // what Postgres stored (a mismatch silently updated nothing).
+  const { data: bumped } = await admin.auth.admin.getUserById(target.id);
+  const bumpedAt = bumped.user?.last_sign_in_at;
+  if (bumpedAt && bumpedAt !== target.last_sign_in_at) {
     const { error: restoreErr } = await admin.rpc("admin_restore_last_sign_in", {
       p_user_id: target.id,
       p_expected: bumpedAt,
