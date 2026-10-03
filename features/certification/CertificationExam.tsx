@@ -30,7 +30,7 @@ type Props = {
 
 export default function CertificationExam({ holderName = "" }: Props) {
   const planSlug = usePlanSlug();
-  const isLocked = !isPlanAtLeast(planSlug, "basic");
+  const isLocked = !isPlanAtLeast(planSlug, "pro");
 
   const [stage, setStage] = useState<Stage>("intro");
   const [examSet, setExamSet] = useState<CertificationQuestion[]>([]);

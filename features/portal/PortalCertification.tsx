@@ -13,7 +13,7 @@ const facts = [
   },
   {
     name: `${MAX_EXAM_QUESTIONS}-question exam`,
-    description: `Timed and drawn at random from a ${CERTIFICATION_QUESTIONS.length}-question bank, from fundamentals to advanced strategy. Score ${Math.round(CERTIFICATION_PASS_THRESHOLD * 100)}% or more to pass.`,
+    description: `Timed and drawn at random from a ${CERTIFICATION_QUESTIONS.length}-question bank, from fundamentals to advanced strategy. Score ${Math.round(CERTIFICATION_PASS_THRESHOLD * 100)}% or more to pass. Included with Pro.`,
     icon: ClipboardDocumentCheckIcon,
   },
   {
@@ -24,19 +24,19 @@ const facts = [
 ];
 
 export default function PortalCertification({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const href = isAuthenticated ? "/dashboard/certification" : "/signup?next=/dashboard/certification";
+  const href = isAuthenticated ? "/dashboard/certification/learn" : "/signup?next=/dashboard/certification/learn";
 
   return (
     <section id="certification" className="bg-[#f5f6f8] py-24 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div>
-            <PortalEyebrow>Free ASO certification</PortalEyebrow>
+            <PortalEyebrow>ASO certification</PortalEyebrow>
             <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
               Learn ASO. <span className="text-indigo-600">Prove it.</span>
             </h2>
             <p className="mt-6 text-lg text-gray-600">
-              Start with a free overview course, then take an exam that tests real ASO knowledge in depth. Pass it and get a
+              Start with a free overview course. On Pro, take the exam that tests real ASO knowledge in depth, and pass it to get a
               certificate you can add to your LinkedIn or portfolio.
             </p>
 
@@ -59,7 +59,7 @@ export default function PortalCertification({ isAuthenticated }: { isAuthenticat
                 href={href}
                 className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
-                {isAuthenticated ? "Start the course" : "Get certified free"}
+                {isAuthenticated ? "Start the course" : "Start the free course"}
               </a>
             </div>
           </div>
