@@ -285,8 +285,8 @@ export async function deleteUserAction(userId: string, confirmation: string): Pr
 // magic link the admin API generates and verifies on the spot (no email is
 // sent), but only its access token is kept, in a separate cookie: the
 // admin's own session is untouched and comes back the moment it's cleared.
-// Side effect: this counts as a sign-in for the target, so their
-// last_sign_in_at (the admin table's "Last login") moves to now.
+// GoTrue records that as a sign-in, so the target's last_sign_in_at is
+// rewound afterwards (admin_restore_last_sign_in).
 export async function startImpersonationAction(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const me = await requireSuperAdmin();
   if (userId === me.id) return { ok: false, error: "That's your own account." };
@@ -314,6 +314,18 @@ export async function startImpersonationAction(userId: string): Promise<{ ok: tr
   });
   const session = verified.session;
   if (verifyErr || !session?.expires_at) return { ok: false, error: verifyErr?.message ?? "Could not create a session." };
+
+  // Verifying the link counted as a sign-in for the target — put their real
+  // last_sign_in_at back so the Users table doesn't show the admin's visit.
+  const bumpedAt = verified.user?.last_sign_in_at;
+  if (bumpedAt) {
+    const { error: restoreErr } = await admin.rpc("admin_restore_last_sign_in", {
+      p_user_id: target.id,
+      p_expected: bumpedAt,
+      p_previous: target.last_sign_in_at ?? null,
+    });
+    if (restoreErr) console.error("[admin] could not restore last_sign_in_at", restoreErr);
+  }
 
   const payload: Impersonation = {
     adminId: me.id,
