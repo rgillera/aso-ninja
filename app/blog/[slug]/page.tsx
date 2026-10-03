@@ -5,9 +5,18 @@ import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
 import BlogArticle from "@/features/blog/BlogArticle";
-import { BLOG_POSTS, getBlogPost } from "@/features/blog/posts";
+import { BLOG_POSTS, getBlogPost, getRelatedPosts, formatPostDate, type BlogBlock } from "@/features/blog/posts";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
+
+// Named author for E-E-A-T: posts are written by the founder, the same
+// person introduced on /our-story.
+const author = {
+  name: "Rodel Gillera",
+  role: "Founder, AppASO",
+  photo: "/founder.jpeg",
+  url: "https://www.linkedin.com/in/rodel-gillera",
+};
 
 export async function generateStaticParams() {
   return BLOG_POSTS.map((post) => ({ slug: post.slug }));
@@ -22,10 +31,12 @@ export async function generateMetadata({
   const post = getBlogPost(slug);
   if (!post) return {};
 
+  const description = post.metaDescription ?? post.excerpt;
   return {
-    title: post.title,
-    description: post.excerpt,
+    title: post.seoTitle ?? post.title,
+    description,
     keywords: post.keywords,
+    authors: [{ name: author.name, url: author.url }],
     alternates: {
       canonical: `/blog/${post.slug}`,
     },
@@ -33,14 +44,17 @@ export async function generateMetadata({
       type: "article",
       url: `/blog/${post.slug}`,
       title: post.title,
-      description: post.excerpt,
+      description,
       publishedTime: post.date,
-      authors: ["AppASO"],
+      modifiedTime: post.updated ?? post.date,
+      authors: [author.name],
+      section: post.category,
+      tags: post.keywords,
     },
     twitter: {
       card: "summary_large_image",
       title: post.title,
-      description: post.excerpt,
+      description,
     },
   };
 }
@@ -59,18 +73,23 @@ export default async function BlogPostPage({
   const isAuthenticated = !!user;
 
   const postUrl = `${siteUrl}/blog/${post.slug}`;
+  const related = getRelatedPosts(post.slug);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
-    description: post.excerpt,
+    description: post.metaDescription ?? post.excerpt,
+    image: `${postUrl}/opengraph-image`,
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.updated ?? post.date,
+    articleSection: post.category,
     keywords: post.keywords.join(", "),
     author: {
-      "@type": "Organization",
-      name: "AppASO",
-      url: siteUrl,
+      "@type": "Person",
+      name: author.name,
+      jobTitle: author.role,
+      url: `${siteUrl}/our-story`,
+      sameAs: [author.url],
     },
     publisher: {
       "@type": "Organization",
@@ -82,6 +101,19 @@ export default async function BlogPostPage({
       "@id": postUrl,
     },
   };
+
+  const faqItems = post.content.flatMap((b: BlogBlock) => (b.type === "faq" ? b.items : []));
+  const faqJsonLd = faqItems.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faqItems.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      }
+    : null;
 
   const breadcrumbJsonLd = {
     "@context": "https://schema.org",
@@ -105,6 +137,13 @@ export default async function BlogPostPage({
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+      )}
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
@@ -120,25 +159,60 @@ export default async function BlogPostPage({
               <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
                 {post.title}
               </h1>
-              <p className="mt-4 text-sm text-gray-400">
-                <time dateTime={post.date}>
-                  {new Date(post.date).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </time>{" "}
-                &middot; {post.readTime}
-              </p>
+              <div className="mt-6 flex items-center gap-3">
+                <img
+                  src={author.photo}
+                  alt={author.name}
+                  width={800}
+                  height={800}
+                  className="size-10 rounded-full object-cover ring-2 ring-white"
+                />
+                <div className="text-sm">
+                  <p className="font-semibold text-gray-900">
+                    <Link href="/our-story" className="hover:text-indigo-600">
+                      {author.name}
+                    </Link>
+                  </p>
+                  <p className="text-gray-400">
+                    <time dateTime={post.date}>{formatPostDate(post.date)}</time>
+                    {post.updated && post.updated !== post.date && (
+                      <>
+                        {" "}&middot; Updated <time dateTime={post.updated}>{formatPostDate(post.updated)}</time>
+                      </>
+                    )}{" "}
+                    &middot; {post.readTime}
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
-          <section className="pb-24 sm:pb-32">
+          <section className="pb-16">
             <div className="mx-auto max-w-3xl px-6 lg:px-8">
               <BlogArticle content={post.content} />
             </div>
           </section>
         </article>
+
+        {related.length > 0 && (
+          <section className="pb-24 sm:pb-32">
+            <div className="mx-auto max-w-3xl px-6 lg:px-8">
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900">Keep reading</h2>
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {related.map((r) => (
+                  <Link
+                    key={r.slug}
+                    href={`/blog/${r.slug}`}
+                    className="block rounded-2xl bg-white p-5 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
+                  >
+                    <p className="text-xs font-semibold text-indigo-600">{r.category}</p>
+                    <p className="mt-2 text-sm font-semibold leading-snug text-gray-900">{r.seoTitle ?? r.title}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       <PortalFooter />

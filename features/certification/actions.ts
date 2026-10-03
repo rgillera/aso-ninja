@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/libs/supabase/server";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import type { Plan } from "@/libs/contracts";
 
 export type CertificationRecord = {
   certificateId: string;
@@ -28,6 +30,17 @@ export async function recordCertificationAction(input: {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated." };
+
+  // The exam is a Pro feature. CertificationExam.tsx locks the button, but
+  // that's client-side only — re-check here so a lower plan can't record a
+  // pass by calling this action directly. A certification belongs to the
+  // person, not a workspace, so any Pro-or-above workspace they can see counts.
+  const { data: workspaces } = await supabase.from("workspaces").select("id");
+  const plans = await Promise.all(
+    (workspaces ?? []).map((w) => supabase.rpc("get_workspace_plan", { p_workspace_id: w.id }).single())
+  );
+  const hasPro = plans.some(({ data: plan }) => !!plan && isPlanAtLeast((plan as Plan).slug, "pro"));
+  if (!hasPro) return { error: "The certification exam requires the Pro plan or above." };
 
   const { data, error } = await supabase
     .from("certifications")

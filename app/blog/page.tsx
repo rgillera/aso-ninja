@@ -3,7 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
-import { getSortedBlogPosts } from "@/features/blog/posts";
+import { getSortedBlogPosts, formatPostDate } from "@/features/blog/posts";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
 
@@ -53,6 +53,7 @@ export default async function BlogIndexPage() {
       headline: post.title,
       description: post.excerpt,
       datePublished: post.date,
+      dateModified: post.updated ?? post.date,
       url: `${siteUrl}/blog/${post.slug}`,
     })),
   };
@@ -94,11 +95,7 @@ export default async function BlogIndexPage() {
                   <h2 className="mt-2 text-2xl font-semibold text-gray-900">{post.title}</h2>
                   <p className="mt-3 text-sm leading-relaxed text-gray-600">{post.excerpt}</p>
                   <p className="mt-4 text-sm text-gray-400">
-                    {new Date(post.date).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}{" "}
+                    {formatPostDate(post.date)}{" "}
                     &middot; {post.readTime}
                   </p>
                 </Link>

@@ -42,7 +42,7 @@ export default function BlogArticle({ content }: { content: BlogBlock[] }) {
                   </thead>
                   <tbody className="divide-y divide-black/[0.06] bg-white">
                     {block.rows.map((row, r) => (
-                      <tr key={r} className={r === block.rows.length - 1 ? "bg-indigo-50" : undefined}>
+                      <tr key={r} className={row[0]?.startsWith("AppASO") ? "bg-indigo-50" : undefined}>
                         {row.map((cell, c) => (
                           <td
                             key={c}
@@ -60,6 +60,20 @@ export default function BlogArticle({ content }: { content: BlogBlock[] }) {
                   </tbody>
                 </table>
               </div>
+            );
+          case "faq":
+            return (
+              <section key={i} className="pt-4">
+                <h2 className="text-2xl font-semibold tracking-tight text-gray-900">Frequently asked questions</h2>
+                <dl className="mt-6 divide-y divide-black/[0.06] rounded-2xl bg-white shadow-clay ring-1 ring-black/5">
+                  {block.items.map((item) => (
+                    <div key={item.question} className="px-6 py-5">
+                      <dt className="text-base font-semibold text-gray-900">{item.question}</dt>
+                      <dd className="mt-2 text-base leading-relaxed text-gray-600">{item.answer}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
             );
           case "cta":
             return (
