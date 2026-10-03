@@ -70,6 +70,7 @@ export const PLANS: Plan[] = [
       "Est. downloads per keyword",
       "3 competitors per app",
       "ASA & Market Intelligence",
+      "ASO certification exam",
       "6 months of history",
     ],
   },
