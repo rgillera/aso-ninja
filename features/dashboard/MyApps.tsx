@@ -188,19 +188,21 @@ function AppRow({
   const selectApp = useSelectApp();
   const router = useRouter();
 
-  function goToKeywordsPage(path: string) {
+  // Scoped to one country entry, so the keyword pages open with that
+  // country's tracked app selected rather than always the primary one.
+  function goToKeywordsPage(entry: App, path: string) {
     return (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
       selectApp({
-        name: primary.name,
-        iconUrl: primary.icon_url,
-        store: primary.store,
-        bundleId: primary.bundle_id,
-        storeId: primary.store_id,
-        country: primary.country ?? "US",
-        href: `/dashboard/apps/${primary.id}/report`,
-        trackedId: primary.id,
+        name: entry.name,
+        iconUrl: entry.icon_url,
+        store: entry.store,
+        bundleId: entry.bundle_id,
+        storeId: entry.store_id,
+        country: entry.country ?? "US",
+        href: `/dashboard/apps/${entry.id}/report`,
+        trackedId: entry.id,
       });
       router.push(path);
     };
@@ -249,51 +251,52 @@ function AppRow({
         <p className="text-xs text-gray-500 truncate mt-0.5">{primary.bundle_id}</p>
       </Link>
 
-      {/* Keyword shortcuts */}
-      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          onClick={goToKeywordsPage("/dashboard/keywords/research")}
-          className="p-1.5 rounded-lg text-gray-600 light:text-gray-400 hover:text-indigo-400 light:hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors"
-          title="Go to Keyword Research"
-        >
-          <MagnifyingGlassIcon className="size-4" />
-        </button>
-        <button
-          onClick={goToKeywordsPage("/dashboard/keywords/performance")}
-          className="p-1.5 rounded-lg text-gray-600 light:text-gray-400 hover:text-indigo-400 light:hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors"
-          title="Go to Keyword Performance"
-        >
-          <ArrowTrendingUpIcon className="size-4" />
-        </button>
-      </div>
-
       {/* Country badges + remove button */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-1.5">
           {entries.map((app) =>
             app.country ? (
-              <div key={app.id} className="relative group/country">
-                <Link
-                  href={`/dashboard/apps/${app.id}/report`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors"
-                >
-                  <span className="text-base leading-none">{countryFlag(app.country)}</span>
-                  {app.country}
-                </Link>
-                {entries.length > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onRequestRemoveCountry(group, app);
-                    }}
-                    title={`Stop tracking ${app.country}`}
-                    className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 ring-2 ring-[#1a1d24] light:ring-white transition-opacity group-hover/country:opacity-100"
+              <div key={app.id} className="flex flex-col items-center gap-0.5">
+                <div className="relative group/country">
+                  <Link
+                    href={`/dashboard/apps/${app.id}/report`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors"
                   >
-                    <XMarkIcon className="size-2.5 stroke-[3]" />
+                    <span className="text-base leading-none">{countryFlag(app.country)}</span>
+                    {app.country}
+                  </Link>
+                  {entries.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onRequestRemoveCountry(group, app);
+                      }}
+                      title={`Stop tracking ${app.country}`}
+                      className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-red-500 text-white opacity-0 ring-2 ring-[#1a1d24] light:ring-white transition-opacity group-hover/country:opacity-100"
+                    >
+                      <XMarkIcon className="size-2.5 stroke-[3]" />
+                    </button>
+                  )}
+                </div>
+                {/* Keyword shortcuts for this country */}
+                <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={goToKeywordsPage(app, "/dashboard/keywords/research")}
+                    className="p-1 rounded-md text-gray-600 light:text-gray-400 hover:text-indigo-400 light:hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors"
+                    title={`Keyword Research (${app.country.toUpperCase()})`}
+                  >
+                    <MagnifyingGlassIcon className="size-3.5" />
                   </button>
-                )}
+                  <button
+                    onClick={goToKeywordsPage(app, "/dashboard/keywords/performance")}
+                    className="p-1 rounded-md text-gray-600 light:text-gray-400 hover:text-indigo-400 light:hover:text-indigo-600 hover:bg-indigo-500/10 transition-colors"
+                    title={`Keyword Performance (${app.country.toUpperCase()})`}
+                  >
+                    <ArrowTrendingUpIcon className="size-3.5" />
+                  </button>
+                </div>
               </div>
             ) : null
           )}
