@@ -18,31 +18,47 @@ const founder = {
   linkedinUrl: "https://www.linkedin.com/in/rodel-gillera",
 };
 
-const chapters: { title: string; paragraphs: string[] }[] = [
+type StoryImage = { src: string; alt: string; width: number; height: number };
+type Block = string | { image: StoryImage } | { quote: string };
+
+const chapters: { title: string; blocks: Block[] }[] = [
   {
     title: "Building apps nobody used",
-    paragraphs: [
-      "The journey started before the pandemic. I wanted to build apps but had no clear direction, so I kept building one after another. I spent weeks, sometimes months, on features nobody used, believing that simply publishing an app would bring users.",
-      "During lockdown, building apps started as a way to pass the time and quickly became an obsession. I kept starting new projects, and kept wishing someone had guided me earlier.",
+    blocks: [
+      "This journey started before the pandemic. Like many of you, I had no clear direction. I just wanted to build apps. So, I did. One after another. I spent weeks, even months, building features no one used, convinced that just publishing to the App Store would somehow make everything work out. I thought, \"If it's live, users will come.\" I was wrong.",
+      "Here's the proof, check my GitHub. It all started during the lockdown 😄",
+      { image: { src: "/github1.png", alt: "GitHub contribution graph showing 486 contributions in 2020", width: 1542, height: 414 } },
+      "What began as a way to kill time quickly turned into an obsession. One project led to another, and before I knew it, I was hooked.",
+      { image: { src: "/github2.png", alt: "GitHub contribution graph from the following year", width: 1534, height: 398 } },
+      { image: { src: "/github3.png", alt: "GitHub contribution graph from a later year", width: 1546, height: 390 } },
+      "Looking back, I wish someone had guided me through the process. I spent countless hours learning the hard way, making mistakes, hitting walls, and wondering why nothing was growing.",
     ],
   },
   {
     title: "Learning the business side",
-    paragraphs: [
-      "I knew very little about the business side of apps, so I committed to learning it. Every day I spent at least two hours studying app marketing, ASO, user acquisition, retention, and anything else that would help me build better apps and make sure my work wasn't wasted.",
-      "Then a developer reached out and offered me $200 for 30 minutes of my time to help with her app. I shared what I knew, and afterwards she told me how grateful she was. Her problems were the same ones I'd had. That's when I realized how many indie developers and small teams were going through the same thing: trying to figure everything out alone, and losing time, energy, and motivation along the way.",
+    blocks: [
+      "At the time, I knew very little about the business side of apps. So I committed myself to learn. Every single day, I studied. I gave myself at least two hours daily to dive into app marketing, ASO (App Store Optimization), user acquisition, retention strategies, anything I could get my hands on. Not because I wanted to start a company, but because I wanted to build better apps… and make sure my work didn't go to waste.",
+      "Then something happened.",
+      "A developer reached out and offered to pay me $200 for just 30 minutes of my time to help her with her app. I didn't expect that. But I agreed. I shared what I knew, and afterward, she told me how grateful she was. That moment stuck with me. Because her struggles were the same as mine.",
+      { image: { src: "/idea.jpg", alt: "Illustration of a lightbulb moment", width: 540, height: 360 } },
+      "That's when it hit me: it's not just me. So many indie developers and small teams go through this, trying to figure things out on their own, wasting time, energy, and motivation. We all face the same roadblocks. And I realized, if someone had just shared their journey with me back then, maybe I wouldn't have had to struggle so much.",
     ],
   },
   {
     title: "Starting ASO Ninja",
-    paragraphs: [
-      "That realization led me to create ASO Ninja, a place to share what I'd learned about app growth, marketing, and ASO, so indie developers, small teams, and startups could avoid the painful trial and error I went through. My philosophy was simple: if I can save another developer even one wasted year, that's a win.",
-      "I no longer just wanted to build apps. I wanted to understand how to make them grow. I teamed up with three people who shared the same obsession, bringing expertise across ASO, user acquisition, monetization, and growth strategy. Together we built ASO Ninja around practical experience rather than selling dreams, combining our wins, failures, and lessons into a service that helps developers grow their apps more intelligently and sustainably.",
+    blocks: [
+      "That moment led me to create ASO Ninja, a platform where I share everything I've learned about app growth, marketing, and ASO. No fluff, no hype, just real strategies that actually work. My goal is simple: to help other indie devs, small teams, and startups avoid the painful trial and error I went through.",
+      { quote: "If I can save you even one wasted year, that's a win." },
+      "After that, I fully committed to this journey. I didn't want to just build apps. I wanted to understand how to make them grow. So I connected with three other passionate people who shared the same obsession. Each of them brings deep expertise in areas I once struggled with: ASO, user acquisition, monetization, and growth strategies.",
+      { image: { src: "/team.png", alt: "The ASO Ninja team", width: 1104, height: 698 } },
+      "Together, we combine real-world experience and hard-earned lessons to help others avoid the costly mistakes we made. If you're serious about growing your app, we've built this with you in mind because we've been exactly where you are.",
+      "We're not here to sell dreams. We're here to support you with practical, proven strategies. Whether you're an indie dev, part of a small team, or just starting out, we're here to help you the best we can.",
+      "Our approach is straightforward: we combine everything we've learned, our wins, our setbacks, and our proven growth tactics into one comprehensive app growth service, with tailored strategies designed to help your app grow smarter, faster, and more sustainably.",
     ],
   },
   {
     title: "Why we built AppASO",
-    paragraphs: [
+    blocks: [
       "Running ASO for clients showed us where the real gap was: the data. Keyword rankings, relevancy scores, and download estimates were locked behind tools priced for big brands, out of reach for the indie developers we wanted to help.",
       "In June 2025 we started building our own internal ASO tool. The data was limited at first, so we focused on collecting it, tracking keywords, rankings, and search results across the App Store and Google Play.",
       "By July 2026 we had built up a large base of store data, so we turned the internal tool into AppASO.io, giving indie developers, startups, and agencies the same data without the cost of the big ASO brands.",
@@ -178,9 +194,28 @@ export default async function OurStoryPage() {
                   <div key={chapter.title}>
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">{chapter.title}</h2>
                     <div className="mt-4 space-y-4 text-base leading-relaxed text-gray-700 sm:text-lg">
-                      {chapter.paragraphs.map((p) => (
-                        <p key={p}>{p}</p>
-                      ))}
+                      {chapter.blocks.map((block, i) =>
+                        typeof block === "string" ? (
+                          <p key={i}>{block}</p>
+                        ) : "image" in block ? (
+                          <img
+                            key={i}
+                            src={block.image.src}
+                            alt={block.image.alt}
+                            width={block.image.width}
+                            height={block.image.height}
+                            loading="lazy"
+                            className="!my-8 h-auto w-full rounded-xl bg-white shadow-clay ring-1 ring-black/5"
+                          />
+                        ) : (
+                          <p
+                            key={i}
+                            className="!my-8 border-l-4 border-indigo-500 pl-5 text-xl font-semibold text-gray-900 sm:text-2xl"
+                          >
+                            {block.quote}
+                          </p>
+                        )
+                      )}
                     </div>
                   </div>
                 ))}
