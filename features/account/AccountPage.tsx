@@ -15,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { updateProfileAction, deleteAccountAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
+import { resetAnalytics } from "@/libs/mixpanel";
 import type { CertificationRecord } from "@/features/certification/actions";
 import { CertificateDownload } from "@/features/certification/CertificateDownload";
 import { useTheme } from "@/features/dashboard/ThemeContext";
@@ -302,7 +303,7 @@ export default function AccountPage({ email, profile, certification }: Props) {
             title="Sign out"
             description="Sign out of your account on this device."
             action={
-              <form action={signOutAction}>
+              <form action={signOutAction} onSubmit={resetAnalytics}>
                 <button
                   type="submit"
                   className="rounded-lg bg-white/10 light:bg-gray-100 px-4 py-2 text-sm font-semibold text-white light:text-gray-900 hover:bg-white/15 light:hover:bg-gray-200 transition-colors"

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient, getImpersonation } from "@/libs/supabase/server";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
+import { MixpanelIdentify } from "@/components/MixpanelIdentify";
 import { resolveActiveWorkspaceId } from "@/libs/workspace";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
@@ -70,6 +71,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           dangerouslySetInnerHTML={{ __html: `document.documentElement.setAttribute('data-theme','light')` }}
         />
       )}
+      {!impersonation && <MixpanelIdentify userId={user.id} email={user.email} />}
       <Suspense>
         <DashboardShell
           workspaces={(workspaces ?? []) as Workspace[]}

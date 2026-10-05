@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient, getImpersonation } from "@/libs/supabase/server";
 import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { InstallBanner } from "@/features/mobile/InstallBanner";
+import { MixpanelIdentify } from "@/components/MixpanelIdentify";
 
 // Deliberately not nested under app/dashboard/layout.tsx — this route never
 // inherits DashboardShell's sidebar/nav. Points at its own manifest (see
@@ -27,6 +28,7 @@ export default async function MobileLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-full overscroll-y-contain bg-[#111318] text-gray-300">
+      {!impersonation && <MixpanelIdentify userId={user.id} email={user.email} />}
       <InstallBanner />
       {children}
       {impersonation && <ImpersonationBanner email={impersonation.targetEmail} expiresAt={impersonation.expiresAt} />}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Bars3Icon, XMarkIcon, ArrowRightStartOnRectangleIcon, ChevronDownIcon, ComputerDesktopIcon, BellIcon } from "@heroicons/react/24/outline";
 import { signOutAction } from "@/features/auth/actions";
+import { resetAnalytics } from "@/libs/mixpanel";
 import { countryFlag } from "@/libs/countries";
 import { groupAppsByBundle, keywordCountLabel } from "@/libs/mobile-nav";
 
@@ -160,7 +161,7 @@ export function NavigationDrawer({
             <ComputerDesktopIcon className="size-5 shrink-0" />
             View Dashboard
           </Link>
-          <form action={signOutAction}>
+          <form action={signOutAction} onSubmit={resetAnalytics}>
             <button
               type="submit"
               className="flex w-full items-center gap-3 rounded-lg px-4 py-3.5 text-left text-sm text-gray-400 hover:bg-white/5 hover:text-white"
