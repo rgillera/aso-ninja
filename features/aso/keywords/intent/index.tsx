@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TagIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -14,6 +14,8 @@ import type { IntentTheme, IntentKeyword } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 
 function NoAppSelected() {
+  const resolving = useActiveAppResolving();
+  if (resolving) return <ActiveAppLoading />;
   return (
     <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">

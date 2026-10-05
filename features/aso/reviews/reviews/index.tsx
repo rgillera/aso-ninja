@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MagnifyingGlassIcon, ChatBubbleLeftEllipsisIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -14,6 +14,8 @@ import { GrowthTable } from "./GrowthTable";
 import type { ReviewsResult } from "./types";
 
 function NoAppSelected() {
+  const resolving = useActiveAppResolving();
+  if (resolving) return <ActiveAppLoading />;
   return (
     <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">

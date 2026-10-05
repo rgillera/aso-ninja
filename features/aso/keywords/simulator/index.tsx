@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon, BeakerIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -16,6 +16,8 @@ import type { SavedKeyword, SimulatedResult, SimulatorRow } from "./types";
 const MAX_TERMS = 50;
 
 function NoAppSelected() {
+  const resolving = useActiveAppResolving();
+  if (resolving) return <ActiveAppLoading />;
   return (
     <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">

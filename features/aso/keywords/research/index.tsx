@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
@@ -22,6 +22,8 @@ import type { CompetitorApp } from "./ManageCompetitorsModal";
 
 
 function NoAppSelected() {
+  const resolving = useActiveAppResolving();
+  if (resolving) return <ActiveAppLoading />;
   return (
     <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">

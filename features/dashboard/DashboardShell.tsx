@@ -9,7 +9,7 @@ import { UpgradeBanner } from "./UpgradeBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider } from "./PlanContext";
 import { ThemeProvider, type Theme } from "./ThemeContext";
-import { ActiveAppProvider } from "./ActiveAppContext";
+import { ActiveAppProvider, ActiveAppResolvingProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
 import { NavigationGuardProvider } from "./NavigationGuardContext";
 import { SidebarTourProvider } from "./SidebarTourContext";
@@ -183,7 +183,11 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   // a stale-then-cleared savedAppId still triggers the localStorage fallback.
   // Must be in useEffect — localStorage is client-only (hydration safety).
   const [recentAppId, setRecentAppId] = useState<string | undefined>(undefined);
+  // Flipped in the same effect that seeds recentAppId, so both land in one
+  // render and pages never see "resolved" with the recent app still missing.
+  const [appResolved, setAppResolved] = useState(false);
   useEffect(() => {
+    setAppResolved(true);
     if (savedAppId) {
       if (allApps.find(a => a.id === savedAppId)) return; // valid — no fallback needed
       // Stale cookie: clear it and fall through to load from localStorage
@@ -448,6 +452,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <WorkspaceNameProvider value={activeWorkspace?.name ?? ""}>
     <PlanProvider value={planSlug}>
     <ActiveAppProvider value={displayApp}>
+    <ActiveAppResolvingProvider value={!appResolved && !displayApp}>
     <SelectAppProvider value={selectApp}>
     <AllAppsProvider value={allApps}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
@@ -515,6 +520,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     </NavigationGuardProvider>
     </AllAppsProvider>
     </SelectAppProvider>
+    </ActiveAppResolvingProvider>
     </ActiveAppProvider>
     </PlanProvider>
     </WorkspaceNameProvider>

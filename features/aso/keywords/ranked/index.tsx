@@ -6,7 +6,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { AppHeader } from "@/features/aso/AppHeader";
-import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { RankHistoryPanel } from "@/features/aso/keywords/performance/RankHistoryPanel";
@@ -25,6 +25,8 @@ function formatDate(iso: string): string {
 }
 
 function NoAppSelected() {
+  const resolving = useActiveAppResolving();
+  if (resolving) return <ActiveAppLoading />;
   return (
     <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
       <div className="text-center">
