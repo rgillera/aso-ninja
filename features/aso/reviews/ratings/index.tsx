@@ -66,12 +66,10 @@ export default function RatingsDashboardPage() {
     return () => clearTimeout(t);
   }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id, isLocked]);
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (isLocked) {
     return (
       <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Ratings" />
+        <AppHeader app={activeApp ?? null} title="Ratings" />
         <FeatureLocked
           minPlan="pro"
           icon={StarIcon}
@@ -86,6 +84,8 @@ export default function RatingsDashboardPage() {
       </main>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">

@@ -267,12 +267,10 @@ export default function KeywordCombinationPage() {
     patchExpandInDb(seed, nextExpanded);
   }
 
-
   function handleRemoveGroup(seed: string) {
     setGroups(groups.filter((g) => g.seed !== seed));
     deleteGroupFromDb(seed);
   }
-
 
   async function addTermsToTracked(terms: string[]) {
     // Filter out already tracked AND currently in-flight terms to prevent duplicates
@@ -391,14 +389,10 @@ export default function KeywordCombinationPage() {
     } catch {}
   }
 
-  if (!activeApp) {
-    return <NoAppSelected />;
-  }
-
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Long Tail Keywords" />
+        <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />
         <FeatureLocked
           minPlan="pro"
           icon={PuzzlePieceIcon}
@@ -412,6 +406,10 @@ export default function KeywordCombinationPage() {
         />
       </div>
     );
+  }
+
+  if (!activeApp) {
+    return <NoAppSelected />;
   }
 
   return (

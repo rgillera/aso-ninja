@@ -163,7 +163,9 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
                     <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
                     <p className="text-sm font-semibold text-white light:text-gray-900">{lockedCount} month{lockedCount === 1 ? "" : "s"} locked</p>
                     <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
-                      Upgrade to {planNeededForMoreHistory(unlockedMonths)} to see this keyword&apos;s volume trend further back.
+                      Upgrade to{" "}
+                      <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+                      to see this keyword&apos;s volume trend further back.
                     </p>
                     <Link
                       href="/dashboard/subscription"

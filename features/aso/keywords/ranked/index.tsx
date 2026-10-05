@@ -146,12 +146,10 @@ export default function RankedKeywordsPage() {
     });
   }, [keywords, filters, activeApp]);
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="All Ranked Keywords" />
+        <AppHeader app={activeApp ?? null} title="All Ranked Keywords" />
         <FeatureLocked
           minPlan="pro_plus"
           icon={ListBulletIcon}
@@ -165,6 +163,8 @@ export default function RankedKeywordsPage() {
       </div>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">

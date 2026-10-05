@@ -60,12 +60,10 @@ export default function BidSuggestionsPage() {
     [keywords]
   );
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (locked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Bid Suggestions" />
+        <AppHeader app={activeApp ?? null} title="Bid Suggestions" />
         <FeatureLocked
           minPlan="pro"
           icon={BanknotesIcon}
@@ -80,6 +78,8 @@ export default function BidSuggestionsPage() {
       </div>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">

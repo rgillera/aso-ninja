@@ -196,14 +196,10 @@ export default function KeywordSimulator() {
     simulatedOpportunity: simulatedResults?.[k.term]?.opportunity ?? null,
   })), [keywords, simulatedResults]);
 
-  if (!activeApp) {
-    return <NoAppSelected />;
-  }
-
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Keyword Simulator" />
+        <AppHeader app={activeApp ?? null} title="Keyword Simulator" />
         <FeatureLocked
           minPlan="pro_plus"
           icon={BeakerIcon}
@@ -216,6 +212,10 @@ export default function KeywordSimulator() {
         />
       </div>
     );
+  }
+
+  if (!activeApp) {
+    return <NoAppSelected />;
   }
 
   const limits = activeApp.store === "android"

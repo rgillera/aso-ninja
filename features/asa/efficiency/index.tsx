@@ -84,12 +84,10 @@ export default function EfficiencyPage() {
   const pauseCount = useMemo(() => tagged.filter((r) => r.efficiency === "Pause candidate").length, [tagged]);
   const scaleCount = useMemo(() => tagged.filter((r) => r.efficiency === "Scale candidate").length, [tagged]);
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (locked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Efficiency" />
+        <AppHeader app={activeApp ?? null} title="Efficiency" />
         <FeatureLocked
           minPlan="pro"
           icon={AdjustmentsHorizontalIcon}
@@ -104,6 +102,8 @@ export default function EfficiencyPage() {
       </div>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">

@@ -281,14 +281,10 @@ export default function KeywordIntentPage() {
     }
   }
 
-  if (!activeApp) {
-    return <NoAppSelected />;
-  }
-
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Group by Intent" />
+        <AppHeader app={activeApp ?? null} title="Group by Intent" />
         <FeatureLocked
           minPlan="pro"
           icon={TagIcon}
@@ -302,6 +298,10 @@ export default function KeywordIntentPage() {
         />
       </div>
     );
+  }
+
+  if (!activeApp) {
+    return <NoAppSelected />;
   }
 
   return (

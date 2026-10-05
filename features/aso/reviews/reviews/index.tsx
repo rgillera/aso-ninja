@@ -73,12 +73,10 @@ export default function ReviewsDashboardPage() {
     return () => clearTimeout(t);
   }, [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, activeApp?.bundle_id, from, to, isLocked]);
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (isLocked) {
     return (
       <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Reviews" />
+        <AppHeader app={activeApp ?? null} title="Reviews" />
         <FeatureLocked
           minPlan="pro"
           icon={ChatBubbleLeftEllipsisIcon}
@@ -93,6 +91,8 @@ export default function ReviewsDashboardPage() {
       </main>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">

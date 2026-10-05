@@ -206,12 +206,10 @@ export default function SpendInsightsPage() {
   const totalWasted = useMemo(() => wastedSpend.reduce((sum, r) => sum + r.spend, 0), [wastedSpend]);
   const currency = wastedSpend[0]?.currency ?? "";
 
-  if (!activeApp) return <NoAppSelected />;
-
   if (locked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        <AppHeader app={activeApp} title="Spend Insights" />
+        <AppHeader app={activeApp ?? null} title="Spend Insights" />
         <FeatureLocked
           minPlan="pro"
           icon={LightBulbIcon}
@@ -226,6 +224,8 @@ export default function SpendInsightsPage() {
       </div>
     );
   }
+
+  if (!activeApp) return <NoAppSelected />;
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
