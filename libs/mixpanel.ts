@@ -12,8 +12,17 @@ export function initMixpanel() {
     // With autocapture on, its own `pageview` option replaces the top-level
     // track_pageview. "url-with-path" fires on client-side (history API)
     // navigations too, but not on query-only changes like ?ws= switches.
-    autocapture: { pageview: "url-with-path" },
-    record_sessions_percent: 100,
+    // Page views only: interaction events (clicks, inputs, submits) fired on
+    // every keyword add and drowned out the navigation data.
+    autocapture: {
+      pageview: "url-with-path",
+      click: false,
+      dead_click: false,
+      rage_click: false,
+      input: false,
+      submit: false,
+      scroll: false,
+    },
     persistence: "localStorage",
   });
   initialized = true;
@@ -22,7 +31,12 @@ export function initMixpanel() {
 export function identifyUser(userId: string, email: string | undefined) {
   if (!initialized) return;
   mixpanel.identify(userId);
-  if (email) mixpanel.people.set({ $email: email });
+  if (email) {
+    mixpanel.people.set({ $email: email });
+    // Super property: attached to every event sent after this, so event
+    // lists can be filtered by email without joining to the user profile.
+    mixpanel.register({ email });
+  }
 }
 
 export function trackEvent(name: string, props?: Record<string, unknown>) {
