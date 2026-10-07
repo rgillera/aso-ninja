@@ -144,21 +144,6 @@ export type MonthlyKeywordStats = {
 // volume or rank data for.
 export type PerformanceReportResult = Record<string, Record<string, MonthlyKeywordStats>>;
 
-// Keeps each batch's PostgREST `in.(...)` filter well under the ~16KB
-// URL/header ceiling both Next.js and PostgREST enforce on the request line
-// (verified directly: a single unbatched `.in()` call started failing with
-// a plain 414/431 somewhere between 800-1000 real-length keywords, nowhere
-// close to what an unlimited-keyword paid plan can actually reach — see
-// 20260721000001_unlimited_paid_keywords.sql). 250 keeps even long
-// multi-word phrases far under that regardless of how many batches it takes.
-const QUERY_BATCH_SIZE = 250;
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-}
-
 // Resolves whether this export is entitled to Est. Downloads (Pro and up,
 // same gate the live column uses — see app/api/keywords/list/route.ts) and,
 // if so, this app's real download totals summed to one number per calendar
@@ -228,80 +213,36 @@ export async function POST(request: NextRequest) {
   if (!terms.length) return NextResponse.json({});
 
   const supabase = await createClient();
-  const termBatches = chunk(terms, QUERY_BATCH_SIZE);
 
-  const [volRows, rankRows, downloadsAccess] = await Promise.all([
-    Promise.all(
-      termBatches.map((batch) =>
-        supabase
-          .from("keyword_volume_history")
-          .select("term, score, recorded_on")
-          .in("term", batch)
-          .eq("store", store)
-          .eq("country", country)
-      )
-    ).then((results) => results.flatMap((r) => r.data ?? [])),
-    // Only our own app's rank belongs in this report — skip the query
-    // entirely when we don't have a store_id to filter on (a
-    // previewed-but-not-yet-tracked app).
-    ourAppId
-      ? Promise.all(
-          termBatches.map((batch) =>
-            supabase
-              .from("keyword_rankings_history")
-              .select("keyword, recorded_on, position")
-              .in("keyword", batch)
-              .eq("store", store)
-              .eq("country", country)
-              .eq("app_id", ourAppId)
-          )
-        ).then((results) => results.flatMap((r) => r.data ?? []))
-      : Promise.resolve([] as { keyword: string; recorded_on: string; position: number | null }[]),
+  // Rolled up per term per month in Postgres (see
+  // 20261007000001_keyword_performance_monthly.sql for why: pulling the raw
+  // history rows here got silently cut off at PostgREST's 1000-row cap) and
+  // returned as one jsonb value. Only our own app's rank belongs in this
+  // report; an empty storeId (a previewed-but-not-yet-tracked app) makes
+  // the function skip ranks entirely.
+  const [monthly, downloadsAccess] = await Promise.all([
+    supabase.rpc("keyword_performance_monthly", {
+      p_terms: terms, p_store: store, p_country: country, p_app_id: ourAppId,
+    }),
     loadDownloadsAccess(supabase, appId),
   ]);
+  if (monthly.error) {
+    // Failing loudly beats exporting a workbook of empty months that look
+    // like real "no data yet" gaps.
+    return NextResponse.json({ error: "Couldn't load keyword history" }, { status: 500 });
+  }
 
   const monthOf = (recordedOn: string) => recordedOn.slice(0, 7); // "YYYY-MM"
   const today = new Date().toISOString().split("T")[0];
 
-  // Accumulates a running sum/count per term+month so the average can be
-  // taken once at the end, rather than trying to maintain a running average
-  // per row.
-  type Accum = { volSum: number; volCount: number; bestRank: number | null };
-  const accum: Record<string, Record<string, Accum>> = {};
-  for (const term of terms) accum[term] = {};
-
-  for (const row of volRows) {
-    const bucket = accum[row.term] ?? (accum[row.term] = {});
-    const month = monthOf(row.recorded_on);
-    const entry = bucket[month] ?? (bucket[month] = { volSum: 0, volCount: 0, bestRank: null });
-    if (row.score != null) {
-      entry.volSum += row.score;
-      entry.volCount += 1;
-    }
-  }
-
-  for (const row of rankRows) {
-    // A null position is the "checked, not found in results" marker — no
-    // numeric rank to compare, so it can't set a month's best.
-    if (row.position == null) continue;
-    const bucket = accum[row.keyword] ?? (accum[row.keyword] = {});
-    const month = monthOf(row.recorded_on);
-    const entry = bucket[month] ?? (bucket[month] = { volSum: 0, volCount: 0, bestRank: null });
-    if (entry.bestRank === null || row.position < entry.bestRank) {
-      entry.bestRank = row.position;
-    }
-  }
-
   const result: PerformanceReportResult = {};
-  for (const term of terms) {
-    result[term] = {};
-    for (const [month, entry] of Object.entries(accum[term])) {
-      result[term][month] = {
-        avgVolume: entry.volCount ? Math.round(entry.volSum / entry.volCount) : null,
-        bestRank: entry.bestRank,
-        estimatedDownloads: null, // filled in below, per month, once every term's entry exists
-      };
-    }
+  for (const term of terms) result[term] = {};
+  for (const row of (monthly.data ?? []) as { term: string; month: string; avgVolume: number | null; bestRank: number | null }[]) {
+    (result[row.term] ??= {})[row.month] = {
+      avgVolume: row.avgVolume,
+      bestRank: row.bestRank,
+      estimatedDownloads: null, // filled in below, per month, once every term's entry exists
+    };
   }
 
   // Splits each month's real download total across every term ranked that

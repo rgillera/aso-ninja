@@ -42,12 +42,16 @@ function rankLabel(rank: number | null | undefined): string {
 // The current calendar month plus the REPORT_MONTHS-1 before it, most recent
 // first — a fixed rolling window rather than "whatever months have data", so
 // a month with nothing recorded yet still gets its own (empty) tab instead of
-// silently disappearing.
+// silently disappearing. Built in UTC, not the viewer's local time: every
+// recorded_on the report reads (and the server's own "current month" for its
+// catch-up pass) is a UTC date, so a local-time window would show e.g. an
+// "Oct" tab to a UTC+8 viewer while the server still files everything under
+// Sep 30 — an October that can't fill until UTC catches up.
 function rollingMonths(count: number): string[] {
   const now = new Date();
   return Array.from({ length: count }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
   });
 }
 

@@ -29,12 +29,18 @@ import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import type { PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
+import type { MonthCoverage } from "@/app/api/keywords/month-coverage/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 
 // Caps how many automatic background retries a stuck ("Unknown" rank)
 // keyword gets before we stop nagging Apple/Google for it — a genuinely
 // gone/renamed keyword would otherwise get retried forever.
 const MAX_AUTO_RETRIES = 5;
+
+// See monthCoverage in the component.
+const COVERAGE_POLL_MS = 5 * 60 * 1000;
+// UTC, matching the month key the Export Report's tabs and the server use.
+const CURRENT_MONTH_NAME = new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" });
 const AUTO_RETRY_INTERVAL_MS = 2 * 60 * 1000;
 
 function NoAppSelected() {
@@ -533,19 +539,67 @@ export default function KeywordPerformancePage() {
       // A handful of keywords had nothing for this month yet at the moment
       // of export — they're being filled in behind the scenes now, kept in
       // plain, non-technical terms for the user.
+      // Same "X of Y so far" framing as the progress line by the Export
+      // button (monthCoverage below): a count of what's still missing reads
+      // like a failure, when it's really the normal start-of-month fill.
+      const missing = data._catchingUp?.length ?? 0;
+      const monthName = CURRENT_MONTH_NAME.format(new Date());
       setExportNotice(
-        data._catchingUp?.length
-          ? data._catchingUp.length === 1
-            ? `"${data._catchingUp[0]}" is still catching up — export again in a bit for the full picture.`
-            : `${data._catchingUp.length} keywords are still catching up — export again in a bit for the full picture.`
+        missing
+          ? `${monthName} data so far: ${terms.length - missing} of ${terms.length} keywords. The rest fill in over the next day, so export again later for the full month.`
           : null
       );
     } catch {
       setSaveError("Couldn't export the report. Try again in a moment.");
     } finally {
       setExportingReport(false);
+      setCoverageRefreshKey((k) => k + 1);
     }
   }
+
+  // How many tracked keywords already have this month's reading, shown by
+  // the Export button so users see the current-month tab is still filling
+  // before they download it, not after. Every keyword's monthly volume goes
+  // stale together on the 1st (stale_keywords_for_refresh) and the refresh
+  // cron drains them in batches, so this is normal for the first day or so
+  // of each month. Re-checked every few minutes while incomplete (the
+  // cron runs every 30, so anything faster is wasted) and after each export,
+  // since the export's own catch-up pass fills some in. Only with a
+  // store_id, same as performance-report's catchingUp list. Stored with the
+  // app + term set it was fetched for, so switching apps never shows the
+  // previous app's count while the new one loads.
+  const coverageKey = activeApp?.store_id && trackedTerms && !isLocked
+    ? `${activeApp.store_id}|${activeApp.store}|${activeApp.country}|${trackedTerms}`
+    : null;
+  const [coverageResult, setCoverageResult] = useState<{ key: string; data: MonthCoverage | null } | null>(null);
+  const [coverageRefreshKey, setCoverageRefreshKey] = useState(0);
+  const monthCoverage = coverageKey && coverageResult?.key === coverageKey ? coverageResult.data : null;
+  const coverageIncomplete = !!monthCoverage && monthCoverage.covered < monthCoverage.total;
+
+  useEffect(() => {
+    if (!coverageKey || !activeApp || !trackedTerms) return;
+    let cancelled = false;
+    fetch("/api/keywords/month-coverage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        terms: trackedTerms.split(",").map(decodeURIComponent),
+        store: activeApp.store ?? "ios",
+        country: activeApp.country ?? "us",
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: MonthCoverage | null) => { if (!cancelled) setCoverageResult({ key: coverageKey, data }); })
+      .catch(() => { if (!cancelled) setCoverageResult({ key: coverageKey, data: null }); });
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- coverageKey already captures the activeApp fields read here
+  }, [coverageKey, coverageRefreshKey]);
+
+  useEffect(() => {
+    if (!coverageIncomplete) return;
+    const t = setInterval(() => setCoverageRefreshKey((k) => k + 1), COVERAGE_POLL_MS);
+    return () => clearInterval(t);
+  }, [coverageIncomplete]);
 
   // Bumped after a Live Search closes, so a freshly recorded rank shows up
   // without the user having to leave and re-enter the page.
@@ -784,6 +838,7 @@ export default function KeywordPerformancePage() {
               onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
               onExportReport={handleExportReport}
               exportingReport={exportingReport}
+              monthCoverage={coverageIncomplete ? monthCoverage : null}
               tourStep={tourStep}
               onAdvanceTour={advanceTour}
             />

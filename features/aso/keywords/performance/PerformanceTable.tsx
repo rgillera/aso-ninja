@@ -32,6 +32,7 @@ import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import type { TourStep } from "@/features/onboarding/tour";
+import type { MonthCoverage } from "@/app/api/keywords/month-coverage/route";
 
 type Props = {
   keywords: PerformanceKeyword[];
@@ -64,6 +65,7 @@ type Props = {
   onTranslateToggle: () => void;
   onExportReport: () => void;
   exportingReport?: boolean;
+  monthCoverage?: MonthCoverage | null;
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };
@@ -187,7 +189,7 @@ export function PerformanceTable({
   onLiveSearch, onViewVolumeHistory, onViewRankHistory, onViewDownloadsHistory, downloadsConnection,
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
-  onExportReport, exportingReport = false,
+  onExportReport, exportingReport = false, monthCoverage = null,
   tourStep = null, onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
@@ -343,6 +345,7 @@ export function PerformanceTable({
         onChange={onFiltersChange}
         onExportReport={onExportReport}
         exportingReport={exportingReport}
+        monthCoverage={monthCoverage}
         tourStep={tourStep}
         onAdvanceTour={onAdvanceTour}
       />

@@ -12,12 +12,18 @@ import {
 import { DEFAULT_FILTERS, isFiltersDefault, type Filters } from "./types";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
+import type { MonthCoverage } from "@/app/api/keywords/month-coverage/route";
+
+const MONTH_NAME = new Intl.DateTimeFormat("en", { month: "long", timeZone: "UTC" });
 
 type Props = {
   filters: Filters;
   onChange: (patch: Partial<Filters>) => void;
   onExportReport: () => void;
   exportingReport?: boolean;
+  // Only passed while this month's readings are still filling in (see
+  // monthCoverage in index.tsx); hidden once every keyword has one.
+  monthCoverage?: MonthCoverage | null;
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };
@@ -85,7 +91,7 @@ function RangeFields({
   );
 }
 
-export function PerformanceFilters({ filters, onChange, onExportReport, exportingReport = false, tourStep = null, onAdvanceTour = () => {} }: Props) {
+export function PerformanceFilters({ filters, onChange, onExportReport, exportingReport = false, monthCoverage = null, tourStep = null, onAdvanceTour = () => {} }: Props) {
   const volumeActive = filters.volumeMin !== DEFAULT_FILTERS.volumeMin || filters.volumeMax !== DEFAULT_FILTERS.volumeMax;
   const rankActive = filters.rankMin !== DEFAULT_FILTERS.rankMin || filters.rankMax !== DEFAULT_FILTERS.rankMax;
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -163,6 +169,16 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
           </div>
         </Dropdown>
 
+        {monthCoverage && (
+          <span
+            title="Each keyword gets its monthly reading in the first days of the month. The export's current-month tab fills in as they arrive."
+            className="ml-auto flex items-center gap-1.5 text-[11px] text-gray-500"
+          >
+            <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+            {MONTH_NAME.format(new Date(`${monthCoverage.month}-02T00:00:00Z`))} data: {monthCoverage.covered} of {monthCoverage.total} keywords so far
+          </span>
+        )}
+
         <button
           ref={exportBtnRef}
           onClick={() => {
@@ -171,7 +187,7 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
           }}
           disabled={exportingReport}
           title="Export a monthly volume/ranking report as an Excel file"
-          className={`relative ml-auto flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors ${
+          className={`relative ${monthCoverage ? "" : "ml-auto"} flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors ${
             tourStep === "exportReport" ? "ring-2 ring-offset-2 ring-offset-[#1a1d24] ring-indigo-400/70" : ""
           }`}
         >

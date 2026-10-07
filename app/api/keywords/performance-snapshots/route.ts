@@ -63,23 +63,17 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  const [popRes, rankRes] = await Promise.all([
-    supabase
-      .from("keyword_volume_history")
-      .select("term, score, recorded_on")
-      .in("term", terms)
-      .eq("store", store)
-      .eq("country", country)
-      .order("recorded_on", { ascending: true }),
-    supabase
-      .from("keyword_rankings_history")
-      .select("keyword, recorded_on, position, app_id")
-      .in("keyword", terms)
-      .eq("store", store)
-      .eq("country", country)
-      .in("app_id", relevantAppIds)
-      .order("recorded_on", { ascending: true }),
-  ]);
+  // Reduced in Postgres to just the rows the loop below reads (each term's
+  // two latest volume dates + its max score, and its two latest rank dates)
+  // and returned as one jsonb value: pulling the raw history here got
+  // silently cut off at PostgREST's 1000-row cap, and since it was ordered
+  // oldest-first, the rows dropped were the newest. See
+  // 20261007000002_keyword_snapshots_visibility_rpc.sql.
+  const { data: reduced } = await supabase.rpc("keyword_performance_snapshots", {
+    p_terms: terms, p_store: store, p_country: country, p_app_ids: relevantAppIds,
+  });
+  const popRes = { data: (reduced?.volume ?? []) as { term: string; recorded_on: string; score: number; max_score: number }[] };
+  const rankRes = { data: (reduced?.rank ?? []) as { keyword: string; recorded_on: string; app_id: string; position: number | null }[] };
 
   const result: PerformanceSnapshotResult = {};
 
@@ -94,7 +88,9 @@ export async function GET(request: NextRequest) {
     // Carry the same real value into Prev (growth reads as 0) rather than showing
     // a misleading blank "Unknown".
     const volumePrevDate = popDates.length > 1 ? popDates.at(-2)! : volumeLatestDate;
-    const volumeMax = popRows.length ? Math.max(...popRows.map((r) => r.score)) : null;
+    // popRows is only the latest two dates now, so the all-time max comes
+    // precomputed alongside them.
+    const volumeMax = popRows.length ? popRows[0].max_score : null;
 
     const rankRows = (rankRes.data ?? []).filter((r) => r.keyword === term);
     const rankDates = [...new Set(rankRows.map((r) => r.recorded_on))].sort();
