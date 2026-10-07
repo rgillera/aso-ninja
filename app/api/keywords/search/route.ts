@@ -16,6 +16,20 @@ export type AppSearchResult = {
   screenshotUrls: string[];
 };
 
+// Records the "checked, not found" marker (null position) for a tracked app
+// missing from a search's results. Insert-only (ignoreDuplicates): if a real
+// rank for this keyword/app/day is already stored, e.g. from the refresh
+// cron's own search, it stays. A plain upsert here let a later search that
+// happened to miss the app overwrite that real rank with "Unranked".
+async function insertNotFoundMarker(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  row: { keyword: string; store: string; country: string; recorded_on: string; app_id: string; app_name: string; app_icon: string }
+) {
+  await supabase
+    .from("keyword_rankings_history")
+    .upsert({ ...row, position: null }, { onConflict: "keyword,store,country,recorded_on,app_id", ignoreDuplicates: true });
+}
+
 // POST /api/keywords/search  — persist pre-fetched iOS results from the browser
 export async function POST(request: NextRequest) {
   const { keyword, store, country, apps, trackedApp } = await request.json() as {
@@ -44,20 +58,20 @@ export async function POST(request: NextRequest) {
   // a null position so it reads as "checked, unranked" rather than leaving no
   // row at all, which is indistinguishable from "never checked" and would
   // retry forever.
+  if (rows.length) {
+    await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
+  }
   if (trackedApp && !rows.some((r) => r.app_id === trackedApp.id)) {
-    rows.push({
+    await insertNotFoundMarker(supabase, {
       keyword:     keyword.toLowerCase().trim(),
       store,
       country:     country.toLowerCase(),
       recorded_on: today,
-      position:    null,
       app_id:      trackedApp.id,
       app_name:    trackedApp.name,
       app_icon:    trackedApp.icon,
     });
   }
-  if (!rows.length) return NextResponse.json({ ok: true });
-  await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
   return NextResponse.json({ ok: true });
 }
 
@@ -138,8 +152,12 @@ export async function GET(request: NextRequest) {
     const gplay = await import("google-play-scraper");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api   = (gplay.default ?? gplay) as any;
+    // num: 250, the same window refresh-keywords ranks against, so a
+    // tracked app below #20 isn't recorded as "checked, not found" (see the
+    // matching note in liveSearch.ts). Callers that display results trim to
+    // their own top 20; fullDetail below only enriches those 20.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: any[] = await api.search({ term, country, num: 20 });
+    const results: any[] = await api.search({ term, country, num: 250 });
     const apps: AppSearchResult[] = results.map((a, i) => ({
       position:       i + 1,
       trackId:        0,
@@ -163,7 +181,7 @@ export async function GET(request: NextRequest) {
     // keeps a lookup failure scoped to that one row's count (stays 0).
     if (fullDetail && apps.length) {
       const details = await Promise.allSettled(
-        results.map((a) => api.app({ appId: a.appId, country }))
+        results.slice(0, 20).map((a) => api.app({ appId: a.appId, country }))
       );
       details.forEach((d, i) => {
         if (d.status === "fulfilled") apps[i].ratingCount = (d.value.ratings ?? 0) as number;
@@ -184,20 +202,19 @@ export async function GET(request: NextRequest) {
     // Same "checked, not found" fallback as the iOS POST path: without this,
     // a tracked app genuinely outside the search window leaves no row at
     // all, indistinguishable from "never checked", and retries forever.
+    const supabase = await createClient();
+    await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
     if (trackedId && !rows.some((r) => r.app_id === trackedId)) {
-      rows.push({
+      await insertNotFoundMarker(supabase, {
         keyword:     term.toLowerCase().trim(),
         store,
         country,
         recorded_on: today,
-        position:    null,
         app_id:      trackedId,
         app_name:    trackedName,
         app_icon:    trackedIcon,
       });
     }
-    const supabase = await createClient();
-    await supabase.from("keyword_rankings_history").upsert(rows, { onConflict: "keyword,store,country,recorded_on,app_id" });
 
     return NextResponse.json({ apps });
   } catch {

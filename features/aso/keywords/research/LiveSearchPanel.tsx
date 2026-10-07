@@ -10,6 +10,8 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 
+const LIVE_SEARCH_DISPLAY_LIMIT = 20;
+
 type AddStatus = "idle" | "adding" | "added";
 
 function rowStoreId(app: AppSearchResult, store: "ios" | "android"): string {
@@ -349,7 +351,9 @@ export function LiveSearchPanel({ keyword, store, country, onClose, onCompetitor
     // background rank check), so it's worth the extra per-app Play Store
     // requests to get real Android rating counts instead of always-0.
     fetchLiveSearchResults(keyword, store, country, undefined, true)
-      .then((apps) => { setApps(apps); setLoading(false); })
+      // Rank checks fetch the full search window (see liveSearch.ts); this
+      // panel only ever showed the top 20.
+      .then((apps) => { setApps(apps.slice(0, LIVE_SEARCH_DISPLAY_LIMIT)); setLoading(false); })
       .catch(() => { setError("unavailable"); setLoading(false); });
   }, [keyword, store, country]);
 
