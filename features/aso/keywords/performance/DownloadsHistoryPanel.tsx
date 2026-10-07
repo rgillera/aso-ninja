@@ -70,7 +70,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
           ) : rows.length === 1 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
               <p className="text-3xl font-semibold text-white light:text-gray-900">~{rows[0].estimated}</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Only synced day so far — {formatDate(rows[0].recorded_on)}</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Only synced day so far: {formatDate(rows[0].recorded_on)}</p>
               <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A trend will appear once your app keeps syncing.</p>
             </div>
           ) : (

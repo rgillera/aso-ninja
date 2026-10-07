@@ -24,8 +24,17 @@ function formatDay(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function yDomain(max: number): [number, number] {
-  return [0, Math.max(max + 5, 20)];
+// Ranks start at #1 (there's no #0), so the axis does too. Ticks are #1
+// plus round multiples of a step sized to the worst rank shown, with the top
+// rounded up to the next one, so labels read #1, #5, #10... instead of
+// whatever uneven values an auto-scaled [1, n] axis would pick.
+function yAxisScale(max: number): { domain: [number, number]; ticks: number[] } {
+  const top = Math.max(max + 5, 20);
+  const step = top <= 20 ? 5 : top <= 50 ? 10 : top <= 100 ? 25 : 50;
+  const end = Math.ceil(top / step) * step;
+  const ticks = [1];
+  for (let t = step; t <= end; t += step) ticks.push(t);
+  return { domain: [1, end], ticks };
 }
 
 function dotShape(props: unknown) {
@@ -82,6 +91,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
   // exactly like it already doesn't draw before `firstRecordedOn`.
   const chartData = weekly.map((w, i) => (i < lockedCount ? { ...w, position: null } : w));
   const weeklyMax = weekly.reduce((m, r) => Math.max(m, r.position ?? 0), 0);
+  const yScale = yAxisScale(weeklyMax);
   const hasUntrackedGap = weekly.some((w, i) => i >= lockedCount && w.position == null);
 
   function axisTick(props: unknown) {
@@ -161,7 +171,11 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
                     />
                     <YAxis
                       allowDecimals={false}
-                      domain={yDomain(weeklyMax)}
+                      domain={yScale.domain}
+                      ticks={yScale.ticks}
+                      // #1 at the top: a better rank is a smaller number, so
+                      // an improving keyword should climb, not dip.
+                      reversed
                       tick={{ fill: "#6b7280", fontSize: 11 }}
                       axisLine={false}
                       tickLine={false}
@@ -198,7 +212,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
 
               {hasUntrackedGap && firstRecordedOn && (
                 <p className="text-xs text-gray-500 text-center">
-                  History starts {formatDay(firstRecordedOn)} — more will fill in as this keyword keeps being tracked.
+                  History starts {formatDay(firstRecordedOn)}. More will fill in as this keyword keeps being tracked.
                 </p>
               )}
             </div>
