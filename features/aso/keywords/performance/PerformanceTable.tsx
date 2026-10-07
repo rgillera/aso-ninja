@@ -92,6 +92,21 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
     : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
 }
 
+// Shown on each app's Rank/Change group header while rank history reloads —
+// on the columns that are actually changing, rather than loose in the
+// toolbar where it read as the Add button being busy.
+function RankHistorySpinner() {
+  return (
+    <span
+      role="status"
+      title="Updating rank history…"
+      className="size-3 rounded-full border-2 border-gray-600 light:border-gray-300 border-t-indigo-400 light:border-t-indigo-500 animate-spin shrink-0"
+    >
+      <span className="sr-only">Updating rank history…</span>
+    </span>
+  );
+}
+
 // Unranked/unknown sort to the bottom regardless of direction — there's no
 // meaningful position to compare them against a real rank.
 function rankSortValue(v: RankValue | null | undefined): number {
@@ -377,7 +392,6 @@ export function PerformanceTable({
             : <PlusIcon className="size-3.5" />}
           {adding ? "Adding…" : "Add"}
         </button>
-        {snapshotsLoading && <div className="size-3 rounded-full border-2 border-gray-600 border-t-indigo-400 animate-spin shrink-0" />}
         {stuckRankCount > 0 && (
           <button
             onClick={onRefetchRanks}
@@ -454,6 +468,7 @@ export function PerformanceTable({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={appIcon} alt="" className="size-4 rounded shrink-0" />
                     <span className="truncate max-w-[140px]">{appName}</span>
+                    {snapshotsLoading && <RankHistorySpinner />}
                   </div>
                 </th>
                 {competitors.map((c) => (
@@ -462,6 +477,7 @@ export function PerformanceTable({
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={c.icon} alt="" className="size-4 rounded shrink-0" />
                       <span className="truncate max-w-[140px]">{c.name}</span>
+                      {snapshotsLoading && <RankHistorySpinner />}
                     </div>
                   </th>
                 ))}
