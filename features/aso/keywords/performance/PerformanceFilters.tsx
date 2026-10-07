@@ -169,34 +169,36 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
           </div>
         </Dropdown>
 
-        {monthCoverage && (
-          <span
-            title="Each keyword gets its monthly reading in the first days of the month. The export's current-month tab fills in as they arrive."
-            className="ml-auto flex items-center gap-1.5 text-[11px] text-gray-500"
+        {/* Progress line sits under the button (see monthCoverage in index.tsx). */}
+        <div className="ml-auto flex flex-col items-end gap-1">
+          <button
+            ref={exportBtnRef}
+            onClick={() => {
+              onExportReport();
+              if (tourStep === "exportReport") onAdvanceTour();
+            }}
+            disabled={exportingReport}
+            title="Export a monthly volume/ranking report as an Excel file"
+            className={`relative flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors ${
+              tourStep === "exportReport" ? "ring-2 ring-offset-2 ring-offset-[#1a1d24] ring-indigo-400/70" : ""
+            }`}
           >
-            <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
-            {MONTH_NAME.format(new Date(`${monthCoverage.month}-02T00:00:00Z`))} data: {monthCoverage.covered} of {monthCoverage.total} keywords so far
-          </span>
-        )}
-
-        <button
-          ref={exportBtnRef}
-          onClick={() => {
-            onExportReport();
-            if (tourStep === "exportReport") onAdvanceTour();
-          }}
-          disabled={exportingReport}
-          title="Export a monthly volume/ranking report as an Excel file"
-          className={`relative ${monthCoverage ? "" : "ml-auto"} flex items-center gap-1.5 rounded-lg bg-indigo-600 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors ${
-            tourStep === "exportReport" ? "ring-2 ring-offset-2 ring-offset-[#1a1d24] ring-indigo-400/70" : ""
-          }`}
-        >
-          {tourStep === "exportReport" && <TourPulse />}
-          {exportingReport
-            ? <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            : <ArrowDownTrayIcon className="size-3.5" />}
-          {exportingReport ? "Exporting…" : "Export Keyword Report"}
-        </button>
+            {tourStep === "exportReport" && <TourPulse />}
+            {exportingReport
+              ? <span className="size-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              : <ArrowDownTrayIcon className="size-3.5" />}
+            {exportingReport ? "Exporting…" : "Export Keyword Report"}
+          </button>
+          {monthCoverage && (
+            <span
+              title="Each keyword gets its monthly reading in the first days of the month. The export's current-month tab fills in as they arrive."
+              className="flex items-center gap-1.5 text-[11px] text-gray-500"
+            >
+              <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+              {MONTH_NAME.format(new Date(`${monthCoverage.month}-02T00:00:00Z`))} data: {monthCoverage.covered} of {monthCoverage.total} keywords so far
+            </span>
+          )}
+        </div>
 
         <TourTooltip
           targetRef={exportBtnRef}
