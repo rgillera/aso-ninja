@@ -172,8 +172,8 @@ export default function AdminUsersPage({ users }: Props) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("email");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [deleting, setDeleting] = useState<AdminUserRow | null>(null);
   // Hides a deleted row immediately; revalidatePath in deleteUserAction
   // brings the server-rendered list (and totals) in line on the next render.

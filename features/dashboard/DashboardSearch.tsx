@@ -8,7 +8,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { searchStoreApps, type SearchStoreResult } from "./searchAction";
-import { saveRecentEntry, pruneDeletedApps } from "./recentApps";
+import { saveRecentEntry, pruneDeletedApps, removeRecentEntry } from "./recentApps";
 import type { RecentEntry } from "./recentApps";
 import type { App, AppSearchResult } from "@/libs/contracts";
 import { countryFlag, COUNTRY_MAP } from "@/libs/countries";
@@ -246,6 +246,11 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
     }
   }
 
+  function handleRemoveRecent(entry: RecentEntry) {
+    removeRecentEntry(workspaceId, entry.bundleId, entry.store);
+    setRecentlyViewed(pruneDeletedApps(workspaceId, apps.map(a => a.id)));
+  }
+
   function clearQuery() {
     setQuery("");
     setResults([]);
@@ -386,9 +391,12 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                           trackedId, bundleId: r.bundleId, storeId: r.storeId, store: r.store,
                           name: r.name, iconUrl: r.iconUrl, country: r.country,
                         });
+                        // Followed apps padded onto the list (timestamp 0) aren't stored
+                        // in recently viewed, so there's nothing to remove for them.
+                        const isStoredRecent = r.timestamp > 0;
                         return (
+                          <div key={i} className="group flex items-center hover:bg-white/[0.03] light:hover:bg-black/[0.03] transition-colors">
                           <a
-                            key={i}
                             href={targetHref}
                             onClick={(e) => handleResultClick(e, {
                               name: r.name,
@@ -400,7 +408,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                               href: r.href,
                               trackedId,
                             })}
-                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-white/[0.03] light:hover:bg-black/[0.03] transition-colors"
+                            className="flex flex-1 min-w-0 items-center gap-4 px-5 py-3.5"
                           >
                             <AppIconWithBadge iconUrl={r.iconUrl} name={r.name} store={r.store} />
                             <div className="flex-1 min-w-0">
@@ -414,6 +422,18 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
                             </div>
                             {isFollowed ? <FollowedBadge /> : null}
                           </a>
+                          {isStoredRecent && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveRecent(r)}
+                              aria-label={`Remove ${r.name} from recently viewed`}
+                              title="Remove from recently viewed"
+                              className="mr-3 shrink-0 rounded-md p-1 text-gray-500 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-white light:hover:text-gray-900 transition-opacity"
+                            >
+                              <XMarkIcon className="size-4" />
+                            </button>
+                          )}
+                          </div>
                         );
                       })}
                     </div>

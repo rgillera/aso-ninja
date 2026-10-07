@@ -33,6 +33,14 @@ export function removeRecentEntry(workspaceId: string, bundleId: string, store: 
   } catch { /* no-op outside browser */ }
 }
 
+export function clearRecent(workspaceId: string) {
+  try {
+    const key = recentKey(workspaceId);
+    localStorage.removeItem(key);
+    window.dispatchEvent(new StorageEvent("storage", { key }));
+  } catch { /* no-op outside browser */ }
+}
+
 export function saveRecentEntry(workspaceId: string, entry: Omit<RecentEntry, "timestamp">) {
   const key = recentKey(workspaceId);
   const existing = loadRecent(workspaceId).filter(

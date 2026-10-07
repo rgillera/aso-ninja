@@ -146,7 +146,8 @@ export default async function Page() {
     };
   });
 
-  rows.sort((a, b) => a.email.localeCompare(b.email));
+  // Newest accounts first, matching AdminUsersPage's default sort.
+  rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return <AdminUsersPage users={rows} />;
 }
