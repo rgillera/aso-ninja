@@ -170,7 +170,7 @@ export function PerformanceFilters({ filters, onChange, onExportReport, exportin
         </Dropdown>
 
         {/* Progress line sits under the button (see monthCoverage in index.tsx). */}
-        <div className="ml-auto flex flex-col items-end gap-1">
+        <div className="ml-auto flex flex-col items-end gap-2">
           <button
             ref={exportBtnRef}
             onClick={() => {

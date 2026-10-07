@@ -382,11 +382,11 @@ export function PerformanceTable({
           <button
             onClick={onRefetchRanks}
             disabled={refetchingRanks}
-            title="These keywords are automatically retried in the background — click to force an immediate retry"
+            title="These keywords haven't had their first rank check yet. They're checked automatically in the background. Click to check them now."
             className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
           >
             <ArrowPathIcon className="size-3.5 animate-spin" />
-            {refetchingRanks ? "Refetching…" : `${stuckRankCount} unranked · refreshing`}
+            {refetchingRanks ? "Checking now…" : `Checking ranks · ${stuckRankCount} left`}
           </button>
         )}
         {translateToggle && translating && (
