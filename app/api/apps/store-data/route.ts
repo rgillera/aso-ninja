@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { extractIosSubtitleFromHtml } from "@/libs/keyword-relevancy";
+import { extractIosSubtitle } from "@/libs/store/appstore";
 
 // Client-fetchable subset of what app/dashboard/apps/[id]/preview/page.tsx's
 // fetchItunesData/fetchGooglePlayData compute server-side — just subtitle +
@@ -29,7 +29,7 @@ async function fetchIosSubtitleAndDescription(storeId: string, country: string):
     const r = json.results?.[0];
     if (!r) return null;
     return {
-      subtitle: html ? extractIosSubtitleFromHtml(html, r.trackName ?? "") : "",
+      subtitle: html ? extractIosSubtitle(html, r.trackName ?? "", storeId) : "",
       description: (r.description ?? "") as string,
     };
   } catch { return null; }

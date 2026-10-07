@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import type { App } from "@/libs/contracts";
+import { extractIosSubtitle } from "@/libs/store/appstore";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -37,18 +38,6 @@ function extractIosScreenshots(html: string): string[] {
   return results;
 }
 
-// The public iTunes lookup API has no "subtitle" field at all — the marketing
-// subtitle shown under the app name only exists in the store page's embedded
-// JSON, tied to the exact title text. Apps without one set just won't match.
-function extractIosSubtitle(html: string, trackName: string): string {
-  try {
-    const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}","subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
-    const m = html.match(re);
-    return m ? JSON.parse(`"${m[1]}"`) : "";
-  } catch { return ""; }
-}
-
 async function fetchItunesData(storeId: string, country: string) {
   try {
     const [apiRes, html] = await Promise.all([
@@ -60,7 +49,7 @@ async function fetchItunesData(storeId: string, country: string) {
     if (!r) return null;
     return {
       screenshotUrls: html ? extractIosScreenshots(html) : [],
-      subtitle: html ? extractIosSubtitle(html, r.trackName ?? "") : "",
+      subtitle: html ? extractIosSubtitle(html, r.trackName ?? "", storeId) : "",
       description: (r.description ?? "") as string,
       releaseNotes: (r.releaseNotes ?? "") as string,
       rating: r.averageUserRating as number | undefined,

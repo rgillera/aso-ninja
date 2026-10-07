@@ -79,19 +79,25 @@ export async function lookupAppStore(storeId: string): Promise<AppSearchResult |
 
 // The public iTunes lookup API has no reliable "subtitle" field — the marketing
 // subtitle shown under the app name only exists in the store page's embedded
-// JSON, tied to the exact title text. Apps without one set just won't match.
-export function extractIosSubtitle(html: string, trackName: string): string {
-  try {
-    const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    // Apple doesn't guarantee key order in the embedded JSON around "title", so
-    // allow any number of sibling keys between "title" and "subtitle" rather than
-    // hard-coding the exact key sequence (which has changed before).
-    const re = new RegExp(`"title":"${escaped}",(?:"[^"]+":(?:"(?:[^"\\\\]|\\\\.)*"|true|false|null|-?\\d+(?:\\.\\d+)?),){0,15}?"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
-    const m = html.match(re);
-    return m ? JSON.parse(`"${m[1]}"`) : "";
-  } catch {
-    return "";
+// JSON. The page also embeds lockups for related apps, each with their own
+// "subtitle", so the match is anchored to this app's exact title, falling back
+// to its adamId (store ID) when the title text differs from trackName. Apps
+// without a subtitle set just won't match.
+export function extractIosSubtitle(html: string, trackName: string, storeId?: string): string {
+  // Apple doesn't guarantee key order in the embedded JSON, so allow sibling
+  // scalar keys between the anchor and "subtitle" rather than hard-coding the
+  // exact key sequence (which has changed before).
+  const SIBLINGS = `(?:"[^"]+":(?:"(?:[^"\\\\]|\\\\.)*"|true|false|null|-?\\d+(?:\\.\\d+)?),){0,15}?`;
+  const SUBTITLE = `"subtitle":"((?:[^"\\\\]|\\\\.)*)"`;
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const anchors = [trackName && `"title":"${escape(trackName)}",`, storeId && `"adamId":"${escape(storeId)}",`].filter(Boolean);
+  for (const anchor of anchors) {
+    try {
+      const m = html.match(new RegExp(anchor + SIBLINGS + SUBTITLE));
+      if (m) return JSON.parse(`"${m[1]}"`);
+    } catch { /* try next anchor */ }
   }
+  return "";
 }
 
 // Scrapes the public app page for the screenshot set and preview-video presence —
@@ -127,7 +133,7 @@ async function fetchIosStoreDataImpl(storeId: string, country: string): Promise<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const r: any = json?.results?.[0];
   if (!r) return null;
-  const subtitle = (page.html ? extractIosSubtitle(page.html, r.trackName ?? "") : "") || ((r.subtitle ?? "") as string);
+  const subtitle = (page.html ? extractIosSubtitle(page.html, r.trackName ?? "", String(r.trackId ?? "")) : "") || ((r.subtitle ?? "") as string);
   return {
     name: (r.trackName ?? "") as string,
     screenshotUrls: page.screenshotUrls,

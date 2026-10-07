@@ -1,6 +1,7 @@
 import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateText, embedText, embedTexts } from "@/libs/gemini";
+import { extractIosSubtitle } from "@/libs/store/appstore";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -316,23 +317,8 @@ export async function computeRelevancy(
 
 const IOS_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
-// The public iTunes API (search or lookup) has no "subtitle" field at all —
-// the marketing subtitle shown under the app name only exists in the store
-// page's embedded JSON, tied to the exact title text. Apps without one set
-// just won't match. Shared with app/api/apps/store-data/route.ts, which needs
-// the same extraction for the Keyword Simulator's "current subtitle" seed.
-// The hero card's field order isn't stable across apps: some put
-// isIOSBinaryMacOSCompatible/useAdsLocale between title and subtitle, others
-// put subtitle immediately after title — both are tolerated here.
-export function extractIosSubtitleFromHtml(html: string, trackName: string): string {
-  try {
-    const escaped = trackName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const re = new RegExp(`"title":"${escaped}",(?:"(?:isIOSBinaryMacOSCompatible|useAdsLocale)":(?:true|false),)*"subtitle":"((?:[^"\\\\]|\\\\.)*)"`);
-    const m = html.match(re);
-    return m ? JSON.parse(`"${m[1]}"`) : "";
-  } catch { return ""; }
-}
-
+// The public iTunes API (search or lookup) has no "subtitle" field at all, so
+// it is scraped from the store page; see extractIosSubtitle for the matching.
 export async function fetchIosSubtitle(storeId: string, trackName: string, country: string): Promise<string> {
   if (!storeId) return "";
   try {
@@ -341,7 +327,7 @@ export async function fetchIosSubtitle(storeId: string, trackName: string, count
       cache: "no-store",
     });
     const html = await res.text();
-    return extractIosSubtitleFromHtml(html, trackName);
+    return extractIosSubtitle(html, trackName, storeId);
   } catch { return ""; }
 }
 

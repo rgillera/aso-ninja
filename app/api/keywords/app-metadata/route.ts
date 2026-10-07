@@ -83,7 +83,7 @@ async function scrapeAppStoreSubtitle(storeId: string, country: string, trackNam
     // The page embeds shoebox JSON for related/recommended apps too, each with
     // their own "subtitle" field, so an unanchored match can pick up someone
     // else's subtitle. Anchor to this app's own title first.
-    return extractIosSubtitle(html, trackName);
+    return extractIosSubtitle(html, trackName, storeId);
   } catch { return ""; }
 }
 
