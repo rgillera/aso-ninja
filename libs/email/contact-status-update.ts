@@ -61,8 +61,24 @@ export function applyAppName(template: string, appName: string): string {
   return template.split(APP_NAME_PLACEHOLDER).join(appName);
 }
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
+
+// Bodies are plain text, so links are added at render time: full http(s)
+// URLs (e.g. a Calendly link) and the bare brand domain "AppASO.io" (as in
+// a signature). One alternation pass so a URL containing appaso.io isn't
+// linked twice; the lookbehind skips email addresses like jay@appaso.io.
+const LINK_PATTERN =
+  /(https?:\/\/[^\s<]*[^\s<.,;:!?)])|(?<![@\w./])(appaso\.io)\b/gi;
+
+function linkify(escaped: string): string {
+  return escaped.replace(LINK_PATTERN, (match, url?: string) => {
+    const href = url ?? siteUrl;
+    return `<a href="${href}" style="color: #2563eb;">${match}</a>`;
+  });
+}
+
 export function renderTemplateHtml(body: string, appName: string): string {
-  const merged = applyAppName(escapeHtml(body), escapeHtml(appName));
+  const merged = linkify(applyAppName(escapeHtml(body), escapeHtml(appName)));
   const paragraphs = merged
     .split(/\n{2,}/)
     .map((p) => `<p>${p.replace(/\n/g, "<br/>")}</p>`)
