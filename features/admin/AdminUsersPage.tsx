@@ -24,31 +24,46 @@ type Props = {
   users: AdminUserRow[];
 };
 
-type SortKey = "email" | "status" | "planName" | "appCount" | "keywordCount" | "createdAt" | "lastSignInAt";
+type SortKey =
+  | "email"
+  | "planName"
+  | "appCount"
+  | "keywordCount"
+  | "activeSeconds"
+  | "createdAt"
+  | "lastSignInAt"
+  | "lastActiveAt";
 type SortDirection = "asc" | "desc";
-type StatusFilter = "all" | "active" | "inactive";
 
 const SORT_COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "email", label: "Email" },
-  { key: "status", label: "Status" },
   { key: "planName", label: "Plan" },
   { key: "appCount", label: "Apps", align: "right" },
   { key: "keywordCount", label: "Keywords", align: "right" },
+  { key: "activeSeconds", label: "Time used", align: "right" },
   { key: "createdAt", label: "Joined" },
   { key: "lastSignInAt", label: "Last login" },
+  { key: "lastActiveAt", label: "Last active" },
 ];
 
 const PAGE_SIZE = 25;
 
-// "Active" = signed in within this window — there's no live presence
-// tracking (no last-seen heartbeat), so this is a recency proxy, not
-// "online right now".
+// The header's "active in last N days" count = signed in or used the app
+// (ActivityHeartbeat) within this window. Sign-in alone undercounts: sessions refresh silently for weeks, so
+// a daily user can go a long time without a new "Last login".
 const ACTIVE_WINDOW_DAYS = 7;
 const ACTIVE_WINDOW_MS = ACTIVE_WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
-function isRecentlyActive(lastSignInAt: string | null): boolean {
-  if (!lastSignInAt) return false;
-  return Date.now() - new Date(lastSignInAt).getTime() <= ACTIVE_WINDOW_MS;
+function lastSeenMs(u: AdminUserRow): number {
+  return Math.max(
+    u.lastSignInAt ? new Date(u.lastSignInAt).getTime() : 0,
+    u.lastActiveAt ? new Date(u.lastActiveAt).getTime() : 0
+  );
+}
+
+function isRecentlyActive(u: AdminUserRow): boolean {
+  const seen = lastSeenMs(u);
+  return seen > 0 && Date.now() - seen <= ACTIVE_WINDOW_MS;
 }
 
 const PLAN_BADGE_CLASSES: Record<string, string> = {
@@ -62,6 +77,25 @@ const PLAN_BADGE_CLASSES: Record<string, string> = {
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDateTime(iso: string | null): string {
+  if (!iso) return "Never";
+  return new Date(iso).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatDuration(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
 }
 
 // What the admin has to type to confirm: the email, or the id for the rare
@@ -153,24 +187,25 @@ function compareValues(a: AdminUserRow, b: AdminUserRow, key: SortKey): number {
   switch (key) {
     case "email":
       return a.email.localeCompare(b.email);
-    case "status":
-      return Number(isRecentlyActive(a.lastSignInAt)) - Number(isRecentlyActive(b.lastSignInAt));
     case "planName":
       return a.planName.localeCompare(b.planName);
     case "appCount":
       return a.appCount - b.appCount;
     case "keywordCount":
       return a.keywordCount - b.keywordCount;
+    case "activeSeconds":
+      return a.activeSeconds - b.activeSeconds;
     case "createdAt":
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     case "lastSignInAt":
       return (a.lastSignInAt ? new Date(a.lastSignInAt).getTime() : 0) - (b.lastSignInAt ? new Date(b.lastSignInAt).getTime() : 0);
+    case "lastActiveAt":
+      return (a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0) - (b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0);
   }
 }
 
 export default function AdminUsersPage({ users }: Props) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -208,7 +243,7 @@ export default function AdminUsersPage({ users }: Props) {
     setPage(0);
   }
 
-  const activeCount = useMemo(() => users.filter((u) => isRecentlyActive(u.lastSignInAt)).length, [users]);
+  const activeCount = useMemo(() => users.filter((u) => isRecentlyActive(u)).length, [users]);
 
   function handleExportEmails() {
     downloadCsv(
@@ -223,11 +258,9 @@ export default function AdminUsersPage({ users }: Props) {
     return users.filter((u) => {
       if (deletedIds.has(u.id)) return false;
       if (q && !u.email.toLowerCase().includes(q)) return false;
-      if (statusFilter === "active" && !isRecentlyActive(u.lastSignInAt)) return false;
-      if (statusFilter === "inactive" && isRecentlyActive(u.lastSignInAt)) return false;
       return true;
     });
-  }, [users, search, statusFilter, deletedIds]);
+  }, [users, search, deletedIds]);
 
   const sorted = useMemo(() => {
     const factor = sortDirection === "asc" ? 1 : -1;
@@ -258,22 +291,6 @@ export default function AdminUsersPage({ users }: Props) {
         </div>
 
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] light:bg-white">
-            {(["all", "active", "inactive"] as StatusFilter[]).map((status) => (
-              <button
-                key={status}
-                onClick={() => { setStatusFilter(status); setPage(0); }}
-                className={`capitalize rounded-md px-3 py-2 text-xs font-medium transition-colors ${
-                  statusFilter === status
-                    ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                    : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
-                }`}
-              >
-                {status}
-              </button>
-            ))}
-          </div>
-
           <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
@@ -328,16 +345,9 @@ export default function AdminUsersPage({ users }: Props) {
               </thead>
               <tbody className="divide-y divide-white/[0.07] light:divide-black/[0.08]">
                 {pageUsers.map((u) => {
-                  const active = isRecentlyActive(u.lastSignInAt);
                   return (
                     <tr key={u.id} className="hover:bg-white/[0.03] light:hover:bg-black/[0.02] transition-colors">
                       <td className="px-5 py-3.5 text-white light:text-gray-900 truncate max-w-xs">{u.email}</td>
-                      <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${active ? "text-emerald-400 light:text-emerald-700" : "text-gray-500"}`}>
-                          <span className={`size-1.5 rounded-full ${active ? "bg-emerald-400" : "bg-gray-600"}`} />
-                          {active ? "Active" : "Inactive"}
-                        </span>
-                      </td>
                       <td className="px-5 py-3.5">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${
@@ -349,8 +359,10 @@ export default function AdminUsersPage({ users }: Props) {
                       </td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.appCount.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.keywordCount.toLocaleString()}</td>
-                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.createdAt)}</td>
-                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600">{formatDate(u.lastSignInAt)}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700 whitespace-nowrap">{formatDuration(u.activeSeconds)}</td>
+                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.createdAt)}</td>
+                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.lastSignInAt)}</td>
+                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDateTime(u.lastActiveAt)}</td>
                       <td className="px-5 py-3.5 text-right">
                         {!u.isSuperAdmin && (
                           <div className="flex items-center justify-end gap-1">

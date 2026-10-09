@@ -2,6 +2,7 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import AdminUsersPage from "@/features/admin/AdminUsersPage";
 import type { AdminUserRow } from "@/features/admin/types";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
+import { fetchAllRows } from "@/libs/supabase/fetch-all";
 
 type AuthUserSummary = {
   id: string;
@@ -95,15 +96,26 @@ export default async function Page() {
   // fetchAllWorkspaceIds) rather than a bare `select("workspace_id")`,
   // which silently truncated at PostgREST's 1000-row cap once `keywords`
   // grew past it.
-  const [appWorkspaceIds, keywordWorkspaceIds, { data: subscriptions, error: subsErr }, { data: plans, error: plansErr }] =
-    await Promise.all([
-      fetchAllWorkspaceIds(admin, "apps", ownedWorkspaceIds),
-      fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
-      admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
-      admin.from("plans").select("id, slug, name"),
-    ]);
+  const [
+    appWorkspaceIds,
+    keywordWorkspaceIds,
+    { data: subscriptions, error: subsErr },
+    { data: plans, error: plansErr },
+    { data: activity, error: activityErr },
+  ] = await Promise.all([
+    fetchAllWorkspaceIds(admin, "apps", ownedWorkspaceIds),
+    fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
+    admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
+    admin.from("plans").select("id, slug, name"),
+    fetchAllRows<{ user_id: string; active_seconds: number; last_active_at: string }>((from, to) =>
+      admin.from("user_activity").select("user_id, active_seconds, last_active_at").range(from, to)
+    ),
+  ]);
   if (subsErr) throw subsErr;
   if (plansErr) throw plansErr;
+  if (activityErr) throw activityErr;
+
+  const activityByUser = new Map(activity.map((a) => [a.user_id, a]));
 
   const appCountByWorkspace = new Map<string, number>();
   for (const workspaceId of appWorkspaceIds) {
@@ -132,11 +144,15 @@ export default async function Page() {
     const keywordCount = workspaceIds.reduce((sum, id) => sum + (keywordCountByWorkspace.get(id) ?? 0), 0);
     const plan = activePlanByUser.get(u.id) ?? (freePlan ? { slug: freePlan.slug, name: freePlan.name } : { slug: "free", name: "Free" });
 
+    const usage = activityByUser.get(u.id);
+
     return {
       id: u.id,
       email: u.email,
       createdAt: u.createdAt,
       lastSignInAt: u.lastSignInAt,
+      activeSeconds: usage?.active_seconds ?? 0,
+      lastActiveAt: usage?.last_active_at ?? null,
       isSuperAdmin: isSuperAdminEmail(u.email),
       workspaceCount: workspaceIds.length,
       appCount,
