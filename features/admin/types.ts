@@ -7,6 +7,8 @@ export type AdminUserRow = {
   // used the app since tracking started.
   activeSeconds: number;
   lastActiveAt: string | null;
+  // Times they opened /dashboard/subscription (SubscriptionPageViewTracker).
+  subscriptionPageViews: number;
   isSuperAdmin: boolean;
   workspaceCount: number;
   appCount: number;

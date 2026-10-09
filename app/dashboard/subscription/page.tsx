@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import SubscriptionPage from "@/features/subscription/SubscriptionPage";
+import { SubscriptionPageViewTracker } from "@/features/activity/SubscriptionPageViewTracker";
 import type { Workspace } from "@/libs/contracts";
 
 type PageProps = { searchParams: Promise<{ ws?: string }> };
@@ -22,7 +23,12 @@ export default async function Page({ searchParams }: PageProps) {
   const activeWorkspaceId = allWorkspaces.find((w) => w.id === wsParam)?.id ?? allWorkspaces[0]?.id;
 
   if (!activeWorkspaceId) {
-    return <SubscriptionPage currentPlanId="free" workspaceId="" />;
+    return (
+      <>
+        <SubscriptionPageViewTracker />
+        <SubscriptionPage currentPlanId="free" workspaceId="" />
+      </>
+    );
   }
 
   const { data: membership } = await supabase
@@ -37,11 +43,14 @@ export default async function Page({ searchParams }: PageProps) {
   const state = await getWorkspacePlanState(activeWorkspaceId);
 
   return (
-    <SubscriptionPage
-      currentPlanId={"error" in state ? "free" : state.plan.slug}
-      workspaceId={activeWorkspaceId}
-      usage={"error" in state ? undefined : state.usage}
-      pendingCancellation={"error" in state ? null : state.pendingCancellation}
-    />
+    <>
+      <SubscriptionPageViewTracker />
+      <SubscriptionPage
+        currentPlanId={"error" in state ? "free" : state.plan.slug}
+        workspaceId={activeWorkspaceId}
+        usage={"error" in state ? undefined : state.usage}
+        pendingCancellation={"error" in state ? null : state.pendingCancellation}
+      />
+    </>
   );
 }

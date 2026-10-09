@@ -10,3 +10,10 @@ export async function recordActivityAction(): Promise<void> {
   const supabase = await createRealUserClient();
   await supabase.rpc("record_user_activity");
 }
+
+// Called by SubscriptionPageViewTracker; same impersonation skip as above.
+export async function recordSubscriptionPageViewAction(): Promise<void> {
+  if (await isImpersonating()) return;
+  const supabase = await createRealUserClient();
+  await supabase.rpc("record_subscription_page_view");
+}
