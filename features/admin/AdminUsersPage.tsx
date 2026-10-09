@@ -27,22 +27,18 @@ type Props = {
 type SortKey =
   | "email"
   | "planName"
-  | "appCount"
   | "keywordCount"
   | "activeSeconds"
   | "createdAt"
-  | "lastSignInAt"
   | "lastActiveAt";
 type SortDirection = "asc" | "desc";
 
 const SORT_COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "email", label: "Email" },
   { key: "planName", label: "Plan" },
-  { key: "appCount", label: "Apps", align: "right" },
   { key: "keywordCount", label: "Keywords", align: "right" },
   { key: "activeSeconds", label: "Time used", align: "right" },
   { key: "createdAt", label: "Joined" },
-  { key: "lastSignInAt", label: "Last login" },
   { key: "lastActiveAt", label: "Last active" },
 ];
 
@@ -189,16 +185,12 @@ function compareValues(a: AdminUserRow, b: AdminUserRow, key: SortKey): number {
       return a.email.localeCompare(b.email);
     case "planName":
       return a.planName.localeCompare(b.planName);
-    case "appCount":
-      return a.appCount - b.appCount;
     case "keywordCount":
       return a.keywordCount - b.keywordCount;
     case "activeSeconds":
       return a.activeSeconds - b.activeSeconds;
     case "createdAt":
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    case "lastSignInAt":
-      return (a.lastSignInAt ? new Date(a.lastSignInAt).getTime() : 0) - (b.lastSignInAt ? new Date(b.lastSignInAt).getTime() : 0);
     case "lastActiveAt":
       return (a.lastActiveAt ? new Date(a.lastActiveAt).getTime() : 0) - (b.lastActiveAt ? new Date(b.lastActiveAt).getTime() : 0);
   }
@@ -357,11 +349,9 @@ export default function AdminUsersPage({ users }: Props) {
                           {u.planName}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.appCount.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.keywordCount.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700 whitespace-nowrap">{formatDuration(u.activeSeconds)}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.createdAt)}</td>
-                      <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.lastSignInAt)}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDateTime(u.lastActiveAt)}</td>
                       <td className="px-5 py-3.5 text-right">
                         {!u.isSuperAdmin && (
