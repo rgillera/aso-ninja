@@ -135,6 +135,7 @@ export function KeywordSuggestionsPanel({
               {...tabProps}
               competitors={competitors}
               translateToggle={translateToggle}
+              active={open && activeTab === "Competitors"}
             />
           </div>
           <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>

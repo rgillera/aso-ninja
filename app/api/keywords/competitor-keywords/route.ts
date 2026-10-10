@@ -62,8 +62,14 @@ function extractTerms(text: string): string[] {
 }
 
 const TOP_10 = 10;
+// Ranked keywords pulled in from rank history, per app. History is shared
+// across workspaces, so a category leader can have thousands of ranked
+// keywords; only its strongest ones are worth surfacing as gaps, and an
+// uncapped list bloats the snapshot query, the response, and translation.
+const RANKED_MAX_POSITION = 50;
+const RANKED_MAX_TERMS = 200;
 
-type RankedSummary = { keywords?: { term: string }[] } | null;
+type RankedSummary = { keywords?: { term: string; rank: number }[] } | null;
 type SnapshotRow = { keyword: string; recorded_on: string; app_id: string; position: number | null };
 type VolumeRow = { term: string; recorded_on: string; score: number };
 
@@ -90,7 +96,13 @@ export async function GET(request: NextRequest) {
   const rankedTerms = (appId: string) =>
     supabase
       .rpc("keyword_ranked_summary", { p_app_id: appId, p_store: store, p_country: country })
-      .then(({ data }) => ((data as RankedSummary)?.keywords ?? []).map((k) => k.term));
+      .then(({ data }) =>
+        ((data as RankedSummary)?.keywords ?? [])
+          .filter((k) => k.rank <= RANKED_MAX_POSITION)
+          .sort((a, b) => a.rank - b.rank)
+          .slice(0, RANKED_MAX_TERMS)
+          .map((k) => k.term)
+      );
 
   // 1. Listings (own + competitors) and every keyword each app already has a
   // recorded rank for, all in parallel. Ranked keywords catch gaps a

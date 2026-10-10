@@ -16,6 +16,8 @@ type Props = {
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
   translateToggle?: boolean;
+  /** Whether the Competitors tab is showing. Nothing is fetched until it first is. */
+  active: boolean;
 };
 
 // The four quadrants of the keyword gap matrix, in reading order (see the
@@ -202,7 +204,7 @@ function UncheckedList({ keywords, trackedSet, onAdd, onRemove, translationFor, 
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle,
+  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, active,
 }: Props) {
   const [data, setData] = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -222,10 +224,16 @@ export function KeywordSuggestionCompetitors({
   // genuinely new request starts, and a stale response is simply one whose
   // captured key no longer matches it.
   const latestKeyRef = useRef<string | null>(null);
+  // Terms already sent for translation (done or in flight), so paging with
+  // "Show more" or switching buckets never re-requests the same term.
+  const requestedTranslations = useRef(new Set<string>());
 
   // Fetch keywords whenever the competitor list or app changes, or on a manual
   // refresh (tracking a keyword records new ranks the matrix should pick up).
+  // The tab stays mounted while hidden, so wait until it's actually opened:
+  // otherwise every Keyword Research load pays for this request.
   useEffect(() => {
+    if (!active) return;
     if (!activeApp?.store_id || !competitors.length) {
       setData(null);
       return;
@@ -253,12 +261,19 @@ export function KeywordSuggestionCompetitors({
       .then((d: CompetitorKeywordsResult) => { if (latestKeyRef.current === key) setData(d); })
       .catch(() => { if (latestKeyRef.current === key) setData({ appName: "", keywords: [], competitorApps: [] }); })
       .finally(() => { if (latestKeyRef.current === key) setLoading(false); });
-  }, [activeApp?.store_id, activeApp?.country, competitors, fetchKey, refreshCount]);
+  }, [active, activeApp?.store_id, activeApp?.country, competitors, fetchKey, refreshCount]);
 
+  const selectedKeywords = data?.keywords.filter((k) => k.bucket === selected) ?? [];
+  const visible = selectedKeywords.slice(0, visibleCount);
+  const visibleTermsKey = visible.map((k) => k.term).join("\n");
+
+  // Translation is an LLM call, so only the rows on screen are translated;
+  // more follow as the list is paged or another bucket is opened.
   useEffect(() => {
-    if (!translateToggle) return;
-    const terms = [...new Set((data?.keywords ?? []).map((k) => k.term))].filter((t) => !(t in translations));
+    if (!translateToggle || !visibleTermsKey) return;
+    const terms = visibleTermsKey.split("\n").filter((t) => !requestedTranslations.current.has(t));
     if (!terms.length) return;
+    terms.forEach((t) => requestedTranslations.current.add(t));
     setTranslating(true);
     fetch("/api/keywords/translate", {
       method: "POST",
@@ -269,10 +284,9 @@ export function KeywordSuggestionCompetitors({
       .then(({ translations: fresh }: { translations: Record<string, string> }) => {
         setTranslations((prev) => ({ ...prev, ...fresh }));
       })
-      .catch(() => {})
+      .catch(() => { terms.forEach((t) => requestedTranslations.current.delete(t)); })
       .finally(() => setTranslating(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [translateToggle, data]);
+  }, [translateToggle, visibleTermsKey]);
 
   const trackedSet = new Set(trackedKeywords.map((k) => k.keyword.toLowerCase()));
 
@@ -285,8 +299,6 @@ export function KeywordSuggestionCompetitors({
   }
 
   const byBucket = (bucket: GapBucket) => data?.keywords.filter((k) => k.bucket === bucket) ?? [];
-  const selectedKeywords = byBucket(selected);
-  const visible = selectedKeywords.slice(0, visibleCount);
   const untracked = selectedKeywords.filter((k) => !trackedSet.has(k.term)).map((k) => k.term);
   const selectedMeta = selected === "unchecked" ? UNCHECKED : BUCKETS.find((b) => b.key === selected)!;
 
