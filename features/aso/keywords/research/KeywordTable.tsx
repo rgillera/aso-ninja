@@ -19,7 +19,7 @@ import {
   LockClosedIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import { TranslateToggle, VolumeBar } from "./ui";
+import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
@@ -170,7 +170,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
   { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
   { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
-  { key: "estimatedDownloads", label: "Est. Downloads", defaultVisible: true, tooltip: "This app's real total downloads (from your connected App Store Connect / Play Console account), split across tracked keywords by search volume and current rank. Neither store attributes downloads to specific search terms, so this is a modeled share of a real number." },
+  { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "This app's real downloads for the most recent synced day (from your connected App Store Connect / Play Console account), split across tracked keywords by search volume and current rank. Neither store attributes downloads to specific search terms, so this is a modeled share of a real number." },
   { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
 ];
 
@@ -571,7 +571,7 @@ export function KeywordTable({
           : downloadsConnection.pending
           ? <PendingSyncCell />
           : row.estimatedDownloads != null
-          ? <span className="text-sm text-gray-300 light:text-gray-700" title="Modeled from real total downloads — see column tooltip">~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
+          ? <span className="text-sm text-gray-300 light:text-gray-700" title={downloadsAsOfTitle(downloadsConnection.asOf)}>~{DOWNLOADS_FORMATTER.format(row.estimatedDownloads)}</span>
           : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
       );
       case "relevancy": return (

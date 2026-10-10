@@ -73,14 +73,20 @@ export type GoogleInstallsResult =
   | { ok: true; downloads: number }
   | { ok: false; error: string; reportMissing: boolean };
 
-// date: YYYY-MM-DD. packageName: the app's Play Store package id (apps.store_id
-// for Android). countryCode: the app row's storefront (apps.country), e.g. "US" —
-// matched against the country-dimension export's "Country" column so the same
-// app tracked under multiple storefronts each gets only its own territory's
-// installs instead of every row's copy of the worldwide total.
-export async function fetchDailyInstalls(
-  credential: GoogleStoreCredential, packageName: string, date: string, countryCode: string
-): Promise<GoogleInstallsResult> {
+export type GoogleMonthlyInstallsResult =
+  | { ok: true; byDate: Record<string, number> }
+  | { ok: false; error: string; reportMissing: boolean };
+
+// yyyyMM: e.g. "202610". packageName: the app's Play Store package id
+// (apps.store_id for Android). countryCode: the app row's storefront
+// (apps.country), e.g. "US" — matched against the country-dimension export's
+// "Country" column so the same app tracked under multiple storefronts each
+// gets only its own territory's installs instead of every row's copy of the
+// worldwide total. Returns every day in that month's file at once, so a
+// multi-day sync downloads each monthly file once rather than once per day.
+export async function fetchMonthlyInstalls(
+  credential: GoogleStoreCredential, packageName: string, yyyyMM: string, countryCode: string
+): Promise<GoogleMonthlyInstallsResult> {
   let serviceAccount: ServiceAccountKey;
   try {
     serviceAccount = parseServiceAccount(credential.serviceAccountJson);
@@ -95,7 +101,6 @@ export async function fetchDailyInstalls(
     return { ok: false, error: e instanceof Error ? e.message : "Couldn't authenticate with Google.", reportMissing: false };
   }
 
-  const yyyyMM = date.slice(0, 7).replace("-", "");
   const objectName = `stats/installs/installs_${packageName}_${yyyyMM}_country.csv`;
 
   const objectRes = await fetch(
@@ -111,15 +116,27 @@ export async function fetchDailyInstalls(
   }
 
   const text = decodeStorageObject(await objectRes.arrayBuffer());
-  const rows = parseCsv(text);
-  // Case-insensitive: Play Console's country export uses lowercase codes
-  // ("us"), while apps.country is stored uppercase — compare loosely rather
-  // than betting on either side's casing.
-  const row = rows.find((r) => r["Date"] === date && r[COUNTRY_COLUMN]?.toUpperCase() === countryCode.toUpperCase());
-  if (!row) return { ok: false, error: `No row found for ${date} (${countryCode}) in this month's report.`, reportMissing: true };
+  const byDate: Record<string, number> = {};
+  for (const row of parseCsv(text)) {
+    // Case-insensitive: Play Console's country export uses lowercase codes
+    // ("us"), while apps.country is stored uppercase — compare loosely rather
+    // than betting on either side's casing.
+    if (row[COUNTRY_COLUMN]?.toUpperCase() !== countryCode.toUpperCase()) continue;
+    const downloads = parseInt(row[DOWNLOADS_COLUMN], 10);
+    byDate[row["Date"]] = isNaN(downloads) ? 0 : downloads;
+  }
+  return { ok: true, byDate };
+}
 
-  const downloads = parseInt(row[DOWNLOADS_COLUMN], 10);
-  return { ok: true, downloads: isNaN(downloads) ? 0 : downloads };
+// date: YYYY-MM-DD. Single-day convenience wrapper over fetchMonthlyInstalls.
+export async function fetchDailyInstalls(
+  credential: GoogleStoreCredential, packageName: string, date: string, countryCode: string
+): Promise<GoogleInstallsResult> {
+  const month = await fetchMonthlyInstalls(credential, packageName, date.slice(0, 7).replace("-", ""), countryCode);
+  if (!month.ok) return month;
+  const downloads = month.byDate[date];
+  if (downloads == null) return { ok: false, error: `No row found for ${date} (${countryCode}) in this month's report.`, reportMissing: true };
+  return { ok: true, downloads };
 }
 
 // Used by the connect route to validate credentials before persisting them.

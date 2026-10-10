@@ -34,10 +34,13 @@ function parseTsv(text: string): Record<string, string>[] {
 // reference isn't reliably fetchable to confirm precisely, so it's
 // deliberately narrow (new paid + free acquisition only, excluding
 // redownloads/updates/IAP) to bias toward undercounting rather than
-// overcounting. Validate against one real report before trusting this number
-// — compare the sum this produces for a known day against App Store
-// Connect's own Analytics "Total Downloads" figure for the same day/app.
-const DOWNLOAD_PRODUCT_TYPES = new Set(["1", "1F"]);
+// overcounting. "1" = iPhone/iPod, "1F" = universal, "1T" = iPad-only (left
+// out, an iPad-only app would always read 0). Mac ("F1") is excluded on
+// purpose: Mac App Store installs don't come from iOS keyword searches.
+// Validate against one real report before trusting this number — compare
+// the sum this produces for a known day against App Store Connect's own
+// Analytics "Total Downloads" figure for the same day/app.
+const DOWNLOAD_PRODUCT_TYPES = new Set(["1", "1F", "1T"]);
 
 export type AppleSalesResult =
   | { ok: true; downloads: number }

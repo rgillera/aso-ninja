@@ -7,8 +7,14 @@ import {
 } from "recharts";
 import { XMarkIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
-type HistoryPoint = { recorded_on: string; downloads: number; estimated: number };
-type HistoryResponse = { history: HistoryPoint[]; share: number };
+import type { DownloadsHistoryPoint } from "@/app/api/keywords/downloads-history/route";
+
+type HistoryResponse = { history: DownloadsHistoryPoint[] };
+
+function formatRank(rank: number | null | undefined): string {
+  if (rank === undefined) return "Not checked yet";
+  return rank === null ? "Unranked" : `#${rank}`;
+}
 
 type Props = {
   term: string;
@@ -33,7 +39,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
     fetch(`/api/keywords/downloads-history?${params}`)
       .then((r) => r.json())
       .then((d: HistoryResponse) => setData(d))
-      .catch(() => setData({ history: [], share: 0 }))
+      .catch(() => setData({ history: [] }))
       .finally(() => setLoading(false));
   }, [term, appId]);
 
@@ -69,7 +75,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
             </div>
           ) : rows.length === 1 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <p className="text-3xl font-semibold text-white light:text-gray-900">~{rows[0].estimated}</p>
+              <p className="text-3xl font-semibold text-white light:text-gray-900">{rows[0].estimated != null ? `~${rows[0].estimated}` : "-"}</p>
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Only synced day so far: {formatDate(rows[0].recorded_on)}</p>
               <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A trend will appear once your app keeps syncing.</p>
             </div>
@@ -94,7 +100,10 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
                   />
                   <Tooltip
                     labelFormatter={(d) => formatDate(String(d))}
-                    formatter={(value) => [value, "Est. downloads"]}
+                    formatter={(value, _name, item) => [
+                      `${value ?? "-"} (rank ${formatRank((item.payload as DownloadsHistoryPoint).rank)})`,
+                      "Est. downloads",
+                    ]}
                     contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "#9ca3af" }}
                   />
@@ -109,7 +118,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
                 </LineChart>
               </ResponsiveContainer>
               <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
-                {Math.round((data?.share ?? 0) * 100)}% of total downloads (today&apos;s search-volume/rank weight, applied to each past day)
+                Each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
               </p>
             </>
           )}

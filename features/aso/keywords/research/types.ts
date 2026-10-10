@@ -11,8 +11,8 @@ export type Keyword = {
   relevancy?: number | null;
   aiDown?: boolean;
   frozen?: boolean;
-  // Real total app downloads (from a connected App Store Connect / Play
-  // Console account) apportioned across tracked keywords by volume + rank.
+  // One day's real total app downloads (from a connected App Store Connect /
+  // Play Console account) apportioned across tracked keywords by volume + rank.
   // null when this keyword isn't ranked (no share of downloads attributed);
   // undefined when the app isn't connected or hasn't synced yet — see
   // DownloadsConnection in KeywordTable.tsx for which state applies.
@@ -23,7 +23,8 @@ export type Keyword = {
 // Connect / Play Console credentials connected under another country, even
 // though `connected` is false for this one. Distinguishes "just follow this
 // app, it'll auto-connect" from "needs credentials entered from scratch" —
-// see app/api/keywords/list/route.ts.
-export type DownloadsConnection = { connected: boolean; pending: boolean; bundleHasCredential?: boolean };
+// see app/api/keywords/list/route.ts. asOf: the YYYY-MM-DD day the
+// per-keyword estimates are split from (estimates are per day, not totals).
+export type DownloadsConnection = { connected: boolean; pending: boolean; bundleHasCredential?: boolean; asOf?: string | null };
 
 export type RankPill = typeof import("./constants").RANK_PILLS[number];

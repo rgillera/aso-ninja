@@ -386,7 +386,7 @@ export function DashboardHeroDemo() {
                     <ColHead>Chance</ColHead>
                     <ColHead>Relevancy</ColHead>
                     <ColHead active>Opportunity</ColHead>
-                    <ColHead>Est. Downloads</ColHead>
+                    <ColHead>Est. Daily Downloads</ColHead>
                     <ColHead>App Rank</ColHead>
                   </tr>
                 </thead>

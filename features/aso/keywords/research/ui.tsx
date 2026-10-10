@@ -66,3 +66,11 @@ export function GrowthCell({ value }: { value: number | null }) {
     </span>
   );
 }
+
+// Hover text for an Est. Daily Downloads value: names the synced day the
+// per-keyword split comes from (asOf, from /api/keywords/list).
+export function downloadsAsOfTitle(asOf: string | null | undefined): string {
+  if (!asOf) return "Modeled share of this app's real daily downloads";
+  const day = new Date(asOf + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  return `Modeled share of this app's real downloads on ${day}`;
+}

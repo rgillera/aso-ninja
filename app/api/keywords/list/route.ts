@@ -14,8 +14,9 @@ export type SavedKeyword = {
   rank: number | null;
   intentThemeId: string | null;
   hasCachedMetrics: boolean;
-  // Real total app downloads (from a connected App Store Connect / Play
-  // Console account) apportioned across tracked keywords by volume + rank —
+  // The most recent synced day's real total app downloads (from a connected
+  // App Store Connect / Play Console account) apportioned across tracked
+  // keywords by volume + rank, so a per-day figure —
   // see the comment above the apportionment block below. null when this
   // keyword isn't ranked (no share attributed); always null when the app
   // isn't connected — see the top-level `downloadsConnection` field instead.
@@ -109,7 +110,7 @@ export async function GET(request: NextRequest) {
       .maybeSingle(),
     supabase
       .from("app_download_history")
-      .select("downloads")
+      .select("recorded_on, downloads")
       .eq("app_id", appId)
       .order("recorded_on", { ascending: false })
       .limit(1)
@@ -209,7 +210,10 @@ export async function GET(request: NextRequest) {
     bundleHasCredential = !!credential;
   }
 
-  const downloadsConnection = { connected, pending, bundleHasCredential };
+  // asOf: the single day whose real total the per-keyword split above is
+  // based on, so the UI can say which day the numbers are for.
+  const asOf = hasDownloadsAccess ? downloadsResult.data?.recorded_on ?? null : null;
+  const downloadsConnection = { connected, pending, bundleHasCredential, asOf };
 
   return NextResponse.json({ keywords, downloadsConnection });
 }

@@ -19,7 +19,7 @@ import {
   InformationCircleIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
-import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
+import { VolumeBar, TranslateToggle, downloadsAsOfTitle } from "@/features/aso/keywords/research/ui";
 import { effectiveRank, effectiveRankDate, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -156,7 +156,7 @@ function VolumeCell({ value, growth, onClick }: { value: number | null | undefin
 // libs/keyword-downloads-apportionment.ts. Not connected / still syncing
 // read as plain muted text rather than a clickable value, since there's
 // nothing to drill into yet.
-function DownloadsCell({ value, connected, pending, locked, bundleHasCredential, onClick }: { value: number | null | undefined; connected: boolean; pending: boolean; locked: boolean; bundleHasCredential?: boolean; onClick: () => void }) {
+function DownloadsCell({ value, connected, pending, locked, bundleHasCredential, asOf, onClick }: { value: number | null | undefined; connected: boolean; pending: boolean; locked: boolean; bundleHasCredential?: boolean; asOf?: string | null; onClick: () => void }) {
   if (locked) {
     return (
       <span
@@ -190,7 +190,7 @@ function DownloadsCell({ value, connected, pending, locked, bundleHasCredential,
   if (pending) return <span className="text-xs text-gray-600 light:text-gray-400">Syncing…</span>;
   if (value == null) return <span className="text-sm text-gray-600 light:text-gray-400">-</span>;
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors" title="View downloads history">
+    <button onClick={onClick} className="flex items-center gap-1.5 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors" title={`${downloadsAsOfTitle(asOf)}. Click for history.`}>
       <span className="text-sm text-gray-300 light:text-gray-700">~{DOWNLOADS_FORMATTER.format(value)}</span>
       <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
     </button>
@@ -290,7 +290,7 @@ export function PerformanceTable({
 
   function handleExportSelected() {
     const rows = filtered.filter((k) => selected.has(k.term));
-    const headers = ["Keyword", "Volume", "Rank", "Est. Downloads"];
+    const headers = ["Keyword", "Volume", "Rank", "Est. Daily Downloads"];
     const data = rows.map((k) => [k.term, k.volume, k.rank ?? "Unranked", k.estimatedDownloads ?? "—"]);
     downloadCsv(`keywords-${Date.now()}.csv`, headers, data);
   }
@@ -461,7 +461,7 @@ export function PerformanceTable({
                   </button>
                 </th>
                 <th rowSpan={2} className="px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom whitespace-nowrap">
-                  Est. Downloads
+                  Est. Daily Downloads
                 </th>
                 <th colSpan={2} className="px-4 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1.5 normal-case tracking-normal">
@@ -561,6 +561,7 @@ export function PerformanceTable({
                           pending={!!downloadsConnection?.pending}
                           locked={downloadsLocked}
                           bundleHasCredential={downloadsConnection?.bundleHasCredential}
+                          asOf={downloadsConnection?.asOf}
                           onClick={() => onViewDownloadsHistory(k.term)}
                         />
                       )}
