@@ -309,7 +309,7 @@ export function DashboardHeroDemo() {
 
             <div className="flex overflow-x-auto border-b border-black/[0.08]">
               <span className="px-3.5 py-3 text-xs font-medium border-b-2 border-indigo-400 text-gray-900 shrink-0">Metadata</span>
-              <span className="px-3.5 py-3 text-xs font-medium text-gray-500 shrink-0">Competitors</span>
+              <span className="px-3.5 py-3 text-xs font-medium text-gray-500 shrink-0">Competitor Gap</span>
               <span className="flex items-center gap-1.5 px-3.5 py-3 text-xs font-medium text-gray-500 shrink-0">
                 <SparklesIcon className="size-3" />
                 AI Suggestions

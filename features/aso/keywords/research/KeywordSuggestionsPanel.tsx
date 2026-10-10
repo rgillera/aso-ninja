@@ -69,7 +69,7 @@ export function KeywordSuggestionsPanel({
         total={TOUR_STEPS.length}
         icon={<SparklesIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Suggestions</span> panel. Browse the Metadata, Competitors, AI Suggestions, and Combinations tabs to find keyword ideas for your app.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Suggestions</span> panel. Browse the Metadata, Competitor Gap, AI Suggestions, and Combinations tabs to find keyword ideas for your app.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
@@ -130,12 +130,12 @@ export function KeywordSuggestionsPanel({
           <div className={activeTab === "Metadata" ? "" : "hidden"}>
             <KeywordSuggestionMetadata {...tabProps} translateToggle={translateToggle} />
           </div>
-          <div className={activeTab === "Competitors" ? "" : "hidden"}>
+          <div className={activeTab === "Competitor Gap" ? "" : "hidden"}>
             <KeywordSuggestionCompetitors
               {...tabProps}
               competitors={competitors}
               translateToggle={translateToggle}
-              active={open && activeTab === "Competitors"}
+              active={open && activeTab === "Competitor Gap"}
             />
           </div>
           <div className={activeTab === "AI Suggestions" ? "" : "hidden"}>

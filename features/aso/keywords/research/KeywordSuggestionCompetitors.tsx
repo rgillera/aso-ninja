@@ -22,45 +22,81 @@ type Props = {
 
 // The four quadrants of the keyword gap matrix, in reading order (see the
 // "Competitor & keyword gap research" playbook lesson), plus the competitor
-// listing words nobody has a rank for yet.
-const BUCKETS: { key: GapBucket; label: string; action: string; tone: string; activeRing: string }[] = [
+// listing words nobody has a rank for yet. Class strings are spelled out in
+// full so Tailwind picks them up.
+type BucketStyle = {
+  key: GapBucket;
+  label: string;
+  hint: string;
+  action: string;
+  dot: string;
+  count: string;
+  bar: string;
+  selected: string;
+};
+
+const BUCKETS: BucketStyle[] = [
   {
     key: "winning",
     label: "Shared and winning",
+    hint: "Protect",
     action: "You rank top 10 and lead your competitors. Protect these: keep them in your metadata.",
-    tone: "text-emerald-400 light:text-emerald-700",
-    activeRing: "ring-emerald-500/50 bg-emerald-500/[0.06]",
+    dot: "bg-emerald-400 light:bg-emerald-500",
+    count: "text-emerald-300 light:text-emerald-700",
+    bar: "bg-emerald-400/80 light:bg-emerald-500",
+    selected: "ring-emerald-400/40 light:ring-emerald-500/40 bg-gradient-to-br from-emerald-500/[0.14] to-emerald-500/[0.02] light:from-emerald-50 light:to-white",
   },
   {
     key: "losing",
     label: "Shared but losing",
+    hint: "Strengthen",
     action: "A competitor outranks you, or you're outside the top 10. Move the word into your title or subtitle.",
-    tone: "text-amber-400 light:text-amber-700",
-    activeRing: "ring-amber-500/50 bg-amber-500/[0.06]",
+    dot: "bg-amber-400 light:bg-amber-500",
+    count: "text-amber-300 light:text-amber-700",
+    bar: "bg-amber-400/80 light:bg-amber-500",
+    selected: "ring-amber-400/40 light:ring-amber-500/40 bg-gradient-to-br from-amber-500/[0.14] to-amber-500/[0.02] light:from-amber-50 light:to-white",
   },
   {
     key: "gap",
     label: "Their keywords, not yours",
+    hint: "Opportunities",
     action: "Competitors rank and you don't. This is the gap: track the relevant ones and add them to your next metadata update.",
-    tone: "text-indigo-400 light:text-indigo-600",
-    activeRing: "ring-indigo-500/50 bg-indigo-500/[0.06]",
+    dot: "bg-violet-400 light:bg-violet-500",
+    count: "text-violet-300 light:text-violet-700",
+    bar: "bg-violet-400/80 light:bg-violet-500",
+    selected: "ring-violet-400/40 light:ring-violet-500/40 bg-gradient-to-br from-violet-500/[0.16] to-indigo-500/[0.03] light:from-violet-50 light:to-white",
   },
   {
     key: "yours",
     label: "Yours alone",
+    hint: "Check volume",
     action: "Only you rank. Often a niche you own; check that they bring real volume.",
-    tone: "text-sky-400 light:text-sky-700",
-    activeRing: "ring-sky-500/50 bg-sky-500/[0.06]",
+    dot: "bg-sky-400 light:bg-sky-500",
+    count: "text-sky-300 light:text-sky-700",
+    bar: "bg-sky-400/80 light:bg-sky-500",
+    selected: "ring-sky-400/40 light:ring-sky-500/40 bg-gradient-to-br from-sky-500/[0.14] to-sky-500/[0.02] light:from-sky-50 light:to-white",
   },
 ];
 
-const UNCHECKED: (typeof BUCKETS)[number] = {
+const UNCHECKED: BucketStyle = {
   key: "unchecked",
   label: "No rank data yet",
+  hint: "Track to rank",
   action: "Words from competitor listings that nobody has a recorded rank for. Track one to record where you and your competitors rank, then refresh.",
-  tone: "text-gray-400 light:text-gray-600",
-  activeRing: "ring-gray-500/50 bg-white/[0.03] light:bg-black/[0.03]",
+  dot: "bg-gray-500 light:bg-gray-400",
+  count: "text-gray-300 light:text-gray-700",
+  bar: "bg-gray-500/60 light:bg-gray-300",
+  selected: "ring-gray-400/30 light:ring-gray-400/40 bg-gradient-to-br from-white/[0.06] to-white/[0.01] light:from-gray-100 light:to-white",
 };
+
+// First bucket that has anything in it, most actionable first: new keywords to
+// add, then ones to strengthen, then (for a brand-new app with no ranks yet)
+// the listing words to start tracking.
+const DEFAULT_ORDER: GapBucket[] = ["gap", "losing", "unchecked", "winning", "yours"];
+
+function defaultBucket(keywords: CompetitorKeyword[]): GapBucket {
+  return DEFAULT_ORDER.find((b) => keywords.some((k) => k.bucket === b)) ?? "gap";
+}
 
 function TrackButton({ tracked, onAdd, onRemove }: { tracked: boolean; onAdd: () => void; onRemove?: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -215,7 +251,7 @@ export function KeywordSuggestionCompetitors({
   const [refreshCount, setRefreshCount] = useState(0);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
-  const [selected, setSelected] = useState<GapBucket>("gap");
+  const [selected, setSelected] = useState<GapBucket>(DEFAULT_ORDER[0]);
   const PAGE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE);
 
@@ -230,6 +266,8 @@ export function KeywordSuggestionCompetitors({
   // Terms already sent for translation (done or in flight), so paging with
   // "Show more" or switching buckets never re-requests the same term.
   const requestedTranslations = useRef(new Set<string>());
+  // Once the user picks a bucket, a refresh never moves them off it.
+  const userPickedBucket = useRef(false);
 
   // Fetch keywords whenever the competitor list or app changes, or on a manual
   // refresh (tracking a keyword records new ranks the matrix should pick up).
@@ -261,7 +299,11 @@ export function KeywordSuggestionCompetitors({
     });
     fetch(`/api/keywords/competitor-keywords?${params}`)
       .then((r) => r.json())
-      .then((d: CompetitorKeywordsResult) => { if (latestKeyRef.current === key) setData(d); })
+      .then((d: CompetitorKeywordsResult) => {
+        if (latestKeyRef.current !== key) return;
+        setData(d);
+        if (!userPickedBucket.current) setSelected(defaultBucket(d.keywords));
+      })
       .catch(() => { if (latestKeyRef.current === key) setData({ appName: "", keywords: [], competitorApps: [] }); })
       .finally(() => { if (latestKeyRef.current === key) setLoading(false); });
   }, [active, activeApp?.store_id, activeApp?.country, competitors, fetchKey, refreshCount]);
@@ -304,8 +346,10 @@ export function KeywordSuggestionCompetitors({
   const byBucket = (bucket: GapBucket) => data?.keywords.filter((k) => k.bucket === bucket) ?? [];
   const untracked = selectedKeywords.filter((k) => !trackedSet.has(k.term)).map((k) => k.term);
   const selectedMeta = selected === "unchecked" ? UNCHECKED : BUCKETS.find((b) => b.key === selected)!;
+  const rankedTotal = BUCKETS.reduce((sum, b) => sum + byBucket(b.key).length, 0);
 
   function select(bucket: GapBucket) {
+    userPickedBucket.current = true;
     setSelected(bucket);
     setVisibleCount(PAGE);
   }
@@ -339,34 +383,64 @@ export function KeywordSuggestionCompetitors({
       {/* Matrix: the four quadrants plus "no rank data yet", one row on wide screens */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         {[...BUCKETS, UNCHECKED].map((b) => {
-          const active = selected === b.key;
+          const isSelected = selected === b.key;
           return (
             <button
               key={b.key}
               onClick={() => select(b.key)}
-              className={`text-left rounded-lg px-3 py-2.5 ring-1 transition-colors ${
+              className={`group text-left rounded-xl px-3.5 py-3 ring-1 transition-all ${
                 b.key === "unchecked" ? "col-span-2 md:col-span-1" : ""
               } ${
-                active ? b.activeRing : "ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/[0.14] light:hover:ring-black/[0.14]"
+                isSelected
+                  ? `${b.selected} shadow-sm`
+                  : "ring-white/[0.06] light:ring-black/[0.07] bg-white/[0.015] light:bg-white hover:ring-white/[0.14] light:hover:ring-black/[0.14] hover:bg-white/[0.03] light:hover:bg-gray-50"
               }`}
             >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className={`text-xs font-semibold ${b.tone}`}>{b.label}</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`size-1.5 rounded-full shrink-0 ${b.dot}`} />
+                <span className={`text-[11px] font-medium truncate ${isSelected ? "text-white light:text-gray-900" : "text-gray-400 light:text-gray-600"}`}>
+                  {b.label}
+                </span>
+              </div>
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
                 {loading || !data ? (
-                  <span className="h-4 w-6 rounded bg-white/[0.06] light:bg-black/[0.06] animate-pulse" />
+                  <span className="h-6 w-10 rounded bg-white/[0.06] light:bg-black/[0.06] animate-pulse" />
                 ) : (
-                  <span className="text-base font-semibold tabular-nums text-white light:text-gray-900">{byBucket(b.key).length}</span>
+                  <span className={`text-xl font-semibold tabular-nums tracking-tight ${b.count}`}>
+                    {byBucket(b.key).length.toLocaleString()}
+                  </span>
                 )}
+                <span className="text-[10px] text-gray-500 truncate">{b.hint}</span>
               </div>
             </button>
           );
         })}
       </div>
 
+      {/* Share of ranked keywords per quadrant */}
+      {data && rankedTotal > 0 && (
+        <div className="mt-2.5 flex h-1 w-full gap-0.5 overflow-hidden rounded-full">
+          {BUCKETS.map((b) => {
+            const n = byBucket(b.key).length;
+            return n ? (
+              <span
+                key={b.key}
+                title={`${b.label}: ${n}`}
+                className={`h-full rounded-full transition-opacity ${b.bar} ${selected === b.key || selected === "unchecked" ? "" : "opacity-40"}`}
+                style={{ width: `${(n / rankedTotal) * 100}%` }}
+              />
+            ) : null;
+          })}
+        </div>
+      )}
+
       {/* Selected bucket */}
       <div className="mt-3 pt-3 border-t border-white/[0.05] light:border-black/[0.04]">
         <div className="flex items-start justify-between gap-3 mb-2.5">
-          <p className="text-xs text-gray-500 leading-relaxed">{selectedMeta.action}</p>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            <span className={`inline-block size-1.5 rounded-full align-middle mr-1.5 ${selectedMeta.dot}`} />
+            <span className="font-medium text-gray-300 light:text-gray-800">{selectedMeta.label}.</span> {selectedMeta.action}
+          </p>
           {untracked.length > 0 && (
             <AnalyzeAllButton onClick={() => (onAddKeywords ? onAddKeywords(untracked) : untracked.forEach(onAddKeyword))} />
           )}
