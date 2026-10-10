@@ -52,6 +52,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : undefined;
   const initialPlanSlug: PlanSlug =
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.slug : "free";
+  const initialCompetitorLimit: number | null =
+    initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.competitor_limit : 1;
   const initialWorkspaceLimit: number | null =
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.workspace_limit : 1;
 
@@ -85,6 +87,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           roleByWorkspace={roleByWorkspace}
           initialPlanSlug={initialPlanSlug}
           initialWorkspaceLimit={initialWorkspaceLimit}
+          initialCompetitorLimit={initialCompetitorLimit}
           initialTheme={initialTheme}
         >
           {children}

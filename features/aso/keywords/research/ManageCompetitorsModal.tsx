@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { MagnifyingGlassIcon, XMarkIcon, CheckIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { MagnifyingGlassIcon, XMarkIcon, CheckIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { AppSearchResult } from "@/libs/contracts";
+import { useCompetitorLimit, usePlanSlug } from "@/features/dashboard/PlanContext";
+import { PLAN_BADGE } from "@/features/subscription/planTiers";
 
 export type CompetitorApp = {
   storeId: string;
@@ -38,6 +41,13 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
 
   const chips = tryChipsFromName(activeApp.name);
 
+  // null = unlimited. Once the draft hits the plan's limit, unselected apps
+  // can't be picked (the DB trigger would reject the save anyway); removing
+  // one frees a slot.
+  const limit = useCompetitorLimit();
+  const planSlug = usePlanSlug();
+  const atLimit = limit != null && draft.size >= limit;
+
   const doSearch = useCallback(async (term: string) => {
     if (!term.trim()) { setResults([]); return; }
     setSearching(true);
@@ -67,7 +77,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
       const next = new Map(prev);
       if (next.has(app.storeId)) {
         next.delete(app.storeId);
-      } else {
+      } else if (limit == null || next.size < limit) {
         next.set(app.storeId, {
           storeId: app.storeId,
           name: app.name,
@@ -108,7 +118,18 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Added competitors */}
           <div>
-            <p className="text-xs font-semibold text-gray-400 light:text-gray-600 mb-2">Added competitors</p>
+            <div className="flex items-center gap-2 mb-2">
+              <p className="text-xs font-semibold text-gray-400 light:text-gray-600">Added competitors</p>
+              {limit != null && (
+                <span className={`text-[10px] font-semibold tabular-nums rounded-full px-1.5 py-px ${
+                  atLimit
+                    ? "bg-amber-500/10 text-amber-400 light:text-amber-700"
+                    : "bg-white/[0.06] light:bg-black/[0.05] text-gray-500"
+                }`}>
+                  {draft.size} / {limit}
+                </span>
+              )}
+            </div>
             {draft.size === 0 ? (
               <p className="text-xs text-gray-600 light:text-gray-400 flex items-center gap-1.5">
                 <span className="inline-flex size-4 items-center justify-center rounded-full bg-white/[0.06] light:bg-black/[0.05] text-gray-500 text-[10px] font-bold">i</span>
@@ -137,6 +158,25 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
               </div>
             )}
           </div>
+
+          {atLimit && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-500/[0.08] ring-1 ring-amber-500/20 px-3 py-2.5 text-xs text-amber-200 light:text-amber-800">
+              <LockClosedIcon className="size-3.5 shrink-0 mt-px" />
+              <p>
+                {limit === 1
+                  ? `The ${PLAN_BADGE[planSlug].label} plan includes 1 competitor. Remove it to pick a different app, or upgrade to compare 5 to 8 competitors.`
+                  : `You've reached your ${PLAN_BADGE[planSlug].label} plan's limit of ${limit} competitors. Remove one to pick a different app${planSlug === "pro" ? ", or upgrade to Pro+ for 8" : ""}.`}
+                {limit === 1 || planSlug === "pro" ? (
+                  <>
+                    {" "}
+                    <Link href="/dashboard/subscription" className="font-semibold underline underline-offset-2 hover:no-underline">
+                      View plans
+                    </Link>
+                  </>
+                ) : null}
+              </p>
+            </div>
+          )}
 
           {/* Search */}
           <div>
@@ -183,14 +223,19 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {results.map((app) => {
                 const added = draft.has(app.storeId);
+                const blocked = !added && atLimit;
                 return (
                   <button
                     key={app.storeId}
                     onClick={() => toggle(app)}
+                    disabled={blocked}
+                    title={blocked ? `Your plan allows ${limit} competitor${limit === 1 ? "" : "s"} per app` : undefined}
                     className={`flex items-center gap-3 p-3 rounded-xl ring-1 text-left transition-all ${
                       added
                         ? "bg-indigo-500/10 ring-indigo-500/40"
-                        : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/20 light:hover:ring-black/20"
+                        : blocked
+                          ? "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.04] light:ring-black/[0.04] opacity-40 cursor-not-allowed"
+                          : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/20 light:hover:ring-black/20"
                     }`}
                   >
                     {app.iconUrl && (
@@ -205,6 +250,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
                       added ? "bg-indigo-500 ring-indigo-500" : "ring-white/[0.12] light:ring-black/[0.12] bg-white/[0.04] light:bg-black/[0.04]"
                     }`}>
                       {added && <CheckIcon className="size-3 text-white" />}
+                      {blocked && <LockClosedIcon className="size-2.5 text-gray-500" />}
                     </div>
                   </button>
                 );

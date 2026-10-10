@@ -7,7 +7,7 @@ import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { UpgradeBanner } from "./UpgradeBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
-import { PlanProvider } from "./PlanContext";
+import { PlanProvider, CompetitorLimitProvider } from "./PlanContext";
 import { ThemeProvider, type Theme } from "./ThemeContext";
 import { ActiveAppProvider, ActiveAppResolvingProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
@@ -95,13 +95,14 @@ type Props = {
   roleByWorkspace: Record<string, WorkspaceRole>;
   initialPlanSlug?: PlanSlug;
   initialWorkspaceLimit?: number | null;
+  initialCompetitorLimit?: number | null;
   initialTheme: Theme;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialTheme, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTheme, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -309,6 +310,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
 
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
   const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
+  const [competitorLimit, setCompetitorLimit] = useState<number | null>(initialCompetitorLimit === undefined ? 1 : initialCompetitorLimit);
   useEffect(() => {
     if (!activeWorkspaceId) return;
     let cancelled = false;
@@ -316,6 +318,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       if (!cancelled && !("error" in result)) {
         setPlanSlug(result.plan.slug);
         setWorkspaceLimit(result.plan.workspace_limit);
+        setCompetitorLimit(result.plan.competitor_limit);
       }
     });
     return () => {
@@ -451,6 +454,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <WorkspaceProvider value={activeWorkspaceId ?? ""}>
     <WorkspaceNameProvider value={activeWorkspace?.name ?? ""}>
     <PlanProvider value={planSlug}>
+    <CompetitorLimitProvider value={competitorLimit}>
     <ActiveAppProvider value={displayApp}>
     <ActiveAppResolvingProvider value={!appResolved && !displayApp}>
     <SelectAppProvider value={selectApp}>
@@ -522,6 +526,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     </SelectAppProvider>
     </ActiveAppResolvingProvider>
     </ActiveAppProvider>
+    </CompetitorLimitProvider>
     </PlanProvider>
     </WorkspaceNameProvider>
     </WorkspaceProvider>
