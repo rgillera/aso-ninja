@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { XMarkIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
-import type { DownloadsHistoryPoint } from "@/app/api/keywords/downloads-history/route";
+import type { DownloadsHistoryWeek } from "@/app/api/keywords/downloads-history/route";
 
-type HistoryResponse = { history: DownloadsHistoryPoint[] };
+type HistoryResponse = { history: DownloadsHistoryWeek[] };
 
 function formatRank(rank: number | null | undefined): string {
   if (rank === undefined) return "Not checked yet";
@@ -27,6 +27,10 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function formatShortDate(iso: string): string {
+  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" });
+}
+
 export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +39,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
   // caller unmounts it to null before showing a different keyword), so
   // `loading` already starts true via useState above.
   useEffect(() => {
-    const params = new URLSearchParams({ appId, keyword: term, days: "90" });
+    const params = new URLSearchParams({ appId, keyword: term, weeks: "13" });
     fetch(`/api/keywords/downloads-history?${params}`)
       .then((r) => r.json())
       .then((d: HistoryResponse) => setData(d))
@@ -70,23 +74,23 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
               <ArrowTrendingUpIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet</p>
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
-                A day is added here each time your connected app syncs real download data.
+                Weekly totals appear here as your connected app syncs real download data.
               </p>
             </div>
           ) : rows.length === 1 ? (
             <div className="flex h-64 flex-col items-center justify-center text-center px-6">
               <p className="text-3xl font-semibold text-white light:text-gray-900">{rows[0].estimated != null ? `~${rows[0].estimated}` : "-"}</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Only synced day so far: {formatDate(rows[0].recorded_on)}</p>
-              <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A trend will appear once your app keeps syncing.</p>
+              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Week of {formatDate(rows[0].week)} ({rows[0].days} of 7 days synced)</p>
+              <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A weekly trend will appear once your app keeps syncing.</p>
             </div>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+                <BarChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                   <XAxis
-                    dataKey="recorded_on"
-                    tickFormatter={formatDate}
+                    dataKey="week"
+                    tickFormatter={formatShortDate}
                     tick={{ fill: "#6b7280", fontSize: 11 }}
                     axisLine={{ stroke: "#ffffff1a" }}
                     tickLine={false}
@@ -99,26 +103,27 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
                     allowDecimals={false}
                   />
                   <Tooltip
-                    labelFormatter={(d) => formatDate(String(d))}
-                    formatter={(value, _name, item) => [
-                      `${value ?? "-"} (rank ${formatRank((item.payload as DownloadsHistoryPoint).rank)})`,
-                      "Est. downloads",
-                    ]}
+                    cursor={{ fill: "#ffffff08" }}
+                    labelFormatter={(d) => `Week of ${formatDate(String(d))}`}
+                    formatter={(value, _name, item) => {
+                      const week = item.payload as DownloadsHistoryWeek;
+                      const partial = week.days < 7 ? `, ${week.days} of 7 days synced` : "";
+                      return [`${value ?? "-"} (rank ${formatRank(week.rank)}${partial})`, "Est. downloads"];
+                    }}
                     contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: "#9ca3af" }}
                   />
-                  <Line
-                    type="stepAfter"
+                  <Bar
                     dataKey="estimated"
                     name="Est. downloads"
-                    stroke="#34d399"
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: "#34d399", strokeWidth: 0 }}
+                    fill="#34d399"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={32}
                   />
-                </LineChart>
+                </BarChart>
               </ResponsiveContainer>
               <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
-                Each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
+                Weekly totals: each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
               </p>
             </>
           )}
