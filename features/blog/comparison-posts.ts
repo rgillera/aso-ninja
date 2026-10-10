@@ -21,8 +21,8 @@ const APPASO_PLANS_TABLE = {
   headers: ["AppASO plan", "Price", "Tracked keywords", "Apps", "History", "Highlights"],
   rows: [
     ["Free", "$0", "100", "Unlimited", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 40 keywords"],
-    ["Pro", "$29/mo, or $24/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, AI keyword suggestions, 3 competitors per app, 3 seats"],
-    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), keyword simulator, 5 competitors per app"],
+    ["Pro", "$29/mo, or $24/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, AI keyword suggestions, 5 competitors per app, 3 seats"],
+    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), keyword simulator, 8 competitors per app"],
     ["Enterprise", "Custom", "Custom", "Unlimited", "Custom", "Custom limits for publishers and agencies"],
   ],
 };
@@ -177,7 +177,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Apple Search Ads campaign management and ad intelligence are core to MobileAction. AppASO Pro includes ASA and market intelligence features, but MobileAction goes much deeper on paid UA.",
-          "More competitors per app: 10 on Basic and 15 on Pro, versus 3 on AppASO Pro and 5 on Pro+.",
+          "More competitors per app: 10 on Basic and 15 on Pro, versus 5 on AppASO Pro and 8 on Pro+.",
           "Longer-established datasets and ad creative insights across 40+ ad networks on Enterprise.",
           "AppASO's search volume is our own model built from public search results, and tracked rankings refresh at least weekly, not daily.",
         ],
@@ -314,7 +314,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         rows: [
           ["Downloads per keyword", "Pro ($239/mo)", "Pro ($29/mo), based on your connected store account's real totals"],
           ["Relevancy scoring", "Not listed on ASO plans", "All plans (20 keywords free, 700 on Pro)"],
-          ["Competitors per app", "3 Lite, 10 Basic, 15 Pro", "3 Pro, 5 Pro+"],
+          ["Competitors per app", "3 Lite, 10 Basic, 15 Pro", "5 Pro, 8 Pro+"],
           ["Apple Search Ads tooling", "Core strength, with ad intelligence", "ASA & market intelligence on Pro"],
           ["Rank tracking", "Included", "Refreshed at least weekly, plus on demand"],
         ],
@@ -328,7 +328,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "faq",
         items: [
           { question: "Which is cheaper, AppASO or MobileAction?", answer: "For unlimited keyword tracking and downloads per keyword, AppASO is cheaper: Pro is $29/mo, or $24/mo billed yearly. MobileAction's cheapest plan is Lite at $15/mo, but it's limited to 100 keywords and 5 apps." },
-          { question: "Does MobileAction track more competitors?", answer: "Yes. MobileAction tracks 10 competitors per app on Basic and 15 on Pro. AppASO tracks 3 per app on Pro and 5 on Pro+." },
+          { question: "Does MobileAction track more competitors?", answer: "Yes. MobileAction tracks 10 competitors per app on Basic and 15 on Pro. AppASO tracks 5 per app on Pro and 8 on Pro+." },
           { question: "Does AppASO have a free plan?", answer: "Yes. AppASO's free plan includes 100 tracked keywords across unlimited iOS and Android apps, with no credit card required." },
         ],
       },
@@ -363,7 +363,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           ["Free option", "7-day free trial", "Free plan: 100 keywords, unlimited apps"],
           ["Tracked keywords", "2,500", "Unlimited"],
           ["Apps", "10", "Unlimited"],
-          ["Competitors", "Unlimited", "3 per app (5 on Pro+)"],
+          ["Competitors", "Unlimited", "5 per app (8 on Pro+)"],
           ["Team seats", "5 seats on the Agency plan ($149/mo)", "3 seats (6 per workspace on Pro+)"],
         ],
       },

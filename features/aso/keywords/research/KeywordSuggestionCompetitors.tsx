@@ -6,7 +6,10 @@ import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { CompetitorKeywordsResult, CompetitorKeyword, GapBucket } from "@/app/api/keywords/competitor-keywords/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
+import Link from "next/link";
 import { AnalyzeAllButton } from "./ui";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 
 type Props = {
   activeApp?: ActiveApp;
@@ -155,7 +158,7 @@ function RankedList({ keywords, trackedSet, onAdd, onRemove, translationFor, isT
       <table className="w-full text-xs">
         <thead>
           <tr className="text-[10px] uppercase tracking-widest text-gray-500 text-left">
-            <th className="py-1.5 pr-2 font-semibold w-7" />
+            <th className="py-1.5 pl-1 pr-2 font-semibold w-8" />
             <th className="py-1.5 pr-3 font-semibold">Keyword</th>
             <th className="py-1.5 pr-3 font-semibold whitespace-nowrap">Your rank</th>
             <th className="py-1.5 pr-3 font-semibold whitespace-nowrap">Competitor ranks</th>
@@ -165,7 +168,7 @@ function RankedList({ keywords, trackedSet, onAdd, onRemove, translationFor, isT
         <tbody>
           {keywords.map((kw) => (
             <tr key={kw.term} className="border-t border-white/[0.04] light:border-black/[0.04] align-middle">
-              <td className="py-1.5 pr-2">
+              <td className="py-1.5 pl-1 pr-2">
                 <TrackButton
                   tracked={trackedSet.has(kw.term)}
                   onAdd={() => onAdd(kw.term)}
@@ -245,6 +248,7 @@ function UncheckedList({ keywords, trackedSet, onAdd, onRemove, translationFor, 
 export function KeywordSuggestionCompetitors({
   activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, active,
 }: Props) {
+  const planSlug = usePlanSlug();
   const [data, setData] = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchKey, setFetchKey] = useState<string | null>(null);
@@ -340,7 +344,23 @@ export function KeywordSuggestionCompetitors({
   }
 
   if (!competitors.length) {
-    return <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">Add 5 to 8 search competitors above to build your keyword gap matrix.</p>;
+    // Free and Basic allow a single competitor (plans.competitor_limit), too
+    // few for the 5 to 8 the gap matrix is built around.
+    if (!isPlanAtLeast(planSlug, "pro")) {
+      return (
+        <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
+          The {PLAN_BADGE[planSlug].label} plan includes 1 competitor. Add one above to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.{" "}
+          <Link href="/dashboard/subscription" className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline">
+            View plans
+          </Link>
+        </p>
+      );
+    }
+    return (
+      <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
+        Add {isPlanAtLeast(planSlug, "pro_plus") ? "5 to 8" : "up to 5"} search competitors above to build your keyword gap matrix.
+      </p>
+    );
   }
 
   const byBucket = (bucket: GapBucket) => data?.keywords.filter((k) => k.bucket === bucket) ?? [];
