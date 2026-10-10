@@ -167,11 +167,16 @@ export async function GET(req: Request) {
   const startedAt = Date.now();
   const today = new Date().toISOString().split("T")[0];
 
-  // Volume only needs one real check per calendar month (it's a slow-moving
-  // score) and rank once a week (still enough to show a trend inside even
-  // Free/Basic's 30-day retention, and to feed the significant-rank-change
-  // push notification) — see stale_keywords_for_refresh's own comment for
-  // why "every keyword, every day" was replaced with this. A modest p_limit
+  // Rank is due once a week (enough to show a trend inside even Free/Basic's
+  // 30-day retention, and to feed the significant-rank-change push
+  // notification); volume is due once per calendar month. In practice the
+  // weekly rank check sets the pace: both come from the same search
+  // response, so every refresh below also writes a volume snapshot, and
+  // volume-history averages those into one point per month (it's a
+  // slow-moving score, so week-over-week detail would mostly be noise). The
+  // monthly volume rule only matters if the two ever get decoupled. See
+  // stale_keywords_for_refresh's own comment for why "every keyword, every
+  // day" was replaced with this. A modest p_limit
   // here is deliberate too: this cron now runs often and in small batches
   // (vercel.json) rather than once a day trying to do everything at once.
   const { data: stale, error } = await supabase.rpc("stale_keywords_for_refresh", {

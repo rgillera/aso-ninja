@@ -3,7 +3,21 @@
 import { DashboardHeroDemo } from "./DashboardHeroDemo";
 import PortalEyebrow from "./PortalEyebrow";
 
-export default function PortalHero({ isAuthenticated }: { isAuthenticated: boolean }) {
+const TRUSTED_AVATARS = [
+  { initial: "M", className: "bg-teal-600" },
+  { initial: "R", className: "bg-cyan-600" },
+  { initial: "L", className: "bg-blue-500" },
+  { initial: "A", className: "bg-amber-500" },
+  { initial: "優", className: "bg-violet-500" },
+];
+
+export default function PortalHero({
+  isAuthenticated,
+  trustedByCount,
+}: {
+  isAuthenticated: boolean;
+  trustedByCount: number;
+}) {
   return (
     <section className="relative isolate overflow-hidden bg-[#f5f6f8] pt-36 pb-24 sm:pb-28">
       {/* Faint dot grid instead of a blurred gradient blob — reads as
@@ -56,6 +70,23 @@ export default function PortalHero({ isAuthenticated }: { isAuthenticated: boole
               ))}
             </ul>
           )}
+          <div className="mt-6 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
+            <div aria-hidden="true" className="flex -space-x-2">
+              {TRUSTED_AVATARS.map(({ initial, className }) => (
+                <span
+                  key={initial}
+                  className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold text-white ring-2 ring-[#f5f6f8] ${className}`}
+                >
+                  {initial}
+                </span>
+              ))}
+            </div>
+            <p className="text-center font-mono text-[11px] leading-relaxed text-gray-500 sm:text-left sm:text-xs">
+              Trusted by{" "}
+              <span className="font-semibold text-gray-900">{trustedByCount.toLocaleString("en-US")}</span>{" "}
+              developers, from indie devs to large publishers
+            </p>
+          </div>
         </div>
 
         <div className="relative mx-auto mt-20 max-w-6xl">
