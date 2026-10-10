@@ -1,5 +1,4 @@
 import ExcelJS from "exceljs";
-import { formatRank } from "./types";
 import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN, planNeededForMoreHistory } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
 import type { MonthlyKeywordStats, PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
@@ -35,8 +34,11 @@ function sheetName(label: string): string {
   return label.replace(/[:\\/?*[\]]/g, "-").slice(0, 31);
 }
 
-function rankLabel(rank: number | null | undefined): string {
-  return formatRank(rank ?? "unranked");
+// A real number (shown as "#12" via numFmt) rather than a "#12" string, so
+// sorting the column in Excel/Sheets is numeric instead of alphabetical.
+// "Unranked" stays text, which sorts after numbers in ascending order.
+function rankCellValue(rank: number | null | undefined): number | string {
+  return typeof rank === "number" ? rank : "Unranked";
 }
 
 // The current calendar month plus the REPORT_MONTHS-1 before it, most recent
@@ -167,7 +169,6 @@ export async function exportPerformanceReport(
       { header: "Change", key: "change", width: 14 },
       ...(showDownloads ? [{ header: "Est. Downloads", key: "downloads", width: 18 }] : []),
     ];
-    sheet.autoFilter = `A1:${lastCol}1`;
 
     const headerRow = sheet.getRow(1);
     headerRow.height = 20;
@@ -195,17 +196,24 @@ export async function exportPerformanceReport(
       const rawChange = !noData && typeof prev?.bestRank === "number" && typeof stats?.bestRank === "number"
         ? prev.bestRank - stats.bestRank
         : null;
-      const changeLabel = rawChange === null ? "-" : rawChange > 0 ? `+${rawChange}` : `${rawChange}`;
+      // A real number (shown as "+3"/"-2" via numFmt) so the column sorts
+      // numerically; "-" (no previous rank) stays text and sorts last.
+      const changeValue = rawChange === null ? "-" : rawChange;
 
       const row = sheet.addRow({
         keyword: term,
         volume: noData ? "No data yet" : stats!.avgVolume ?? "-",
-        ranking: noData ? "No data yet" : rankLabel(stats!.bestRank),
-        change: changeLabel,
+        ranking: noData ? "No data yet" : rankCellValue(stats!.bestRank),
+        change: changeValue,
         ...(showDownloads
           ? { downloads: noData ? "No data yet" : stats!.estimatedDownloads ?? "-" }
           : {}),
       });
+      row.getCell("ranking").numFmt = '"#"0';
+      row.getCell("change").numFmt = "+0;-0;0";
+      // Numbers right-align by default; keep these columns left-aligned like before.
+      row.getCell("ranking").alignment = { horizontal: "left" };
+      row.getCell("change").alignment = { horizontal: "left" };
       row.height = 18;
 
       row.eachCell((cell) => {
@@ -226,6 +234,10 @@ export async function exportPerformanceReport(
         changeCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: improved ? IMPROVED_FILL : DECLINED_FILL } };
       }
     });
+    // Filter range must span the data rows, not just the header: Google
+    // Sheets takes it literally, so a header-only range makes "Sort A to Z"
+    // sort nothing.
+    sheet.autoFilter = `A1:${lastCol}${Math.max(sheet.rowCount, 2)}`;
   }
 
   const buffer = await wb.xlsx.writeBuffer();
