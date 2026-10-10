@@ -1,4 +1,5 @@
 import ExcelJS from "exceljs";
+import { formatRank } from "./types";
 import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN, planNeededForMoreHistory } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
 import type { MonthlyKeywordStats, PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
@@ -32,6 +33,10 @@ function monthLabel(monthKey: string): string {
 // label format from silently failing to write.
 function sheetName(label: string): string {
   return label.replace(/[:\\/?*[\]]/g, "-").slice(0, 31);
+}
+
+function rankLabel(rank: number | null | undefined): string {
+  return formatRank(rank ?? "unranked");
 }
 
 // The current calendar month plus the REPORT_MONTHS-1 before it, most recent
@@ -183,55 +188,38 @@ export async function exportPerformanceReport(
         "to the app's own owner — treat this as a directional split of a real number, not a measurement.";
     }
 
-    // Rows sorted highest to lowest by volume, then highest ranking (#1
-    // first), then change, then est. downloads — missing values always sink
-    // to the bottom. Cells hold real numbers (rank/change shown via numFmt)
-    // rather than "#12"/"+3" strings, so re-sorting from the header filter
-    // in Excel sorts numerically too; a missing value is a blank cell, which
-    // Excel keeps last in either direction.
-    const rows = terms.map((term) => {
+    terms.forEach((term, rowIndex) => {
       const stats: MonthlyKeywordStats | undefined = report[term]?.[month];
       const prev: MonthlyKeywordStats | undefined = report[term]?.[prevMonth];
-      const rank = typeof stats?.bestRank === "number" ? stats.bestRank : null;
-      const change = rank !== null && typeof prev?.bestRank === "number" ? prev.bestRank - rank : null;
-      return {
-        term,
-        volume: stats?.avgVolume ?? null,
-        rank,
-        change,
-        downloads: showDownloads ? stats?.estimatedDownloads ?? null : null,
-      };
-    });
-    const desc = (a: number | null, b: number | null) =>
-      a === b ? 0 : a === null ? 1 : b === null ? -1 : b - a;
-    rows.sort((a, b) =>
-      desc(a.volume, b.volume) ||
-      // Rank: lower number is higher ranking, so negate to keep #1 on top.
-      desc(a.rank === null ? null : -a.rank, b.rank === null ? null : -b.rank) ||
-      desc(a.change, b.change) ||
-      desc(a.downloads, b.downloads) ||
-      a.term.localeCompare(b.term)
-    );
+      const noData = !stats;
+      const rawChange = !noData && typeof prev?.bestRank === "number" && typeof stats?.bestRank === "number"
+        ? prev.bestRank - stats.bestRank
+        : null;
+      const changeLabel = rawChange === null ? "-" : rawChange > 0 ? `+${rawChange}` : `${rawChange}`;
 
-    rows.forEach(({ term, volume, rank, change: rawChange, downloads }, rowIndex) => {
       const row = sheet.addRow({
         keyword: term,
-        volume,
-        ranking: rank,
-        change: rawChange,
-        ...(showDownloads ? { downloads } : {}),
+        volume: noData ? "No data yet" : stats!.avgVolume ?? "-",
+        ranking: noData ? "No data yet" : rankLabel(stats!.bestRank),
+        change: changeLabel,
+        ...(showDownloads
+          ? { downloads: noData ? "No data yet" : stats!.estimatedDownloads ?? "-" }
+          : {}),
       });
-      row.getCell("ranking").numFmt = '"#"0';
-      row.getCell("change").numFmt = "+0;-0;0";
       row.height = 18;
 
-      // includeEmpty so blank (missing-value) cells still get the border/zebra.
-      row.eachCell({ includeEmpty: true }, (cell) => {
+      row.eachCell((cell) => {
         cell.border = { bottom: { style: "thin", color: { argb: BORDER_COLOR } } };
         if (rowIndex % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ROW_ALT_FILL } };
       });
 
-      if (rawChange !== null && rawChange !== 0) {
+      if (noData) {
+        const emptyCells = [row.getCell("volume"), row.getCell("ranking")];
+        if (showDownloads) emptyCells.push(row.getCell("downloads"));
+        emptyCells.forEach((cell) => {
+          cell.font = { italic: true, color: { argb: MUTED_TEXT } };
+        });
+      } else if (rawChange !== null && rawChange !== 0) {
         const changeCell = row.getCell("change");
         const improved = rawChange > 0;
         changeCell.font = { bold: true, color: { argb: improved ? IMPROVED_TEXT : DECLINED_TEXT } };
