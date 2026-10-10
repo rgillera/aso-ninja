@@ -54,9 +54,12 @@ const BUCKETS: { key: GapBucket; label: string; action: string; tone: string; ac
   },
 ];
 
-const UNCHECKED = {
+const UNCHECKED: (typeof BUCKETS)[number] = {
+  key: "unchecked",
   label: "No rank data yet",
   action: "Words from competitor listings that nobody has a recorded rank for. Track one to record where you and your competitors rank, then refresh.",
+  tone: "text-gray-400 light:text-gray-600",
+  activeRing: "ring-gray-500/50 bg-white/[0.03] light:bg-black/[0.03]",
 };
 
 function TrackButton({ tracked, onAdd, onRemove }: { tracked: boolean; onAdd: () => void; onRemove?: () => void }) {
@@ -333,15 +336,17 @@ export function KeywordSuggestionCompetitors({
         </button>
       </div>
 
-      {/* 2x2 matrix */}
-      <div className="grid grid-cols-2 gap-2">
-        {BUCKETS.map((b) => {
+      {/* Matrix: the four quadrants plus "no rank data yet", one row on wide screens */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        {[...BUCKETS, UNCHECKED].map((b) => {
           const active = selected === b.key;
           return (
             <button
               key={b.key}
               onClick={() => select(b.key)}
               className={`text-left rounded-lg px-3 py-2.5 ring-1 transition-colors ${
+                b.key === "unchecked" ? "col-span-2 md:col-span-1" : ""
+              } ${
                 active ? b.activeRing : "ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/[0.14] light:hover:ring-black/[0.14]"
               }`}
             >
@@ -357,21 +362,6 @@ export function KeywordSuggestionCompetitors({
           );
         })}
       </div>
-      <button
-        onClick={() => select("unchecked")}
-        className={`mt-2 w-full flex items-center justify-between rounded-lg px-3 py-2 ring-1 text-left transition-colors ${
-          selected === "unchecked"
-            ? "ring-gray-500/50 bg-white/[0.03] light:bg-black/[0.03]"
-            : "ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/[0.14] light:hover:ring-black/[0.14]"
-        }`}
-      >
-        <span className="text-xs font-semibold text-gray-400 light:text-gray-600">{UNCHECKED.label}</span>
-        {loading || !data ? (
-          <span className="h-3.5 w-6 rounded bg-white/[0.06] light:bg-black/[0.06] animate-pulse" />
-        ) : (
-          <span className="text-xs font-semibold tabular-nums text-gray-300 light:text-gray-700">{byBucket("unchecked").length}</span>
-        )}
-      </button>
 
       {/* Selected bucket */}
       <div className="mt-3 pt-3 border-t border-white/[0.05] light:border-black/[0.04]">
