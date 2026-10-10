@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { XMarkIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
 import type { DownloadsHistoryWeek } from "@/app/api/keywords/downloads-history/route";
 
 type HistoryResponse = { history: DownloadsHistoryWeek[] };
+
+const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 function formatRank(rank: number | null | undefined): string {
   if (rank === undefined) return "Not checked yet";
@@ -31,6 +33,30 @@ function formatShortDate(iso: string): string {
   return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { day: "numeric", month: "short" });
 }
 
+// Same dot as Rank/Volume History: none on a week with no estimate, where
+// connectNulls={false} already breaks the line.
+function dotShape(props: unknown) {
+  const { cx, cy, payload } = props as { cx: number; cy: number; payload: DownloadsHistoryWeek };
+  if (payload.estimated == null) return <></>;
+  return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
+}
+
+function tooltipContent(props: unknown) {
+  const { active, payload } = props as { active?: boolean; payload?: { payload: DownloadsHistoryWeek }[] };
+  if (!active || !payload || !payload.length) return null;
+  const week = payload[0].payload;
+  return (
+    <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
+      <p className="text-gray-400 light:text-gray-600">Week of {formatShortDate(week.week)}</p>
+      <p className="mt-0.5 text-gray-200 light:text-gray-800">
+        Est. downloads: <span className="font-semibold">{week.estimated != null ? `~${week.estimated}` : "-"}</span>
+      </p>
+      <p className="mt-0.5 text-gray-400 light:text-gray-600">Rank: {formatRank(week.rank)}</p>
+      {week.days < 7 && <p className="mt-0.5 text-gray-500">{week.days} of 7 days synced</p>}
+    </div>
+  );
+}
+
 export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,6 +74,18 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
   }, [term, appId]);
 
   const rows = data?.history ?? [];
+  const currentIndex = rows.length - 1;
+
+  // Latest (usually still in progress) week in bold, same as Rank History.
+  function axisTick(props: unknown) {
+    const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
+    const isCurrent = index === currentIndex;
+    return (
+      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
+        {formatShortDate(payload.value)}
+      </text>
+    );
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -85,42 +123,27 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
             </div>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                   <XAxis
                     dataKey="week"
-                    tickFormatter={formatShortDate}
-                    tick={{ fill: "#6b7280", fontSize: 11 }}
+                    tick={axisTick}
                     axisLine={{ stroke: "#ffffff1a" }}
                     tickLine={false}
+                    interval={Math.max(0, Math.ceil(rows.length / 13) - 1)}
                   />
                   <YAxis
                     tick={{ fill: "#6b7280", fontSize: 11 }}
                     axisLine={false}
                     tickLine={false}
-                    width={32}
+                    width={36}
                     allowDecimals={false}
+                    tickFormatter={(v) => DOWNLOADS_FORMATTER.format(v)}
                   />
-                  <Tooltip
-                    cursor={{ fill: "#ffffff08" }}
-                    labelFormatter={(d) => `Week of ${formatDate(String(d))}`}
-                    formatter={(value, _name, item) => {
-                      const week = item.payload as DownloadsHistoryWeek;
-                      const partial = week.days < 7 ? `, ${week.days} of 7 days synced` : "";
-                      return [`${value ?? "-"} (rank ${formatRank(week.rank)}${partial})`, "Est. downloads"];
-                    }}
-                    contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: "#9ca3af" }}
-                  />
-                  <Bar
-                    dataKey="estimated"
-                    name="Est. downloads"
-                    fill="#34d399"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={32}
-                  />
-                </BarChart>
+                  <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                  <Line type="linear" dataKey="estimated" name="Est. downloads" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+                </LineChart>
               </ResponsiveContainer>
               <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
                 Weekly totals: each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
