@@ -163,22 +163,15 @@ type ColumnDef = {
   tooltip: string;
 };
 
-// Volume is measured differently per store (libs/keyword-autocomplete.ts for
-// iOS, title-match/result-count for Android), so its tooltip is too.
-const VOLUME_TOOLTIP: Record<"ios" | "android", string> = {
-  ios: "Estimated search demand (0–100), based on how early App Store search suggests this keyword as you type. Popular searches show up after a letter or two; rare ones late or never. Not Apple's own popularity score. Higher = more demand.",
-  android: "Estimated search demand (0–100), based on how many Google Play results match this keyword and how many have it in their title. Higher = more demand.",
-};
-
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100). Higher = more demand." },
-  { key: "results", label: "Results", defaultVisible: false, tooltip: "Number of apps returned when searching this keyword. More results = more competition." },
-  { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
-  { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
-  { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100), based on word overlap with your app name and the titles of top search results." },
-  { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app — high means people search for it, you can realistically rank for it, and it's a strong match for what your app does." },
-  { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "This app's real downloads for the most recent synced day (from your connected App Store Connect / Play Console account), split across tracked keywords by search volume and current rank. Neither store attributes downloads to specific search terms, so this is a modeled share of a real number." },
-  { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position in search results for this keyword. Lower is better — blank means your app wasn't found in the top results." },
+  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100), based on App Store and Google Play search signals. Higher = more demand." },
+  { key: "results", label: "Results", defaultVisible: false, tooltip: "How many apps show up for this keyword. More results = more competition." },
+  { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank for this keyword (0–100). Higher = harder." },
+  { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Higher = better." },
+  { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100). Higher = better match." },
+  { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app, combining demand, ranking chance and relevancy. Higher = better." },
+  { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "Estimated daily downloads from this keyword, based on your app's connected store data." },
+  { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position for this keyword. Lower = better. Blank means not ranked." },
 ];
 
 const DEFAULT_VISIBLE = new Set(
@@ -982,7 +975,7 @@ export function KeywordTable({
                       {col.tableLabel ?? col.label}
                       <SortIcon colKey={col.key} />
                     </button>
-                    <ColumnTooltip text={col.key === "volume" ? VOLUME_TOOLTIP[store] : col.tooltip} />
+                    <ColumnTooltip text={col.tooltip} />
                   </div>
                 </th>
               ))}

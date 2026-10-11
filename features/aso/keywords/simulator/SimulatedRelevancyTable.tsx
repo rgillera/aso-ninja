@@ -143,7 +143,7 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
                 <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">
                   <span className="ml-auto inline-flex items-center justify-end gap-1.5">
                     {headerButton("relevancyDelta", "Δ")}
-                    <ColumnTooltip text="The predicted change in relevancy from applying this title/subtitle: Simulated Relevancy minus Current Relevancy." />
+                    <ColumnTooltip text="How much relevancy would change with this title and subtitle." />
                   </span>
                 </th>
                 <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">{headerButton("currentOpportunity", "Current Opportunity")}</th>
@@ -151,7 +151,7 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
                 <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600">
                   <span className="ml-auto inline-flex items-center justify-end gap-1.5">
                     {headerButton("opportunityDelta", "Δ")}
-                    <ColumnTooltip text="The predicted change in opportunity from applying this title/subtitle: Simulated Opportunity minus Current Opportunity. Opportunity already weighs relevancy by search volume and current rank chance, so this is the more decision-relevant number." />
+                    <ColumnTooltip text="How much opportunity would change with this title and subtitle. The best number to decide on." />
                   </span>
                 </th>
               </tr>
