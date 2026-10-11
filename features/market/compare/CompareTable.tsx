@@ -190,7 +190,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                             href={storeUrl(app, country)}
                             target="_blank"
                             rel="noreferrer"
-                            className="flex items-center gap-1 text-sm font-medium text-white hover:text-indigo-300 light:hover:text-indigo-600 transition-colors group"
+                            className="flex items-center gap-1 text-sm font-medium text-white light:text-gray-900 hover:text-indigo-300 light:hover:text-indigo-600 transition-colors group"
                             title="Open store listing"
                           >
                             <span className="truncate">{app.name}</span>

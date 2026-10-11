@@ -43,7 +43,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder={atLimit ? `Remove an app to add another (max ${MAX_COMPARE_APPS})` : "Search for an app to compare"}
           disabled={atLimit}
-          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 light:placeholder-gray-400 outline-none disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none disabled:cursor-not-allowed"
         />
       </div>
 
