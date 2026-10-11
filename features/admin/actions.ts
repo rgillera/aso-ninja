@@ -9,6 +9,7 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
+import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -198,7 +199,8 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
     if (result === "rate_limited") return { ok: false, error: "Apple rate-limited this request — try again in a minute." };
     if (result === null) return { ok: false, error: "iTunes search failed." };
 
-    const { volume, diff } = computeIosVolumeAndDiff(result, normTerm);
+    const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(result, normTerm);
+    const volume = await resolveIosVolume(admin, normTerm, countryLower, ratingVolume);
 
     await admin.from("keyword_volume_history").upsert(
       { term: normTerm, store: "ios", country: countryLower, score: volume, diff, raw_apps: result, recorded_on: today },

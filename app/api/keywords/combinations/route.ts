@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateCombinations } from "@/libs/keyword-combinations";
+import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 
 export type CombinationChild = { term: string; volume: number; results: number; difficulty: number; chance: number };
 export type CombinationGroup = { seed: string; children: CombinationChild[] };
@@ -72,7 +73,9 @@ async function fetchVolume(
     const json = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const apps: any[] = json.results ?? [];
-    const { volume, diff } = computeVolume(apps, term);
+    const { volume: ratingVolume, diff } = computeVolume(apps, term);
+    // Autocomplete popularity when available; rating-count estimate otherwise.
+    const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
 
     void supabase.from("keyword_volume_history").upsert(
       { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },

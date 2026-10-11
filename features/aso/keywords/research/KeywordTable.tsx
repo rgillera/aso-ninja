@@ -163,8 +163,15 @@ type ColumnDef = {
   tooltip: string;
 };
 
+// Volume is measured differently per store (libs/keyword-autocomplete.ts for
+// iOS, title-match/result-count for Android), so its tooltip is too.
+const VOLUME_TOOLTIP: Record<"ios" | "android", string> = {
+  ios: "Estimated search demand (0–100), based on how early App Store search suggests this keyword as you type. Popular searches show up after a letter or two; rare ones late or never. Not Apple's own popularity score. Higher = more demand.",
+  android: "Estimated search demand (0–100), based on how many Google Play results match this keyword and how many have it in their title. Higher = more demand.",
+};
+
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100), modeled from the ratings of apps that rank for this keyword with it in their title. Not Apple's own popularity score. Higher = more demand." },
+  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100). Higher = more demand." },
   { key: "results", label: "Results", defaultVisible: false, tooltip: "Number of apps returned when searching this keyword. More results = more competition." },
   { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank (0–100), based on the average ratings of top-ranking apps. Higher = harder to break in." },
   { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Inverse of Difficulty — higher is better." },
@@ -975,7 +982,7 @@ export function KeywordTable({
                       {col.tableLabel ?? col.label}
                       <SortIcon colKey={col.key} />
                     </button>
-                    <ColumnTooltip text={col.tooltip} />
+                    <ColumnTooltip text={col.key === "volume" ? VOLUME_TOOLTIP[store] : col.tooltip} />
                   </div>
                 </th>
               ))}

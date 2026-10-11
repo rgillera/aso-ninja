@@ -3,6 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isGeminiReachable } from "@/libs/gemini";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 import {
   type IntentTheme,
   type AppMeta,
@@ -83,9 +84,12 @@ async function fetchIosMetricsBase(term: string, country: string, appName: strin
     const avgTitleRatings = titleApps.length === 0
       ? 0
       : titleApps.reduce((s, a) => s + a.userRatingCount, 0) / titleApps.length;
-    const volume = avgTitleRatings < 1_000
+    const ratingVolume = avgTitleRatings < 1_000
       ? 5
       : Math.min(Math.round((Math.log10(avgTitleRatings) / Math.log10(10_000_000)) * 100), 100);
+    // Autocomplete popularity when available; rating-count estimate otherwise
+    // (unsupported country, Apple hints error) — see libs/keyword-autocomplete.ts.
+    const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
 
     const avgRatings = top5.length > 0
       ? top5.reduce((s, r) => s + r.userRatingCount, 0) / top5.length

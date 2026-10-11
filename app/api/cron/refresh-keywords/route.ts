@@ -3,6 +3,7 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
+import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 import { getWebPushClient } from "@/libs/webpush";
 
 // Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
@@ -222,7 +223,10 @@ export async function GET(req: Request) {
           artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
         }));
 
-        const { volume, diff } = computeIosVolumeAndDiff(apps, term);
+        const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(apps, term);
+        // Autocomplete popularity when available; rating-count estimate otherwise
+        // (unsupported country, Apple hints error) — see libs/keyword-autocomplete.ts.
+        const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
 
         await supabase.from("keyword_volume_history").upsert(
           { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },

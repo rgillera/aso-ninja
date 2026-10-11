@@ -3,6 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
+import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 import { computeWeight } from "@/libs/keyword-downloads-apportionment";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -57,7 +58,10 @@ async function backfillCurrentMonth(terms: string[], store: string, country: str
           artworkUrl: a.artworkUrl512 ?? a.artworkUrl100 ?? "",
         }));
 
-        const { volume, diff } = computeIosVolumeAndDiff(apps, term);
+        const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(apps, term);
+        // Autocomplete popularity when available; rating-count estimate otherwise
+        // (unsupported country, Apple hints error) — see libs/keyword-autocomplete.ts.
+        const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
 
         await supabase.from("keyword_volume_history").upsert(
           { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
