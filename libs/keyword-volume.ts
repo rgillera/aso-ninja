@@ -31,3 +31,15 @@ export function computeIosVolumeAndDiff(apps: RawStoreApp[], term: string) {
 
   return { volume, diff };
 }
+
+// Opportunity for a keyword_metrics row whose volume/chance just changed,
+// without re-scoring relevancy — same formula as scoreMetrics in
+// app/api/keywords/metrics/route.ts. A row that was never relevancy-scored
+// keeps whatever opportunity it had (null/0) rather than getting a guessed one.
+export function recomputeOpportunity(
+  row: { relevancy: number | null; relevancy_scored: boolean | null; opportunity: number | null },
+  volume: number, chance: number
+): number | null {
+  if (!row.relevancy_scored || row.relevancy === null) return row.opportunity;
+  return Math.round(Math.sqrt(volume * chance) * Math.pow(row.relevancy / 100, 2));
+}

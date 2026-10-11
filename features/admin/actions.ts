@@ -10,6 +10,7 @@ import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
 import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -140,21 +141,22 @@ function computeAndroidVolumeAndDiff(apps: any[], term: string) {
   return { volume, diff };
 }
 
-// Refreshes keyword_metrics.rank/chance (the per-app "current rank" cache)
+// Refreshes keyword_metrics.rank/chance/volume (the per-app "current" cache)
 // for every app already tracking this term/store/country, using the result
-// names this refresh just fetched — same matching logic the cron uses via
-// refreshKeywordMetrics, and just as deliberately narrow: only rank/chance
-// are touched, never relevancy/opportunity, so a manual admin refresh can
-// never clobber a keyword's existing (possibly Gemini-scored) relevancy data.
+// names and volume this refresh just computed — same logic the cron uses via
+// refreshKeywordMetrics, and just as deliberately narrow: relevancy is never
+// touched, so a manual admin refresh can never clobber a keyword's existing
+// (possibly Gemini-scored) relevancy data; opportunity is only recomputed
+// from it.
 async function syncTrackedAppRanks(
-  admin: AdminClient, term: string, store: string, countryUpper: string, resultNames: string[],
+  admin: AdminClient, term: string, store: string, countryUpper: string, volume: number, resultNames: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   resultIds: any[]
 ) {
   const { data: rows } = await admin
     .from("keyword_metrics")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select("app_id, keyword_id, diff, apps!inner(name, store, country, store_id), keywords!inner(term, status)" as any)
+    .select("app_id, keyword_id, diff, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id), keywords!inner(term, status)" as any)
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.store", store)
@@ -167,7 +169,8 @@ async function syncTrackedAppRanks(
     const rankIdx = findRankIdx(resultNames, row.apps.name, resultIds, row.apps.store_id);
     const rank = rankIdx >= 0 ? rankIdx + 1 : null;
     const chance = computeChance(row.diff ?? 0, rank);
-    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, updated_at: new Date().toISOString() };
+    const opportunity = recomputeOpportunity(row, volume, chance);
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
   });
 
   await admin.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
@@ -216,7 +219,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
         })),
         { onConflict: "keyword,store,country,recorded_on,app_id" }
       );
-      await syncTrackedAppRanks(admin, normTerm, "ios", countryUpper, result.map((a) => a.trackName), result.map((a) => a.trackId));
+      await syncTrackedAppRanks(admin, normTerm, "ios", countryUpper, volume, result.map((a) => a.trackName), result.map((a) => a.trackId));
     }
 
     return { ok: true, resultsCount: result.length, recordedOn: today };
@@ -249,7 +252,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
       { onConflict: "keyword,store,country,recorded_on,app_id" }
     );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await syncTrackedAppRanks(admin, normTerm, "android", countryUpper, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId));
+    await syncTrackedAppRanks(admin, normTerm, "android", countryUpper, volume, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId));
   }
 
   return { ok: true, resultsCount: apps.length, recordedOn: today };

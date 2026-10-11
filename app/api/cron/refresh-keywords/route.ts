@@ -4,6 +4,7 @@ import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
 import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
 
 // Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
@@ -57,15 +58,20 @@ async function clearCheckFailure(supabase: AdminClient, term: string, store: str
   await supabase.from("keyword_refresh_failures").delete().eq("term", term).eq("store", store).eq("country", country).then(() => {}, () => {});
 }
 
-// Refreshes rank + chance for every app already tracking `term` in this
-// store/country, using the result names this run just fetched — no extra
-// network calls. Skips volume/diff/relevancy/opportunity entirely (no AI,
-// no rate-limit cost) so this stays a pure DB read + in-memory match + DB
-// write, same matching logic (findRankIdx) the live /api/keywords/metrics
+// Refreshes rank + chance + volume for every app already tracking `term` in
+// this store/country, using the result names and volume this run just
+// computed — no extra network calls. Opportunity is recomputed from the
+// stored relevancy (same formula as the metrics route), never re-scored;
+// diff/relevancy are left alone (no AI, no rate-limit cost) so this stays a
+// pure DB read + in-memory match + DB write. Volume has to be written here:
+// this upsert bumps updated_at, which keeps the metrics route's 7-day cache
+// fresh forever for a tracked keyword, so without it keyword_metrics.volume
+// would stay frozen at whatever it was when the keyword was first added.
+// Same matching logic same matching logic (findRankIdx) the live /api/keywords/metrics
 // route uses, closing the staleness gap between keyword_metrics.rank and
 // keyword_rankings_history.position from up to 7 days down to ~1 day.
 async function refreshKeywordMetrics(
-  supabase: AdminClient, term: string, store: string, country: string, names: string[],
+  supabase: AdminClient, term: string, store: string, country: string, volume: number, names: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ids: any[],
   changes: SignificantChange[]
@@ -73,7 +79,7 @@ async function refreshKeywordMetrics(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows } = await (supabase as any)
     .from("keyword_metrics")
-    .select("app_id, keyword_id, diff, rank, apps!inner(name, store, country, store_id), keywords!inner(term, status)")
+    .select("app_id, keyword_id, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id), keywords!inner(term, status)")
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.store", store)
@@ -91,7 +97,8 @@ async function refreshKeywordMetrics(
       changes.push({ appId: row.app_id, appName: row.apps.name, term, previousRank: row.rank, rank: rank! });
     }
 
-    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, updated_at: new Date().toISOString() };
+    const opportunity = recomputeOpportunity(row, volume, chance);
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
   });
 
   await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
@@ -244,7 +251,7 @@ export async function GET(req: Request) {
           );
         }
 
-        await refreshKeywordMetrics(supabase, term, "ios", country, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
+        await refreshKeywordMetrics(supabase, term, "ios", country, volume, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
         refreshed++;
         await clearCheckFailure(supabase, term, store, country);
       } else if (store === "android") {
@@ -307,7 +314,7 @@ export async function GET(req: Request) {
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await refreshKeywordMetrics(supabase, term, "android", country, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
+        await refreshKeywordMetrics(supabase, term, "android", country, volume, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
         refreshed++;
         await clearCheckFailure(supabase, term, store, country);
       }
