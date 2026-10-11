@@ -121,7 +121,7 @@ export default function CompareAppsPage() {
             <div className="mt-4">
               <CompareTable apps={apps} country={country} onRemove={removeApp} />
             </div>
-            {apps.length >= 2 && <AiInsights apps={apps} />}
+            {apps.length >= 2 && <AiInsights apps={apps} country={country} />}
           </>
         )}
       </div>

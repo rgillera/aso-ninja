@@ -12,60 +12,73 @@ export type CompareInsightApp = {
   rating: number | null;
   ratingCount: number | null;
   daysSinceUpdate: number | null;
+  ageYears: number | null;
+  price: number;
+  offersIAP: boolean | null;
   screenshotCount: number;
   hasPreviewVideo: boolean;
-  titleLength: number;
-  titleLimit: number;
-  subtitleLength: number;
-  subtitleLimit: number;
-  descriptionLength: number;
-  // Top repeated terms/phrases from computeKeywordDensity (@/features/aso/metadata/preview/KeywordDensity) — the
-  // same computation CompareTable's own "Keyword density" row already runs.
-  topKeywords: { term: string; density: number }[];
-  // Terms present in this app's topKeywords but in no other compared app's —
-  // computed by the caller (a plain set difference), not the model, so the
-  // model only ever judges real extracted terms instead of inventing any.
-  uniqueKeywords: string[];
+  // Rough monthly figures from libs/store/appEstimates.ts plus what each was
+  // modeled from. Shares are of the compared set's total and computed by
+  // the caller, so the model interprets real numbers instead of inventing any.
+  estDownloads: number | null;
+  estRevenue: number | null;
+  downloadsBasis: string | null;
+  revenueBasis: string | null;
+  downloadsShare: number | null; // 0-100
+  revenueShare: number | null; // 0-100
 };
 
-export type CompareInsightsResult = { summary: string; gapNotes: (string | null)[] };
+export type CompareInsightsResult = {
+  summary: string;
+  opportunity: string | null;
+  // Same order as the request's apps.
+  positions: ({ role: string; note: string } | null)[];
+};
+
+function money(n: number): string {
+  return n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${Math.round(n / 1_000)}K` : `$${n}`;
+}
 
 function formatApp(app: CompareInsightApp, index: number): string {
+  const model = app.price > 0 ? `Paid (${money(app.price)})` : app.offersIAP === true ? "Free with in-app purchases" : app.offersIAP === false ? "Free, no in-app purchases" : "Free";
   const lines = [
-    `${index + 1}. ${app.name} (${app.store === "ios" ? "App Store" : "Google Play"}) — ${app.developer || "Unknown developer"}`,
-    `   Category: ${app.category} | Rating: ${app.rating != null ? app.rating.toFixed(1) : "n/a"}${app.ratingCount != null ? ` (${app.ratingCount})` : ""} | Last updated: ${app.daysSinceUpdate != null ? `${app.daysSinceUpdate} days ago` : "unknown"}`,
-    `   Screenshots: ${app.screenshotCount} | Preview video: ${app.hasPreviewVideo ? "Yes" : "No"}`,
-    `   Title: ${app.titleLength}/${app.titleLimit} chars | Subtitle: ${app.subtitleLength}/${app.subtitleLimit} chars | Description: ${app.descriptionLength} chars`,
+    `${index + 1}. ${app.name} (${app.store === "ios" ? "App Store" : "Google Play"}) by ${app.developer || "unknown developer"}`,
+    `   Category: ${app.category} | Business model: ${model} | Age: ${app.ageYears != null ? `${app.ageYears} years` : "unknown"} | Last updated: ${app.daysSinceUpdate != null ? `${app.daysSinceUpdate} days ago` : "unknown"}`,
+    `   Rating: ${app.rating != null ? app.rating.toFixed(1) : "n/a"}${app.ratingCount != null ? ` from ${app.ratingCount.toLocaleString("en-US")} ratings` : ""} | Screenshots: ${app.screenshotCount} | Preview video: ${app.hasPreviewVideo ? "Yes" : "No"}`,
   ];
-  if (app.topKeywords.length > 0) {
-    lines.push(`   Top description keywords: ${app.topKeywords.map((k) => `${k.term} (${k.density.toFixed(1)}%)`).join(", ")}`);
+  if (app.estDownloads != null) {
+    lines.push(`   Est. downloads/month: ${app.estDownloads < 5000 ? "under 5K" : app.estDownloads.toLocaleString("en-US")} (${app.downloadsShare ?? 0}% of this set; basis: ${app.downloadsBasis})`);
   }
-  lines.push(
-    app.uniqueKeywords.length > 0
-      ? `   Keywords none of the other compared apps use: ${app.uniqueKeywords.join(", ")}`
-      : `   No keywords unique to this app among the compared set.`
-  );
+  if (app.estRevenue != null) {
+    lines.push(`   Est. revenue/month: ${app.estRevenue < 5000 ? "under $5K" : money(app.estRevenue)} (${app.revenueShare ?? 0}% of this set; basis: ${app.revenueBasis})`);
+  }
+  if (app.estDownloads && app.estRevenue != null) {
+    lines.push(`   Revenue per download: $${(app.estRevenue / app.estDownloads).toFixed(2)}`);
+  }
   return lines.join("\n");
 }
 
-function buildPrompt(apps: CompareInsightApp[]): string {
-  return `You are an App Store Optimization (ASO) expert comparing ${apps.length} competing apps side by side.
+function buildPrompt(apps: CompareInsightApp[], country: string): string {
+  return `You are a mobile app market analyst sizing up ${apps.length} competing apps in the ${country} storefront. Download and revenue figures are rough model estimates (can be off by 2-5x), so reason about relative position and order of magnitude, never quote them as exact.
 
 ${apps.map(formatApp).join("\n\n")}
 
 Write:
-1. "summary": a 3-5 sentence plain-English overview comparing these apps for someone sizing up this competitive set — call out who leads on rating, freshness, or screenshots, and any easy metadata wins (e.g. an app not using its full title/subtitle character limit).
-2. "gapNotes": an array with exactly ${apps.length} entries, in the same order as the apps listed above. For each app: if it has keywords unique to it, write ONE short sentence judging whether that gap looks like a real ASO opportunity the other apps are missing, or just generic filler not worth chasing. If it has no unique keywords, use null for that entry.
+1. "summary": 3-4 sentences on the competitive landscape: who owns the market by downloads and by revenue, how their business models differ (paid, freemium, ad-supported), which apps monetize efficiently versus chase volume, and signs of momentum or stagnation (age, update recency, rating volume).
+2. "opportunity": ONE sentence on the clearest opening in this market for a new or smaller app (an underserved monetization model, a weak leader, a stale incumbent). Be specific to these apps.
+3. "positions": an array with exactly ${apps.length} entries in the same order as above, each {"role": "...", "note": "..."}. "role" is a 1-3 word label such as Market leader, Revenue leader, Volume play, Challenger, Niche player, Stagnant incumbent or Newcomer. "note" is ONE sentence on this app's market position and its main strength or vulnerability.
 
+Plain text only: no markdown, and no em dashes.
 Reply with ONLY this JSON shape, no explanation, no markdown fences:
-{"summary": "...", "gapNotes": ["...", null]}`;
+{"summary": "...", "opportunity": "...", "positions": [{"role": "...", "note": "..."}]}`;
 }
 
-// POST /api/market/compare/insights  { workspaceId, apps: CompareInsightApp[] }
+// POST /api/market/compare/insights  { workspaceId, country, apps: CompareInsightApp[] }
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const workspaceId = typeof body.workspaceId === "string" ? body.workspaceId : "";
-  const apps = (Array.isArray(body.apps) ? body.apps : []) as CompareInsightApp[];
+  const apps = ((Array.isArray(body.apps) ? body.apps : []) as CompareInsightApp[]).slice(0, MAX_COMPARE_APPS);
+  const country = typeof body.country === "string" && /^[A-Za-z]{2}$/.test(body.country) ? body.country.toUpperCase() : "US";
 
   if (apps.length < 2) {
     return NextResponse.json({ error: "Add at least 2 apps to generate insights." }, { status: 400 });
@@ -80,23 +93,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "AI Insights requires the Pro+ plan or above." }, { status: 403 });
   }
 
-  const prompt = buildPrompt(apps.slice(0, MAX_COMPARE_APPS));
+  const prompt = buildPrompt(apps, country);
   const raw = await generateText(prompt, 0.4);
   if (!raw) return NextResponse.json({ error: "Couldn't reach the AI service right now." }, { status: 502 });
 
   try {
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) return NextResponse.json({ error: "Couldn't parse the AI response." }, { status: 502 });
-    const parsed = JSON.parse(match[0]) as { summary?: unknown; gapNotes?: unknown };
+    const parsed = JSON.parse(match[0]) as { summary?: unknown; opportunity?: unknown; positions?: unknown };
     const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
-    const gapNotesRaw = Array.isArray(parsed.gapNotes) ? parsed.gapNotes : [];
+    const positionsRaw = Array.isArray(parsed.positions) ? parsed.positions : [];
     if (!summary) return NextResponse.json({ error: "Couldn't parse the AI response." }, { status: 502 });
 
     const result: CompareInsightsResult = {
       summary,
-      gapNotes: apps.map((_, i) => {
-        const v = gapNotesRaw[i];
-        return typeof v === "string" && v.trim() ? v.trim() : null;
+      opportunity: typeof parsed.opportunity === "string" && parsed.opportunity.trim() ? parsed.opportunity.trim() : null,
+      positions: apps.map((_, i) => {
+        const v = positionsRaw[i] as { role?: unknown; note?: unknown } | undefined;
+        const role = typeof v?.role === "string" ? v.role.trim() : "";
+        const note = typeof v?.note === "string" ? v.note.trim() : "";
+        return role && note ? { role, note } : null;
       }),
     };
     return NextResponse.json(result);
