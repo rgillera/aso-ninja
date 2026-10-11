@@ -15,6 +15,10 @@ export type ChartApp = {
   lastUpdatedAt: number | null;
   // iOS only, from the lookup API alongside rating/lastUpdatedAt.
   releasedAt?: number | null;
+  // Catalog rows only (libs/store/marketCatalog.ts): the chart position the
+  // market-apps crawler last saw this app at. Stands in for a live chart
+  // rank when the app isn't in any chart withEstimates fetches.
+  sighting?: { chart: "free" | "paid" | "grossing"; category: string | null; rank: number; country: string; seenAt: number };
   // Set by withEstimates (libs/store/appEstimates.ts). null/undefined = no
   // estimate possible for this app/storefront.
   estimate?: AppEstimate | null;

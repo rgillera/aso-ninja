@@ -141,7 +141,12 @@ type Signals = {
   installs?: number | null; // Play: global lifetime installs
   releasedAt?: number | null;
   offersIAP?: boolean | null;
+  sighting?: ChartApp["sighting"];
 };
+
+// A crawler sighting older than this no longer says much about today's
+// position. The crawl runs daily, so a fresh app is re-seen every day.
+const SIGHTING_MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 
 function rankIn(chart: ChartRanks | undefined, ids: string[]): number | null {
   if (!chart) return null;
@@ -181,6 +186,19 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
       const raw = curveMonthly(s.store, chart, cr) * perChartShare;
       return { value: o ? Math.min(raw, curveMonthly(s.store, chart, o.floor + 1)) : raw, basis: `#${cr} ${label} ${CATEGORY_LABEL}` };
     }
+    // Last crawl sighting, same treatment as a live rank, but only for the
+    // storefront it was seen in and only while recent.
+    const seen = s.sighting;
+    if (seen && seen.chart === chart && seen.country.toUpperCase() === country && Date.now() - seen.seenAt <= SIGHTING_MAX_AGE_MS) {
+      const day = new Date(seen.seenAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      if (!seen.category) return { value: curveMonthly(s.store, chart, seen.rank), basis: `#${seen.rank} ${label} on ${day}` };
+      const seenShare = categoryShare(s.store, seen.category)[chart === "grossing" ? "revenue" : "downloads"];
+      if (seenShare > 0) {
+        const o = overall[chart];
+        const raw = curveMonthly(s.store, chart, seen.rank) * seenShare;
+        return { value: o ? Math.min(raw, curveMonthly(s.store, chart, o.floor + 1)) : raw, basis: `#${seen.rank} ${label} ${CATEGORY_LABEL} on ${day}` };
+      }
+    }
     return null;
   }
 
@@ -196,7 +214,13 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
   } else {
     const ageMonths = s.releasedAt ? Math.max(1, (Date.now() - s.releasedAt) / (30 * 24 * 60 * 60 * 1000)) : null;
     let usEquivalent: number | null = null;
-    if (s.store === "ios" && s.ratingCount && ageMonths) {
+    if (s.store === "ios" && s.ratingCount === 0) {
+      // A known zero (typical for brand-new apps), not missing data: too few
+      // downloads in this storefront for anyone to have rated it yet.
+      downloads = 0;
+      usEquivalent = 0;
+      downloadsBasis = "No ratings yet in this country";
+    } else if (s.store === "ios" && s.ratingCount && ageMonths) {
       // Already this storefront's count, so no country scaling.
       downloads = (s.ratingCount * IOS_DOWNLOADS_PER_RATING) / ageMonths;
       usEquivalent = downloads / dlScale;
@@ -257,6 +281,7 @@ export async function withEstimates(apps: ChartApp[], store: Store, country: str
         genreId: categoryGenre,
         ratingCount: a.ratingCount,
         releasedAt: a.releasedAt,
+        sighting: a.sighting,
       },
       overall,
       category,

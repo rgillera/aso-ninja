@@ -13,7 +13,7 @@ export async function fetchNewlyDiscoveredApps(
     const supabase = await createClient();
     let query = supabase
       .from("market_apps")
-      .select("store, store_id, bundle_id, name, developer, icon_url, price, price_label, genre, url, rating, rating_count, app_updated_at, first_seen_at")
+      .select("store, store_id, bundle_id, name, developer, icon_url, price, price_label, genre, url, rating, rating_count, app_updated_at, first_seen_at, last_rank, last_chart, last_category, last_country, last_seen_at")
       .eq("store", store)
       .order("first_seen_at", { ascending: false })
       .limit(limit);
@@ -38,6 +38,16 @@ export async function fetchNewlyDiscoveredApps(
       rating: row.rating,
       ratingCount: row.rating_count,
       lastUpdatedAt: row.app_updated_at ? new Date(row.app_updated_at).getTime() : null,
+      sighting:
+        row.last_rank && row.last_country && (row.last_chart === "free" || row.last_chart === "paid" || row.last_chart === "grossing")
+          ? {
+              chart: row.last_chart,
+              category: row.last_category && row.last_category !== "all" ? row.last_category : null,
+              rank: row.last_rank,
+              country: row.last_country,
+              seenAt: new Date(row.last_seen_at).getTime(),
+            }
+          : undefined,
     }));
   } catch {
     return null;
