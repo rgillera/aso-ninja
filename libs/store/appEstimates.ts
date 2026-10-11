@@ -206,7 +206,7 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
   const dlChart: Chart = s.price > 0 ? "paid" : "free";
   const dlLabel = s.price > 0 ? "Top Paid" : "Top Free";
   let downloads: number | null = null;
-  let downloadsBasis = "Not enough public data";
+  let downloadsBasis = "";
   const charted = fromCharts(dlChart, share.downloads, dlLabel);
   if (charted) {
     downloads = charted.value * dlScale;
@@ -214,7 +214,12 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
   } else {
     const ageMonths = s.releasedAt ? Math.max(1, (Date.now() - s.releasedAt) / (30 * 24 * 60 * 60 * 1000)) : null;
     let usEquivalent: number | null = null;
-    if (s.store === "ios" && s.ratingCount === 0) {
+    if (s.releasedAt && s.releasedAt > Date.now()) {
+      // Apple's New Apps feed includes pre-orders.
+      downloads = 0;
+      usEquivalent = 0;
+      downloadsBasis = "Pre-order, not released yet";
+    } else if (s.store === "ios" && s.ratingCount === 0) {
       // A known zero (typical for brand-new apps), not missing data: too few
       // downloads in this storefront for anyone to have rated it yet.
       downloads = 0;
@@ -233,6 +238,12 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
     if (usEquivalent !== null) {
       const cap = ceiling(dlChart, share.downloads);
       if (usEquivalent > cap) downloads = cap * dlScale;
+    } else {
+      // No chart position and no public counter to model from. Such apps
+      // are overwhelmingly small, so this reads as the "<5K" bucket rather
+      // than a blank, same as Sensor Tower does for its long tail.
+      downloads = 0;
+      downloadsBasis = "Not charting and no public counts, likely under 5K";
     }
   }
 
