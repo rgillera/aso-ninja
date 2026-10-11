@@ -124,6 +124,15 @@ async function scrapeIosAppPage(storeId: string, country: string): Promise<{ scr
   }
 }
 
+// The lookup API has no IAP flag; the store page lists "In-App Purchases" in
+// its information section when there are any. The label is localized, so a
+// missing match only means "none" on an English page; elsewhere it's unknown.
+function detectIosInAppPurchases(html: string): boolean | undefined {
+  if (!html) return undefined;
+  if (/>In-App Purchases<\/dt>/.test(html)) return true;
+  return /<html[^>]*\slang="en/i.test(html) ? false : undefined;
+}
+
 async function fetchIosStoreDataImpl(storeId: string, country: string): Promise<StoreData> {
   const [apiRes, page] = await Promise.all([
     itunesFetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`),
@@ -149,6 +158,9 @@ async function fetchIosStoreDataImpl(storeId: string, country: string): Promise<
     hasPreviewVideo: page.hasPreviewVideo,
     lastUpdatedAt: r.currentVersionReleaseDate ? new Date(r.currentVersionReleaseDate as string).getTime() : undefined,
     languageCount: Array.isArray(r.languageCodesISO2A) ? r.languageCodesISO2A.length : undefined,
+    price: typeof r.price === "number" ? r.price : undefined,
+    releasedAt: r.releaseDate ? new Date(r.releaseDate as string).getTime() : undefined,
+    offersIAP: detectIosInAppPurchases(page.html),
   };
 }
 
@@ -315,7 +327,7 @@ async function fetchTopChartsImpl(
 
 const cachedFetchTopCharts = unstable_cache(fetchTopChartsImpl, ["ios-top-charts"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
-type AppLookupExtras = { rating: number | null; ratingCount: number | null; lastUpdatedAt: number | null };
+type AppLookupExtras = { rating: number | null; ratingCount: number | null; lastUpdatedAt: number | null; releasedAt: number | null };
 
 async function fetchAppLookupExtrasImpl(ids: string[], country: string): Promise<Record<string, AppLookupExtras>> {
   if (ids.length === 0) return {};
@@ -329,6 +341,7 @@ async function fetchAppLookupExtrasImpl(ids: string[], country: string): Promise
         rating: typeof r.averageUserRating === "number" ? r.averageUserRating : null,
         ratingCount: typeof r.userRatingCount === "number" ? r.userRatingCount : null,
         lastUpdatedAt: r.currentVersionReleaseDate ? new Date(r.currentVersionReleaseDate).getTime() : null,
+        releasedAt: r.releaseDate ? new Date(r.releaseDate).getTime() : null,
       };
     }
     return out;
@@ -357,6 +370,19 @@ export async function fetchTopCharts(opts: {
 
     const extras = await cachedFetchAppLookupExtras(apps.map((a) => a.storeId), country);
     return apps.map((a) => ({ ...a, ...extras[a.storeId] }));
+  } catch {
+    return null;
+  }
+}
+
+// Ids only, in rank order, for libs/store/appEstimates.ts — skips
+// fetchTopCharts' per-app lookup call, which rank matching doesn't need.
+// Always the iPhone chart. null = feed unavailable (an empty feed reads as
+// unavailable too: no real chart is empty).
+export async function fetchTopChartIds(country: string, chart: ChartType, genreId: string | null): Promise<string[] | null> {
+  try {
+    const apps = await cachedFetchTopCharts(country, "iphone", chart, genreId, 100);
+    return apps.length ? apps.map((a) => a.storeId) : null;
   } catch {
     return null;
   }

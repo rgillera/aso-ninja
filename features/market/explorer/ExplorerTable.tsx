@@ -9,8 +9,9 @@ import {
 } from "@heroicons/react/24/outline";
 import type { ChartApp } from "./types";
 import { StoreIcon } from "./StoreIcon";
+import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 
-type SortKey = "price" | "rating" | "updated";
+type SortKey = "price" | "rating" | "downloads" | "revenue" | "updated";
 
 type Props = {
   apps: ChartApp[];
@@ -48,6 +49,33 @@ function formatUpdated(ts: number | null): string {
   return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function SortTh({ col, label, title, sortKey, sortAsc, onSort }: {
+  col: SortKey; label: string; title?: string;
+  sortKey: SortKey | null; sortAsc: boolean; onSort: (col: SortKey) => void;
+}) {
+  return (
+    <th
+      title={title}
+      className="px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 light:hover:text-gray-700 transition-colors whitespace-nowrap"
+      onClick={() => onSort(col)}
+    >
+      {label}{sortKey === col ? (sortAsc ? " ↑" : " ↓") : ""}
+    </th>
+  );
+}
+
+function EstimateCell({ value, basis, format }: { value: number | null; basis?: string; format: (n: number) => string }) {
+  return (
+    <td className="px-3 py-2.5 whitespace-nowrap">
+      {value !== null ? (
+        <span className="text-sm text-gray-300 light:text-gray-700" title={basis}>{format(value)}</span>
+      ) : (
+        <span className="text-sm text-gray-600 light:text-gray-400" title={basis}>—</span>
+      )}
+    </td>
+  );
+}
+
 export function ExplorerTable({ apps, loading, country }: Props) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -67,6 +95,8 @@ export function ExplorerTable({ apps, loading, country }: Props) {
       let diff = 0;
       if (sortKey === "price") diff = a.price - b.price;
       if (sortKey === "rating") diff = (b.rating ?? -1) - (a.rating ?? -1);
+      if (sortKey === "downloads") diff = (b.estimate?.downloads ?? -1) - (a.estimate?.downloads ?? -1);
+      if (sortKey === "revenue") diff = (b.estimate?.revenue ?? -1) - (a.estimate?.revenue ?? -1);
       if (sortKey === "updated") diff = (b.lastUpdatedAt ?? -1) - (a.lastUpdatedAt ?? -1);
       return sortAsc ? diff : -diff;
     });
@@ -81,20 +111,13 @@ export function ExplorerTable({ apps, loading, country }: Props) {
     setPage(0);
   }
 
+  const sortProps = { sortKey, sortAsc, onSort: toggleSort };
+
   function copyAppName(storeId: string, name: string) {
     navigator.clipboard.writeText(name);
     setCopiedId(storeId);
     setTimeout(() => setCopiedId((prev) => (prev === storeId ? null : prev)), 1500);
   }
-
-  const SortTh = ({ col, label, className = "" }: { col: SortKey; label: string; className?: string }) => (
-    <th
-      className={`px-3 py-2.5 text-left text-xs font-medium text-gray-500 cursor-pointer select-none hover:text-gray-300 light:hover:text-gray-700 transition-colors whitespace-nowrap ${className}`}
-      onClick={() => toggleSort(col)}
-    >
-      {label}{sortKey === col ? (sortAsc ? " ↑" : " ↓") : ""}
-    </th>
-  );
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
@@ -122,16 +145,28 @@ export function ExplorerTable({ apps, loading, country }: Props) {
             <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">App</th>
               <th className="px-3 py-2.5 text-left text-xs font-medium text-gray-500">Category</th>
-              <SortTh col="price" label="Price" />
-              <SortTh col="rating" label="Rating" />
-              <SortTh col="updated" label="Last Updated" />
+              <SortTh {...sortProps} col="price" label="Price" />
+              <SortTh {...sortProps} col="rating" label="Rating" />
+              <SortTh
+                {...sortProps}
+                col="downloads"
+                label="Est. Downloads /mo"
+                title="Rough monthly downloads, modeled from chart ranks (or rating counts for apps not charting). Can be off by 2-5x. Summed across countries when several are selected."
+              />
+              <SortTh
+                {...sortProps}
+                col="revenue"
+                label="Est. Revenue /mo"
+                title="Rough gross monthly spend, modeled from Top Grossing rank (or estimated downloads for apps not charting). Can be off by 2-5x. Summed across countries when several are selected."
+              />
+              <SortTh {...sortProps} col="updated" label="Last Updated" />
             </tr>
           </thead>
           <tbody>
             {loading
               ? Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i} className="border-b border-white/[0.04] light:border-black/[0.05]">
-                    <td colSpan={5} className="px-3 py-3.5">
+                    <td colSpan={7} className="px-3 py-3.5">
                       <div className="h-4 rounded bg-white/[0.04] light:bg-black/[0.04] animate-pulse" />
                     </td>
                   </tr>
@@ -189,6 +224,8 @@ export function ExplorerTable({ apps, loading, country }: Props) {
                         <span className="text-sm text-gray-600 light:text-gray-400">—</span>
                       )}
                     </td>
+                    <EstimateCell value={app.estimate?.downloads ?? null} basis={app.estimate?.downloadsBasis} format={formatDownloads} />
+                    <EstimateCell value={app.estimate?.revenue ?? null} basis={app.estimate?.revenueBasis} format={formatRevenue} />
                     <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">{formatUpdated(app.lastUpdatedAt)}</td>
                   </tr>
                 ))}

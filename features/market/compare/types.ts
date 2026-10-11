@@ -1,4 +1,4 @@
-import type { AppSearchResult, StoreData } from "@/libs/contracts";
+import type { AppEstimate, AppSearchResult, StoreData } from "@/libs/contracts";
 
 // Up to 4 columns fits the table without forcing horizontal scroll on a
 // typical laptop viewport (see CompareTable) — 5+ apps is also rarely a real
@@ -16,6 +16,9 @@ export const FIELD_LIMITS: Record<"ios" | "android", { name: number; subtitle: n
 
 export type CompareApp = AppSearchResult & {
   storeData: StoreData | null;
+  // Rough downloads/revenue (see libs/store/appEstimates.ts); null when no
+  // estimate is possible for this storefront.
+  estimate: AppEstimate | null;
   loading: boolean;
   // Distinct from `storeData === null`, which also covers "hasn't loaded
   // yet" — this is only set once a fetch for this app+country has come back

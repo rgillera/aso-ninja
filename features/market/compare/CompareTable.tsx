@@ -8,6 +8,7 @@ import {
 import { StoreIcon } from "@/features/market/explorer/StoreIcon";
 import { computeKeywordDensity } from "@/features/aso/metadata/preview/KeywordDensity";
 import { daysSince } from "@/libs/store/benchmark-utils";
+import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 import type { CompareApp } from "./types";
 import { compareKey, storeUrl, FIELD_LIMITS } from "./types";
 
@@ -92,10 +93,10 @@ function bestIndices(values: (number | null | undefined)[]): Set<number> {
   return set;
 }
 
-function MetricRow({ label, cells, bestSet, wrap = false }: { label: string; cells: ReactNode[]; bestSet?: Set<number>; wrap?: boolean }) {
+function MetricRow({ label, title, cells, bestSet, wrap = false }: { label: string; title?: string; cells: ReactNode[]; bestSet?: Set<number>; wrap?: boolean }) {
   return (
     <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
-      <td className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
+      <td title={title} className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
       {cells.map((cell, i) => (
         <td
           key={i}
@@ -142,6 +143,18 @@ export function CompareTable({ apps, country, onRemove }: Props) {
 
   const ratings = apps.map((a) => a.storeData?.rating ?? null);
   const bestRating = bestIndices(ratings);
+  const bestDownloads = bestIndices(apps.map((a) => a.estimate?.downloads ?? null));
+  const bestRevenue = bestIndices(apps.map((a) => a.estimate?.revenue ?? null));
+
+  // Shared by the two estimate rows: loading, no estimate for this
+  // storefront, not enough data, or the figure with its basis on hover.
+  function estimateCell(a: CompareApp, value: number | null | undefined, basis: string | undefined, format: (n: number) => string) {
+    if (a.loading) return cellFor(a, () => null);
+    const key = compareKey(a.store, a.storeId);
+    if (!a.estimate) return <span key={key} className="text-gray-600 light:text-gray-400" title="No estimate available for this storefront">—</span>;
+    if (value == null) return <span key={key} className="text-gray-600 light:text-gray-400" title={basis}>—</span>;
+    return <span key={key} title={basis}>{format(value)}</span>;
+  }
   const screenshotCounts = apps.map((a) => a.storeData?.screenshotUrls?.length ?? null);
   const bestScreenshots = bestIndices(screenshotCounts);
   const languageCounts = apps.map((a) => (a.storeData?.languageCount ?? null));
@@ -222,6 +235,18 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                   </span>
                 ) : "—"
               ))}
+            />
+            <MetricRow
+              label="Est. downloads /mo"
+              title="Rough monthly downloads in this storefront, modeled from chart ranks or public rating/install counts. Can be off by 2-5x. Hover a value to see what it's based on."
+              bestSet={bestDownloads}
+              cells={apps.map((a) => estimateCell(a, a.estimate?.downloads, a.estimate?.downloadsBasis, formatDownloads))}
+            />
+            <MetricRow
+              label="Est. revenue /mo"
+              title="Rough gross monthly spend in this storefront, modeled from Top Grossing rank or estimated downloads. Can be off by 2-5x. Hover a value to see what it's based on."
+              bestSet={bestRevenue}
+              cells={apps.map((a) => estimateCell(a, a.estimate?.revenue, a.estimate?.revenueBasis, formatRevenue))}
             />
             <MetricRow label="Content rating" cells={apps.map((a) => cellFor(a, (d) => d.contentAdvisoryRating || "—"))} />
             <MetricRow label="Version" cells={apps.map((a) => cellFor(a, (d) => d.version || "—"))} />

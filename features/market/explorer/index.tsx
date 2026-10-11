@@ -68,16 +68,37 @@ export default function AppExplorerPage() {
         // once (e.g. ChatGPT #1 in both US and GB), so merging multiple
         // countries produces the same storeId more than once — dedupe here,
         // keeping the first (best-ranked, thanks to the round-robin above)
-        // occurrence rather than showing it as a duplicate row.
-        const seen = new Set<string>();
+        // occurrence rather than showing it as a duplicate row. Estimates
+        // are per country, so a duplicate's downloads/revenue are added onto
+        // the kept row: those columns read as totals across the selected
+        // markets.
+        const seen = new Map<string, number>();
         const merged: ChartApp[] = [];
         for (let i = 0; i < maxLen; i++) {
           for (const list of lists) {
             const app = list[i];
             if (!app) continue;
             const key = `${app.store}:${app.storeId}`;
-            if (seen.has(key)) continue;
-            seen.add(key);
+            const existing = seen.get(key);
+            if (existing !== undefined) {
+              const kept = merged[existing];
+              if (app.estimate && kept.estimate) {
+                const sum = (a: number | null, b: number | null) => (a === null && b === null ? null : (a ?? 0) + (b ?? 0));
+                merged[existing] = {
+                  ...kept,
+                  estimate: {
+                    downloads: sum(kept.estimate.downloads, app.estimate.downloads),
+                    revenue: sum(kept.estimate.revenue, app.estimate.revenue),
+                    downloadsBasis: "Total across the selected countries",
+                    revenueBasis: "Total across the selected countries",
+                  },
+                };
+              } else if (app.estimate) {
+                merged[existing] = { ...kept, estimate: app.estimate };
+              }
+              continue;
+            }
+            seen.set(key, merged.length);
             merged.push(app);
           }
         }
@@ -119,7 +140,7 @@ export default function AppExplorerPage() {
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <div className="flex items-center gap-2 px-6 pt-6">
         <h1 className="text-xl font-semibold text-white light:text-gray-900">App Explorer</h1>
-        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Ranked from Apple's and Google's public top-charts feeds (capped at 100 and 200 apps respectively — neither store exposes more). No download or revenue figures: neither store discloses those for apps you don't own." />
+        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Ranked from Apple's and Google's public top-charts feeds (capped at 100 and 200 apps respectively, neither store exposes more). Est. downloads and revenue are rough models from chart ranks and public rating counts, not reported figures." />
       </div>
 
       <div className="flex-1 overflow-y-auto">

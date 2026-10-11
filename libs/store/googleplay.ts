@@ -83,6 +83,10 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
     version: (r.version ?? "") as string,
     hasPreviewVideo: !!r.video,
     lastUpdatedAt: typeof r.updated === "number" ? r.updated : undefined,
+    price: typeof r.price === "number" ? r.price : undefined,
+    releasedAt: typeof r.released === "string" && !Number.isNaN(Date.parse(r.released)) ? Date.parse(r.released) : undefined,
+    installs: typeof r.maxInstalls === "number" ? r.maxInstalls : typeof r.minInstalls === "number" ? r.minInstalls : undefined,
+    offersIAP: typeof r.offersIAP === "boolean" ? r.offersIAP : undefined,
   };
 }
 

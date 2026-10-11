@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { StoreData } from "@/libs/contracts";
+import type { AppEstimate, StoreData } from "@/libs/contracts";
 import { fetchStoreData } from "@/libs/store/load-benchmark";
+import { estimateApp } from "@/libs/store/appEstimates";
 
-export type MarketCompareResult = { storeData: StoreData };
+export type MarketCompareResult = { storeData: StoreData; estimate: AppEstimate | null };
 
 // GET /api/market/compare?store=ios|android&storeId=&bundleId=&country=
 //
@@ -18,9 +19,12 @@ export async function GET(request: NextRequest) {
   const bundleId = searchParams.get("bundleId") ?? "";
   const country = (searchParams.get("country") ?? "US").toUpperCase();
 
+  // Sequential: the estimate needs the listing's category, price and
+  // rating/install counts.
   const storeData = await fetchStoreData(store, storeId, bundleId, country);
+  const estimate = await estimateApp(store, storeId, bundleId, country, storeData);
 
-  const result: MarketCompareResult = { storeData };
+  const result: MarketCompareResult = { storeData, estimate };
   // fetchStoreData is already cached server-side for 6h (see
   // fetchIosStoreData / fetchAndroidStoreData) — mirroring that at the HTTP
   // layer lets browsers/CDNs skip re-hitting this route for repeat requests.

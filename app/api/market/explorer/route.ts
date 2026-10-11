@@ -3,6 +3,7 @@ import type { ChartApp } from "@/libs/contracts";
 import { fetchTopCharts } from "@/libs/store/appstore";
 import { fetchAndroidTopCharts } from "@/libs/store/googleplay";
 import { fetchNewlyDiscoveredApps } from "@/libs/store/marketCatalog";
+import { withEstimates } from "@/libs/store/appEstimates";
 
 export type MarketExplorerResult = { apps: ChartApp[] };
 
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
-  const result: MarketExplorerResult = { apps };
+  const result: MarketExplorerResult = { apps: await withEstimates(apps, store, country, category) };
   // Chart data is public and already cached server-side for 6h (see
   // fetchTopCharts / fetchAndroidTopCharts) — mirroring that at the HTTP layer
   // lets browsers/CDNs skip re-hitting this route for repeat requests.

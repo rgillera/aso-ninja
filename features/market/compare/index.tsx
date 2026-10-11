@@ -31,7 +31,7 @@ export default function CompareAppsPage() {
       .then((r) => r.json())
       .then((data: MarketCompareResult) => {
         setApps((prev) => prev.map((a) =>
-          compareKey(a.store, a.storeId) === key ? { ...a, storeData: data.storeData, loading: false, failed: !data.storeData } : a
+          compareKey(a.store, a.storeId) === key ? { ...a, storeData: data.storeData, estimate: data.estimate ?? null, loading: false, failed: !data.storeData } : a
         ));
       })
       .catch(() => {
@@ -43,7 +43,7 @@ export default function CompareAppsPage() {
     const key = compareKey(result.store, result.storeId);
     setApps((prev) => {
       if (prev.length >= MAX_COMPARE_APPS || prev.some((a) => compareKey(a.store, a.storeId) === key)) return prev;
-      return [...prev, { ...result, storeData: null, loading: true, failed: false }];
+      return [...prev, { ...result, storeData: null, estimate: null, loading: true, failed: false }];
     });
     fetchStoreData(result, country);
   }
@@ -97,7 +97,7 @@ export default function CompareAppsPage() {
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
       <div className="flex items-center gap-2 px-6 pt-6">
         <h1 className="text-xl font-semibold text-white light:text-gray-900">Compare Apps</h1>
-        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Metadata is scraped live from each app's public store listing in the selected storefront country. No download or revenue figures: neither store discloses those for apps you don't own." />
+        <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Metadata is scraped live from each app's public store listing in the selected storefront country. Est. downloads and revenue are rough models from chart ranks and public rating/install counts, not reported figures." />
       </div>
 
       <div className="flex-1 overflow-y-auto">

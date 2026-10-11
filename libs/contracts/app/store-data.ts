@@ -16,6 +16,13 @@ export type StoreData = {
   hasPreviewVideo?: boolean;
   lastUpdatedAt?: number;
   languageCount?: number;
+  // Inputs for libs/store/appEstimates.ts when an app isn't charting.
+  price?: number;
+  releasedAt?: number;
+  // Google Play only: lifetime install count (global, not per storefront)
+  // and whether the listing declares in-app purchases.
+  installs?: number;
+  offersIAP?: boolean;
 } | null;
 
 export type CategoryBenchmark = {
