@@ -7,6 +7,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/growth-sprint/terms",
   },
+  openGraph: {
+    type: "website",
+    url: "/growth-sprint/terms",
+    title: "Growth Sprint Terms | AppASO",
+    description: "Terms for the 90-Day ASO Growth Sprint: scope, payment options, guarantees, and what happens after day 90.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Growth Sprint Terms | AppASO",
+    description: "Terms for the 90-Day ASO Growth Sprint: scope, payment options, guarantees, and what happens after day 90.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const LAST_UPDATED = "October 12, 2026";

@@ -18,7 +18,7 @@ export default function PortalGrowthAudit() {
             </p>
             <div className="mt-8 flex flex-col items-start gap-3">
               <a
-                href={calendlyUrl ?? "/growth-audit"}
+                href={calendlyUrl ?? "mailto:hello@appaso.io"}
                 target={calendlyUrl ? "_blank" : undefined}
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-clay-sm transition-colors hover:bg-indigo-50"

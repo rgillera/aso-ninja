@@ -7,6 +7,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/growth-assistant/terms",
   },
+  openGraph: {
+    type: "website",
+    url: "/growth-assistant/terms",
+    title: "App Growth Assistant Terms | AppASO",
+    description: "Terms for the App Growth Assistant service: scope, billing, start date, cancellation, and replacement.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "App Growth Assistant Terms | AppASO",
+    description: "Terms for the App Growth Assistant service: scope, billing, start date, cancellation, and replacement.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const LAST_UPDATED = "October 1, 2026";

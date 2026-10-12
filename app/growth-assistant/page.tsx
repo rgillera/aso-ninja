@@ -25,6 +25,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/growth-assistant",
   },
+  openGraph: {
+    type: "website",
+    url: "/growth-assistant",
+    title: "App Growth Assistant | AppASO",
+    description: "A dedicated growth assistant for your mobile app, 40 hours a week, guided by a Senior App Growth Specialist. From $1,200/mo, with AppASO Pro included.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "App Growth Assistant | AppASO",
+    description: "A dedicated growth assistant for your mobile app, 40 hours a week, guided by a Senior App Growth Specialist. From $1,200/mo, with AppASO Pro included.",
+    images: ["/opengraph-image"],
+  },
 };
 
 const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
@@ -222,6 +235,24 @@ export default async function GrowthAssistantPage() {
                   See the terms
                 </Link>
               </p>
+            </div>
+
+            <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-6 rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+              <div className="max-w-2xl">
+                <h2 className="text-xl font-semibold text-gray-900">Not sure where to start?</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  An assistant does the work best when there&apos;s a clear plan to follow. Most clients start
+                  with a 90-day Growth Sprint to build the strategy and find what works, then bring on an
+                  assistant to keep it going.
+                </p>
+              </div>
+              <Link
+                href="/growth-sprint"
+                className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                See the Growth Sprint
+                <ArrowRightIcon className="size-4" aria-hidden="true" />
+              </Link>
             </div>
           </div>
         </section>

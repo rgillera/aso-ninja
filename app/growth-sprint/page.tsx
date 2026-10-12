@@ -15,6 +15,7 @@ import {
   CalendarDaysIcon,
   BanknotesIcon,
   ArrowPathIcon,
+  ArrowRightIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
@@ -27,6 +28,19 @@ export const metadata: Metadata = {
     "A focused, 90-day engagement to audit your app, fix your funnel, and grow visibility, conversion, and revenue, run by the team behind AppASO, with clear deliverables, three guarantees, and no long-term contract.",
   alternates: {
     canonical: "/growth-sprint",
+  },
+  openGraph: {
+    type: "website",
+    url: "/growth-sprint",
+    title: "90-Day ASO Growth Sprint | AppASO",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,500/mo or $4,000 upfront, backed by three guarantees.",
+    images: ["/opengraph-image"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "90-Day ASO Growth Sprint | AppASO",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,500/mo or $4,000 upfront, backed by three guarantees.",
+    images: ["/opengraph-image"],
   },
 };
 
@@ -350,6 +364,27 @@ export default async function GrowthSprintPage() {
                   </Link>
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="pb-24 sm:pb-32">
+          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+            <div className="mx-auto flex max-w-5xl flex-col gap-6 rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+              <div className="max-w-2xl">
+                <h2 className="text-xl font-semibold text-gray-900">After the sprint, keep the momentum going</h2>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Your playbook shows what to run next. A dedicated Growth Assistant can carry it out every
+                  week, guided by the same Senior App Growth Specialist.
+                </p>
+              </div>
+              <Link
+                href="/growth-assistant"
+                className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                See the Growth Assistant
+                <ArrowRightIcon className="size-4" aria-hidden="true" />
+              </Link>
             </div>
           </div>
         </section>

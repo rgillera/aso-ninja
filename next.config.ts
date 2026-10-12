@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       { source: "/about", destination: "/our-story", permanent: true },
       // Contact page removed; the footer carries email and chat on every page.
       { source: "/contact", destination: "/", permanent: true },
+      // Paid Growth Audit page removed; the 90-day Sprint now opens with a full audit.
+      { source: "/growth-audit", destination: "/growth-sprint", permanent: true },
     ];
   },
   async headers() {
