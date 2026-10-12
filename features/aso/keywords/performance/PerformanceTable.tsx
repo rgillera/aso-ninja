@@ -20,7 +20,7 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle, downloadsAsOfTitle } from "@/features/aso/keywords/research/ui";
-import { effectiveRank, effectiveRankDate, formatRank, formatSnapshotDate, rankGrowth, volumeGrowth } from "./types";
+import { effectiveRank, effectiveRankDate, formatRank, formatSnapshotDate, rankGrowth, unrankedLabel, volumeGrowth } from "./types";
 import type { Filters, PerformanceKeyword, TermSnapshot, RankValue } from "./types";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -124,9 +124,9 @@ function GrowthCell({ value }: { value: number | null }) {
   );
 }
 
-function RankCell({ value, date, onClick }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null; onClick: () => void }) {
-  const label = formatRank(value);
-  const muted = label === "Unranked";
+function RankCell({ value, date, store, onClick }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null; store: string; onClick: () => void }) {
+  const label = formatRank(value, store);
+  const muted = typeof value !== "number";
   return (
     <button onClick={onClick} title="View rank history" className="flex flex-col items-start rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors text-left">
       <span className={`inline-flex items-center gap-1 text-sm tabular-nums ${muted ? "text-gray-600 light:text-gray-400" : "text-gray-300 light:text-gray-700"}`}>
@@ -291,7 +291,7 @@ export function PerformanceTable({
   function handleExportSelected() {
     const rows = filtered.filter((k) => selected.has(k.term));
     const headers = ["Keyword", "Volume", "Rank", "Est. Daily Downloads"];
-    const data = rows.map((k) => [k.term, k.volume, k.rank ?? "Unranked", k.estimatedDownloads ?? "—"]);
+    const data = rows.map((k) => [k.term, k.volume, k.rank ?? unrankedLabel(activeApp.store), k.estimatedDownloads ?? "—"]);
     downloadCsv(`keywords-${Date.now()}.csv`, headers, data);
   }
 
@@ -574,6 +574,7 @@ export function PerformanceTable({
                           <RankCell
                             value={effectiveRank(s?.rankLatest, k.rank)}
                             date={effectiveRankDate(s?.rankLatest, s?.rankLatestDate)}
+                            store={activeApp.store}
                             onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
                           />
                         </td>
@@ -583,7 +584,7 @@ export function PerformanceTable({
                           return (
                             <Fragment key={c.storeId}>
                               <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]">
-                                <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} onClick={() => onViewRankHistory(k.term, c.storeId)} />
+                                <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} store={activeApp.store} onClick={() => onViewRankHistory(k.term, c.storeId)} />
                               </td>
                               <td className="px-3 py-3"><GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} /></td>
                             </Fragment>

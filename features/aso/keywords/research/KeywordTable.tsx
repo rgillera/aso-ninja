@@ -32,6 +32,7 @@ import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-colu
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { Keyword, DownloadsConnection } from "./types";
+import { unrankedLabel } from "@/features/aso/keywords/performance/types";
 
 // Every plan (Free included) now gets some relevancy/opportunity pool, so
 // the only thing left gated behind a hard plan-tier lock is Est. Downloads
@@ -171,7 +172,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100). Higher = better match." },
   { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app, combining demand, ranking chance and relevancy. Higher = better." },
   { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "Estimated daily downloads from this keyword, based on your app's connected store data." },
-  { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position for this keyword. Lower = better. Blank means not ranked." },
+  { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position for this keyword. Lower = better. Google Play search only shows its top results (about 15-30 apps), so \"Not in top N\" means your app wasn't among them, not that it doesn't rank at all." },
 ];
 
 const DEFAULT_VISIBLE = new Set(
@@ -501,7 +502,7 @@ export function KeywordTable({
 
   function cellValue(colKey: string, row: Keyword): string | number {
     switch (colKey) {
-      case "rank": return row.rank ?? "Unranked";
+      case "rank": return row.rank ?? unrankedLabel(store, row.results);
       case "relevancy": return row.relevancy ?? "";
       case "opportunity": return row.opportunity ?? "";
       case "results": return row.results ?? "";
@@ -557,7 +558,7 @@ export function KeywordTable({
       );
       case "rank": return row.rank !== null
         ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
-        : <span className="text-xs text-gray-600 light:text-gray-400 italic">Unranked</span>;
+        : <span className="text-xs text-gray-600 light:text-gray-400 italic">{unrankedLabel(store, row.results)}</span>;
       case "results": return (
         row.results != null
           ? <span className="text-sm text-gray-300 light:text-gray-700">{row.results.toLocaleString()}</span>
@@ -642,7 +643,7 @@ export function KeywordTable({
           onClick={(e) => toggleFilterDropdown("rank", e)}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
-          {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? "Unranked" : rankFilter === "top3" ? "Top 3" : "Top 10"}
+          {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? unrankedLabel(store) : rankFilter === "top3" ? "Top 3" : "Top 10"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
@@ -735,7 +736,7 @@ export function KeywordTable({
           )}
           {openFilter === "rank" && (
             <div className="py-1 w-44">
-              {([["any","Any"],["ranked","Ranked"],["unranked","Unranked"],["top3","Top 3"],["top10","Top 10"]] as const).map(([val, label]) => (
+              {([["any","Any"],["ranked","Ranked"],["unranked",unrankedLabel(store)],["top3","Top 3"],["top10","Top 10"]] as const).map(([val, label]) => (
                 <button key={val} onClick={() => { setRankFilter(val); setOpenFilter(null); }}
                   className={`flex items-center gap-2 w-full text-left px-3 py-2 text-xs transition-colors hover:bg-white/[0.04] light:hover:bg-black/[0.04] ${rankFilter === val ? "text-indigo-400 light:text-indigo-600" : "text-gray-400 light:text-gray-600"}`}>
                   {rankFilter === val && <CheckIcon className="size-3 shrink-0" />}

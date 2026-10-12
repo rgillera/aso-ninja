@@ -89,7 +89,7 @@ export function MobileMonitor({
         {keywords === null ? (
           <p className="px-4 py-8 text-center text-sm text-gray-500">Loading…</p>
         ) : (
-          <RankingList key={appId} keywords={keywords} snapshots={snapshots} />
+          <RankingList key={appId} keywords={keywords} snapshots={snapshots} store={store} />
         )}
       </PullToRefresh>
     </main>

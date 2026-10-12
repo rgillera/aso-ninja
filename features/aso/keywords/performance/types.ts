@@ -28,8 +28,17 @@ export function todayIso(): string {
 // dashes. Widen it yourself once snapshots have had time to accumulate.
 export const DEFAULT_RANGE: DateRange = { from: todayIso(), to: todayIso() };
 
-export function formatRank(v: RankValue | undefined): string {
-  if (v === undefined || v === "unknown" || v === "unranked") return "Unranked";
+// Google Play's web search only returns one page (~15-30 apps, no next-page
+// token), so a missing Android rank means "not in those results", not "not
+// ranking anywhere" — iOS search returns up to 200, so "Unranked" holds there.
+// resultCount, when known, is how many results that check actually returned.
+export function unrankedLabel(store?: string, resultCount?: number | null): string {
+  if (store !== "android") return "Unranked";
+  return resultCount ? `Not in top ${resultCount}` : "Not in top results";
+}
+
+export function formatRank(v: RankValue | undefined, store?: string): string {
+  if (v === undefined || v === "unknown" || v === "unranked") return unrankedLabel(store);
   return `#${v}`;
 }
 

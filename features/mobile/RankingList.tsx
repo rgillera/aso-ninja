@@ -32,9 +32,11 @@ function GrowthBadge({ value }: { value: number | null }) {
 export function RankingList({
   keywords,
   snapshots,
+  store,
 }: {
   keywords: SavedKeyword[];
   snapshots: PerformanceSnapshotResult;
+  store: string;
 }) {
   // Caller passes key={appId} on this component, so switching apps remounts
   // it fresh (search/sort/page all reset) instead of carrying over stale state.
@@ -144,7 +146,7 @@ export function RankingList({
               <div className="flex shrink-0 items-center gap-3">
                 <GrowthBadge value={growth} />
                 <span className={`text-base font-medium tabular-nums ${rank === "unranked" ? "text-gray-600" : "text-gray-200"}`}>
-                  {formatRank(rank)}
+                  {formatRank(rank, store)}
                 </span>
               </div>
             </li>

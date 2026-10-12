@@ -161,6 +161,17 @@ export function scoreAutocomplete(prefixChars: number, position: number) {
   return Math.min(Math.max(score, LONG_TAIL_MAX + 1), 100);
 }
 
+// A suggestion counts if it's the keyword itself or the keyword plus more
+// whole words: head terms are rarely suggested on their own ("photo" only
+// ever comes back as "photo editor", "weight" as "weight watchers"), so
+// requiring an exact match scored them as never suggested — while everyone
+// who searches "photo editor" typed "photo" first, so an extension's
+// popularity is a floor for the keyword's. The word boundary keeps "chat"
+// from riding on "chatgpt".
+function suggestionIndex(hints: string[], kw: string) {
+  return hints.findIndex((h) => h === kw || h.startsWith(kw + " "));
+}
+
 // Checks the full keyword first: a keyword the store doesn't suggest even
 // fully typed is never suggested at any shorter prefix either, so the long
 // tail (most keywords) costs a single request. Only keywords that *are*
@@ -168,7 +179,8 @@ export function scoreAutocomplete(prefixChars: number, position: number) {
 async function walkPrefixes(kw: string, fetchHints: HintsFetcher): Promise<AutocompleteResult | null> {
   const full = await fetchHints(kw);
   if (!full) return null;
-  if (!full.includes(kw)) return { score: NEVER_SUGGESTED_SCORE, prefixChars: null, position: null };
+  const fullIdx = suggestionIndex(full, kw);
+  if (fullIdx < 0) return { score: NEVER_SUGGESTED_SCORE, prefixChars: null, position: null };
 
   // Array.from, not .length/.slice — keeps a CJK/emoji keyword's prefixes on
   // code point boundaries rather than splitting surrogate pairs.
@@ -178,10 +190,10 @@ async function walkPrefixes(kw: string, fetchHints: HintsFetcher): Promise<Autoc
     if (chars[n - 1] === " ") continue;
     const hints = await fetchHints(chars.slice(0, n).join(""));
     if (!hints) return null;
-    const idx = hints.indexOf(kw);
+    const idx = suggestionIndex(hints, kw);
     if (idx >= 0) return { score: scoreAutocomplete(n, idx + 1), prefixChars: n, position: idx + 1 };
   }
-  const pos = full.indexOf(kw) + 1;
+  const pos = fullIdx + 1;
   return { score: scoreAutocomplete(chars.length, pos), prefixChars: chars.length, position: pos };
 }
 
