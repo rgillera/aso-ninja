@@ -5,8 +5,9 @@ import type { BlogPost } from "./posts";
 // MobileAction, Sonar and Astro were all checked 2026-10-03). AppASO figures
 // mirror features/subscription/plans.ts; update both together when pricing
 // changes. Keep the "where they win" sections honest: AppASO's volume is a
-// model built from public search results (not Apple Search Ads popularity),
-// and tracked rankings refresh at least weekly, not daily.
+// score based on live App Store and Google Play search suggestions (not
+// Apple Search Ads popularity), and tracked rankings refresh at least
+// weekly, not daily.
 
 const SIGNUP_CTA = {
   type: "cta" as const,
@@ -99,7 +100,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "Where AppTweak is still the better choice" },
       {
         type: "paragraph",
-        text: "Be honest with yourself about what you need. AppTweak has years of historical data, market-wide intelligence, and a much larger dataset behind it. AppASO's search volume is our own model built from public App Store and Google Play search results rather than Apple's Search Ads popularity score, tracked rankings refresh at least once a week rather than daily, and history goes back 6 months on Pro. If you manage a large portfolio, report to stakeholders on long-term trends, or need market intelligence beyond your own keywords, AppTweak's depth is worth the price.",
+        text: "Be honest with yourself about what you need. AppTweak has years of historical data, market-wide intelligence, and a much larger dataset behind it. AppASO's search volume is based on live App Store and Google Play search suggestions rather than Apple's Search Ads popularity score, tracked rankings refresh at least once a week rather than daily, and history goes back 6 months on Pro. If you manage a large portfolio, report to stakeholders on long-term trends, or need market intelligence beyond your own keywords, AppTweak's depth is worth the price.",
       },
       {
         type: "paragraph",
@@ -179,7 +180,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           "Apple Search Ads campaign management and ad intelligence are core to MobileAction. AppASO Pro includes ASA and market intelligence features, but MobileAction goes much deeper on paid UA.",
           "More competitors per app: 10 on Basic and 15 on Pro, versus 5 on AppASO Pro and 8 on Pro+.",
           "Longer-established datasets and ad creative insights across 40+ ad networks on Enterprise.",
-          "AppASO's search volume is our own model built from public search results, and tracked rankings refresh at least weekly, not daily.",
+          "AppASO's search volume is based on live App Store and Google Play search suggestions, not Apple's popularity score, and tracked rankings refresh at least weekly, not daily.",
         ],
       },
       { type: "heading", text: "AppASO plans at a glance" },
@@ -371,7 +372,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       {
         type: "bullets",
         items: [
-          "iOS search popularity comes straight from Apple. AppASO's volume score is our own model built from public search results.",
+          "iOS search popularity comes straight from Apple. AppASO's volume score is based on live App Store and Google Play search suggestions.",
           "Daily rank tracking for every tracked keyword. AppASO refreshes tracked rankings at least weekly, plus whenever you research a keyword.",
           "Unlimited historical data, versus 6 months on AppASO Pro and 1 year on Pro+.",
           "A REST API, CLI, and MCP access for developers who want to script their ASO.",
@@ -398,7 +399,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "faq",
         items: [
           { question: "How much does Sonar cost?", answer: "As of October 2026, Sonar's Indie plan costs $29/mo or $290/yr for 10 apps and 2,500 keywords, and the Agency plan costs $149/mo for 50 apps and 10,000 keywords. A 7-day free trial is available." },
-          { question: "Does Sonar use Apple's search popularity data?", answer: "Yes. Sonar shows Apple-reported search popularity for iOS. AppASO's volume score is its own model built from public App Store and Google Play search results." },
+          { question: "Does Sonar use Apple's search popularity data?", answer: "Yes. Sonar shows Apple-reported search popularity for iOS. AppASO's volume score is based on live App Store and Google Play search suggestions." },
           { question: "Which tool tracks rankings more often?", answer: "Sonar tracks rankings daily. AppASO refreshes tracked rankings at least once a week, plus whenever you research a keyword." },
         ],
       },
@@ -433,7 +434,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           ["Platforms", "App Store only", "App Store & Google Play"],
           ["How you use it", "Native Mac app (macOS 14+)", "Web app, works on any OS"],
           ["Keywords and apps", "Unlimited", "100 keywords free, unlimited on Pro"],
-          ["Popularity data", "Apple Search Ads popularity", "AppASO's model built from public search results"],
+          ["Popularity data", "Apple Search Ads popularity", "Based on live App Store and Google Play search suggestions"],
           ["Rank tracking", "Daily", "At least weekly, plus on demand"],
           ["Relevancy scoring", "No", "Yes"],
           ["Downloads per keyword", "No", "Yes, on Pro"],
@@ -518,7 +519,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Where it falls short: search volume is AppASO's own model rather than Apple's popularity score, tracked rankings refresh at least weekly rather than daily, and Pro keeps 6 months of history.",
+        text: "Where it falls short: search volume is based on live App Store and Google Play search suggestions rather than Apple's popularity score, tracked rankings refresh at least weekly rather than daily, and Pro keeps 6 months of history.",
       },
       { type: "heading", text: "2. Sonar" },
       {
