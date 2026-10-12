@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { COUNTRY_MAP } from "@/libs/countries";
 import { generateText } from "@/libs/gemini";
 import { createClient } from "@/libs/supabase/server";
 
@@ -16,7 +17,9 @@ async function generateKeywords(
   description: string,
   category: "discovery" | "generic" | "branded" | "relevancy",
   count: number,
+  country: string,
 ): Promise<string[]> {
+  const market = localeInstructions(country);
   const prompts: Record<typeof category, string> = {
     discovery: `You are an App Store Optimization expert. Generate ${count} discovery keywords for the app "${appName}".
 Description: ${description.slice(0, 400)}
@@ -29,6 +32,7 @@ Rules:
 - No brand names of competitors
 - Relevant to this specific app's functionality
 - Mix of single words and short phrases
+${market}
 
 Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
 
@@ -43,6 +47,7 @@ Rules:
 - Broad and competitive terms
 - No brand names
 - Very high search volume potential
+${market}
 
 Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
 
@@ -56,6 +61,7 @@ Rules:
 - Competitor app names in this category
 - App name variations
 - Include both the brand name alone and with "alternative" or similar
+${market}
 
 Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
 
@@ -70,6 +76,7 @@ Rules:
 - Must directly describe a core feature or benefit of the app
 - No brand names
 - Terms a user would search specifically to find this type of app
+${market}
 
 Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
   };
@@ -86,6 +93,19 @@ Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`
       .filter((k) => k.length >= 2 && k.length <= 50)
       .slice(0, count);
   } catch { return []; }
+}
+
+// Keywords only rank for what people type in that storefront, so the
+// suggestions have to be in the market's search language, not English.
+// No country→language table here: the LLM picks the dominant search
+// language itself, which also handles bilingual storefronts (CA, CH, BE...).
+function localeInstructions(country: string): string {
+  const code = country.toUpperCase();
+  const name = COUNTRY_MAP[code] ?? code;
+  return `Market: the ${name} (${code}) App Store.
+- Write every keyword in the language users in ${name} actually type into App Store search (the dominant local language, in its native script). Use English only where it is the local search language or where locals genuinely search the English term.
+- Use local spelling, phrasing, and competitor apps that are popular in ${name}.
+- For languages written without spaces (Chinese, Japanese, Thai, etc.), keep each keyword short, as a local user would type it.`;
 }
 
 // Deduplicate terms across sections (earlier sections take priority).
@@ -110,6 +130,7 @@ export async function GET(request: NextRequest) {
   const description = searchParams.get("description") ?? "";
   const workspaceId = searchParams.get("workspaceId") ?? "";
   const onboarding  = searchParams.get("onboarding") === "1";
+  const country     = searchParams.get("country")     || "us";
 
   if (!appName) return NextResponse.json(EMPTY);
 
@@ -137,10 +158,10 @@ export async function GET(request: NextRequest) {
   if (!allowed) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
-    generateKeywords(appName, description, "discovery", 30),
-    generateKeywords(appName, description, "generic",   30),
-    generateKeywords(appName, description, "branded",   30),
-    generateKeywords(appName, description, "relevancy", 30),
+    generateKeywords(appName, description, "discovery", 30, country),
+    generateKeywords(appName, description, "generic",   30, country),
+    generateKeywords(appName, description, "branded",   30, country),
+    generateKeywords(appName, description, "relevancy", 30, country),
   ]);
 
   const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =

@@ -11,7 +11,10 @@ import {
   FunnelIcon,
   MegaphoneIcon,
   UserGroupIcon,
-  RocketLaunchIcon,
+  ShieldCheckIcon,
+  CalendarDaysIcon,
+  BanknotesIcon,
+  ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
@@ -21,7 +24,7 @@ import PortalFooter from "@/features/portal/PortalFooter";
 export const metadata: Metadata = {
   title: "90-Day ASO Growth Sprint",
   description:
-    "A focused, 90-day engagement to audit, fix, and test your way to better rankings, conversion, and paid acquisition, run by the team behind AppASO, with clear deliverables and no long-term contract.",
+    "A focused, 90-day engagement to audit your app, fix your funnel, and grow visibility, conversion, and revenue, run by the team behind AppASO, with clear deliverables, three guarantees, and no long-term contract.",
   alternates: {
     canonical: "/growth-sprint",
   },
@@ -31,30 +34,48 @@ const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
 const stats = [
   { label: "Duration", value: "90 days" },
-  { label: "Pricing", value: "Scoped per app" },
-  { label: "Bonus", value: "1 yr Pro free" },
+  { label: "Pricing", value: "$1,500/mo" },
+  { label: "Bonus", value: "1 yr Pro ($348)" },
 ];
 
 const phases = [
   {
     n: "Days 1–30",
-    title: "Audit & quick wins",
-    description:
-      "Full audit of your metadata, keyword coverage, and store listing against your ranking and volume data. We ship the quick wins immediately, then lock in a prioritized roadmap for the next 60 days.",
+    title: "Audit, fix & plan",
+    description: "We find what's holding your app back and fix the biggest problems first.",
+    items: [
+      "Full audit of your metadata, keywords, creatives, and competitors",
+      "Title, subtitle, and keyword rewrite, shipped",
+      "Funnel mapped from impression to sale, with the biggest leaks fixed",
+      "Growth strategy and a prioritized 60-day roadmap, agreed with your team",
+    ],
+    milestone: "Day 30: audit and roadmap delivered",
     icon: ClipboardDocumentCheckIcon,
   },
   {
     n: "Days 31–60",
     title: "Test & optimize",
-    description:
-      "Icon, screenshot, and metadata A/B tests go live, alongside small Meta and Apple Search Ads tests. We fix the biggest drop-offs in your funnel and iterate on what the data shows is working.",
+    description: "We test what drives installs and conversions, and keep only what works.",
+    items: [
+      "Icon and screenshot A/B tests running by day 45",
+      "Small Meta and Apple Search Ads tests to find what converts",
+      "New high-potential keywords added to your coverage",
+      "Deeper funnel fixes, guided by test results",
+    ],
+    milestone: "Day 60: test results and next priorities reviewed",
     icon: BeakerIcon,
   },
   {
     n: "Days 61–90",
     title: "Scale & hand off",
-    description:
-      "Double down on the winning tests, get paid campaigns ready to scale, fold results into a long-term growth strategy, and hand you a clear playbook for what to run next, with or without us.",
+    description: "We double down on what worked and set you up to keep growing.",
+    items: [
+      "Winning variants rolled out to your live listing",
+      "Paid campaigns ready to scale on the channels that convert",
+      "Long-term growth plan across organic and paid",
+      "A handoff playbook your team keeps, with or without us",
+    ],
+    milestone: "Day 90: playbook delivered",
     icon: ArrowTrendingUpIcon,
   },
 ];
@@ -107,25 +128,37 @@ const deliverables = [
   },
 ];
 
-const sprintIncludes = [
-  "Full audit and all three sprint phases",
-  "Creative & metadata A/B testing",
-  "Funnel optimization, from impression to sale",
-  "UA management for Meta & Apple Search Ads (ad spend billed separately)",
-  "Growth strategy & scaling plan",
-  "Performance tracking & reporting",
-  "Hands-on collaboration with your team",
-  "Handoff playbook at the end of day 90",
-  "1 year of AppASO Pro, included free",
+const guarantees = [
+  {
+    name: "Shipped by day 45, or a month free",
+    description:
+      "Your quick wins will be live and your first A/B tests running by day 45. If not, your next month is free. If you paid upfront, we refund one month.",
+    icon: CalendarDaysIcon,
+  },
+  {
+    name: "Not working? Leave at day 30",
+    description:
+      "Tell us by day 30 and you won't pay for the remaining two months. If you paid upfront, we refund them. You keep the audit and roadmap either way.",
+    icon: BanknotesIcon,
+  },
+  {
+    name: "We finish what we promised",
+    description:
+      "If any deliverable isn't done by day 90, we keep working on it at no extra cost.",
+    icon: ArrowPathIcon,
+  },
 ];
 
-const benefits = [
-  "Senior growth expertise without a full-time hire",
-  "Organic and paid handled by one team, in one plan",
-  "Decisions backed by your data, not guesswork",
-  "Small, low-risk tests before you commit bigger budgets",
-  "A clear 90-day scope with no long-term contract",
-  "A playbook your team keeps after the sprint",
+const sprintIncludes = [
+  "Full ASO audit, benchmarked against your competitors",
+  "Title, subtitle, and keyword rewrite based on real ranking data",
+  "Icon and screenshot A/B tests, read out with real conversion data",
+  "Funnel fixes, from store impression to sale",
+  "Meta & Apple Search Ads tests, managed by us (ad spend billed separately)",
+  "A growth plan across organic and paid, reviewed every 30 days",
+  "Regular reports on rankings, conversion, and campaigns",
+  "A handoff playbook you keep after day 90",
+  "1 year of AppASO Pro included ($348 value)",
 ];
 
 export default async function GrowthSprintPage() {
@@ -149,9 +182,9 @@ export default async function GrowthSprintPage() {
               A focused 90 days to <span className="text-indigo-600">fix what&apos;s holding your app&apos;s growth back</span>
             </h1>
             <p className="mt-6 text-lg text-gray-600">
-              No long-term contract, just a scoped, three-phase engagement that audits your app,
-              ships the fixes, and tests its way to better rankings and conversion, run by the same
-              team behind AppASO, working from the data your workspace already tracks.
+              No long-term contract. Just a fixed-price, three-phase engagement where we audit your app,
+              fix the leaks in your funnel, and test our way to more visibility, higher conversion,
+              and more revenue. It&apos;s run by the same team that built AppASO.
             </p>
             <div className="mt-8">
               <a
@@ -160,7 +193,7 @@ export default async function GrowthSprintPage() {
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
                 className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
-                Book a sprint scoping call
+                Book your free audit call
               </a>
             </div>
 
@@ -180,11 +213,11 @@ export default async function GrowthSprintPage() {
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">The three phases</p>
               <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-                Thirty days at a time
+                Your 90 days, step by step
               </h2>
               <p className="mt-6 text-lg text-gray-600">
-                Each phase builds on the last, with a milestone review in between so priorities stay
-                grounded in what the data is actually showing.
+                Every phase has clear work, a clear milestone, and a review with your team, so you
+                always know what&apos;s done, what it changed, and what comes next.
               </p>
             </div>
 
@@ -192,13 +225,24 @@ export default async function GrowthSprintPage() {
               <div aria-hidden="true" className="absolute left-0 right-0 top-6 hidden h-px bg-indigo-200 sm:block" />
               <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
                 {phases.map((phase) => (
-                  <div key={phase.title} className="relative flex flex-col items-center text-center sm:items-start sm:text-left">
+                  <div key={phase.title} className="relative flex flex-col items-start text-left">
                     <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 shadow-clay-sm ring-8 ring-[#f5f6f8]">
                       <phase.icon className="size-5 text-white" aria-hidden="true" />
                     </div>
                     <p className="mt-5 text-xs font-semibold text-indigo-600 uppercase tracking-widest">{phase.n}</p>
                     <h3 className="mt-1 text-lg font-semibold text-gray-900">{phase.title}</h3>
                     <p className="mt-3 text-sm leading-6 text-gray-600">{phase.description}</p>
+                    <ul className="mt-5 flex-1 space-y-2.5">
+                      {phase.items.map((item) => (
+                        <li key={item} className="flex items-start gap-2.5">
+                          <CheckIcon className="size-4 shrink-0 mt-0.5 text-indigo-600" aria-hidden="true" />
+                          <span className="text-sm leading-5 text-gray-600">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-6 rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                      {phase.milestone}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -241,18 +285,19 @@ export default async function GrowthSprintPage() {
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Getting started</p>
               <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-                Scoped to your app
+                One sprint. Clear price. Real deliverables.
               </h2>
             </div>
 
             <div className="mx-auto mt-16 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:items-stretch">
               <div className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:p-10 lg:col-span-3">
                 <p className="text-sm font-semibold text-gray-500">90-Day ASO Growth Sprint</p>
-                <h3 className="mt-4 text-2xl font-bold tracking-tight text-gray-900">
-                  Contact us for details
-                </h3>
+                <p className="mt-4 flex items-baseline gap-x-2">
+                  <span className="text-4xl font-bold tracking-tight text-gray-900">$1,500</span>
+                  <span className="text-sm font-semibold text-gray-500">/month for 3 months</span>
+                </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Every sprint is scoped to your app on a quick call. Here&apos;s what&apos;s included.
+                  Or <span className="font-semibold text-gray-900">$4,000 paid upfront</span>{" "}and save $500.
                 </p>
                 <ul className="mt-8 flex-1 space-y-3">
                   {sprintIncludes.map((item) => (
@@ -268,10 +313,10 @@ export default async function GrowthSprintPage() {
                   rel={calendlyUrl ? "noopener noreferrer" : undefined}
                   className="mt-8 inline-flex w-fit items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                 >
-                  Book a call for details
+                  Book your free audit call
                 </a>
                 <p className="mt-4 text-xs text-gray-500">
-                  Fixed 90 days, paid upfront.{" "}
+                  Fixed 90 days, paid monthly or upfront.{" "}
                   <Link href="/growth-sprint/terms" className="text-indigo-600 hover:underline">
                     See the terms
                   </Link>
@@ -280,18 +325,30 @@ export default async function GrowthSprintPage() {
 
               <div className="flex flex-col rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-clay-lg ring-1 ring-indigo-400/40 sm:p-10 lg:col-span-2">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30">
-                  <RocketLaunchIcon className="size-6 text-white" aria-hidden="true" />
+                  <ShieldCheckIcon className="size-6 text-white" aria-hidden="true" />
                 </div>
-                <p className="mt-5 text-xs font-semibold text-indigo-100 uppercase tracking-widest">Benefits</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">Why teams choose the sprint</h3>
-                <ul className="mt-6 space-y-3">
-                  {benefits.map((b) => (
-                    <li key={b} className="flex items-start gap-3">
-                      <CheckIcon className="size-5 shrink-0 mt-0.5 text-white" aria-hidden="true" />
-                      <span className="text-sm leading-6 text-indigo-50">{b}</span>
+                <p className="mt-5 text-xs font-semibold text-indigo-100 uppercase tracking-widest">Our guarantees</p>
+                <h3 className="mt-2 text-xl font-semibold text-white">We put our work on the line</h3>
+                <p className="mt-2 text-sm leading-6 text-indigo-100">
+                  Nobody can promise rankings or revenue, but we can promise our own work.
+                </p>
+                <ul className="mt-6 flex-1 space-y-6">
+                  {guarantees.map((g) => (
+                    <li key={g.name} className="flex items-start gap-3">
+                      <g.icon className="size-5 shrink-0 mt-0.5 text-white" aria-hidden="true" />
+                      <div>
+                        <p className="text-sm font-semibold text-white">{g.name}</p>
+                        <p className="mt-1 text-sm leading-6 text-indigo-50">{g.description}</p>
+                      </div>
                     </li>
                   ))}
                 </ul>
+                <p className="mt-8 text-xs text-indigo-200">
+                  Guarantees depend on your team giving us access and approvals on time.{" "}
+                  <Link href="/growth-sprint/terms#guarantees" className="text-white hover:underline">
+                    See the full terms
+                  </Link>
+                </p>
               </div>
             </div>
           </div>
@@ -302,7 +359,7 @@ export default async function GrowthSprintPage() {
             <div className="mx-auto max-w-3xl rounded-2xl bg-gradient-to-br from-gray-900 to-indigo-950 px-6 py-12 text-center shadow-clay-lg sm:px-10">
               <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to start the sprint?</h2>
               <p className="mt-3 text-sm text-indigo-200">
-                Tell us about your app and we&apos;ll scope the first 30 days.
+                Tell us about your app and we&apos;ll show you where it&apos;s losing installs.
               </p>
               <div className="mt-6">
                 <a

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = "October 1, 2026";
+const LAST_UPDATED = "October 12, 2026";
 
 export default function GrowthSprintTermsPage() {
   return (
@@ -34,7 +34,7 @@ export default function GrowthSprintTermsPage() {
         <p>
           You engage AppASO for a fixed 90-day Sprint focused on identifying and executing growth
           opportunities for your mobile app. Your quote or order form (&quot;Order&quot;) sets out the app
-          and store(s) covered and the fee. The Sprint includes:
+          and store(s) covered and your payment option (see Fees and Payment). The Sprint includes:
         </p>
         <ul>
           <li>
@@ -54,8 +54,9 @@ export default function GrowthSprintTermsPage() {
             improve conversion rates and drive more installs.
           </li>
           <li>
-            <strong>Funnel optimization:</strong> analyze the user journey from impression to install and
-            identify opportunities to reduce drop-off and improve conversion.
+            <strong>Funnel optimization:</strong> analyze the user journey from store impression to install
+            to sale, fix the biggest drop-offs in your store listing and campaigns, and give your team
+            clear recommendations for steps inside your app, which your team implements.
           </li>
           <li>
             <strong>Performance tracking &amp; reporting:</strong> monitor key growth metrics and provide
@@ -92,26 +93,41 @@ export default function GrowthSprintTermsPage() {
         <h2>Term &amp; Commitment</h2>
         <ul>
           <li>The Sprint is a fixed 3-month engagement. Day 1 is the date of your kickoff call, and the Sprint ends on day 90.</li>
-          <li>The Sprint cannot be paused or cancelled early by you once it has started.</li>
+          <li>
+            The Sprint cannot be paused or cancelled early by you once it has started, except under the
+            First-Month Guarantee described in Our Guarantees.
+          </li>
           <li>Results require testing and iteration over the full 90 days, which is why the Sprint is a fixed commitment.</li>
         </ul>
         <p>
           We may end the Sprint if you materially breach these Sprint Terms and do not fix the breach
-          within 14 days of notice. If we end the Sprint without cause, we will refund the Sprint fee in
-          proportion to the days remaining.
+          within 14 days of notice. If we end the Sprint without cause, we will refund the fees you have
+          paid in proportion to the days remaining, and cancel any monthly payments not yet due.
         </p>
       </section>
 
       <section>
         <h2>Fees and Payment</h2>
+        <p>You can pay for the Sprint in one of two ways:</p>
+        <ul>
+          <li>
+            <strong>Monthly:</strong> $1,500 per month for 3 months ($4,500 in total). The first payment
+            is due before kickoff, the second on Day 31, and the third on Day 61.
+          </li>
+          <li>
+            <strong>Upfront:</strong> $4,000, paid in full before kickoff.
+          </li>
+        </ul>
         <p>
-          The full Sprint fee for all three months is paid upfront, before kickoff. We schedule your
-          kickoff call once payment is received.
+          The &quot;Sprint fee&quot; means the total for your payment option: $4,500 on the monthly
+          option, or $4,000 on the upfront option. Either way, the Sprint is a fixed 3-month commitment,
+          and on the monthly option you agree to make all three payments. We schedule your kickoff call
+          once the first payment is received. If a monthly payment is more than 7 days late, we may pause
+          work until it is paid, and the pause does not extend the Sprint.
         </p>
         <p>
           Fees exclude taxes, which you are responsible for where applicable. Fees are non-refundable once
-          paid, except as described in Term &amp; Commitment and Satisfaction Guarantee, or where required
-          by law.
+          paid, except as described in Term &amp; Commitment and Our Guarantees, or where required by law.
         </p>
       </section>
 
@@ -125,25 +141,98 @@ export default function GrowthSprintTermsPage() {
         </p>
       </section>
 
-      <section>
-        <h2>Satisfaction Guarantee</h2>
+      <section id="guarantees">
+        <h2>Our Guarantees</h2>
+        <p>
+          We cannot guarantee business results (see No Results Guarantee), but we do guarantee our own
+          work. The Sprint comes with the following guarantees.
+        </p>
+
+        <h3>Day 45 Guarantee</h3>
+        <p>
+          We commit to having your quick wins live and your first A/B tests running by Day 45. If either
+          is missed, your next month is free. For this guarantee:
+        </p>
+        <ul>
+          <li>
+            <strong>Quick wins</strong> means the metadata rewrite (title, subtitle, and keyword field)
+            and the other quick-win fixes named in your audit.
+          </li>
+          <li>
+            <strong>Live</strong> means submitted to the App Store or Google Play. Time the store takes to
+            review a submission is not counted.
+          </li>
+          <li>
+            <strong>First A/B tests running</strong> means at least one icon, screenshot, or store listing
+            test has been started in Product Page Optimization or Store Listing Experiments.
+          </li>
+        </ul>
+        <p>
+          You do not need to claim this guarantee. We apply it automatically:
+        </p>
+        <ul>
+          <li>
+            <strong>Monthly option:</strong> we waive your third payment ($1,500), due on Day 61.
+          </li>
+          <li>
+            <strong>Upfront option:</strong> we refund one month ($1,333.33, one third of the upfront
+            fee) within 14 days of Day 45.
+          </li>
+        </ul>
+        <p>The Sprint continues as planned, and you still receive the full 90 days of work.</p>
+
+        <h3>First-Month Guarantee</h3>
+        <p>
+          If you are not satisfied with the Sprint, you may end it by emailing us at{" "}
+          <a href="mailto:hello@appaso.io">hello@appaso.io</a> no later than the end of Day 30. Notices
+          received after Day 30 are not covered. You will not pay for the remaining two months:
+        </p>
+        <ul>
+          <li>
+            <strong>Monthly option:</strong> we cancel your second and third payments, and no further
+            payments are due.
+          </li>
+          <li>
+            <strong>Upfront option:</strong> we refund two months ($2,666.67, two thirds of the upfront
+            fee) within 14 days of your notice.
+          </li>
+        </ul>
+        <p>
+          You keep the audit, roadmap, and any other deliverables created up to that point. The included
+          AppASO Pro plan ends when the Sprint ends under this guarantee, and your workspace moves to the
+          Free plan unless you subscribe to a paid plan.
+        </p>
+
+        <h3>Work-Until-Done Guarantee</h3>
+        <p>
+          If a deliverable listed in the Engagement Overview is not finished by Day 90, we will keep
+          working on that deliverable at no extra cost until it is finished. This covers completing the
+          unfinished deliverable only. It does not extend ongoing services such as campaign management,
+          keyword expansion, or reporting beyond Day 90.
+        </p>
+
+        <h3>Fixing Deliverables</h3>
         <p>
           If you believe a deliverable listed in the Engagement Overview was not provided, notify us in
           writing at <a href="mailto:hello@appaso.io">hello@appaso.io</a> within 7 days of when it was
-          due. We will:
+          due. We will review your concern and fix or re-deliver the item promptly. If a deliverable still
+          cannot be fulfilled after correction, you may be eligible for a partial refund, limited to the
+          value of the undelivered work.
         </p>
+
+        <h3>Conditions</h3>
         <ul>
-          <li>Review your concern, and</li>
-          <li>Fix or re-deliver the item promptly.</li>
+          <li>
+            These guarantees do not apply where a missed Day 45 milestone or unfinished deliverable is caused by
+            delays on your side, as described in Your Responsibilities, such as missing access, assets, or
+            approvals, or by platform issues described in Experiments and Platform Limits.
+          </li>
+          <li>Total refunds and waived payments under these guarantees will never exceed the Sprint fee.</li>
+          <li>
+            These guarantees cover the delivery of the work, not performance results such as installs,
+            revenue, rankings, or return on investment.
+          </li>
         </ul>
-        <p>
-          If a deliverable still cannot be fulfilled after correction, you may be eligible for a partial
-          refund, limited to the value of the undelivered work.
-        </p>
-        <p>
-          This guarantee covers the delivery of the work, not performance results such as installs,
-          revenue, rankings, or return on investment.
-        </p>
       </section>
 
       <section>
@@ -209,7 +298,7 @@ export default function GrowthSprintTermsPage() {
       <section>
         <h2>Ownership of Work</h2>
         <p>
-          Once the Sprint fee is paid, you own the deliverables we create specifically for you, including
+          Once you have paid for the period in which we created them, you own the deliverables we create specifically for you, including
           your audit, roadmap, listing copy, ad creatives, test results, reports, and handoff playbook. You
           can keep and use them after the Sprint ends, with or without us. We keep ownership of our own
           tools, templates, methods, and know-how, and of AppASO itself.
@@ -219,8 +308,9 @@ export default function GrowthSprintTermsPage() {
       <section>
         <h2>Included AppASO Pro Plan</h2>
         <p>
-          Your Sprint includes one year of AppASO Pro at no extra cost, starting on Day 1, and it continues
-          for the full year after the Sprint ends. Your use of AppASO is governed by our{" "}
+          Your Sprint includes one year of AppASO Pro at no extra cost, starting on Day 1. It keeps running
+          after the Sprint ends until the year is up, unless it ends early under the First-Month
+          Guarantee. Your use of AppASO is governed by our{" "}
           <Link href="/terms">Terms of Service</Link>, and when the included plan ends, your workspace moves
           to the Free plan unless you subscribe to a paid plan.
         </p>
