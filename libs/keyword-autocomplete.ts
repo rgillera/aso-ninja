@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { enqueueAppleHintsRequest } from "@/libs/apple-rate-limiter";
+import { enqueueAppleHintsRequest, createQueue } from "@/libs/apple-rate-limiter";
 
 // iOS keyword popularity estimated from App Store search autocomplete — the
 // same suggestion list the App Store app shows while typing. Popular
@@ -12,6 +12,15 @@ import { enqueueAppleHintsRequest } from "@/libs/apple-rate-limiter";
 //
 // Unofficial, undocumented endpoint (no account or key needed) — every
 // failure path returns null so callers fall back rather than break.
+//
+// Android does the same walk against Google Play's search suggest (see
+// fetchPlayHints). Play used to be scored by whether the *full* keyword came
+// back as a suggestion, which saturated because Play echoed back almost any
+// well-formed phrase — it no longer does (long-tail phrases like "pet vet
+// records" now return no suggestions at all), and the letter-by-letter walk
+// only rewards keywords suggested early anyway. Sample (US): chatgpt 95,
+// photo editor 73, budget app 61, habit tracker 59, ai photo enhancer 43,
+// pet records 36, plant identifier 34.
 
 // Apple storefront IDs, needed as the X-Apple-Store-Front header (a ?cc=
 // param is ignored). Sourced from app-store-scraper's markets table and
@@ -57,14 +66,25 @@ const LONG_TAIL_MAX = 15;
 const PREFIX_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const prefixCache = new Map<string, { hints: string[]; ts: number }>();
 
+// Play suggest has no known per-IP limit (a ~60-request back-to-back run went
+// through clean), but each keyword can cost ~9 requests and the Android
+// metrics path scores terms in parallel — a short gap keeps that from
+// bursting.
+const PLAY_SUGGEST_GAP_MS = 200;
+const enqueuePlaySuggestRequest = createQueue(PLAY_SUGGEST_GAP_MS);
+const PLAY_SUGGEST_URL = "https://play.google.com/_/PlayStoreUi/data/batchexecute?rpcids=IJ4APc&authuser&soc-app=121&soc-platform=1&soc-device=1";
+
+export type Store = "ios" | "android";
+type HintsFetcher = (prefix: string) => Promise<string[] | null>;
+
 export type AutocompleteResult = { score: number; prefixChars: number | null; position: number | null };
 
 function normalize(s: string) {
   return s.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
-async function fetchHints(prefix: string, storefront: number): Promise<string[] | null> {
-  const key = `${storefront}|${prefix}`;
+async function fetchAppleHints(prefix: string, storefront: number): Promise<string[] | null> {
+  const key = `ios|${storefront}|${prefix}`;
   const cached = prefixCache.get(key);
   if (cached && Date.now() - cached.ts < PREFIX_CACHE_TTL_MS) return cached.hints;
   try {
@@ -80,6 +100,43 @@ async function fetchHints(prefix: string, storefront: number): Promise<string[] 
     const hints = [...xml.matchAll(/<key>term<\/key>\s*<string>([^<]*)<\/string>/g)].map((m) =>
       normalize(decodeXmlEntities(m[1]))
     );
+    prefixCache.set(key, { hints, ts: Date.now() });
+    return hints;
+  } catch {
+    return null;
+  }
+}
+
+// Same request google-play-scraper's suggest() sends, made directly: the
+// library throws a TypeError ("reading 'map'") when Play has no suggestions
+// for a prefix, which is indistinguishable from a real failure — here an
+// empty result is [] and only a failed request/unparseable response is null.
+async function fetchPlayHints(prefix: string, country: string): Promise<string[] | null> {
+  const key = `android|${country}|${prefix}`;
+  const cached = prefixCache.get(key);
+  if (cached && Date.now() - cached.ts < PREFIX_CACHE_TTL_MS) return cached.hints;
+  try {
+    const term = encodeURIComponent(prefix);
+    const body = `f.req=%5B%5B%5B%22IJ4APc%22%2C%22%5B%5Bnull%2C%5B%5C%22${term}%5C%22%5D%2C%5B10%5D%2C%5B2%5D%2C4%5D%5D%22%5D%5D%5D`;
+    const res = await enqueuePlaySuggestRequest(() =>
+      fetch(`${PLAY_SUGGEST_URL}&hl=en&gl=${encodeURIComponent(country)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+        body,
+        cache: "no-store",
+      })
+    );
+    if (!res.ok) return null;
+    // ")]}'" XSSI prefix, then a JSON envelope whose payload is itself a JSON string.
+    const text = await res.text();
+    const envelope = JSON.parse(text.substring(5));
+    const payload = envelope?.[0]?.[2];
+    if (typeof payload !== "string") return null;
+    const data = JSON.parse(payload);
+    const rows: unknown[] = Array.isArray(data?.[0]?.[0]) ? data[0][0] : [];
+    const hints = rows
+      .map((r) => (Array.isArray(r) && typeof r[0] === "string" ? normalize(r[0]) : null))
+      .filter((h): h is string => h !== null);
     prefixCache.set(key, { hints, ts: Date.now() });
     return hints;
   } catch {
@@ -104,16 +161,12 @@ export function scoreAutocomplete(prefixChars: number, position: number) {
   return Math.min(Math.max(score, LONG_TAIL_MAX + 1), 100);
 }
 
-// Checks the full keyword first: a keyword Apple doesn't suggest even fully
-// typed is never suggested at any shorter prefix either, so the long tail
-// (most keywords) costs a single request. Only keywords that *are*
+// Checks the full keyword first: a keyword the store doesn't suggest even
+// fully typed is never suggested at any shorter prefix either, so the long
+// tail (most keywords) costs a single request. Only keywords that *are*
 // suggested pay for the letter-by-letter walk.
-export async function fetchAutocompletePopularity(term: string, country: string): Promise<AutocompleteResult | null> {
-  const storefront = STOREFRONTS[country.toUpperCase()];
-  const kw = normalize(term);
-  if (!storefront || !kw) return null;
-
-  const full = await fetchHints(kw, storefront);
+async function walkPrefixes(kw: string, fetchHints: HintsFetcher): Promise<AutocompleteResult | null> {
+  const full = await fetchHints(kw);
   if (!full) return null;
   if (!full.includes(kw)) return { score: NEVER_SUGGESTED_SCORE, prefixChars: null, position: null };
 
@@ -121,9 +174,9 @@ export async function fetchAutocompletePopularity(term: string, country: string)
   // code point boundaries rather than splitting surrogate pairs.
   const chars = Array.from(kw);
   for (let n = 1; n < Math.min(chars.length, MAX_PREFIX_CHARS + 1); n++) {
-    // A trailing space adds nothing Apple matches on — skip the request.
+    // A trailing space adds nothing the store matches on — skip the request.
     if (chars[n - 1] === " ") continue;
-    const hints = await fetchHints(chars.slice(0, n).join(""), storefront);
+    const hints = await fetchHints(chars.slice(0, n).join(""));
     if (!hints) return null;
     const idx = hints.indexOf(kw);
     if (idx >= 0) return { score: scoreAutocomplete(n, idx + 1), prefixChars: n, position: idx + 1 };
@@ -132,39 +185,59 @@ export async function fetchAutocompletePopularity(term: string, country: string)
   return { score: scoreAutocomplete(chars.length, pos), prefixChars: chars.length, position: pos };
 }
 
+export async function fetchAutocompletePopularity(term: string, country: string, store: Store = "ios"): Promise<AutocompleteResult | null> {
+  const kw = normalize(term);
+  if (!kw) return null;
+  if (store === "android") {
+    const gl = country.toLowerCase();
+    return walkPrefixes(kw, (prefix) => fetchPlayHints(prefix, gl));
+  }
+  const storefront = STOREFRONTS[country.toUpperCase()];
+  if (!storefront) return null;
+  return walkPrefixes(kw, (prefix) => fetchAppleHints(prefix, storefront));
+}
+
 // Weekly-cached autocomplete popularity for a keyword, shared across every
-// app/workspace. null = not available (unsupported country, Apple error) —
-// the caller should fall back to the rating-count volume, and nothing is
+// app/workspace. null = not available (unsupported country, store error) —
+// the caller should fall back to its search-result volume, and nothing is
 // cached so the next check retries.
-export async function getIosAutocompleteVolume(
+async function getAutocompleteVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, store: Store
 ): Promise<number | null> {
   const normTerm = normalize(term);
   const normCountry = country.toLowerCase();
-  if (!STOREFRONTS[normCountry.toUpperCase()]) return null;
+  if (store === "ios" && !STOREFRONTS[normCountry.toUpperCase()]) return null;
 
   const { data } = await supabase
     .from("keyword_autocomplete_popularity")
     .select("score, checked_at")
     .eq("term", normTerm)
+    .eq("store", store)
     .eq("country", normCountry)
     .maybeSingle();
   if (data && Date.now() - new Date(data.checked_at as string).getTime() < CACHE_TTL_MS) {
     return data.score as number;
   }
 
-  const result = await fetchAutocompletePopularity(normTerm, normCountry);
+  const result = await fetchAutocompletePopularity(normTerm, normCountry, store);
   if (!result) return null;
   await supabase.from("keyword_autocomplete_popularity").upsert(
     {
-      term: normTerm, country: normCountry, score: result.score,
+      term: normTerm, store, country: normCountry, score: result.score,
       prefix_chars: result.prefixChars, position: result.position,
       checked_at: new Date().toISOString(),
     },
-    { onConflict: "term,country" }
+    { onConflict: "term,store,country" }
   );
   return result.score;
+}
+
+export async function getIosAutocompleteVolume(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any, any, any>, term: string, country: string
+): Promise<number | null> {
+  return getAutocompleteVolume(supabase, term, country, "ios");
 }
 
 // Rating-count volume (computeIosVolume) is 5 below a 1,000-rating average,
@@ -187,5 +260,26 @@ export async function resolveIosVolume(
   const autocomplete = await getIosAutocompleteVolume(supabase, term, country);
   if (autocomplete === null) return ratingVolume;
   if (autocomplete === NEVER_SUGGESTED_SCORE) return longTailScore(ratingVolume);
+  return autocomplete;
+}
+
+// Title-match volume (computeAndroidTitleVolume) is ~30 for any keyword with
+// a full result page but no title matches, up to 100 — stretched across the
+// long-tail range the same way longTailScore stretches the iOS estimate.
+function androidLongTailScore(titleVolume: number) {
+  const t = Math.min(Math.max((titleVolume - 30) / (100 - 30), 0), 1);
+  return NEVER_SUGGESTED_SCORE + 1 + Math.round(t * (LONG_TAIL_MAX - NEVER_SUGGESTED_SCORE - 1));
+}
+
+// The Android volume every writer stores: Play suggest popularity, with the
+// title-match estimate (titleVolume) breaking ties among never-suggested
+// keywords, and as the whole score whenever Play suggest fails.
+export async function resolveAndroidVolume(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, titleVolume: number
+): Promise<number> {
+  const autocomplete = await getAutocompleteVolume(supabase, term, country, "android");
+  if (autocomplete === null) return titleVolume;
+  if (autocomplete === NEVER_SUGGESTED_SCORE) return androidLongTailScore(titleVolume);
   return autocomplete;
 }

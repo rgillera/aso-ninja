@@ -19,7 +19,7 @@ const GAP_MS = 3500;
 // behind search requests. See libs/keyword-autocomplete.ts.
 const HINTS_GAP_MS = 500;
 
-function createQueue(gapMs: number) {
+export function createQueue(gapMs: number) {
   let chain: Promise<void> = Promise.resolve();
   return function enqueue<T>(fn: () => Promise<T>): Promise<T> {
     const result: Promise<T> = chain.then(() => fn());

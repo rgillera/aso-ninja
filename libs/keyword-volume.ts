@@ -32,6 +32,20 @@ export function computeIosVolumeAndDiff(apps: RawStoreApp[], term: string) {
   return { volume, diff };
 }
 
+// Android's fallback volume (and tiebreaker among keywords Play never
+// suggests — see resolveAndroidVolume in libs/keyword-autocomplete.ts): how
+// many results the search returns, and how many of them carry every keyword
+// word in their title.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function computeAndroidTitleVolume(apps: any[], term: string) {
+  const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
+  const resultCountScore = Math.min(Math.round((apps.length / 100) * 100), 100);
+  const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
+  return Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+}
+
 // Opportunity for a keyword_metrics row whose volume/chance just changed,
 // without re-scoring relevancy — same formula as scoreMetrics in
 // app/api/keywords/metrics/route.ts. A row that was never relevancy-scored

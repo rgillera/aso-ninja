@@ -3,7 +3,8 @@ import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isGeminiReachable } from "@/libs/gemini";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
-import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
+import { computeAndroidTitleVolume } from "@/libs/keyword-volume";
 import {
   type IntentTheme,
   type AppMeta,
@@ -166,18 +167,9 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
     await persistAndroidSearch(supabase, term, country, apps);
 
     const count = apps.length;
-    const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
-    const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
-    const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
-    // Play's "suggest" autocomplete used to feed this (does the exact term
-    // appear in autosuggest?), but it almost always echoes back any
-    // well-formed multi-word phrase as its own top suggestion — that made
-    // volume saturate near 100 for precisely the specific, long-tail phrases
-    // ASO research cares about most, while only discriminating on single
-    // generic words. Title-match/result-count is a weaker but honest signal.
-    const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+    // Play suggest popularity (letter-by-letter, same walk as iOS), with the
+    // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
+    const volume = await resolveAndroidVolume(supabase, term, country, computeAndroidTitleVolume(apps, term));
 
     const top5 = apps.slice(0, 5);
     // Use rating *count* (install signal), not star rating — same approach as iOS.

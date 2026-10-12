@@ -9,8 +9,8 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
-import { resolveIosVolume } from "@/libs/keyword-autocomplete";
-import { recomputeOpportunity } from "@/libs/keyword-volume";
+import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
+import { recomputeOpportunity, computeAndroidTitleVolume } from "@/libs/keyword-volume";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -121,13 +121,7 @@ function computeIosVolumeAndDiff(apps: RawIosApp[], term: string) {
 // Mirrors the android branch of app/api/cron/refresh-keywords/route.ts.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeAndroidVolumeAndDiff(apps: any[], term: string) {
-  const count = apps.length;
-  const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
-  const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
-  const titleMatchScore = Math.min(Math.round((titleMatches / 30) * 100), 100);
-  const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+  const volume = computeAndroidTitleVolume(apps, term);
 
   const top5 = apps.slice(0, 5);
   const avgRatings = top5.length > 0
@@ -236,7 +230,8 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
     return { ok: false, error: "Google Play search failed." };
   }
 
-  const { volume, diff } = computeAndroidVolumeAndDiff(apps, normTerm);
+  const { volume: titleVolume, diff } = computeAndroidVolumeAndDiff(apps, normTerm);
+  const volume = await resolveAndroidVolume(admin, normTerm, countryLower, titleVolume);
 
   await admin.from("keyword_volume_history").upsert(
     { term: normTerm, store: "android", country: countryLower, score: volume, diff, recorded_on: today },

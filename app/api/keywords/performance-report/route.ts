@@ -2,8 +2,8 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
-import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
-import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { computeIosVolumeAndDiff, computeAndroidTitleVolume } from "@/libs/keyword-volume";
+import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { computeWeight } from "@/libs/keyword-downloads-apportionment";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -83,13 +83,9 @@ async function backfillCurrentMonth(terms: string[], store: string, country: str
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
 
-        const count = apps.length;
-        const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
-        const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
-        const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
-        const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+        // Play suggest popularity (letter-by-letter, same walk as iOS), with the
+        // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
+        const volume = await resolveAndroidVolume(supabase, term, country, computeAndroidTitleVolume(apps, term));
 
         // Skips the diff calc (needs a per-app detail lookup the cron pays
         // for — see refresh-keywords) since the Export Report never reads

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
-import { computeIosVolumeAndDiff } from "@/libs/keyword-volume";
-import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { computeIosVolumeAndDiff, computeAndroidTitleVolume } from "@/libs/keyword-volume";
+import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
 
@@ -261,15 +261,9 @@ export async function GET(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
 
-        const count = apps.length;
-        const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const titleMatches = apps.filter((a: any) => kwTokens.every((w) => (a.title ?? "").toLowerCase().includes(w))).length;
-        const resultCountScore = Math.min(Math.round((count / 100) * 100), 100);
-        const titleMatchScore  = Math.min(Math.round((titleMatches / 30) * 100), 100);
-        // See app/api/keywords/metrics/route.ts for why this dropped the
-        // Play-suggest-echo signal in favor of title-match/result-count.
-        const volume = Math.round(resultCountScore * 0.3 + titleMatchScore * 0.7);
+        // Play suggest popularity (letter-by-letter, same walk as iOS), with the
+        // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
+        const volume = await resolveAndroidVolume(supabase, term, country, computeAndroidTitleVolume(apps, term));
 
         const top5 = apps.slice(0, 5);
         // Plain search() results never carry ratings/reviews (only score/scoreText) —
