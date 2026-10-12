@@ -84,6 +84,7 @@ export default function CompareAppsPage() {
             "Line up ratings, screenshots, and content details across up to 4 apps",
             "See who leads on rating, screenshot count, and freshness at a glance",
             "Works across App Store and Google Play, in any storefront country",
+            "Includes estimated downloads and revenue for each app",
           ]}
         />
       </div>

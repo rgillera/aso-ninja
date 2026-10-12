@@ -130,6 +130,7 @@ export default function AppExplorerPage() {
             "Browse live Top Free, Paid, and Grossing charts for iOS and Android",
             "Spot newly trending and newly discovered apps in your category",
             "Track competitor apps straight from the charts into your workspace",
+            "See estimated downloads and revenue for each app",
           ]}
         />
       </div>
