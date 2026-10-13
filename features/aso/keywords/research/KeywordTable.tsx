@@ -184,14 +184,11 @@ const DEFAULT_VISIBLE = new Set(
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 // Hover text on the Rank cell (and the Potential Impressions column): the
-// app's estimated daily search impressions now vs. at POTENTIAL_RANK. See
+// app's estimated daily search impressions at its current rank. See
 // libs/keyword-impressions.ts for how these are modeled.
 function impressionsTitle(row: Keyword): string {
-  const potential = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
-  if (row.rank === null) return `Est. impressions: none now (not ranking), ~${potential}/day at #${POTENTIAL_RANK}`;
-  const current = DOWNLOADS_FORMATTER.format(estimateDailyImpressions(row.volume, row.rank));
-  if (row.rank <= POTENTIAL_RANK) return `Est. impressions: ~${current}/day at #${row.rank}`;
-  return `Est. impressions: ~${current}/day at #${row.rank}, ~${potential}/day at #${POTENTIAL_RANK}`;
+  if (row.rank === null) return "Est. impressions: none (not ranking)";
+  return `Est. impressions: ~${DOWNLOADS_FORMATTER.format(estimateDailyImpressions(row.volume, row.rank))}/day`;
 }
 
 function PendingSyncCell() {
