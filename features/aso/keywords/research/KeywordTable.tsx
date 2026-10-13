@@ -572,7 +572,14 @@ export function KeywordTable({
       );
       case "rank": return row.rank !== null
         ? <span title={impressionsTitle(row)} className={`text-sm font-medium tabular-nums cursor-help ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
-        : <span title={impressionsTitle(row)} className="text-xs text-gray-600 light:text-gray-400 italic cursor-help">{unrankedLabel(store, row.results)}</span>;
+        : <span
+            title={store === "android" && row.results
+              ? `Google Play showed ${row.results} apps for this keyword and yours wasn't among them.\n${impressionsTitle(row)}`
+              : impressionsTitle(row)}
+            className="text-xs text-gray-600 light:text-gray-400 italic cursor-help"
+          >
+            {unrankedLabel(store)}
+          </span>;
       case "results": return (
         row.results != null
           ? <span className="text-sm text-gray-300 light:text-gray-700">{row.results.toLocaleString()}</span>
