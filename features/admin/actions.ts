@@ -171,7 +171,7 @@ async function syncTrackedAppRanks(
 }
 
 export type RefreshResult =
-  | { ok: true; resultsCount: number; recordedOn: string }
+  | { ok: true; resultsCount: number; recordedOn: string; volume: number }
   | { ok: false; error: string };
 
 // Forces a fresh live rank + volume fetch for one (term, store, country)
@@ -197,7 +197,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
     if (result === null) return { ok: false, error: "iTunes search failed." };
 
     const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(result, normTerm);
-    const volume = await resolveIosVolume(admin, normTerm, countryLower, ratingVolume);
+    const volume = await resolveIosVolume(admin, normTerm, countryLower, ratingVolume, { fresh: true });
 
     await admin.from("keyword_volume_history").upsert(
       { term: normTerm, store: "ios", country: countryLower, score: volume, diff, raw_apps: result, recorded_on: today },
@@ -216,7 +216,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
       await syncTrackedAppRanks(admin, normTerm, "ios", countryUpper, volume, result.map((a) => a.trackName), result.map((a) => a.trackId));
     }
 
-    return { ok: true, resultsCount: result.length, recordedOn: today };
+    return { ok: true, resultsCount: result.length, recordedOn: today, volume };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -231,7 +231,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
   }
 
   const { volume: titleVolume, diff } = computeAndroidVolumeAndDiff(apps, normTerm);
-  const volume = await resolveAndroidVolume(admin, normTerm, countryLower, titleVolume);
+  const volume = await resolveAndroidVolume(admin, normTerm, countryLower, titleVolume, { fresh: true });
 
   await admin.from("keyword_volume_history").upsert(
     { term: normTerm, store: "android", country: countryLower, score: volume, diff, recorded_on: today },
@@ -250,7 +250,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
     await syncTrackedAppRanks(admin, normTerm, "android", countryUpper, volume, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId));
   }
 
-  return { ok: true, resultsCount: apps.length, recordedOn: today };
+  return { ok: true, resultsCount: apps.length, recordedOn: today, volume };
 }
 
 // Deletes a user and all their data on their behalf (deletion requests sent

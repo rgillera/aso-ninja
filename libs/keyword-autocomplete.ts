@@ -240,16 +240,20 @@ export async function fetchAutocompletePopularity(term: string, country: string,
 // Weekly-cached autocomplete popularity for a keyword, shared across every
 // app/workspace. null = not available (unsupported country, store error) —
 // the caller should fall back to its search-result volume, and nothing is
-// cached so the next check retries.
+// cached so the next check retries. fresh skips the cached score (still
+// writes the new one) — for an explicit force refresh, where handing back
+// last week's score would make the refresh a silent no-op for volume.
+export type VolumeOptions = { fresh?: boolean };
+
 async function getAutocompleteVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string, store: Store
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, store: Store, opts: VolumeOptions = {}
 ): Promise<number | null> {
   const normTerm = normalize(term);
   const normCountry = country.toLowerCase();
   if (store === "ios" && !STOREFRONTS[normCountry.toUpperCase()]) return null;
 
-  const { data } = await supabase
+  const { data } = opts.fresh ? { data: null } : await supabase
     .from("keyword_autocomplete_popularity")
     .select("score, checked_at")
     .eq("term", normTerm)
@@ -275,9 +279,9 @@ async function getAutocompleteVolume(
 
 export async function getIosAutocompleteVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, opts: VolumeOptions = {}
 ): Promise<number | null> {
-  return getAutocompleteVolume(supabase, term, country, "ios");
+  return getAutocompleteVolume(supabase, term, country, "ios", opts);
 }
 
 // Rating-count volume (computeIosVolume) is 5 below a 1,000-rating average,
@@ -295,9 +299,9 @@ function longTailScore(ratingVolume: number) {
 // isn't available (unsupported country, Apple hints error).
 export async function resolveIosVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string, ratingVolume: number
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, ratingVolume: number, opts: VolumeOptions = {}
 ): Promise<number> {
-  const autocomplete = await getIosAutocompleteVolume(supabase, term, country);
+  const autocomplete = await getIosAutocompleteVolume(supabase, term, country, opts);
   if (autocomplete === null) return ratingVolume;
   if (autocomplete === NEVER_SUGGESTED_SCORE) return longTailScore(ratingVolume);
   return autocomplete;
@@ -316,9 +320,9 @@ function androidLongTailScore(titleVolume: number) {
 // keywords, and as the whole score whenever Play suggest fails.
 export async function resolveAndroidVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string, titleVolume: number
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, titleVolume: number, opts: VolumeOptions = {}
 ): Promise<number> {
-  const autocomplete = await getAutocompleteVolume(supabase, term, country, "android");
+  const autocomplete = await getAutocompleteVolume(supabase, term, country, "android", opts);
   if (autocomplete === null) return titleVolume;
   if (autocomplete === NEVER_SUGGESTED_SCORE) return androidLongTailScore(titleVolume);
   return autocomplete;

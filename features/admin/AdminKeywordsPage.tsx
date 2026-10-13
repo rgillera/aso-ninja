@@ -117,7 +117,7 @@ export default function AdminKeywordsPage() {
                       {state?.result && (
                         <p className={`text-xs mt-1 ${state.result.ok ? "text-emerald-400 light:text-emerald-700" : "text-red-400 light:text-red-600"}`}>
                           {state.result.ok
-                            ? `Refreshed just now — ${state.result.resultsCount.toLocaleString()} results recorded`
+                            ? `Refreshed just now: volume ${state.result.volume}, ${state.result.resultsCount.toLocaleString()} results recorded`
                             : state.result.error}
                         </p>
                       )}
