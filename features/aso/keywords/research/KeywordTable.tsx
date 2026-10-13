@@ -28,6 +28,7 @@ import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { estimateDailyImpressions, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
@@ -171,6 +172,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Higher = better." },
   { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100). Higher = better match." },
   { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app, combining demand, ranking chance and relevancy. Higher = better." },
+  { key: "potentialImpressions", label: "Potential Impressions", tableLabel: "Potential Impr.", defaultVisible: false, tooltip: `Estimated times a day your app would be shown in search results for this keyword if it ranked #${POTENTIAL_RANK}, based on volume. A ballpark for comparing keywords, not a store-reported count.` },
   { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "Estimated daily downloads from this keyword, based on your app's connected store data." },
   { key: "rank", label: "App Rank", defaultVisible: true, tooltip: "Your app's current position for this keyword. Lower = better. Google Play search only shows its top results (about 15-30 apps), so \"Not in top N\" means your app wasn't among them, not that it doesn't rank at all." },
 ];
@@ -180,6 +182,17 @@ const DEFAULT_VISIBLE = new Set(
 );
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+
+// Hover text on the Rank cell (and the Potential Impressions column): the
+// app's estimated daily search impressions now vs. at POTENTIAL_RANK. See
+// libs/keyword-impressions.ts for how these are modeled.
+function impressionsTitle(row: Keyword): string {
+  const potential = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
+  if (row.rank === null) return `Est. impressions: none now (not ranking), ~${potential}/day at #${POTENTIAL_RANK}`;
+  const current = DOWNLOADS_FORMATTER.format(estimateDailyImpressions(row.volume, row.rank));
+  if (row.rank <= POTENTIAL_RANK) return `Est. impressions: ~${current}/day at #${row.rank}`;
+  return `Est. impressions: ~${current}/day at #${row.rank}, ~${potential}/day at #${POTENTIAL_RANK}`;
+}
 
 function PendingSyncCell() {
   return <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />;
@@ -449,6 +462,9 @@ export function KeywordTable({
       if (sortKey === "keyword") {
         av = a.keyword.toLowerCase();
         bv = b.keyword.toLowerCase();
+      } else if (sortKey === "potentialImpressions") {
+        av = estimatePotentialImpressions(a.volume, a.rank);
+        bv = estimatePotentialImpressions(b.volume, b.rank);
       } else if (sortKey === "rank") {
         // null (unranked) always sorts to the end
         if (a.rank === null && b.rank === null) return 0;
@@ -505,6 +521,7 @@ export function KeywordTable({
       case "rank": return row.rank ?? unrankedLabel(store, row.results);
       case "relevancy": return row.relevancy ?? "";
       case "opportunity": return row.opportunity ?? "";
+      case "potentialImpressions": return estimatePotentialImpressions(row.volume, row.rank);
       case "results": return row.results ?? "";
       default: return (row as unknown as Record<string, number>)[colKey] ?? "";
     }
@@ -557,12 +574,17 @@ export function KeywordTable({
           : <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />
       );
       case "rank": return row.rank !== null
-        ? <span className={`text-sm font-medium tabular-nums ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
-        : <span className="text-xs text-gray-600 light:text-gray-400 italic">{unrankedLabel(store, row.results)}</span>;
+        ? <span title={impressionsTitle(row)} className={`text-sm font-medium tabular-nums cursor-help ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
+        : <span title={impressionsTitle(row)} className="text-xs text-gray-600 light:text-gray-400 italic cursor-help">{unrankedLabel(store, row.results)}</span>;
       case "results": return (
         row.results != null
           ? <span className="text-sm text-gray-300 light:text-gray-700">{row.results.toLocaleString()}</span>
           : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
+      );
+      case "potentialImpressions": return (
+        <span className="text-sm text-gray-300 light:text-gray-700 tabular-nums" title={impressionsTitle(row)}>
+          ~{DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank))}
+        </span>
       );
       case "estimatedDownloads": return (
         downloadsLocked
