@@ -14,12 +14,23 @@
 //
 // Usage (dry run by default, prints old → new):
 //   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
-//     npx tsx --tsconfig tsconfig.json scripts/refresh-volumes.ts [--apply] [--clear-cache] [--store=ios|android]
+//     npx tsx --tsconfig tsconfig.json scripts/refresh-volumes.ts [--apply]
+//       [--clear-cache | --recheck-suspect] [--store=ios|android] [--terms=a,b]
 //
-// --clear-cache deletes keyword_autocomplete_popularity rows first (it's only
-// a cache) so scores computed before the latest scoring change are redone.
-// Re-running after an interruption is safe: already re-scored keywords hit
-// the fresh cache and cost nothing.
+// --clear-cache deletes every keyword_autocomplete_popularity row first (it's
+// only a cache) so every score is redone with the current rules.
+//
+// --recheck-suspect is the fast version: only keywords a scoring-rule change
+// can plausibly move are re-checked — never suggested (prefix_chars null),
+// first suggested at SUSPECT_MIN_PREFIX+ letters, or not scored yet. Keywords
+// suggested within the first few letters (popular, with plenty of rivals) are
+// skipped outright: no requests, no writes.
+//
+// --terms limits the run to those keywords (comma-separated, any case).
+//
+// A keyword whose volume comes out unchanged is never written. Re-running
+// after an interruption is safe: already re-scored keywords hit the fresh
+// cache and cost nothing.
 
 import { createClient } from "@supabase/supabase-js";
 import { resolveIosVolume, resolveAndroidVolume } from "../libs/keyword-autocomplete";
@@ -28,7 +39,15 @@ import { computeIosVolumeAndDiff, computeAndroidTitleVolume, recomputeOpportunit
 const args = new Set(process.argv.slice(2));
 const APPLY = args.has("--apply");
 const CLEAR_CACHE = args.has("--clear-cache");
+const RECHECK_SUSPECT = !CLEAR_CACHE && args.has("--recheck-suspect");
 const ONLY_STORE = [...args].find((a) => a.startsWith("--store="))?.split("=")[1];
+const ONLY_TERMS = [...args].find((a) => a.startsWith("--terms="))?.slice("--terms=".length)
+  .split(",").map((t) => t.toLowerCase().trim().replace(/\s+/g, " ")).filter(Boolean);
+
+// Won-by-default brands (see wonByDefault in libs/keyword-autocomplete.ts)
+// only surface once a prefix is nearly unique, which is never within the
+// first three letters for any keyword sampled.
+const SUSPECT_MIN_PREFIX = 4;
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -59,6 +78,26 @@ async function loadTrackedMetrics(): Promise<MetricsRow[]> {
     if (!data || data.length < PAGE) break;
   }
   return rows;
+}
+
+// term|store|country → prefix_chars (null = never suggested). Missing key =
+// no cached score at all.
+async function loadAutocompleteCache(): Promise<Map<string, number | null>> {
+  const cache = new Map<string, number | null>();
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    let q = supabase.from("keyword_autocomplete_popularity").select("term, store, country, prefix_chars");
+    if (ONLY_STORE) q = q.eq("store", ONLY_STORE);
+    const { data, error } = await q.order("term").order("store").order("country").range(from, from + PAGE - 1);
+    if (error) throw error;
+    for (const r of data ?? []) cache.set(`${r.term}|${r.store}|${r.country}`, r.prefix_chars as number | null);
+    if (!data || data.length < PAGE) break;
+  }
+  return cache;
+}
+
+function isSuspect(prefixChars: number | null | undefined) {
+  return prefixChars === undefined || prefixChars === null || prefixChars >= SUSPECT_MIN_PREFIX;
 }
 
 async function fallbackVolume(term: string, store: "ios" | "android", country: string) {
@@ -93,7 +132,7 @@ async function fallbackVolume(term: string, store: "ios" | "android", country: s
 }
 
 async function main() {
-  console.log(`${APPLY ? "APPLY" : "DRY RUN"}${CLEAR_CACHE ? " + clear cache" : ""}${ONLY_STORE ? ` (${ONLY_STORE} only)` : ""}`);
+  console.log(`${APPLY ? "APPLY" : "DRY RUN"}${CLEAR_CACHE ? " + clear cache" : ""}${RECHECK_SUSPECT ? " + suspects only" : ""}${ONLY_STORE ? ` (${ONLY_STORE} only)` : ""}${ONLY_TERMS ? ` (terms: ${ONLY_TERMS.join(", ")})` : ""}`);
 
   if (CLEAR_CACHE && APPLY) {
     let q = supabase.from("keyword_autocomplete_popularity").delete();
@@ -104,13 +143,30 @@ async function main() {
   }
 
   const metrics = await loadTrackedMetrics();
+  const cache = RECHECK_SUSPECT ? await loadAutocompleteCache() : null;
   const groups = new Map<string, MetricsRow[]>();
+  const skipped = new Set<string>();
   for (const row of metrics) {
     if (ONLY_STORE && row.apps.store !== ONLY_STORE) continue;
-    const k = `${row.keywords.term}|${row.apps.store}|${row.apps.country.toLowerCase()}`;
+    const term = row.keywords.term.toLowerCase().trim().replace(/\s+/g, " ");
+    if (ONLY_TERMS && !ONLY_TERMS.includes(term)) continue;
+    const k = `${term}|${row.apps.store}|${row.apps.country.toLowerCase()}`;
+    if (cache && !groups.has(k) && !isSuspect(cache.get(k))) { skipped.add(k); continue; }
     groups.set(k, [...(groups.get(k) ?? []), row]);
   }
-  console.log(`${groups.size} keyword/store/country combos across ${metrics.length} tracked rows.\n`);
+  if (cache) {
+    console.log(`Skipping ${skipped.size} combos suggested within ${SUSPECT_MIN_PREFIX - 1} letters.`);
+    // Drop the suspects' cached scores so they're actually re-fetched.
+    if (APPLY && groups.size) {
+      for (const k of groups.keys()) {
+        const [term, store, country] = k.split("|");
+        const { error } = await supabase.from("keyword_autocomplete_popularity").delete()
+          .eq("term", term).eq("store", store).eq("country", country);
+        if (error) throw error;
+      }
+    }
+  }
+  console.log(`${groups.size} keyword/store/country combos to check.\n`);
 
   const today = new Date().toISOString().split("T")[0];
   let i = 0, changed = 0, failed = 0;
@@ -126,7 +182,12 @@ async function main() {
       const resolve = store === "ios" ? resolveIosVolume : resolveAndroidVolume;
       const volume = await resolve(APPLY ? supabase : readOnlyClient(), term, country, base);
       const old = rows[0].volume;
-      if (old !== volume) changed++;
+      const stale = rows.filter((r) => r.volume !== volume);
+      if (!stale.length) {
+        console.log(`[${i}/${groups.size}] ${store} ${country} "${term}": ${old ?? "-"} (unchanged)`);
+        continue;
+      }
+      changed++;
       console.log(`[${i}/${groups.size}] ${store} ${country} "${term}": ${old ?? "-"} → ${volume}`);
 
       if (!APPLY) continue;
@@ -135,7 +196,7 @@ async function main() {
         { onConflict: "term,store,country,recorded_on" }
       );
       const now = new Date().toISOString();
-      for (const row of rows) {
+      for (const row of stale) {
         await supabase.from("keyword_metrics")
           .update({ volume, opportunity: recomputeOpportunity(row, volume, row.chance ?? 0), updated_at: now })
           .eq("app_id", row.app_id).eq("keyword_id", row.keyword_id);

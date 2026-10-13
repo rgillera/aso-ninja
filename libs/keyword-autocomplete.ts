@@ -172,6 +172,31 @@ function suggestionIndex(hints: string[], kw: string) {
   return hints.findIndex((h) => h === kw || h.startsWith(kw + " "));
 }
 
+// A match only says something about popularity if the keyword beat
+// something unrelated to it. An app's own name ("nutrisnap") is suggested
+// as soon as its letters stop matching anything else — at "nutrisn" every
+// suggestion on both stores is NutriSnap or a NutriSnap variant — which
+// scored a brand with ~0 searches like a mid-popularity keyword. Every real
+// keyword sampled (incl. brands people do search, like "myfitnesspal") had
+// 2+ unrelated suggestions alongside it where it first appeared.
+// A variant is the keyword followed by nothing or by a non-letter ("nutrisnap
+// pro", "nutrisnap: calorie counter"); "buddy" is a rival of "bud", not a
+// variant of it.
+function isVariant(hint: string, kw: string) {
+  if (!hint.startsWith(kw)) return false;
+  const next = Array.from(hint.slice(kw.length))[0];
+  return next === undefined || !/[\p{L}\p{N}]/u.test(next);
+}
+
+// Two, not one: a near-identical app name can be the lone "rival" (Apple
+// suggests "nutrisnaps: ai calorie tracker" alongside nine NutriSnap
+// variants at "nutrisn").
+const MIN_RIVALS = 2;
+
+function wonByDefault(hints: string[], kw: string) {
+  return hints.filter((h) => !isVariant(h, kw)).length < MIN_RIVALS;
+}
+
 // Checks the full keyword first: a keyword the store doesn't suggest even
 // fully typed is never suggested at any shorter prefix either, so the long
 // tail (most keywords) costs a single request. Only keywords that *are*
@@ -191,8 +216,11 @@ async function walkPrefixes(kw: string, fetchHints: HintsFetcher): Promise<Autoc
     const hints = await fetchHints(chars.slice(0, n).join(""));
     if (!hints) return null;
     const idx = suggestionIndex(hints, kw);
-    if (idx >= 0) return { score: scoreAutocomplete(n, idx + 1), prefixChars: n, position: idx + 1 };
+    if (idx < 0) continue;
+    if (wonByDefault(hints, kw)) return { score: NEVER_SUGGESTED_SCORE, prefixChars: null, position: null };
+    return { score: scoreAutocomplete(n, idx + 1), prefixChars: n, position: idx + 1 };
   }
+  if (wonByDefault(full, kw)) return { score: NEVER_SUGGESTED_SCORE, prefixChars: null, position: null };
   const pos = fullIdx + 1;
   return { score: scoreAutocomplete(chars.length, pos), prefixChars: chars.length, position: pos };
 }
