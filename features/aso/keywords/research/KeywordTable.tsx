@@ -166,7 +166,7 @@ type ColumnDef = {
 };
 
 const COLUMN_DEFS: ColumnDef[] = [
-  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100), based on App Store and Google Play search signals. Higher = more demand. Less precise in smaller markets, so it's best for comparing keywords within the same country." },
+  { key: "volume", label: "Volume", defaultVisible: true, tooltip: "Estimated search demand (0–100), based on App Store and Google Play search signals. Higher = more demand. Most precise in larger markets, and best for comparing keywords within the same country." },
   { key: "results", label: "Results", defaultVisible: false, tooltip: "How many apps show up for this keyword. More results = more competition." },
   { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank for this keyword (0–100). Higher = harder." },
   { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Higher = better." },
