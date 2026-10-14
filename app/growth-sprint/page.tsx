@@ -62,6 +62,7 @@ const phases = [
       "Title, subtitle, and keyword rewrite, shipped",
       "Funnel mapped from impression to sale, with the biggest leaks fixed",
       "Growth strategy and a prioritized 60-day roadmap, agreed with your team",
+      "FREE 1 year of AppASO Pro, yours to keep even if you cancel after month one",
     ],
     milestone: "Day 30: audit and roadmap delivered",
     icon: ClipboardDocumentCheckIcon,
@@ -172,7 +173,7 @@ const sprintIncludes = [
   "A growth plan across organic and paid, reviewed every 30 days",
   "Regular reports on rankings, conversion, and campaigns",
   "A handoff playbook you keep after day 90",
-  "1 year of AppASO Pro included ($348 value)",
+  "1 year of AppASO Pro included ($348 value), yours to keep even if you cancel",
 ];
 
 export default async function GrowthSprintPage() {
