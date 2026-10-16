@@ -3,7 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isGeminiReachable } from "@/libs/gemini";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
-import { resolveIosVolume, resolveAndroidVolume, loadLowConfidenceTerms } from "@/libs/keyword-autocomplete";
+import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { computeAndroidTitleVolume } from "@/libs/keyword-volume";
 import {
   type IntentTheme,
@@ -20,9 +20,6 @@ import {
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
 type Metrics = {
-  // Volume from a late autocomplete match in a smaller storefront — see
-  // isLowConfidenceVolume in libs/keyword-autocomplete.ts.
-  volumeLowConfidence?: boolean;
   volume: number;
   diff: number;
   chance: number;
@@ -427,9 +424,6 @@ export async function GET(request: NextRequest) {
   if (!hasRelevancyAccess) {
     for (const m of Object.values(merged)) { m.relevancy = null; m.opportunity = null; }
   }
-
-  const lowConfidence = await loadLowConfidenceTerms(supabase, Object.keys(merged), store, country);
-  for (const [term, m] of Object.entries(merged)) m.volumeLowConfidence = lowConfidence.has(term);
 
   return NextResponse.json({
     ...merged,

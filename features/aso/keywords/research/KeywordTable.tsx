@@ -192,12 +192,8 @@ function impressionsTitle(row: Keyword): string {
 }
 
 // Hover text on the Volume cell: the 0-100 score translated into daily
-// counts, which are easier to picture than a log-scaled score. Skipped for
-// low-confidence volume, where a precise-looking count would overstate it.
+// counts, which are easier to picture than a log-scaled score.
 function volumeTitle(row: Keyword): string {
-  if (row.volumeLowConfidence) {
-    return "Low confidence: this keyword only appears late in store search suggestions in this country, so its volume is a rough guess.\nClick to view volume history";
-  }
   const searches = DOWNLOADS_FORMATTER.format(Math.round(estimateDailySearches(row.volume)));
   const impressions = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
   const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
@@ -552,7 +548,7 @@ export function KeywordTable({
           title={volumeTitle(row)}
           className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
-          <VolumeBar value={row.volume} lowConfidence={row.volumeLowConfidence} />
+          <VolumeBar value={row.volume} />
           <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
         </button>
       );
