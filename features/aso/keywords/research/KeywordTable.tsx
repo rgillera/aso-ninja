@@ -194,7 +194,7 @@ function impressionsTitle(row: Keyword): string {
 // Hover text on the Volume cell: the 0-100 score translated into daily
 // counts, which are easier to picture than a log-scaled score.
 function volumeTitle(row: Keyword): string {
-  const searches = DOWNLOADS_FORMATTER.format(estimateDailySearches(row.volume));
+  const searches = DOWNLOADS_FORMATTER.format(Math.round(estimateDailySearches(row.volume)));
   const impressions = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
   const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
   return `Est. searches: ~${searches}/day\nEst. impressions at #${target}: ~${impressions}/day\nClick to view volume history`;
