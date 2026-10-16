@@ -61,7 +61,7 @@ async function backfillCurrentMonth(terms: string[], store: string, country: str
         const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(apps, term);
         // Autocomplete popularity when available; rating-count estimate otherwise
         // (unsupported country, Apple hints error) — see libs/keyword-autocomplete.ts.
-        const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
+        const volume = await resolveIosVolume(supabase, term, country, ratingVolume, { apps });
 
         await supabase.from("keyword_volume_history").upsert(
           { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },

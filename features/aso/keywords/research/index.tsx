@@ -245,6 +245,7 @@ export default function KeywordResearchPage() {
             loading: false,
             frozen: s.frozen,
             estimatedDownloads: s.estimatedDownloads,
+            volumeLowConfidence: s.volumeLowConfidence,
           }))
         );
 

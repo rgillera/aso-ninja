@@ -179,8 +179,10 @@ async function main() {
       // A dry run must not write the autocomplete cache either, so it scores
       // through a client that always misses the cache and drops writes —
       // i.e. it previews a fresh score, as if run with --clear-cache.
-      const resolve = store === "ios" ? resolveIosVolume : resolveAndroidVolume;
-      const volume = await resolve(APPLY ? supabase : readOnlyClient(), term, country, base);
+      const client = APPLY ? supabase : readOnlyClient();
+      const volume = store === "ios"
+        ? await resolveIosVolume(client, term, country, base, { apps: (latest?.raw_apps as RawStoreApp[] | null | undefined) ?? undefined })
+        : await resolveAndroidVolume(client, term, country, base);
       const old = rows[0].volume;
       const stale = rows.filter((r) => r.volume !== volume);
       if (!stale.length) {

@@ -10,6 +10,10 @@ export type Keyword = {
   results?: number | null;
   relevancy?: number | null;
   aiDown?: boolean;
+  // Volume from a late autocomplete match in a smaller storefront: shown
+  // muted, without the per-day estimates. See isLowConfidenceVolume in
+  // libs/keyword-autocomplete.ts.
+  volumeLowConfidence?: boolean;
   frozen?: boolean;
   // One day's real total app downloads (from a connected App Store Connect /
   // Play Console account) apportioned across tracked keywords by volume + rank.

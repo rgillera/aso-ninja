@@ -197,7 +197,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
     if (result === null) return { ok: false, error: "iTunes search failed." };
 
     const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(result, normTerm);
-    const volume = await resolveIosVolume(admin, normTerm, countryLower, ratingVolume, { fresh: true });
+    const volume = await resolveIosVolume(admin, normTerm, countryLower, ratingVolume, { fresh: true, apps: result });
 
     await admin.from("keyword_volume_history").upsert(
       { term: normTerm, store: "ios", country: countryLower, score: volume, diff, raw_apps: result, recorded_on: today },

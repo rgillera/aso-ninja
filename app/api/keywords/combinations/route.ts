@@ -75,7 +75,7 @@ async function fetchVolume(
     const apps: any[] = json.results ?? [];
     const { volume: ratingVolume, diff } = computeVolume(apps, term);
     // Autocomplete popularity when available; rating-count estimate otherwise.
-    const volume = await resolveIosVolume(supabase, term, country, ratingVolume);
+    const volume = await resolveIosVolume(supabase, term, country, ratingVolume, { apps });
 
     void supabase.from("keyword_volume_history").upsert(
       { term, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },

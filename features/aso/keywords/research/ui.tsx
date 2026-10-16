@@ -44,13 +44,16 @@ export function Toggle({ checked, onChange }: { checked: boolean; onChange: () =
   );
 }
 
-export function VolumeBar({ value, max = 100 }: { value: number; max?: number }) {
+// lowConfidence: muted, with a "~" on the number, for volume from a late
+// autocomplete match in a smaller storefront (see isLowConfidenceVolume in
+// libs/keyword-autocomplete.ts).
+export function VolumeBar({ value, max = 100, lowConfidence = false }: { value: number; max?: number; lowConfidence?: boolean }) {
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-300 light:text-gray-700 shrink-0">{value}</span>
+      <span className={`text-sm shrink-0 ${lowConfidence ? "text-gray-500" : "text-gray-300 light:text-gray-700"}`}>{lowConfidence ? "~" : ""}{value}</span>
       <div className="w-16 h-1.5 rounded-full bg-white/[0.08] light:bg-black/[0.08] overflow-hidden">
-        <div className="h-full rounded-full bg-indigo-500/70" style={{ width: `${pct}%` }} />
+        <div className={`h-full rounded-full ${lowConfidence ? "bg-gray-500/50" : "bg-indigo-500/70"}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );

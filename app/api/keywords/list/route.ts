@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { computeShares } from "@/libs/keyword-downloads-apportionment";
+import { loadLowConfidenceTerms } from "@/libs/keyword-autocomplete";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 
@@ -26,6 +27,9 @@ export type SavedKeyword = {
   // 20260728000001_keyword_metrics_results migration) — self-heals within
   // CACHE_TTL_MS once app/api/keywords/metrics recomputes and re-saves it.
   results: number | null;
+  // Volume from a late autocomplete match in a smaller storefront — see
+  // isLowConfidenceVolume in libs/keyword-autocomplete.ts.
+  volumeLowConfidence: boolean;
   // Frozen when this keyword is beyond the workspace owner's current plan
   // limit (e.g. after a downgrade) — see reconcile_plan_limits in
   // supabase/migrations/20260713000001_plan_limit_reconciliation.sql.
@@ -115,7 +119,7 @@ export async function GET(request: NextRequest) {
       .order("recorded_on", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("apps").select("workspace_id, store, bundle_id").eq("id", appId).maybeSingle(),
+    supabase.from("apps").select("workspace_id, store, bundle_id, country").eq("id", appId).maybeSingle(),
   ]);
 
   if (akResult.error) return NextResponse.json({ keywords: [] }, { status: 500 });
@@ -161,11 +165,17 @@ export async function GET(request: NextRequest) {
         intentThemeId:    m?.intentThemeId ?? null,
         results:          m?.results     ?? null,
         hasCachedMetrics: !!m,
+        volumeLowConfidence: false, // filled in below
         frozen:           kw?.status === "frozen",
         estimatedDownloads: null, // filled in below once the full set's weights are known
       } satisfies SavedKeyword;
     })
     .filter(Boolean) as SavedKeyword[];
+
+  if (appResult.data?.store && appResult.data.country) {
+    const lowConfidence = await loadLowConfidenceTerms(supabase, keywords.map((k) => k.term), appResult.data.store, appResult.data.country);
+    for (const k of keywords) k.volumeLowConfidence = lowConfidence.has(k.term);
+  }
 
   // Est. Downloads is a Pro-and-up feature, same tier as Relevancy/
   // Opportunity (see app/api/keywords/metrics/route.ts) — stripped here

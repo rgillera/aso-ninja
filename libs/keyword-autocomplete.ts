@@ -248,20 +248,20 @@ export type VolumeOptions = { fresh?: boolean };
 async function getAutocompleteVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, any, any>, term: string, country: string, store: Store, opts: VolumeOptions = {}
-): Promise<number | null> {
+): Promise<{ score: number; prefixChars: number | null } | null> {
   const normTerm = normalize(term);
   const normCountry = country.toLowerCase();
   if (store === "ios" && !STOREFRONTS[normCountry.toUpperCase()]) return null;
 
   const { data } = opts.fresh ? { data: null } : await supabase
     .from("keyword_autocomplete_popularity")
-    .select("score, checked_at")
+    .select("score, prefix_chars, checked_at")
     .eq("term", normTerm)
     .eq("store", store)
     .eq("country", normCountry)
     .maybeSingle();
   if (data && Date.now() - new Date(data.checked_at as string).getTime() < CACHE_TTL_MS) {
-    return data.score as number;
+    return { score: data.score as number, prefixChars: (data.prefix_chars as number | null) ?? null };
   }
 
   const result = await fetchAutocompletePopularity(normTerm, normCountry, store);
@@ -274,14 +274,7 @@ async function getAutocompleteVolume(
     },
     { onConflict: "term,store,country" }
   );
-  return result.score;
-}
-
-export async function getIosAutocompleteVolume(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string, opts: VolumeOptions = {}
-): Promise<number | null> {
-  return getAutocompleteVolume(supabase, term, country, "ios", opts);
+  return { score: result.score, prefixChars: result.prefixChars };
 }
 
 // Rating-count volume (computeIosVolume) is 5 below a 1,000-rating average,
@@ -293,18 +286,103 @@ function longTailScore(ratingVolume: number) {
   return Math.min(Math.max(NEVER_SUGGESTED_SCORE + 1 + Math.round(t * (LONG_TAIL_MAX - NEVER_SUGGESTED_SCORE - 1)), NEVER_SUGGESTED_SCORE + 1), LONG_TAIL_MAX);
 }
 
+// An autocomplete score no better than a first suggestion at 5 letters
+// (95 - 30·ln 5 ≈ 47) comes from the part of the walk where quiet
+// storefronts pad the list with obscure app names: in PH, "nutrisnap" first
+// shows at "nutris" beside nutriscan / nutrisense / nutrishot, which pass
+// wonByDefault as rivals but aren't real competing searches, and nutriscan
+// itself only scrapes in at "nutr" in 10th place (44). Real head terms
+// surface within 1-3 letters even there (nutrition 58, calorie 59, noom 58,
+// gcash 95). Also what the keyword table flags as low-confidence volume —
+// see isLowConfidenceVolume.
+const LATE_SCORE_MAX = 47;
+
+function isLateSuggestion(score: number, prefixChars: number | null) {
+  return prefixChars !== null && score <= LATE_SCORE_MAX;
+}
+
+// Storefronts whose autocomplete is dense enough that a late suggestion still
+// reflects real searches. Everywhere else, a late-suggested keyword's volume
+// is shown as low confidence.
+const DENSE_STOREFRONTS = new Set(["us", "gb", "ca", "au", "de", "fr", "jp", "kr", "cn", "br", "in", "it", "es", "mx", "ru", "nl"]);
+
+// score/prefixChars are the cached autocomplete row's, not the stored
+// volume (which the namesake ceiling may have lowered).
+export function isLowConfidenceVolume(score: number, prefixChars: number | null, country: string) {
+  return isLateSuggestion(score, prefixChars) && !DENSE_STOREFRONTS.has(country.toLowerCase());
+}
+
+// Which of these terms have low-confidence volume in this storefront, from
+// the shared autocomplete cache (one query). Keys are the terms as passed in.
+export async function loadLowConfidenceTerms(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: SupabaseClient<any, any, any>, terms: string[], store: string, country: string
+): Promise<Set<string>> {
+  const flagged = new Set<string>();
+  const normCountry = country.toLowerCase();
+  if (!terms.length || DENSE_STOREFRONTS.has(normCountry)) return flagged;
+  const byNorm = new Map<string, string[]>();
+  for (const t of terms) byNorm.set(normalize(t), [...(byNorm.get(normalize(t)) ?? []), t]);
+  const { data } = await supabase
+    .from("keyword_autocomplete_popularity")
+    .select("term, score, prefix_chars")
+    .eq("store", store)
+    .eq("country", normCountry)
+    .in("term", [...byNorm.keys()]);
+  for (const row of data ?? []) {
+    if (!isLowConfidenceVolume(row.score as number, (row.prefix_chars as number | null) ?? null, normCountry)) continue;
+    for (const t of byNorm.get(row.term as string) ?? []) flagged.add(t);
+  }
+  return flagged;
+}
+
+// Ceiling for a late-suggested single word, from how many ratings its
+// most-rated namesake app has in this storefront: a brand gets searched
+// roughly in proportion to its user base. Same scale as the volume score
+// itself (+20 = 10x searches, see libs/keyword-impressions.ts), anchored so
+// lifesum's 823 PH ratings land at 30. PH samples: lifesum 30, cronometer 22,
+// nutrisnap (248) 20, nutriscan (7) 5.
+function namesakeCeiling(topRatings: number) {
+  if (topRatings < 1) return NEVER_SUGGESTED_SCORE;
+  return Math.max(Math.round(20 * Math.log10(topRatings) - 28), NEVER_SUGGESTED_SCORE);
+}
+
+// Ratings of the most-rated app carrying the keyword as a whole word in its
+// title ("Scale For Grams: NutriSnap" counts for nutrisnap, "Nutriscan+"
+// doesn't count for nutri). Single words only: a multi-word phrase isn't a
+// brand, and CJK has no spaces to tell a word from a phrase, so both skip.
+function topNamesakeRatings(apps: { trackName: string; userRatingCount: number }[], kw: string): number | null {
+  if (kw.includes(" ") || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(kw)) return null;
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const word = new RegExp(`(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`, "u");
+  return apps.reduce((max, a) => (word.test(a.trackName.toLowerCase()) ? Math.max(max, a.userRatingCount ?? 0) : max), 0);
+}
+
+export type IosVolumeOptions = VolumeOptions & {
+  // The search result set the keyword was scored from; enables the namesake
+  // ceiling for late-suggested single words. Omitted → no ceiling.
+  apps?: { trackName: string; userRatingCount: number }[];
+};
+
 // The iOS volume every writer stores: autocomplete popularity, with the
 // rating-count estimate (ratingVolume) used to break ties among
 // never-suggested keywords, and as the whole score whenever autocomplete
-// isn't available (unsupported country, Apple hints error).
+// isn't available (unsupported country, Apple hints error). A late-suggested
+// single word is also capped by its namesake app's ratings, so it can land
+// below LONG_TAIL_MAX — an unused app name shouldn't outrank the long tail
+// just because a quiet storefront suggested it.
 export async function resolveIosVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: SupabaseClient<any, any, any>, term: string, country: string, ratingVolume: number, opts: VolumeOptions = {}
+  supabase: SupabaseClient<any, any, any>, term: string, country: string, ratingVolume: number, opts: IosVolumeOptions = {}
 ): Promise<number> {
-  const autocomplete = await getIosAutocompleteVolume(supabase, term, country, opts);
+  const autocomplete = await getAutocompleteVolume(supabase, term, country, "ios", opts);
   if (autocomplete === null) return ratingVolume;
-  if (autocomplete === NEVER_SUGGESTED_SCORE) return longTailScore(ratingVolume);
-  return autocomplete;
+  if (autocomplete.score === NEVER_SUGGESTED_SCORE) return longTailScore(ratingVolume);
+  if (opts.apps && isLateSuggestion(autocomplete.score, autocomplete.prefixChars)) {
+    const top = topNamesakeRatings(opts.apps, normalize(term));
+    if (top !== null) return Math.min(autocomplete.score, namesakeCeiling(top));
+  }
+  return autocomplete.score;
 }
 
 // Title-match volume (computeAndroidTitleVolume) is ~30 for any keyword with
@@ -322,7 +400,7 @@ export async function resolveAndroidVolume(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabase: SupabaseClient<any, any, any>, term: string, country: string, titleVolume: number, opts: VolumeOptions = {}
 ): Promise<number> {
-  const autocomplete = await getAutocompleteVolume(supabase, term, country, "android", opts);
+  const autocomplete = (await getAutocompleteVolume(supabase, term, country, "android", opts))?.score ?? null;
   if (autocomplete === null) return titleVolume;
   if (autocomplete === NEVER_SUGGESTED_SCORE) return androidLongTailScore(titleVolume);
   return autocomplete;
