@@ -28,7 +28,7 @@ import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { estimateDailyImpressions, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
+import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
@@ -189,6 +189,15 @@ const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", m
 function impressionsTitle(row: Keyword): string {
   if (row.rank === null) return "Est. impressions: none (not ranking)";
   return `Est. impressions: ~${DOWNLOADS_FORMATTER.format(estimateDailyImpressions(row.volume, row.rank))}/day`;
+}
+
+// Hover text on the Volume cell: the 0-100 score translated into daily
+// counts, which are easier to picture than a log-scaled score.
+function volumeTitle(row: Keyword): string {
+  const searches = DOWNLOADS_FORMATTER.format(estimateDailySearches(row.volume));
+  const impressions = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
+  const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
+  return `Est. searches: ~${searches}/day\nEst. impressions at #${target}: ~${impressions}/day\nClick to view volume history`;
 }
 
 function PendingSyncCell() {
@@ -536,7 +545,7 @@ export function KeywordTable({
       case "volume": return (
         <button
           onClick={() => setVolumeHistoryKeyword(row.keyword)}
-          title="View volume history"
+          title={volumeTitle(row)}
           className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
         >
           <VolumeBar value={row.volume} />
