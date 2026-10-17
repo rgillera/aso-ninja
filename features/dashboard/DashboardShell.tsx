@@ -6,6 +6,7 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { UpgradeBanner } from "./UpgradeBanner";
+import { ReviewPromptBanner } from "@/features/review/ReviewPromptBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider, CompetitorLimitProvider } from "./PlanContext";
 import { ThemeProvider, type Theme } from "./ThemeContext";
@@ -493,6 +494,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           {activeWorkspaceId && !hideSearchAndBanner && (
             <UpgradeBanner workspaceId={activeWorkspaceId} />
           )}
+          {!hideSearchAndBanner && <ReviewPromptBanner />}
           {!hideSearchAndBanner && (
             <DashboardSearch
               apps={activeWorkspaceApps}
