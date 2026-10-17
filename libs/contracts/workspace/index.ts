@@ -13,7 +13,7 @@ export type Workspace = {
   // supabase/migrations/20260714000004_workspace_freeze.sql.
   status?: "active" | "frozen";
   // While set and in the future, apps over the Free plan's app limit stay
-  // active (the workspace already had them when the limit dropped to 1).
+  // active (the workspace already had them when the limit dropped to 2).
   // See supabase/migrations/20261017000002_free_app_limit_grace.sql.
   app_limit_grace_until?: string | null;
 };

@@ -1,7 +1,7 @@
--- Free plan goes back to 1 app per workspace (undoing
+-- Free plan goes back to a 2-app limit per workspace (undoing
 -- 20260731000001_free_plan_unlimited_apps.sql). Each country is its own apps
 -- row (unique on workspace_id, store, bundle_id, country), so this is
--- "1 app in 1 country".
+-- "2 apps or countries": 1 app in 2 countries, or 2 apps in 1 country each.
 --
 -- Existing workspaces already over that get a grace period instead of being
 -- frozen on deploy: app_limit_grace_until. Until it passes,
@@ -11,8 +11,9 @@
 -- The expire-app-grace cron (expire_app_limit_grace below) clears the date
 -- and reconciles once it passes.
 --
--- apps.pinned_at lets the user pick which app stays active instead of
--- "oldest wins": reconciliation ranks pinned apps first (latest pin wins).
+-- apps.pinned_at lets the user pick which apps stay active instead of
+-- "oldest wins": reconciliation ranks pinned apps first, most recently
+-- pinned first, so with a limit of 2 the last two picks stay active.
 
 alter table workspaces add column app_limit_grace_until timestamptz;
 alter table apps add column pinned_at timestamptz;
@@ -62,9 +63,11 @@ begin
 end;
 $$;
 
--- Lets a workspace owner/admin choose which app stays active. During the
--- grace period this only records the choice; afterwards it swaps which app
--- is frozen right away.
+-- Lets a workspace owner/admin choose an app to keep active. It becomes the
+-- most recent pick, so it bumps the oldest pick out once the workspace is at
+-- its limit. During the grace period this only records the choice;
+-- afterwards it swaps which app is frozen right away. clock_timestamp() (not
+-- now()) so two picks in one transaction still order correctly.
 create or replace function set_active_app(p_app_id uuid)
 returns void
 language plpgsql
@@ -82,9 +85,7 @@ begin
     raise exception 'Only workspace owners and admins can choose the active app.';
   end if;
 
-  update public.apps
-  set pinned_at = case when id = p_app_id then now() else null end
-  where workspace_id = v_workspace_id and (id = p_app_id or pinned_at is not null);
+  update public.apps set pinned_at = clock_timestamp() where id = p_app_id;
   perform public.reconcile_app_limits(v_workspace_id);
 end;
 $$;
@@ -118,8 +119,7 @@ $$;
 revoke execute on function public.expire_app_limit_grace() from public, anon, authenticated;
 
 -- Same as 20260714000004_workspace_freeze.sql's version, with a message
--- that explains countries count as apps (the free limit is now 1, so the
--- old "% apps per workspace" read as "1 apps").
+-- that explains each country counts as an app.
 create or replace function enforce_app_limit()
 returns trigger
 language plpgsql
@@ -142,10 +142,7 @@ begin
       from public.apps where workspace_id = v_workspace_id;
 
       if v_count > v_plan.app_limit then
-        if v_plan.app_limit = 1 then
-          raise exception 'Your plan covers 1 app in 1 country. Upgrade to track more apps and countries.';
-        end if;
-        raise exception 'Your plan covers % apps per workspace (each country counts as one). Upgrade to track more.', v_plan.app_limit;
+        raise exception 'Your plan covers % apps or countries (each country counts as one). Upgrade to track more.', v_plan.app_limit;
       end if;
     end if;
   end loop;
@@ -174,11 +171,11 @@ create trigger trg_enforce_app_not_frozen
   for each row
   execute function enforce_app_not_frozen();
 
--- Grandfather every workspace that already tracks more than one app (or
--- country), then lower the limit. 7 days from whenever this is applied.
+-- Grandfather every workspace that already tracks more than two apps (or
+-- countries), then lower the limit. 7 days from whenever this is applied.
 update public.workspaces w
 set app_limit_grace_until = now() + interval '7 days'
-where (select count(*) from public.apps a where a.workspace_id = w.id) > 1;
+where (select count(*) from public.apps a where a.workspace_id = w.id) > 2;
 
-update plans set app_limit = 1, updated_at = now()
+update plans set app_limit = 2, updated_at = now()
 where slug = 'free';

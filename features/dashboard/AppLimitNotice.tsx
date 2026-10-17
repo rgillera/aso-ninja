@@ -2,7 +2,7 @@
 
 import { useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
-import { ClockIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, ClockIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { countryFlag } from "@/libs/countries";
 import { setActiveAppAction } from "@/features/app/actions";
 import type { App, WorkspaceRole } from "@/libs/contracts";
@@ -27,31 +27,38 @@ function readDismissed(workspaceId: string): boolean {
 
 const noopSubscribe = () => () => {};
 
-// The app reconcile_app_limits would keep: latest pin, else the oldest row.
-function keptApp(apps: App[]): App | undefined {
-  const pinned = apps
-    .filter((a) => a.pinned_at)
-    .sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""))[0];
-  return pinned ?? [...apps].sort((a, b) => a.created_at.localeCompare(b.created_at))[0];
+// The apps reconcile_app_limits would keep, in its rank order: most recent
+// pins first, then the oldest rows.
+function keptIds(apps: App[], limit: number): string[] {
+  return [...apps]
+    .sort((a, b) =>
+      a.pinned_at && b.pinned_at ? b.pinned_at.localeCompare(a.pinned_at)
+      : a.pinned_at ? -1
+      : b.pinned_at ? 1
+      : a.created_at.localeCompare(b.created_at))
+    .slice(0, limit)
+    .map((a) => a.id);
 }
 
-// Shown on Free workspaces that tracked more than one app (or country) when
-// the Free plan dropped to 1, while their grace period is still running. See
-// supabase/migrations/20261017000002_free_app_limit_grace.sql.
+// Shown on Free workspaces that tracked more apps (or countries) than the
+// Free plan's limit when it dropped to 2, while their grace period is still
+// running. See supabase/migrations/20261017000002_free_app_limit_grace.sql.
 export function AppLimitNotice({
   workspaceId,
   graceUntil,
   apps,
+  limit,
   role,
 }: {
   workspaceId: string;
   graceUntil: string;
   apps: App[];
+  limit: number;
   role: WorkspaceRole | undefined;
 }) {
   const storedDismissed = useSyncExternalStore(noopSubscribe, () => readDismissed(workspaceId), () => false);
   const [dismissed, setDismissed] = useState(false);
-  const [selectedId, setSelectedId] = useState(() => keptApp(apps)?.id ?? "");
+  const [kept, setKept] = useState(() => keptIds(apps, limit));
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -62,8 +69,11 @@ export function AppLimitNotice({
   const date = new Date(graceUntil).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
   const sorted = [...apps].sort((a, b) => a.name.localeCompare(b.name) || (a.country ?? "").localeCompare(b.country ?? ""));
 
+  // Picking an app makes it the most recent pick, so once `limit` apps are
+  // picked it replaces the earliest one (same as set_active_app).
   function choose(appId: string) {
-    setSelectedId(appId);
+    if (kept.includes(appId)) return;
+    setKept((prev) => [appId, ...prev].slice(0, limit));
     setSaved(false);
     setError(null);
     startTransition(async () => {
@@ -81,37 +91,43 @@ export function AppLimitNotice({
 
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white light:text-gray-900">
-          From {date}, the Free plan covers 1 app in 1 country
+          From {date}, the Free plan covers {limit} apps or countries
         </p>
         <p className="text-xs text-gray-400 light:text-gray-600">
-          You&apos;re tracking {apps.length} apps and countries. They all keep updating until {date}. After that, only the one
-          you choose keeps updating. The others stay saved and resume as soon as you upgrade.
+          You&apos;re tracking {apps.length} apps and countries (each country counts as one). They all keep updating until {date}. After that,
+          only the {limit} you choose keep updating. The others stay saved and resume as soon as you upgrade.
         </p>
 
         {canChoose ? (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <label htmlFor="app-limit-keep" className="text-xs text-gray-400 light:text-gray-600">
-              Keep updating:
-            </label>
-            <select
-              id="app-limit-keep"
-              value={selectedId}
-              disabled={isPending}
-              onChange={(e) => choose(e.target.value)}
-              className="rounded-lg bg-[#1a1d24] light:bg-white px-2.5 py-1.5 text-xs text-gray-200 light:text-gray-800 ring-1 ring-white/[0.08] light:ring-black/[0.08] disabled:opacity-60"
-            >
-              {sorted.map((a) => (
-                <option key={a.id} value={a.id}>
+            <span className="text-xs text-gray-400 light:text-gray-600">Keep updating:</span>
+            {sorted.map((a) => {
+              const isKept = kept.includes(a.id);
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  data-app-limit-choice={a.id}
+                  aria-pressed={isKept}
+                  disabled={isPending}
+                  onClick={() => choose(a.id)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ring-1 transition-colors disabled:opacity-60 ${
+                    isKept
+                      ? "bg-indigo-500/15 text-indigo-300 light:text-indigo-700 ring-indigo-500/40"
+                      : "bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 ring-white/[0.08] light:ring-black/[0.08] hover:text-white light:hover:text-gray-900"
+                  }`}
+                >
+                  {isKept && <CheckIcon className="size-3" />}
                   {a.name} · {countryFlag(a.country ?? "")} {(a.country ?? "").toUpperCase()}
-                </option>
-              ))}
-            </select>
+                </button>
+              );
+            })}
             {isPending && <span className="text-xs text-gray-500">Saving...</span>}
             {saved && !isPending && <span className="text-xs text-emerald-500 light:text-emerald-700">Saved</span>}
             {error && <span className="text-xs text-red-400/80 light:text-red-600">{error}</span>}
           </div>
         ) : (
-          <p className="mt-2 text-xs text-gray-500">Ask a workspace owner or admin to choose which app keeps updating.</p>
+          <p className="mt-2 text-xs text-gray-500">Ask a workspace owner or admin to choose which apps keep updating.</p>
         )}
       </div>
 

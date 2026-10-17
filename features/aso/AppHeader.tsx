@@ -221,8 +221,9 @@ function PausedAppStrip({ appId }: { appId: string }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-2.5 border-b border-amber-500/20 bg-amber-500/10">
       <p className="flex-1 min-w-0 text-xs text-amber-600 light:text-amber-800">
-        <span className="font-semibold">Paused.</span> Your plan covers 1 app in 1 country, so rankings for this one
-        stopped updating. Your data is saved.
+        <span className="font-semibold">Paused.</span>{" "}
+        This app is over your plan&apos;s app limit (each country counts as one), so its rankings stopped updating.
+        Your data is saved.
         {error && <span className="ml-2 text-red-400/80 light:text-red-600">{error}</span>}
       </p>
       <div className="flex items-center gap-2 shrink-0">

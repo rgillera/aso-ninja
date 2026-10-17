@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     features: [
       "1 workspace",
       "1 seat",
-      "1 app in 1 country (iOS or Android)",
+      "2 apps or countries (iOS & Android)",
       "100 tracked keywords",
       "Keyword research & ranking tracking",
       "ASO reports & metadata optimization",
