@@ -6,6 +6,7 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { UpgradeBanner } from "./UpgradeBanner";
+import { AppLimitNotice } from "./AppLimitNotice";
 import { ReviewPromptBanner } from "@/features/review/ReviewPromptBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider, CompetitorLimitProvider } from "./PlanContext";
@@ -327,6 +328,17 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     };
   }, [activeWorkspaceId]);
 
+  // Free workspaces still inside the grace period from the Free plan's app
+  // limit dropping to 1, that track more than that: show the "choose which
+  // app keeps updating" notice in place of the generic upgrade banner.
+  const [mountedAt] = useState(() => Date.now());
+  const appLimitGraceUntil = activeWorkspace?.app_limit_grace_until;
+  const showAppLimitNotice =
+    planSlug === "free" &&
+    !!appLimitGraceUntil &&
+    new Date(appLimitGraceUntil).getTime() > mountedAt &&
+    activeWorkspaceApps.length > 1;
+
   // Bounce away from a product area the current member's access doesn't cover
   // for the active workspace — mirrors the sections hidden in DashboardSidebar,
   // so a stale/bookmarked/typed-in URL can't be used to reach a gated page.
@@ -494,7 +506,16 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           {!hideSearchAndBanner && (
             // empty:hidden drops the wrapper's margins when neither banner renders.
             <div className="mx-6 mt-6 mb-4 flex flex-col gap-3 empty:hidden">
-              {activeWorkspaceId && <UpgradeBanner workspaceId={activeWorkspaceId} />}
+              {activeWorkspaceId && (showAppLimitNotice && appLimitGraceUntil
+                ? (
+                  <AppLimitNotice
+                    workspaceId={activeWorkspaceId}
+                    graceUntil={appLimitGraceUntil}
+                    apps={activeWorkspaceApps}
+                    role={currentRole}
+                  />
+                )
+                : <UpgradeBanner workspaceId={activeWorkspaceId} />)}
               <ReviewPromptBanner />
             </div>
           )}

@@ -82,6 +82,7 @@ async function refreshKeywordMetrics(
     .select("app_id, keyword_id, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id), keywords!inner(term, status)")
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
+    .eq("apps.status", "active")
     .eq("apps.store", store)
     .eq("apps.country", country.toUpperCase());
 

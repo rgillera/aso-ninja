@@ -8,7 +8,7 @@ import { countryFlag } from "@/libs/countries";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useAllApps } from "@/features/dashboard/AllAppsContext";
 import { useSelectApp } from "@/features/dashboard/SelectAppContext";
-import { followAppAction, deleteAppAction } from "@/features/app/actions";
+import { followAppAction, deleteAppAction, setActiveAppAction } from "@/features/app/actions";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountrySwitcher } from "@/features/aso/CountrySwitcher";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -200,6 +200,51 @@ function SettingsLinkButton({ app }: { app: ActiveApp }) {
   );
 }
 
+// Shown under the header when this app (country) is over the workspace
+// plan's app limit: rankings stop updating but the data stays. Lets the user
+// make this the app that keeps updating instead (set_active_app in
+// supabase/migrations/20261017000002_free_app_limit_grace.sql).
+function PausedAppStrip({ appId }: { appId: string }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  function handleSwitch() {
+    setError(null);
+    startTransition(async () => {
+      const res = await setActiveAppAction(appId);
+      if (res.error) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-2.5 border-b border-amber-500/20 bg-amber-500/10">
+      <p className="flex-1 min-w-0 text-xs text-amber-600 light:text-amber-800">
+        <span className="font-semibold">Paused.</span> Your plan covers 1 app in 1 country, so rankings for this one
+        stopped updating. Your data is saved.
+        {error && <span className="ml-2 text-red-400/80 light:text-red-600">{error}</span>}
+      </p>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={handleSwitch}
+          disabled={isPending}
+          className="rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:bg-white/[0.10] light:hover:bg-black/[0.08] transition-colors disabled:opacity-50"
+        >
+          {isPending ? "Switching..." : "Track this one instead"}
+        </button>
+        <Link
+          href="/dashboard/subscription"
+          className="rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-400 transition-colors"
+        >
+          Upgrade to resume all
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // Shown instead of the plain country label when the app is followed in more
 // than one country — switches which country's data the rest of the page
 // (report, keywords, reviews, ...) is scoped to.
@@ -246,59 +291,63 @@ export function AppHeader({ app, title }: Props) {
   const siblings = app?.id && app.bundle_id
     ? allApps.filter((a) => a.workspace_id === workspaceId && a.bundle_id === app.bundle_id && a.store === app.store)
     : [];
+  const isFrozen = Boolean(app?.id) && allApps.find((a) => a.id === app?.id)?.status === "frozen";
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
-      <div className="flex items-center gap-3">
-        {app ? (
-          <>
-            {app.icon_url ? (
-              <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
-            ) : (
+    <div className="shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
+        <div className="flex items-center gap-3">
+          {app ? (
+            <>
+              {app.icon_url ? (
+                <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
+                  <DevicePhoneMobileIcon className="size-4 text-gray-500" />
+                </div>
+              )}
+              <div>
+                <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">{app.name}</p>
+                <div className="text-xs text-gray-500 leading-tight flex items-center gap-1">
+                  {app.store === "ios" ? (
+                    <img src="/app-store.svg" alt="" className="size-3" />
+                  ) : (
+                    <img src="/google-play.svg" alt="" className="size-3" />
+                  )}
+                  {app.store === "ios" ? "App Store" : "Google Play"}
+                  {app.country && (
+                    siblings.length > 1
+                      ? <HeaderCountrySwitcher app={app} siblings={siblings} />
+                      : (
+                        <span className="ml-1.5">
+                          &middot; {countryFlag(app.country)} {app.country.toUpperCase()}
+                        </span>
+                      )
+                  )}
+                </div>
+              </div>
+              <FollowButton app={app} />
+              <StoreLinkButton app={app} />
+              <SettingsLinkButton app={app} />
+            </>
+          ) : (
+            <>
               <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
                 <DevicePhoneMobileIcon className="size-4 text-gray-500" />
               </div>
-            )}
-            <div>
-              <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">{app.name}</p>
-              <div className="text-xs text-gray-500 leading-tight flex items-center gap-1">
-                {app.store === "ios" ? (
-                  <img src="/app-store.svg" alt="" className="size-3" />
-                ) : (
-                  <img src="/google-play.svg" alt="" className="size-3" />
-                )}
-                {app.store === "ios" ? "App Store" : "Google Play"}
-                {app.country && (
-                  siblings.length > 1
-                    ? <HeaderCountrySwitcher app={app} siblings={siblings} />
-                    : (
-                      <span className="ml-1.5">
-                        &middot; {countryFlag(app.country)} {app.country.toUpperCase()}
-                      </span>
-                    )
-                )}
+              <div>
+                <p className="text-sm text-gray-500 leading-tight">No app selected</p>
+                <p className="text-xs text-gray-600 light:text-gray-400 leading-tight">Select an app from My Apps</p>
               </div>
-            </div>
-            <FollowButton app={app} />
-            <StoreLinkButton app={app} />
-            <SettingsLinkButton app={app} />
-          </>
-        ) : (
-          <>
-            <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
-              <DevicePhoneMobileIcon className="size-4 text-gray-500" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 leading-tight">No app selected</p>
-              <p className="text-xs text-gray-600 light:text-gray-400 leading-tight">Select an app from My Apps</p>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
+        <div className="hidden items-center gap-1.5 sm:flex">
+          <h1 className="text-sm font-semibold text-white light:text-gray-900">{title}</h1>
+          <InformationCircleIcon className="size-4 text-gray-500" />
+        </div>
       </div>
-      <div className="hidden items-center gap-1.5 sm:flex">
-        <h1 className="text-sm font-semibold text-white light:text-gray-900">{title}</h1>
-        <InformationCircleIcon className="size-4 text-gray-500" />
-      </div>
+      {isFrozen && app?.id && <PausedAppStrip appId={app.id} />}
     </div>
   );
 }

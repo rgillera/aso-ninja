@@ -170,7 +170,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           "Downloads per keyword for much less: MobileAction includes them from Pro at $239/mo. AppASO Pro includes estimated downloads per keyword at $29/mo, or $24/mo billed yearly.",
           "No keyword or app caps on Pro: unlimited keywords and unlimited apps, versus 1,500 keywords and 10 apps on MobileAction Pro.",
           "Relevancy scoring on every plan, so you can see which keywords actually fit your app before you chase them.",
-          "A real free plan: 100 tracked keywords across unlimited apps, versus 100 keywords and 5 apps on the $15 Lite plan.",
+          "A real free plan: 100 tracked keywords for one app at $0, versus 100 keywords and 5 apps on the $15 Lite plan.",
         ],
       },
       { type: "heading", text: "Where MobileAction is the better fit" },
@@ -225,7 +225,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "table",
         headers: ["Tier", "AppTweak", "AppASO"],
         rows: [
-          ["Free", "No free plan", "Free: 100 keywords, unlimited apps"],
+          ["Free", "No free plan", "Free: 100 keywords, 1 app"],
           ["Entry", "Essential: $79/mo, 500 keywords, 5 apps", "Pro: $29/mo ($24 billed yearly), unlimited keywords and apps"],
           ["Mid", "Grow: $249/mo, 1,500 keywords, 10 apps", "Pro+: $99/mo ($79 billed yearly), unlimited keywords and apps, 4 workspaces"],
           ["Top", "Grow Plus: $499/mo, 3,000 keywords, 15 apps", "Enterprise: custom"],
@@ -302,7 +302,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "table",
         headers: ["Tier", "MobileAction", "AppASO"],
         rows: [
-          ["Free / entry", "Lite: $15/mo, 100 keywords, 5 apps", "Free: $0, 100 keywords, unlimited apps"],
+          ["Free / entry", "Lite: $15/mo, 100 keywords, 5 apps", "Free: $0, 100 keywords, 1 app"],
           ["Core", "Basic: $69/mo, 500 keywords, 8 apps", "Pro: $29/mo ($24 billed yearly), unlimited keywords and apps"],
           ["Advanced", "Pro: $239/mo, 1,500 keywords, 10 apps", "Pro+: $99/mo ($79 billed yearly), unlimited keywords and apps, 4 workspaces"],
           ["Top", "Enterprise: custom", "Enterprise: custom"],
@@ -323,7 +323,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "The verdict" },
       {
         type: "paragraph",
-        text: "Pick MobileAction if paid UA through Apple Search Ads is central to your growth, or you need to watch 10 or more competitors per app. Pick AppASO if organic ASO is your focus and you want unlimited keywords, relevancy scoring, and downloads per keyword without paying $239/mo. AppASO's free plan also gives you more room to start than MobileAction Lite, with unlimited apps instead of 5.",
+        text: "Pick MobileAction if paid UA through Apple Search Ads is central to your growth, or you need to watch 10 or more competitors per app. Pick AppASO if organic ASO is your focus and you want unlimited keywords, relevancy scoring, and downloads per keyword without paying $239/mo. AppASO's free plan also lets you start at $0 instead of $15/mo, and Pro removes app and keyword caps entirely.",
       },
       {
         type: "faq",
@@ -361,7 +361,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         headers: ["", "Sonar Indie", "AppASO Pro"],
         rows: [
           ["Price", "$29/mo, or $290/yr", "$29/mo, or $288/yr ($24/mo)"],
-          ["Free option", "7-day free trial", "Free plan: 100 keywords, unlimited apps"],
+          ["Free option", "7-day free trial", "Free plan: 100 keywords, 1 app"],
           ["Tracked keywords", "2,500", "Unlimited"],
           ["Apps", "10", "Unlimited"],
           ["Competitors", "Unlimited", "5 per app (8 on Pro+)"],
@@ -383,7 +383,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       {
         type: "bullets",
         items: [
-          "A free plan you can stay on, not just a trial: 100 tracked keywords across unlimited apps.",
+          "A free plan you can stay on, not just a trial: 100 tracked keywords for one app.",
           "No keyword or app caps on Pro, versus 2,500 keywords and 10 apps on Sonar Indie.",
           "Relevancy scoring that tells you how well each keyword fits your app, and opportunity scoring that combines it with volume and difficulty.",
           "Estimated downloads per keyword, based on your real totals from App Store Connect or Google Play Console.",
@@ -515,7 +515,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "1. AppASO" },
       {
         type: "paragraph",
-        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords across unlimited apps, with keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords. Pro ($29/mo, or $24/mo billed yearly) removes the keyword cap and adds relevancy scoring for 1,000 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
+        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords for one app, with keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords. Pro ($29/mo, or $24/mo billed yearly) removes the keyword cap and adds relevancy scoring for 1,000 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
       },
       {
         type: "paragraph",
@@ -562,7 +562,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "faq",
         items: [
           { question: "What is the best AppTweak alternative for indie developers?", answer: "For iOS-only developers on a Mac, Astro is the cheapest. For Apple's own popularity data, daily ranks, and an API, Sonar is strong. For iOS and Android with relevancy scoring, downloads per keyword, and a free plan, AppASO fits best." },
-          { question: "Is there a free AppTweak alternative?", answer: "AppASO has a free plan with 100 tracked keywords across unlimited apps. Sonar offers a 7-day free trial, and Astro and MobileAction are paid." },
+          { question: "Is there a free AppTweak alternative?", answer: "AppASO has a free plan with 100 tracked keywords for one app. Sonar offers a 7-day free trial, and Astro and MobileAction are paid." },
           { question: "Which AppTweak alternative supports Google Play?", answer: "AppASO, Sonar, and MobileAction all support Google Play. Astro covers the App Store only." },
         ],
       },

@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     features: [
       "1 workspace",
       "1 seat",
-      "Unlimited apps (iOS & Android)",
+      "1 app in 1 country (iOS or Android)",
       "100 tracked keywords",
       "Keyword research & ranking tracking",
       "ASO reports & metadata optimization",
@@ -62,6 +62,7 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Free plan, plus:",
+      "Unlimited apps & countries",
       "3 seats",
       "Unlimited keywords",
       "Relevancy & opportunity scoring (1,000 keywords)",

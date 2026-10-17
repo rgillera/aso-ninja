@@ -185,6 +185,9 @@ function AppRow({
   onRequestRemoveCountry: (group: AppGroup, entry: App) => void;
 }) {
   const { primary, entries } = group;
+  // Each country is its own apps row, so one country can be paused while
+  // another keeps updating — only badge the whole app when all of them are.
+  const allFrozen = entries.every((e) => e.status === "frozen");
   const selectApp = useSelectApp();
   const router = useRouter();
 
@@ -227,10 +230,10 @@ function AppRow({
       </Link>
 
       {/* Name + bundle — links to first entry */}
-      <Link href={`/dashboard/apps/${primary.id}/report`} className={`flex-1 min-w-0 ${primary.status === "frozen" ? "opacity-60" : ""}`}>
+      <Link href={`/dashboard/apps/${primary.id}/report`} className={`flex-1 min-w-0 ${allFrozen ? "opacity-60" : ""}`}>
         <p className="text-sm font-semibold text-white light:text-gray-900 truncate flex items-center gap-1.5">
           {primary.name}
-          {primary.status === "frozen" && (
+          {allFrozen && (
             <span
               className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 shrink-0"
               title="This app is over your plan's limit. Upgrade to resume tracking."
@@ -261,7 +264,8 @@ function AppRow({
                   <Link
                     href={`/dashboard/apps/${app.id}/report`}
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors"
+                    title={app.status === "frozen" ? "Paused: over your plan's app limit. Upgrade to resume tracking." : undefined}
+                    className={`inline-flex items-center gap-1.5 rounded-full bg-[#0d0f14] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors ${app.status === "frozen" ? "opacity-50 line-through" : ""}`}
                   >
                     <span className="text-base leading-none">{countryFlag(app.country)}</span>
                     {app.country}

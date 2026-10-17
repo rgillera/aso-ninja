@@ -17,4 +17,8 @@ export type App = {
   // Optional: only populated where the caller selected it; synthetic/preview
   // App objects elsewhere in the app never have it, and are never frozen.
   status?: "active" | "frozen";
+  // Set when the user picks this app to stay active under their plan's app
+  // limit — reconcile_app_limits keeps pinned apps ahead of older ones. See
+  // supabase/migrations/20261017000002_free_app_limit_grace.sql.
+  pinned_at?: string | null;
 };

@@ -184,7 +184,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Astro is the closest thing to AppASO on price: a flat ~$99/year (about $9/month) for unlimited keywords across unlimited apps, no per-keyword or per-app fees. It's a genuinely well-built, indie-friendly tool — and its real limitation is scope. Astro is a native Mac app built specifically for Apple's App Store; there's no Google Play tracking, no Android support, and no built-in metadata optimization workspace or competitor keyword discovery. If you only ship on iOS and want the cheapest possible flat-fee keyword tracker, Astro is worth a serious look. If you're on both iOS and Android, or want keyword research, metadata tooling, and competitor tracking in the same workspace, AppASO picks up where Astro's scope ends: its free plan covers 100 keywords on both stores, and Pro adds unlimited tracking from $24/mo billed yearly.",
+        text: "Astro is the closest thing to AppASO on price: a flat ~$99/year (about $9/month) for unlimited keywords across unlimited apps, no per-keyword or per-app fees. It's a genuinely well-built, indie-friendly tool — and its real limitation is scope. Astro is a native Mac app built specifically for Apple's App Store; there's no Google Play tracking, no Android support, and no built-in metadata optimization workspace or competitor keyword discovery. If you only ship on iOS and want the cheapest possible flat-fee keyword tracker, Astro is worth a serious look. If you're on both iOS and Android, or want keyword research, metadata tooling, and competitor tracking in the same workspace, AppASO picks up where Astro's scope ends: its free plan covers 100 keywords for one app on either store, and Pro adds unlimited tracking from $24/mo billed yearly.",
       },
       {
         type: "heading",
@@ -195,7 +195,7 @@ export const BLOG_POSTS: BlogPost[] = [
         items: [
           "Relevancy scoring and estimated downloads per keyword included on Pro, from $24/mo billed yearly",
           "Unlimited keyword tracking on Pro, covering Android as well as iOS",
-          "A genuinely free plan to start on: 100 tracked keywords, metadata optimization, and relevancy scoring for 40 keywords across unlimited apps, no credit card required",
+          "A genuinely free plan to start on: 100 tracked keywords, metadata optimization, and relevancy scoring for 40 keywords for one app, no credit card required",
           "One workspace for keyword research, AI keyword suggestions, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
           "An ASO certification exam included with Pro, alongside a free overview course",
           "Transparent, published self-serve pricing — no sales calls or annual contracts required just to find out what it costs, unlike Sensor Tower",

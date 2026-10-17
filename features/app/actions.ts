@@ -57,6 +57,19 @@ export async function deleteAppAction(appId: string): Promise<void> {
   refresh();
 }
 
+// Picks which app (country row) stays active when the workspace is over its
+// plan's app limit — see set_active_app in
+// supabase/migrations/20261017000002_free_app_limit_grace.sql.
+export async function setActiveAppAction(appId: string): Promise<{ error?: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_active_app", { p_app_id: appId });
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  refresh();
+  return {};
+}
+
 export type FollowAppInput = {
   workspaceId: string;
   name: string;
