@@ -44,11 +44,13 @@ export function Toggle({ checked, onChange }: { checked: boolean; onChange: () =
   );
 }
 
-export function VolumeBar({ value, max = 100 }: { value: number; max?: number }) {
+// `hoverHint` adds a dotted underline under the number to signal that
+// hovering it reveals more (e.g. est. searches/impressions).
+export function VolumeBar({ value, max = 100, hoverHint = false }: { value: number; max?: number; hoverHint?: boolean }) {
   const pct = Math.round((value / max) * 100);
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-gray-300 light:text-gray-700 shrink-0">{value}</span>
+      <span className={`text-sm text-gray-300 light:text-gray-700 shrink-0 ${hoverHint ? "underline decoration-dotted decoration-gray-500 underline-offset-4" : ""}`}>{value}</span>
       <div className="w-16 h-1.5 rounded-full bg-white/[0.08] light:bg-black/[0.08] overflow-hidden">
         <div className="h-full rounded-full bg-indigo-500/70" style={{ width: `${pct}%` }} />
       </div>

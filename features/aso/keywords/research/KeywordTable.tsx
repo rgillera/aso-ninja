@@ -25,7 +25,7 @@ import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHi
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
-import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
+import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
@@ -543,14 +543,16 @@ export function KeywordTable({
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
       case "volume": return (
-        <button
-          onClick={() => setVolumeHistoryKeyword(row.keyword)}
-          title={volumeTitle(row)}
-          className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
-        >
-          <VolumeBar value={row.volume} />
-          <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
-        </button>
+        <HoverTooltip text={volumeTitle(row)}>
+          <button
+            onClick={() => setVolumeHistoryKeyword(row.keyword)}
+            aria-label="View volume history"
+            className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors"
+          >
+            <VolumeBar value={row.volume} hoverHint />
+            <ArrowTrendingUpIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
+          </button>
+        </HoverTooltip>
       );
       case "diff": return (
         <span className={`text-sm ${row.diff > 60 ? "text-red-400 light:text-red-600" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400 light:text-emerald-700"}`}>
@@ -645,7 +647,7 @@ export function KeywordTable({
         total={TOUR_STEPS.length}
         icon={<TableCellsIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more. Hover a <span className="font-semibold text-white light:text-gray-900">Volume</span> number to see estimated daily searches and impressions.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
