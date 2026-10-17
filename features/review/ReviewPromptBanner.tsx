@@ -40,7 +40,7 @@ export function ReviewPromptBanner() {
   if (!visible) return null;
 
   return (
-    <div className="mx-6 mt-6 mb-4 flex items-center gap-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 ring-1 ring-emerald-500/20 px-5 py-4">
+    <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 ring-1 ring-emerald-500/20 px-5 py-4">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
         <StarIcon className="size-5 text-emerald-400 light:text-emerald-600" />
       </div>

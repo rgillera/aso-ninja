@@ -491,10 +491,13 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
               {activeWorkspace?.name ?? "My Workspace"}
             </span>
           </div>
-          {activeWorkspaceId && !hideSearchAndBanner && (
-            <UpgradeBanner workspaceId={activeWorkspaceId} />
+          {!hideSearchAndBanner && (
+            // empty:hidden drops the wrapper's margins when neither banner renders.
+            <div className="mx-6 mt-6 mb-4 flex flex-col gap-3 empty:hidden">
+              {activeWorkspaceId && <UpgradeBanner workspaceId={activeWorkspaceId} />}
+              <ReviewPromptBanner />
+            </div>
           )}
-          {!hideSearchAndBanner && <ReviewPromptBanner />}
           {!hideSearchAndBanner && (
             <DashboardSearch
               apps={activeWorkspaceApps}
