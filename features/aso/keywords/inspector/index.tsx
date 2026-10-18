@@ -400,6 +400,12 @@ export default function KeywordInspectorPage() {
     inspect(r);
   }
 
+  function removeRecent(r: Recent) {
+    const next = recent.filter((x) => !(x.term === r.term && x.store === r.store && x.country === r.country));
+    setRecent(next);
+    writeJson(RECENT_KEY, next);
+  }
+
   function clearRecent() {
     setRecent([]);
     writeJson(RECENT_KEY, []);
@@ -529,20 +535,34 @@ export default function KeywordInspectorPage() {
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-gray-600 light:text-gray-400 mr-1">Recent</span>
                 {recent.map((r) => (
-                  <button
+                  // Two sibling buttons in one pill (a button can't nest
+                  // another): the search itself, and × to drop just this one.
+                  <span
                     key={`${r.term}-${r.store}-${r.country}`}
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onRecentClick(r)}
-                    className="flex items-center gap-1 rounded-full bg-white/[0.05] light:bg-black/[0.04] px-2.5 py-1 text-xs text-gray-300 light:text-gray-700 hover:bg-white/[0.09] light:hover:bg-black/[0.07] disabled:opacity-50 transition-colors"
+                    className="group flex items-center rounded-full bg-white/[0.05] light:bg-black/[0.04] text-xs text-gray-300 light:text-gray-700 transition-colors hover:bg-white/[0.09] light:hover:bg-black/[0.07]"
                   >
-                    <span>{countryFlag(r.country)}</span>
-                    <img src={r.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3" />
-                    {r.term}
-                  </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => onRecentClick(r)}
+                      className="flex items-center gap-1 py-1 pl-2.5 pr-1 disabled:opacity-50"
+                    >
+                      <span>{countryFlag(r.country)}</span>
+                      <img src={r.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3" />
+                      {r.term}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeRecent(r)}
+                      aria-label={`Remove ${r.term} from recent searches`}
+                      className="mr-1 rounded-full p-0.5 text-gray-600 light:text-gray-400 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-gray-300 light:hover:text-gray-700 transition-colors"
+                    >
+                      <XMarkIcon className="size-3" />
+                    </button>
+                  </span>
                 ))}
-                <button type="button" onClick={clearRecent} aria-label="Clear recent searches" className="ml-1 rounded p-1 text-gray-600 hover:text-gray-400 light:text-gray-400 light:hover:text-gray-600">
-                  <XMarkIcon className="size-3.5" />
+                <button type="button" onClick={clearRecent} className="ml-1 text-xs text-gray-600 light:text-gray-400 hover:text-gray-400 light:hover:text-gray-600 hover:underline">
+                  Clear all
                 </button>
               </div>
             )}
