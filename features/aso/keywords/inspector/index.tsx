@@ -422,7 +422,7 @@ export default function KeywordInspectorPage() {
       </div>
       <div>
         <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
-        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty and live search results for any keyword, in any country</p>
+        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty, estimated daily searches and live search results for any keyword, in any country</p>
       </div>
     </div>
   );
