@@ -50,6 +50,15 @@ export default function PortalFooter() {
               <br />
               Sheridan, Wyoming 82801
             </p>
+            <p className="mt-3 text-sm text-gray-400">
+              Support:{" "}
+              <a
+                href="mailto:hello@appaso.io"
+                className="text-gray-600 underline-offset-2 transition-colors hover:text-gray-900 hover:underline"
+              >
+                hello@appaso.io
+              </a>
+            </p>
             <div className="mt-5 flex items-center gap-2">
               <a
                 href="https://www.linkedin.com/company/app-aso/"
