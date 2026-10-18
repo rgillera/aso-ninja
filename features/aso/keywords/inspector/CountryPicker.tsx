@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { COUNTRIES, COUNTRY_MAP, countryFlag } from "@/libs/countries";
 
-const OPTIONS = [...COUNTRIES].sort((a, b) => a.label.localeCompare(b.label));
+// Code order (AE, AG, AI...), same as the app search's country picker.
+const OPTIONS = COUNTRIES;
 
 // Searchable country dropdown for Keyword Inspector. A native <select> over
 // 170+ countries was hard to scan, and its flag-prefixed labels broke
