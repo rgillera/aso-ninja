@@ -11,7 +11,7 @@ import { useSelectApp } from "@/features/dashboard/SelectAppContext";
 import { followAppAction, deleteAppAction, setActiveAppAction } from "@/features/app/actions";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountrySwitcher } from "@/features/aso/CountrySwitcher";
-import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
+import { useActiveAppResolving, type ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { App } from "@/libs/contracts";
 
 type Props = {
@@ -289,6 +289,7 @@ function HeaderCountrySwitcher({ app, siblings }: { app: ActiveApp; siblings: Ap
 export function AppHeader({ app, title }: Props) {
   const allApps = useAllApps();
   const workspaceId = useWorkspaceId();
+  const resolving = useActiveAppResolving();
   const siblings = app?.id && app.bundle_id
     ? allApps.filter((a) => a.workspace_id === workspaceId && a.bundle_id === app.bundle_id && a.store === app.store)
     : [];
@@ -331,6 +332,17 @@ export function AppHeader({ app, title }: Props) {
               <StoreLinkButton app={app} />
               <SettingsLinkButton app={app} />
             </>
+          ) : resolving ? (
+            // Still restoring the last-viewed app from localStorage: a neutral
+            // placeholder, not "No app selected", which flashed on every load
+            // (e.g. on locked pages, which render this header right away).
+            <div className="flex items-center gap-3 animate-pulse" aria-hidden="true">
+              <div className="size-8 rounded-xl bg-white/[0.06] light:bg-black/[0.06] shrink-0" />
+              <div className="space-y-1.5">
+                <div className="h-3 w-28 rounded bg-white/[0.06] light:bg-black/[0.06]" />
+                <div className="h-2.5 w-20 rounded bg-white/[0.06] light:bg-black/[0.06]" />
+              </div>
+            </div>
           ) : (
             <>
               <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
