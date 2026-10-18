@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useSyncExternalStore } from "react";
 import {
   ChevronDownIcon,
   Squares2X2Icon,
@@ -55,9 +55,42 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
   );
 }
 
-const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
+// "NEW" on a nav link, for users who were already here before it launched
+// (anyone with a workspace created before launchedOn). Signups after that
+// meet it as part of the product, not as news. Hidden once they've opened
+// the page, and for everyone after showUntil.
+type NewBadge = { launchedOn: string; showUntil: string };
+
+const SEEN_KEY_PREFIX = "nav-new-seen:";
+
+function readSeen(href: string): boolean {
+  try { return localStorage.getItem(SEEN_KEY_PREFIX + href) === "1"; } catch { return false; }
+}
+
+function markSeen(href: string) {
+  try { localStorage.setItem(SEEN_KEY_PREFIX + href, "1"); } catch {}
+}
+
+const noopSubscribe = () => () => {};
+
+function NewLinkBadge({ href, badge, workspaces, currentPath }: { href: string; badge: NewBadge; workspaces: Workspace[]; currentPath: string }) {
+  // Client-only read (localStorage): the server snapshot says "seen", so the
+  // badge never renders on the server and can't cause a hydration mismatch.
+  const seen = useSyncExternalStore(noopSubscribe, () => readSeen(href), () => true);
+  const onPage = currentPath.startsWith(href);
+  useEffect(() => { if (onPage) markSeen(href); }, [onPage, href]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const isPastUser = workspaces.some((w) => w.created_at.slice(0, 10) < badge.launchedOn);
+  if (seen || onPage || today > badge.showUntil || !isPastUser) return null;
+  return (
+    <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold leading-none bg-red-500 text-white">NEW</span>
+  );
+}
+
+const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug; newBadge?: NewBadge }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
-  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, minPlan: "pro" },
+  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, minPlan: "pro", newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
   { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance", icon: ArrowTrendingUpIcon },
   { label: "Group by Intent", href: "/dashboard/keywords/intent", icon: TagIcon, minPlan: "pro" },
@@ -377,6 +410,9 @@ export default function DashboardSidebar({
                 {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
                 <link.icon className="size-5 shrink-0" />
                 <span className="flex-1 whitespace-nowrap">{link.label}</span>
+                {link.newBadge && (
+                  <NewLinkBadge href={link.href} badge={link.newBadge} workspaces={workspaces} currentPath={currentPath} />
+                )}
                 {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
                   <PlanLockBadge minPlan={link.minPlan} />
                 )}
