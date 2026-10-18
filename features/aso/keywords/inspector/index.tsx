@@ -9,6 +9,8 @@ import {
   ArrowTopRightOnSquareIcon,
   ArrowPathIcon,
   ChevronDownIcon,
+  TrophyIcon,
+  LightBulbIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -21,6 +23,8 @@ import { Toggle } from "@/features/aso/keywords/research/ui";
 // The same history panel Keyword Research's Volume column opens.
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRIES, COUNTRY_MAP, countryFlag } from "@/libs/countries";
+import { findRankIdx } from "@/libs/keyword-rank-match";
+import { AppHeader } from "@/features/aso/AppHeader";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
 
@@ -35,6 +39,32 @@ type Recent = { term: string; store: Store; country: string };
 
 const COUNTRY_OPTIONS = [...COUNTRIES].sort((a, b) => a.label.localeCompare(b.label));
 const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
+
+// "Beatable spots": a top-10 app this thin is one an ordinary app can
+// realistically displace, even when Difficulty (top-5 average) looks high.
+const WEAK_SPOT_RANGE = 10;
+const WEAK_RATING_COUNT = 5_000;
+const WEAK_STARS = 3.5;
+
+type WeakSpot = { app: AppSearchResult; reasons: string[] };
+
+// A rating count is only trusted when the store actually returned one: App
+// Store results always carry it, but a Google Play row shows 0 when its
+// detail lookup failed (or on the server fallback list), which says nothing.
+// Same for stars: 0 means "not known" (the iOS fallback list has none).
+function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: string): WeakSpot[] {
+  return apps.slice(0, WEAK_SPOT_RANGE).flatMap((app) => {
+    const id = store === "ios" ? String(app.trackId) : app.appId;
+    if (excludeStoreId && id === excludeStoreId) return [];
+    const reasons: string[] = [];
+    const countKnown = store === "ios" || app.ratingCount > 0;
+    if (countKnown && app.ratingCount < WEAK_RATING_COUNT) {
+      reasons.push(app.ratingCount === 0 ? "no ratings yet" : `only ${formatCount(app.ratingCount)} ratings`);
+    }
+    if (app.rating > 0 && app.rating < WEAK_STARS) reasons.push(`rated ${app.rating.toFixed(1)}★`);
+    return reasons.length ? [{ app, reasons }] : [];
+  });
+}
 
 function readJson<T>(key: string): T | null {
   try {
@@ -153,7 +183,7 @@ function MatchPill({ label, value, hint }: { label: string; value: string | null
 }
 
 function ResultRow({
-  app, store, country, subtitle, subtitleLoading, term, highlight,
+  app, store, country, subtitle, subtitleLoading, term, highlight, isYou,
 }: {
   app: AppSearchResult;
   store: Store;
@@ -163,18 +193,23 @@ function ResultRow({
   subtitleLoading: boolean;
   term: string;
   highlight: boolean;
+  // This row is the active app: tinted, with a "Your app" tag.
+  isYou: boolean;
 }) {
   const storeUrl = store === "ios"
     ? app.trackId ? `https://apps.apple.com/${country}/app/id${app.trackId}` : null
     : app.appId ? `https://play.google.com/store/apps/details?id=${encodeURIComponent(app.appId)}&gl=${country}` : null;
   return (
-    <div className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.05] light:border-black/[0.05] last:border-0">
+    <div className={`flex items-start gap-3 px-4 py-3 border-b border-white/[0.05] light:border-black/[0.05] last:border-0 ${isYou ? "bg-indigo-500/[0.08]" : ""}`}>
       <span className="w-6 shrink-0 pt-3 text-center text-xs font-semibold text-gray-500">{app.position}</span>
       <div className={`size-10 shrink-0 overflow-hidden bg-[#0d0f14] light:bg-gray-100 ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
         {app.icon && <img src={app.icon} alt="" className="size-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-white light:text-gray-900"><KeywordHighlight text={app.name} term={term} active={highlight} /></p>
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="truncate text-sm font-medium text-white light:text-gray-900"><KeywordHighlight text={app.name} term={term} active={highlight} /></p>
+          {isYou && <span className="shrink-0 rounded-full bg-indigo-500/15 px-1.5 py-px text-[10px] font-semibold text-indigo-300 light:text-indigo-700">Your app</span>}
+        </div>
         {subtitleLoading && (
           <div className="my-1 h-2.5 w-40 max-w-full rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
         )}
@@ -235,6 +270,9 @@ export default function KeywordInspectorPage() {
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
+  // Every result the search returned (up to 200 on the App Store), not just
+  // the top 20 shown, so "your app's rank" can find it further down.
+  const [allResults, setAllResults] = useState<AppSearchResult[] | null>(null);
   const [appsLoading, setAppsLoading] = useState(false);
   const [appsError, setAppsError] = useState<string | null>(null);
 
@@ -270,6 +308,7 @@ export default function KeywordInspectorPage() {
     setMetricsError(null);
     setMetricsLoading(true);
     setApps(null);
+    setAllResults(null);
     setIosSubtitles({});
     setSubtitlesLoading(false);
     setAppsError(null);
@@ -306,6 +345,7 @@ export default function KeywordInspectorPage() {
         if (id !== requestId.current) return;
         const top = results.slice(0, RESULTS_DISPLAY_LIMIT);
         setApps(top);
+        setAllResults(results);
         if (current.store === "ios") loadIosSubtitles(top, current.country, id);
       } catch {
         // Live search failed (usually the store rate-limiting this browser's
@@ -315,6 +355,7 @@ export default function KeywordInspectorPage() {
         if (id !== requestId.current) return;
         if (inspection?.topApps?.length) {
           setApps(inspection.topApps);
+          setAllResults(inspection.topApps);
           if (current.store === "ios") loadIosSubtitles(inspection.topApps, current.country, id);
         } else setAppsError("Couldn't load search results right now. Try again in a minute.");
       } finally {
@@ -366,17 +407,9 @@ export default function KeywordInspectorPage() {
     writeJson(RECENT_KEY, []);
   }
 
-  const header = (
-    <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
-      <div className="size-8 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-        <DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600" />
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
-        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty and live search results for any keyword, in any country</p>
-      </div>
-    </div>
-  );
+  // Same header as the other Keywords pages, so the active app (used for
+  // "Your app's rank") is always visible and switchable from here.
+  const header = <AppHeader app={activeApp ?? null} title="Keyword Inspector" />;
 
   if (isLocked) {
     return (
@@ -407,6 +440,15 @@ export default function KeywordInspectorPage() {
   // searched keyword itself: the strongest ranking signal you can see from
   // outside, and often a better read on direct competition than Difficulty.
   const subtitleLabel = query?.store === "android" ? "short description" : "subtitle";
+  // "Your app's rank" only makes sense for an active app on the searched store.
+  const sameStore = !!activeApp && !!query && activeApp.store === query.store;
+  // Same matcher the metrics route and nightly refresh use, so this agrees
+  // with the rank Keyword Research shows.
+  const yourRankIdx = sameStore && allResults && activeApp
+    ? findRankIdx(allResults.map((a) => a.name), activeApp.name, allResults.map((a) => (query!.store === "ios" ? a.trackId : a.appId)), activeApp.store_id)
+    : -1;
+  const yourStoreId = sameStore ? activeApp?.store_id : undefined;
+  const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId) : [];
   const rowSubtitles = query && apps ? apps.map((a) => subtitleFor(a, query.store, iosSubtitles)) : [];
   const hasSubtitles = rowSubtitles.some(Boolean);
   const titleMatches = query && apps ? apps.filter((a) => titleHasKeyword(a.name, query.term)).length : 0;
@@ -585,6 +627,64 @@ export default function KeywordInspectorPage() {
                 )}
               </section>
 
+              {/* ── Insights: your app's rank + beatable spots ── */}
+              {apps && apps.length > 0 && (
+                <section className={`grid gap-3 ${sameStore ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""}`}>
+                  {sameStore && activeApp && allResults && (
+                    <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4">
+                      <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                        <TrophyIcon className="size-3.5" />
+                        Your app&apos;s rank
+                      </p>
+                      <div className="mt-2 flex items-center gap-2.5">
+                        {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-8 shrink-0 rounded-xl object-cover" />}
+                        <div className="min-w-0">
+                          {yourRankIdx >= 0 ? (
+                            <p className="text-2xl font-semibold leading-tight text-white light:text-gray-900">#{yourRankIdx + 1}</p>
+                          ) : (
+                            <p className="text-sm font-semibold leading-tight text-white light:text-gray-900">Not in the top {allResults.length}</p>
+                          )}
+                          <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[11px] text-gray-500">
+                        {yourRankIdx >= RESULTS_DISPLAY_LIMIT
+                          ? `Below the top ${RESULTS_DISPLAY_LIMIT} shown here`
+                          : yourRankIdx >= 0
+                            ? "Highlighted in the list below"
+                            : query.store === "android"
+                              ? "Google Play only shows its first page of results"
+                              : "Your app doesn't show up for this keyword yet"}
+                      </p>
+                    </div>
+                  )}
+                  <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4">
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                      <LightBulbIcon className="size-3.5" />
+                      Beatable spots in the top {WEAK_SPOT_RANGE}
+                    </p>
+                    {weakSpots.length > 0 ? (
+                      <ul className="mt-2 space-y-1.5">
+                        {weakSpots.map(({ app, reasons }) => (
+                          <li key={`${app.position}-${app.trackId || app.appId}`} className="flex items-center gap-2 text-xs">
+                            <span className="w-6 shrink-0 text-right font-semibold tabular-nums text-amber-400 light:text-amber-600">#{app.position}</span>
+                            <span className="min-w-0 truncate text-gray-300 light:text-gray-700">{app.name}</span>
+                            <span className="shrink-0 text-gray-500">{reasons.join(", ")}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-2 text-xs text-gray-400 light:text-gray-600">
+                        No easy openings. Every app in the top {WEAK_SPOT_RANGE} has {formatCount(WEAK_RATING_COUNT)}+ ratings and at least {WEAK_STARS} stars.
+                      </p>
+                    )}
+                    <p className="mt-2 text-[11px] text-gray-500">
+                      Apps with under {formatCount(WEAK_RATING_COUNT)} ratings or below {WEAK_STARS} stars are the easiest to outrank.
+                    </p>
+                  </div>
+                </section>
+              )}
+
               {/* ── Live search results ── */}
               <section>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -646,6 +746,7 @@ export default function KeywordInspectorPage() {
                         subtitleLoading={query.store === "ios" && subtitlesLoading && !iosSubtitles[String(app.trackId)]}
                         term={query.term}
                         highlight={highlightKeyword}
+                        isYou={!!yourStoreId && (query.store === "ios" ? String(app.trackId) : app.appId) === yourStoreId}
                       />
                   ))}
                 </div>
