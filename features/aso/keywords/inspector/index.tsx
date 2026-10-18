@@ -11,7 +11,10 @@ import {
   TrophyIcon,
   LightBulbIcon,
   XMarkIcon,
+  PlusIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
@@ -246,6 +249,53 @@ function ResultRow({
   );
 }
 
+// "Track for <app>": adds the inspected keyword to the active app's tracked
+// list, through the same save route Keyword Research uses. Only offered when
+// the active app lives on the inspected store and country, since a tracked
+// keyword's rank and metrics are always for the app's own storefront.
+function TrackKeywordButton({
+  app, tracked, saving, onTrack,
+}: {
+  app: { name: string; icon_url: string | null };
+  tracked: boolean;
+  saving: boolean;
+  onTrack: () => void;
+}) {
+  const icon = app.icon_url
+    ? <img src={app.icon_url} alt="" className="size-5 shrink-0 rounded-md object-cover ring-1 ring-white/10 light:ring-black/10" />
+    : null;
+
+  if (tracked) {
+    return (
+      <Link
+        href="/dashboard/keywords/research"
+        title="Open in Keyword Research"
+        className="group inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-500/10 py-1 pl-3 pr-3 text-xs font-medium text-emerald-300 light:text-emerald-700 ring-1 ring-inset ring-emerald-500/25 transition-colors hover:bg-emerald-500/15"
+      >
+        {icon ?? <span className="size-5" />}
+        <CheckIcon className="size-3.5 shrink-0" />
+        <span className="truncate">Tracking for {app.name}</span>
+        <ArrowTopRightOnSquareIcon className="size-3 shrink-0 opacity-0 transition-opacity group-hover:opacity-100" />
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onTrack}
+      disabled={saving}
+      className="group relative inline-flex max-w-full items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 py-1 pl-3 pr-3.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 ring-1 ring-inset ring-white/15 transition-all hover:-translate-y-px hover:shadow-indigo-500/40 hover:brightness-110 active:translate-y-0 disabled:cursor-wait disabled:opacity-80 disabled:hover:translate-y-0"
+    >
+      {icon ?? <span className="size-5" />}
+      {saving
+        ? <ArrowPathIcon className="size-3.5 shrink-0 animate-spin" />
+        : <PlusIcon className="size-3.5 shrink-0 stroke-[2.5] transition-transform group-hover:rotate-90" />}
+      <span className="truncate">{saving ? "Adding..." : `Track for ${app.name}`}</span>
+    </button>
+  );
+}
+
 export default function KeywordInspectorPage() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
@@ -278,15 +328,64 @@ export default function KeywordInspectorPage() {
   // it before writing so it can't overwrite the newer query's results.
   const requestId = useRef(0);
 
+  // Terms the active app already tracks (lowercased), so the Track button
+  // can show "Tracking" instead. null = not loaded (or no active app).
+  const [trackedTerms, setTrackedTerms] = useState<Set<string> | null>(null);
+  const [trackSaving, setTrackSaving] = useState(false);
+  const [trackError, setTrackError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!activeApp?.id && !activeApp?.bundle_id) return;
+    let cancelled = false;
+    // Same params Keyword Research uses: a previewed (not yet followed) app
+    // has no id, so it's looked up by its natural key instead.
+    const params = activeApp.id
+      ? new URLSearchParams({ appId: activeApp.id })
+      : new URLSearchParams({
+          workspaceId: workspaceId ?? "",
+          bundleId: activeApp.bundle_id ?? "",
+          store: activeApp.store,
+          country: activeApp.country ?? "us",
+        });
+    fetch(`/api/keywords/list?${params}`)
+      .then((r) => r.json())
+      .then(({ keywords }: { keywords?: { term: string }[] }) => {
+        if (!cancelled) setTrackedTerms(new Set((keywords ?? []).map((k) => k.term.toLowerCase())));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      setTrackedTerms(null);
+    };
+  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, workspaceId]);
+
   // Store/country: last used here, else the active app's, else US App Store.
   // Read after mount (localStorage is client-only).
+  //
+  // A link from Keyword Research (?term=&store=&country=) overrides both and
+  // runs the inspection straight away. Read from window.location rather than
+  // useSearchParams so the page doesn't need a Suspense boundary.
   useEffect(() => {
     const prefs = readJson<{ store?: Store; country?: string }>(PREFS_KEY);
+    const url = new URLSearchParams(window.location.search);
+    const linkTerm = url.get("term")?.trim();
+    const linkStore = url.get("store");
+    const linkCountry = url.get("country")?.toLowerCase();
+    const nextStore: Store = linkStore === "ios" || linkStore === "android" ? linkStore : prefs?.store ?? activeApp?.store ?? "ios";
+    const nextCountry = linkCountry && COUNTRY_MAP[linkCountry.toUpperCase()]
+      ? linkCountry
+      : (prefs?.country ?? activeApp?.country ?? "us").toLowerCase();
     /* eslint-disable react-hooks/set-state-in-effect */
-    setStore(prefs?.store ?? activeApp?.store ?? "ios");
-    setCountry((prefs?.country ?? activeApp?.country ?? "us").toLowerCase());
+    setStore(nextStore);
+    setCountry(nextCountry);
     setRecent(readJson<Recent[]>(RECENT_KEY) ?? []);
+    if (linkTerm && !isLocked) {
+      setTerm(linkTerm);
+      inspect({ term: linkTerm, store: nextStore, country: nextCountry });
+    }
     /* eslint-enable react-hooks/set-state-in-effect */
+    // Drop the params so a refresh doesn't re-run it over a newer search.
+    if (linkTerm) window.history.replaceState(null, "", window.location.pathname);
     // Only on mount: switching apps later shouldn't clobber a choice made here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -302,6 +401,7 @@ export default function KeywordInspectorPage() {
     const id = ++requestId.current;
 
     setQuery(current);
+    setTrackError(null);
     setMetrics(null);
     setMetricsError(null);
     setMetricsLoading(true);
@@ -312,7 +412,10 @@ export default function KeywordInspectorPage() {
     setAppsError(null);
     setAppsLoading(true);
 
-    const nextRecent = [current, ...recent.filter((r) => !(r.term === current.term && r.store === current.store && r.country === current.country))].slice(0, RECENT_LIMIT);
+    // Built from storage, not the `recent` state: a linked inspection runs
+    // from the mount effect, before that state has been filled.
+    const stored = readJson<Recent[]>(RECENT_KEY) ?? [];
+    const nextRecent = [current, ...stored.filter((r) => !(r.term === current.term && r.store === current.store && r.country === current.country))].slice(0, RECENT_LIMIT);
     setRecent(nextRecent);
     writeJson(RECENT_KEY, nextRecent);
 
@@ -384,6 +487,41 @@ export default function KeywordInspectorPage() {
       // Best-effort: rows already show the developer instead.
     } finally {
       if (id === requestId.current) setSubtitlesLoading(false);
+    }
+  }
+
+  async function trackKeyword(t: string) {
+    if (!activeApp || !workspaceId) return;
+    setTrackSaving(true);
+    setTrackError(null);
+    try {
+      // Terms only, no metrics: Keyword Research computes them (rank,
+      // chance, relevancy) the next time it loads this app's list.
+      const res = await fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: [t],
+          workspaceId,
+          appId: activeApp.id,
+          bundleId: activeApp.bundle_id,
+          storeId: activeApp.store_id,
+          appName: activeApp.name,
+          iconUrl: activeApp.icon_url ?? undefined,
+          store: activeApp.store,
+          country: activeApp.country ?? "us",
+        }),
+      });
+      if (!res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        setTrackError(body.error ?? "Couldn't track this keyword.");
+        return;
+      }
+      setTrackedTerms((prev) => new Set(prev ?? []).add(t.toLowerCase()));
+    } catch {
+      setTrackError("Couldn't track this keyword.");
+    } finally {
+      setTrackSaving(false);
     }
   }
 
@@ -464,6 +602,12 @@ export default function KeywordInspectorPage() {
     ? findRankIdx(allResults.map((a) => a.name), activeApp.name, allResults.map((a) => (query!.store === "ios" ? a.trackId : a.appId)), activeApp.store_id)
     : -1;
   const yourStoreId = sameStore ? activeApp?.store_id : undefined;
+  // Tracking needs the same storefront too: a tracked keyword's rank and
+  // metrics are always for the app's own country.
+  const canTrack = sameStore && !!workspaceId && !!activeApp
+    && (activeApp.country ?? "us").toLowerCase() === query!.country
+    && (!!activeApp.id || (!!activeApp.bundle_id && !!activeApp.store_id));
+  const isTracked = !!query && !!trackedTerms?.has(query.term);
   const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId) : [];
   const rowSubtitles = query && apps ? apps.map((a) => subtitleFor(a, query.store, iosSubtitles)) : [];
   const hasSubtitles = rowSubtitles.some(Boolean);
@@ -589,17 +733,37 @@ export default function KeywordInspectorPage() {
                       {countryFlag(query.country)} {COUNTRY_MAP[query.country.toUpperCase()] ?? query.country.toUpperCase()} · {query.store === "ios" ? "App Store" : "Google Play"}
                     </span>
                   </h2>
-                  {metrics && (
-                    <button
-                      type="button"
-                      onClick={() => setShowHistory(true)}
-                      className="flex items-center gap-1.5 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
-                    >
-                      <ArrowTrendingUpIcon className="size-3.5" />
-                      Popularity history
-                    </button>
-                  )}
+                  <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                    {metrics && (
+                      <button
+                        type="button"
+                        onClick={() => setShowHistory(true)}
+                        className="flex items-center gap-1.5 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
+                      >
+                        <ArrowTrendingUpIcon className="size-3.5" />
+                        Popularity history
+                      </button>
+                    )}
+                    {canTrack && activeApp && trackedTerms && (
+                      <TrackKeywordButton
+                        app={activeApp}
+                        tracked={isTracked}
+                        saving={trackSaving}
+                        onTrack={() => trackKeyword(query.term)}
+                      />
+                    )}
+                  </div>
                 </div>
+
+                {trackError && (
+                  <div className="mb-3 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-xs text-red-400 light:text-red-600">
+                    <ExclamationTriangleIcon className="size-4 shrink-0" />
+                    <span className="flex-1">{trackError}</span>
+                    <button type="button" onClick={() => setTrackError(null)} aria-label="Dismiss" className="hover:opacity-70">
+                      <XMarkIcon className="size-3.5" />
+                    </button>
+                  </div>
+                )}
 
                 {metricsError && (
                   <div className="flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-xs text-red-400 light:text-red-600">

@@ -18,6 +18,7 @@ import {
   ArrowTrendingUpIcon,
   LockClosedIcon,
   ExclamationTriangleIcon,
+  DocumentMagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
@@ -241,6 +242,9 @@ export function KeywordTable({
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
+  // Keyword Inspector is Pro+. Below that the link still shows (with a lock)
+  // and lands on the Inspector's upgrade screen.
+  const inspectorLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -1078,6 +1082,15 @@ export function KeywordTable({
                       <MagnifyingGlassIcon className="size-3" />
                       Live search
                     </button>
+                    <Link
+                      href={`/dashboard/keywords/inspector?${new URLSearchParams({ term: row.keyword, store, country: country.toLowerCase() })}`}
+                      title={inspectorLocked ? "Open in Keyword Inspector (Pro)" : "Open in Keyword Inspector"}
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                    >
+                      <DocumentMagnifyingGlassIcon className="size-3" />
+                      Inspect
+                      {inspectorLocked && <LockClosedIcon className="size-2.5" />}
+                    </Link>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}
                       className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
