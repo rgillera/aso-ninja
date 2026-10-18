@@ -8,7 +8,6 @@ import {
   ArrowTrendingUpIcon,
   ArrowTopRightOnSquareIcon,
   ArrowPathIcon,
-  ChevronDownIcon,
   TrophyIcon,
   LightBulbIcon,
   XMarkIcon,
@@ -22,9 +21,9 @@ import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSea
 import { Toggle } from "@/features/aso/keywords/research/ui";
 // The same history panel Keyword Research's Volume column opens.
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
-import { COUNTRIES, COUNTRY_MAP, countryFlag } from "@/libs/countries";
+import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
-import { AppHeader } from "@/features/aso/AppHeader";
+import { CountryPicker } from "./CountryPicker";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
 
@@ -37,7 +36,6 @@ const RECENT_KEY = "keyword-inspector-recent";
 
 type Recent = { term: string; store: Store; country: string };
 
-const COUNTRY_OPTIONS = [...COUNTRIES].sort((a, b) => a.label.localeCompare(b.label));
 const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 
 // "Beatable spots": a top-10 app this thin is one an ordinary app can
@@ -407,9 +405,21 @@ export default function KeywordInspectorPage() {
     writeJson(RECENT_KEY, []);
   }
 
-  // Same header as the other Keywords pages, so the active app (used for
-  // "Your app's rank") is always visible and switchable from here.
-  const header = <AppHeader app={activeApp ?? null} title="Keyword Inspector" />;
+  // A plain title bar, not the app header the other Keywords pages use: the
+  // Inspector isn't tied to an app (any keyword, store and country), and an
+  // app header would imply the form follows it. The active app only feeds
+  // the "Your app's rank" card, which names the app itself.
+  const header = (
+    <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
+      <div className="size-8 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+        <DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
+        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty and live search results for any keyword, in any country</p>
+      </div>
+    </div>
+  );
 
   if (isLocked) {
     return (
@@ -501,21 +511,9 @@ export default function KeywordInspectorPage() {
                   ))}
                 </div>
 
-                <label className="relative min-w-0 flex-1 md:flex-none">
-                  <span className="sr-only">Country</span>
-                  {/* appearance-none + our own chevron: the native caret sits flush
-                      against the edge and can't be padded. */}
-                  <select
-                    value={country.toUpperCase()}
-                    onChange={(e) => { const c = e.target.value.toLowerCase(); setCountry(c); rememberPrefs({ store, country: c }); }}
-                    className="h-full w-full md:w-52 appearance-none rounded-xl bg-[#111318] light:bg-[#f5f6f8] py-2.5 pl-3 pr-10 text-sm text-white light:text-gray-900 outline-none focus:ring-1 focus:ring-indigo-500/60"
-                  >
-                    {COUNTRY_OPTIONS.map((c) => (
-                      <option key={c.code} value={c.code}>{countryFlag(c.code)} {c.label}</option>
-                    ))}
-                  </select>
-                  <ChevronDownIcon className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
-                </label>
+                <div className="min-w-0 flex-1 md:flex-none">
+                  <CountryPicker value={country} onChange={(c) => { setCountry(c); rememberPrefs({ store, country: c }); }} />
+                </div>
               </div>
 
               <button
@@ -640,9 +638,19 @@ export default function KeywordInspectorPage() {
                         {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-8 shrink-0 rounded-xl object-cover" />}
                         <div className="min-w-0">
                           {yourRankIdx >= 0 ? (
-                            <p className="text-2xl font-semibold leading-tight text-white light:text-gray-900">#{yourRankIdx + 1}</p>
+                            <p className="text-2xl font-semibold leading-tight text-white light:text-gray-900">
+                              #{yourRankIdx + 1}
+                              <span className="ml-1.5 text-xs font-normal text-gray-500">
+                                in {countryFlag(query.country)} {COUNTRY_MAP[query.country.toUpperCase()] ?? query.country.toUpperCase()}
+                              </span>
+                            </p>
                           ) : (
-                            <p className="text-sm font-semibold leading-tight text-white light:text-gray-900">Not in the top {allResults.length}</p>
+                            <p className="text-sm font-semibold leading-tight text-white light:text-gray-900">
+                              Not in the top {allResults.length}
+                              <span className="ml-1.5 text-xs font-normal text-gray-500">
+                                in {countryFlag(query.country)} {COUNTRY_MAP[query.country.toUpperCase()] ?? query.country.toUpperCase()}
+                              </span>
+                            </p>
                           )}
                           <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
                         </div>
