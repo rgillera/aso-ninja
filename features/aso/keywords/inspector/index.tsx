@@ -560,7 +560,7 @@ export default function KeywordInspectorPage() {
       </div>
       <div>
         <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
-        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty, estimated daily searches and live search results for any keyword, in any country</p>
+        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty, daily searches and live results for any keyword, and whether you can rank for it</p>
       </div>
     </div>
   );
@@ -573,11 +573,11 @@ export default function KeywordInspectorPage() {
           minPlan="pro"
           icon={DocumentMagnifyingGlassIcon}
           title="Keyword Inspector is a Pro feature"
-          description="Upgrade to Pro or above to inspect any keyword in any country."
+          description="Upgrade to Pro or above to inspect any keyword in any country and see if you can rank for it."
           benefits={[
-            "Check popularity, difficulty and estimated daily searches for any keyword, no app needed",
+            "Check estimated daily searches, popularity and difficulty for any keyword, no app needed",
             "Switch between 170+ App Store and Google Play countries",
-            "See which apps rank in the top 20 right now",
+            "Find the beatable spots in the top 10 and where your app ranks",
           ]}
         />
       </div>
@@ -717,7 +717,7 @@ export default function KeywordInspectorPage() {
               <DocumentMagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
               <p className="text-sm font-medium text-gray-400 light:text-gray-600">Inspect any keyword</p>
               <p className="mt-1 text-sm text-gray-600 light:text-gray-400 max-w-md mx-auto">
-                Pick a store and country, enter a keyword, and see how popular it is, how hard it is to rank for, and which apps rank for it right now.
+                Pick a store and country, enter a keyword, and see how popular it is, how hard it is to rank for, and which apps rank for it right now. Then find out if you can beat them, with the weakest spots in the top 10 and where your app ranks today.
               </p>
             </div>
           )}
