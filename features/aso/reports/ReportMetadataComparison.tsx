@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 import { Toggle } from "@/features/aso/keywords/research/ui";
+import { computeRepeatedWords, HighlightedText } from "@/features/aso/keywords/repeatedWords";
 import { computeKeywordDensity, computeTermFrequencies, tokenizeWords, DensityTable } from "@/features/aso/metadata/preview/KeywordDensity";
 import { toneFor, scoreVsBenchmark, boolScore, ASO_REFERENCE } from "./asoScore";
 import type { CategoryBenchmark } from "@/libs/contracts";
@@ -84,39 +85,6 @@ function lengthHint(field: TextField, count: number, limit: number): string | nu
   if (count > limit) return `That's ${count - limit} characters over the ${limit}-character limit.`;
   if (count / limit >= 0.7) return field === "App Name" ? "The length of the App Name looks great!" : `Good! Your ${field.toLowerCase()} looks great!`;
   return `You have room for ${limit - count} more characters to fit another keyword.`;
-}
-
-// 3+ letter words only, so connectors like "a"/"to"/"of" never count as "repeated".
-function tokenize(text: string): string[] {
-  return text.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length >= 3);
-}
-
-// A word only counts once per app even if it repeats within that app's own
-// text, so "repeated" means shared *across* apps, not reused within one.
-function computeRepeatedWords(texts: string[]): Set<string> {
-  const counts = new Map<string, number>();
-  for (const text of texts) {
-    for (const word of new Set(tokenize(text))) {
-      counts.set(word, (counts.get(word) ?? 0) + 1);
-    }
-  }
-  return new Set([...counts.entries()].filter(([, c]) => c >= 2).map(([w]) => w));
-}
-
-function HighlightedText({ text, repeated, active }: { text: string; repeated: Set<string>; active: boolean }) {
-  if (!active) return <>{text}</>;
-  return (
-    <>
-      {text.split(/(\s+)/).map((part, i) => {
-        const clean = part.toLowerCase().replace(/[^a-z0-9]/g, "");
-        return clean.length >= 3 && repeated.has(clean) ? (
-          <mark key={i} className="rounded bg-indigo-500/25 text-indigo-200 light:text-indigo-800">{part}</mark>
-        ) : (
-          <span key={i}>{part}</span>
-        );
-      })}
-    </>
-  );
 }
 
 function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: string | null; onRemove?: () => void }) {

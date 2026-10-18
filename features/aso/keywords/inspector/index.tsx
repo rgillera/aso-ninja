@@ -6,6 +6,9 @@ import {
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   ArrowTrendingUpIcon,
+  ArrowTopRightOnSquareIcon,
+  ArrowPathIcon,
+  ChevronDownIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -14,6 +17,7 @@ import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
+import { Toggle } from "@/features/aso/keywords/research/ui";
 // The same history panel Keyword Research's Volume column opens.
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRIES, COUNTRY_MAP, countryFlag } from "@/libs/countries";
@@ -93,21 +97,110 @@ function StatSkeleton() {
   );
 }
 
-function ResultRow({ app, store }: { app: AppSearchResult; store: Store }) {
-  const storeUrl = store === "ios"
-    ? app.trackId ? `https://apps.apple.com/app/id${app.trackId}` : null
-    : app.appId ? `https://play.google.com/store/apps/details?id=${encodeURIComponent(app.appId)}` : null;
-  const body = (
+// Same rule as the title-match part of the volume estimate
+// (fetchIosCoreMetrics): every word of the keyword appears in the title.
+// Substring match, so it also works for scripts without spaces (CJK).
+function titleHasKeyword(title: string, term: string) {
+  const t = title.toLowerCase();
+  return term.toLowerCase().split(/\s+/).filter(Boolean).every((w) => t.includes(w));
+}
+
+// The line under an app's name: App Store subtitle (loaded separately, see
+// loadIosSubtitles) or Google Play short description. Not app.subtitle on
+// iOS: the browser's iTunes search fills that with the category instead.
+function subtitleFor(app: AppSearchResult, store: Store, iosSubtitles: Record<string, string>) {
+  return store === "ios" ? iosSubtitles[String(app.trackId)] ?? "" : app.subtitle;
+}
+
+// Marks every occurrence of the searched keyword's words in a title or
+// subtitle. Substring and case-insensitive, matching titleHasKeyword's rule,
+// so "habit" also lights up inside "Habits" and it works for scripts written
+// without spaces (CJK).
+function KeywordHighlight({ text, term, active }: { text: string; term: string; active: boolean }) {
+  const words = term.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!active || !words.length) return <>{text}</>;
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((a, b) => b.length - a.length);
+  const parts = text.split(new RegExp(`(${escaped.join("|")})`, "giu"));
+  return (
     <>
-      <span className="w-6 shrink-0 text-center text-xs font-semibold text-gray-500">{app.position}</span>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? (
+          <mark key={i} className="rounded bg-indigo-500/25 text-indigo-200 light:text-indigo-800">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
+// A compact "label  value" chip for the keyword-match counts above the
+// results list. value null = still loading (App Store subtitles).
+function MatchPill({ label, value, hint }: { label: string; value: string | null; hint: string }) {
+  return (
+    <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-1.5" title={hint}>
+      <span className="text-xs text-gray-500">{label}</span>
+      {value === null ? (
+        <span className="flex items-center gap-1 text-xs text-gray-500" role="status">
+          <ArrowPathIcon className="size-3 animate-spin" />
+          Fetching subtitles...
+        </span>
+      ) : (
+        <span className="text-xs font-semibold tabular-nums text-white light:text-gray-900">{value}</span>
+      )}
+    </div>
+  );
+}
+
+function ResultRow({
+  app, store, country, subtitle, subtitleLoading, term, highlight,
+}: {
+  app: AppSearchResult;
+  store: Store;
+  country: string;
+  subtitle: string;
+  // An App Store subtitle that's still being fetched: shows a placeholder bar.
+  subtitleLoading: boolean;
+  term: string;
+  highlight: boolean;
+}) {
+  const storeUrl = store === "ios"
+    ? app.trackId ? `https://apps.apple.com/${country}/app/id${app.trackId}` : null
+    : app.appId ? `https://play.google.com/store/apps/details?id=${encodeURIComponent(app.appId)}&gl=${country}` : null;
+  return (
+    <div className="flex items-start gap-3 px-4 py-3 border-b border-white/[0.05] light:border-black/[0.05] last:border-0">
+      <span className="w-6 shrink-0 pt-3 text-center text-xs font-semibold text-gray-500">{app.position}</span>
       <div className={`size-10 shrink-0 overflow-hidden bg-[#0d0f14] light:bg-gray-100 ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
         {app.icon && <img src={app.icon} alt="" className="size-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-white light:text-gray-900">{app.name}</p>
-        <p className="truncate text-xs text-gray-500">{app.developer}</p>
+        <p className="truncate text-sm font-medium text-white light:text-gray-900"><KeywordHighlight text={app.name} term={term} active={highlight} /></p>
+        {subtitleLoading && (
+          <div className="my-1 h-2.5 w-40 max-w-full rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
+        )}
+        {subtitle && (
+          // Wraps instead of truncating: a Play short description runs up to
+          // 80 characters (App Store subtitles max out at 30, so they never do).
+          <p className="text-xs leading-snug text-gray-400 light:text-gray-600 break-words"><KeywordHighlight text={subtitle} term={term} active={highlight} /></p>
+        )}
+        <p className={`truncate text-gray-500 ${subtitle ? "text-[11px]" : "text-xs"}`}>{app.developer}</p>
+        {storeUrl && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+            {storeUrl && (
+              <a
+                href={storeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1 text-[11px] font-medium hover:underline ${store === "android" ? "text-[#01875f]" : "text-[#007AFF]"}`}
+              >
+                {store === "android" ? "View on Google Play" : "View on App Store"}
+                <ArrowTopRightOnSquareIcon className="size-3" />
+              </a>
+            )}
+          </div>
+        )}
       </div>
-      <div className="shrink-0 text-right">
+      <div className="shrink-0 pt-1 text-right">
         <p className="text-xs text-gray-300 light:text-gray-700">
           {app.rating ? <><span className="text-amber-400">★</span> {app.rating.toFixed(1)}</> : null}
         </p>
@@ -115,16 +208,8 @@ function ResultRow({ app, store }: { app: AppSearchResult; store: Store }) {
           {app.ratingCount ? `${formatCount(app.ratingCount)} ratings` : store === "android" ? "" : "No ratings"}
         </p>
       </div>
-      <span className="hidden sm:block w-16 shrink-0 text-right text-xs text-gray-500">{app.price}</span>
-    </>
-  );
-  const rowClass = "flex items-center gap-3 px-4 py-2.5 border-b border-white/[0.05] light:border-black/[0.05] last:border-0";
-  return storeUrl ? (
-    <a href={storeUrl} target="_blank" rel="noopener noreferrer" className={`${rowClass} hover:bg-white/[0.03] light:hover:bg-black/[0.02] transition-colors`}>
-      {body}
-    </a>
-  ) : (
-    <div className={rowClass}>{body}</div>
+      <span className="hidden sm:block w-16 shrink-0 pt-1 text-right text-xs text-gray-500">{app.price}</span>
+    </div>
   );
 }
 
@@ -144,6 +229,9 @@ export default function KeywordInspectorPage() {
   const [query, setQuery] = useState<Recent | null>(null);
   const [metrics, setMetrics] = useState<KeywordInspection | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [highlightKeyword, setHighlightKeyword] = useState(false);
+  const [iosSubtitles, setIosSubtitles] = useState<Record<string, string>>({});
+  const [subtitlesLoading, setSubtitlesLoading] = useState(false);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
@@ -182,6 +270,8 @@ export default function KeywordInspectorPage() {
     setMetricsError(null);
     setMetricsLoading(true);
     setApps(null);
+    setIosSubtitles({});
+    setSubtitlesLoading(false);
     setAppsError(null);
     setAppsLoading(true);
 
@@ -213,21 +303,49 @@ export default function KeywordInspectorPage() {
     const appsPromise = (async () => {
       try {
         const results = await fetchLiveSearchResults(normTerm, current.store, current.country, undefined, true);
-        if (id === requestId.current) setApps(results.slice(0, RESULTS_DISPLAY_LIMIT));
+        if (id !== requestId.current) return;
+        const top = results.slice(0, RESULTS_DISPLAY_LIMIT);
+        setApps(top);
+        if (current.store === "ios") loadIosSubtitles(top, current.country, id);
       } catch {
         // Live search failed (usually the store rate-limiting this browser's
         // IP). The server already ran the same search for the scores, so show
         // its results instead of an error when it has them.
         const inspection = await metricsPromise;
         if (id !== requestId.current) return;
-        if (inspection?.topApps?.length) setApps(inspection.topApps);
-        else setAppsError("Couldn't load search results right now. Try again in a minute.");
+        if (inspection?.topApps?.length) {
+          setApps(inspection.topApps);
+          if (current.store === "ios") loadIosSubtitles(inspection.topApps, current.country, id);
+        } else setAppsError("Couldn't load search results right now. Try again in a minute.");
       } finally {
         if (id === requestId.current) setAppsLoading(false);
       }
     })();
 
     await Promise.all([metricsPromise, appsPromise]);
+  }
+
+  // Second step after the list renders: App Store subtitles come from each
+  // app's store page (server-side, cached), so the list never waits on them.
+  // Rows show just the developer until they arrive, or if a lookup fails.
+  async function loadIosSubtitles(list: AppSearchResult[], country: string, id: number) {
+    const targets = list.filter((a) => a.trackId).map((a) => ({ trackId: a.trackId, name: a.name }));
+    if (!targets.length) return;
+    setSubtitlesLoading(true);
+    try {
+      const res = await fetch("/api/keywords/subtitles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country, workspaceId, apps: targets }),
+      });
+      if (!res.ok || id !== requestId.current) return;
+      const data = (await res.json()) as { subtitles?: Record<string, string> };
+      if (id === requestId.current) setIosSubtitles(data.subtitles ?? {});
+    } catch {
+      // Best-effort: rows already show the developer instead.
+    } finally {
+      if (id === requestId.current) setSubtitlesLoading(false);
+    }
   }
 
   function onSubmit(e: React.FormEvent) {
@@ -285,6 +403,16 @@ export default function KeywordInspectorPage() {
   // (a crowded keyword can come back with 19). Only the App Store's count,
   // up to its 200 limit, is meaningful.
   const showResultsCard = query?.store === "ios";
+  // Words shared by 2+ of the top titles, and how many titles carry the
+  // searched keyword itself: the strongest ranking signal you can see from
+  // outside, and often a better read on direct competition than Difficulty.
+  const subtitleLabel = query?.store === "android" ? "short description" : "subtitle";
+  const rowSubtitles = query && apps ? apps.map((a) => subtitleFor(a, query.store, iosSubtitles)) : [];
+  const hasSubtitles = rowSubtitles.some(Boolean);
+  const titleMatches = query && apps ? apps.filter((a) => titleHasKeyword(a.name, query.term)).length : 0;
+  const titleOrSubtitleMatches = query && apps
+    ? apps.filter((a, i) => titleHasKeyword(`${a.name} ${rowSubtitles[i]}`, query.term)).length
+    : 0;
   const pop = metrics ? popularityLabel(metrics.popularity) : null;
   const diff = metrics ? difficultyLabel(metrics.difficulty) : null;
 
@@ -331,17 +459,20 @@ export default function KeywordInspectorPage() {
                   ))}
                 </div>
 
-                <label className="min-w-0 flex-1 md:flex-none">
+                <label className="relative min-w-0 flex-1 md:flex-none">
                   <span className="sr-only">Country</span>
+                  {/* appearance-none + our own chevron: the native caret sits flush
+                      against the edge and can't be padded. */}
                   <select
                     value={country.toUpperCase()}
                     onChange={(e) => { const c = e.target.value.toLowerCase(); setCountry(c); rememberPrefs({ store, country: c }); }}
-                    className="h-full w-full md:w-52 rounded-xl bg-[#111318] light:bg-[#f5f6f8] px-3 py-2.5 text-sm text-white light:text-gray-900 outline-none focus:ring-1 focus:ring-indigo-500/60"
+                    className="h-full w-full md:w-52 appearance-none rounded-xl bg-[#111318] light:bg-[#f5f6f8] py-2.5 pl-3 pr-10 text-sm text-white light:text-gray-900 outline-none focus:ring-1 focus:ring-indigo-500/60"
                   >
                     {COUNTRY_OPTIONS.map((c) => (
                       <option key={c.code} value={c.code}>{countryFlag(c.code)} {c.label}</option>
                     ))}
                   </select>
+                  <ChevronDownIcon className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
                 </label>
               </div>
 
@@ -456,7 +587,31 @@ export default function KeywordInspectorPage() {
 
               {/* ── Live search results ── */}
               <section>
-                <h2 className="mb-3 text-sm font-semibold text-white light:text-gray-900">Top {RESULTS_DISPLAY_LIMIT} search results</h2>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                  <h2 className="text-sm font-semibold text-white light:text-gray-900">Top {RESULTS_DISPLAY_LIMIT} search results</h2>
+                  {apps && apps.length > 0 && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Toggle checked={highlightKeyword} onChange={() => setHighlightKeyword((v) => !v)} />
+                      <span className="text-xs text-gray-500 whitespace-nowrap">Highlight the searched keyword</span>
+                    </label>
+                  )}
+                </div>
+                {apps && apps.length > 0 && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <MatchPill
+                      label="Keyword in title"
+                      value={`${titleMatches}/${apps.length}`}
+                      hint={`Top apps with every word of "${query.term}" in their title`}
+                    />
+                    {(hasSubtitles || subtitlesLoading) && (
+                      <MatchPill
+                        label={`In title or ${subtitleLabel}`}
+                        value={subtitlesLoading ? null : `${titleOrSubtitleMatches}/${apps.length}`}
+                        hint={`Top apps with every word of "${query.term}" in their title or ${subtitleLabel}`}
+                      />
+                    )}
+                  </div>
+                )}
                 <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden">
                   {appsLoading && (
                     <div className="divide-y divide-white/[0.05] light:divide-black/[0.05]">
@@ -481,7 +636,18 @@ export default function KeywordInspectorPage() {
                   {apps && apps.length === 0 && (
                     <p className="px-4 py-8 text-center text-sm text-gray-500">No apps found for this keyword in this country.</p>
                   )}
-                  {apps && apps.map((app) => <ResultRow key={`${app.position}-${app.trackId || app.appId}`} app={app} store={query.store} />)}
+                  {apps && apps.map((app) => (
+                      <ResultRow
+                        key={`${app.position}-${app.trackId || app.appId}`}
+                        app={app}
+                        store={query.store}
+                        country={query.country}
+                        subtitle={subtitleFor(app, query.store, iosSubtitles)}
+                        subtitleLoading={query.store === "ios" && subtitlesLoading && !iosSubtitles[String(app.trackId)]}
+                        term={query.term}
+                        highlight={highlightKeyword}
+                      />
+                  ))}
                 </div>
               </section>
             </>

@@ -81,6 +81,8 @@ export async function GET(request: NextRequest) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       : (core.apps as any[]).slice(0, TOP_APPS_LIMIT).map((a, i) => ({
           position: i + 1, trackId: 0, appId: (a.appId ?? "") as string, name: (a.title ?? "") as string,
+          // search()'s summary is the full description, not the short one,
+          // so the fallback list goes without (see the search route).
           subtitle: "", developer: (a.developer ?? "") as string, icon: (a.icon ?? "") as string,
           rating: (a.score ?? 0) as number, ratingCount: 0,
           price: a.free ? "Free" : typeof a.price === "number" ? `$${a.price.toFixed(2)}` : "",

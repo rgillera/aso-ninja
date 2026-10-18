@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 
+// Play's short description comes HTML-escaped ("fitness &amp; workouts").
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
 export type AppSearchResult = {
   position: number;
   trackId: number;
@@ -163,7 +175,11 @@ export async function GET(request: NextRequest) {
       trackId:        0,
       appId:          (a.appId ?? "") as string,
       name:           (a.title ?? "") as string,
-      subtitle:       (a.genre ?? "") as string,
+      // Play has no subtitle; its short description is the equivalent, but
+      // only the app() detail lookup has it (filled in below with
+      // fullDetail). search()'s own `summary` is the *full* description now,
+      // thousands of characters of HTML, so it's deliberately not used here.
+      subtitle:       "",
       developer:      (a.developer ?? "") as string,
       icon:           (a.icon ?? "") as string,
       rating:         (a.score ?? 0) as number,
@@ -184,7 +200,10 @@ export async function GET(request: NextRequest) {
         results.slice(0, 20).map((a) => api.app({ appId: a.appId, country }))
       );
       details.forEach((d, i) => {
-        if (d.status === "fulfilled") apps[i].ratingCount = (d.value.ratings ?? 0) as number;
+        if (d.status === "fulfilled") {
+          apps[i].ratingCount = (d.value.ratings ?? 0) as number;
+          apps[i].subtitle = decodeHtmlEntities((d.value.summary ?? "") as string);
+        }
       });
     }
 
