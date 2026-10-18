@@ -431,7 +431,7 @@ export default function KeywordInspectorPage() {
           title="Keyword Inspector is a Pro feature"
           description="Upgrade to Pro or above to inspect any keyword in any country."
           benefits={[
-            "Check popularity and difficulty for any keyword, no app needed",
+            "Check popularity, difficulty and estimated daily searches for any keyword, no app needed",
             "Switch between 170+ App Store and Google Play countries",
             "See which apps rank in the top 20 right now",
           ]}

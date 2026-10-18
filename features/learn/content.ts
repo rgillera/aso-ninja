@@ -218,7 +218,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         description:
           "Keyword Inspector shows how popular any keyword is, how hard it is to rank for, and which apps rank for it right now, in any country. It's for checking a keyword before you commit to it, with no app needed.",
         benefits: [
-          "Vet a keyword's popularity and difficulty before adding it to an app",
+          "Vet a keyword's popularity, difficulty and estimated daily searches before adding it to an app",
           "Compare the same keyword across countries and between the App Store and Google Play",
           "See the top 20 apps ranking for a keyword today, with their ratings and prices",
         ],
