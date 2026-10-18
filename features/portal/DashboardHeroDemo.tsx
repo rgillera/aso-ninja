@@ -25,7 +25,7 @@ import {
   ScaleIcon,
   BeakerIcon,
   TrophyIcon,
-  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
   UserCircleIcon,
   CreditCardIcon,
 } from "@heroicons/react/24/outline";
@@ -257,7 +257,7 @@ export function DashboardHeroDemo() {
 
           <div className="border-t border-black/[0.08] p-2.5 space-y-0.5">
             <FooterRow icon={TrophyIcon} label="Learn & Get Certified" />
-            <FooterRow icon={ChatBubbleLeftRightIcon} label="Chat with us 👋" />
+            <FooterRow icon={EnvelopeIcon} label="Email support" />
             <FooterRow icon={CreditCardIcon} label="Manage Plan" badge="Enterprise" />
             <FooterRow icon={UserCircleIcon} label="Account settings" />
           </div>

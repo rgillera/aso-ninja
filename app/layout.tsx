@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import MaintenancePage from "@/components/MaintenancePage";
-import { TawkTo } from "@/components/TawkTo";
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import "./globals.css";
 
@@ -32,12 +31,6 @@ const geistMono = Geist_Mono({
 const maintenanceEnabled =
   process.env.MAINTENANCE_MODE === "1" ||
   process.env.MAINTENANCE_MODE?.toLowerCase() === "true";
-
-// Only load the tawk.to chat widget on the live production deployment, never
-// in local dev or Vercel preview builds (which also set NODE_ENV=production).
-const isLiveProduction =
-  process.env.VERCEL_ENV === "production" ||
-  (!process.env.VERCEL_ENV && process.env.NODE_ENV === "production");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -122,7 +115,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}
-        {isLiveProduction ? <TawkTo /> : null}
         <Analytics />
       </body>
     </html>

@@ -14,7 +14,7 @@ import {
   ArrowTrendingUpIcon,
   ListBulletIcon,
   TagIcon,
-  ChatBubbleLeftRightIcon,
+  EnvelopeIcon,
   UserCircleIcon,
   CreditCardIcon,
   LockClosedIcon,
@@ -497,14 +497,13 @@ export default function DashboardSidebar({
           <TrophyIcon className="size-5 shrink-0" />
           Learn &amp; Get Certified
         </a>
-        <button
-          type="button"
-          onClick={() => window.Tawk_API?.maximize?.()}
+        <a
+          href="mailto:hello@appaso.io"
           className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
         >
-          <ChatBubbleLeftRightIcon className="size-5 shrink-0" />
-          Chat with us 👋
-        </button>
+          <EnvelopeIcon className="size-5 shrink-0" />
+          Email support
+        </a>
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"
