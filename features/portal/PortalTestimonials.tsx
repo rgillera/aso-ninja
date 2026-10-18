@@ -11,9 +11,9 @@ const testimonials = [
   {
     quote:
       "Keyword research told us which terms to go after, and keyword combinations surfaced long-tail variants we would've never thought to search for. Adding them for tracking is very convenient.",
-    name: "Rex Torres",
-    title: "Founder, NutriSnap",
-    avatar: "RT",
+    name: "Maya Chen",
+    title: "Founder, Habitly",
+    avatar: "MC",
   },
 ];
 
