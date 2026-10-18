@@ -3,18 +3,14 @@ import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isGeminiReachable } from "@/libs/gemini";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
-import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
-import { computeAndroidTitleVolume } from "@/libs/keyword-volume";
+import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
 import {
   type IntentTheme,
   type AppMeta,
-  type RawIosApp,
   isBrandKeyword,
   computeRelevancy,
   fetchIosAppMeta,
   fetchAndroidAppMeta,
-  getCachedIosSearch,
-  searchIosLive,
 } from "@/libs/keyword-relevancy";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
@@ -32,31 +28,6 @@ type Metrics = {
 
 // ── Metric fetchers ───────────────────────────────────────────────────────────
 
-async function persistIosSearch(
-  supabase: SupabaseClient, term: string, country: string,
-  apps: RawIosApp[], volume: number, diff: number
-) {
-  const today = new Date().toISOString().split("T")[0];
-  const normTerm = term.toLowerCase().trim();
-  await supabase.from("keyword_volume_history").upsert(
-    { term: normTerm, store: "ios", country, score: volume, diff, raw_apps: apps, recorded_on: today },
-    { onConflict: "term,store,country,recorded_on" }
-  );
-  if (apps.length) {
-    // Same write the manual/automatic client-side live search performs —
-    // doing it here too means a successful metrics fetch already covers
-    // today's rank history for every app in the results, not just this one.
-    await supabase.from("keyword_rankings_history").upsert(
-      apps.map((a, i) => ({
-        keyword: normTerm, store: "ios", country, recorded_on: today,
-        position: i + 1, app_id: String(a.trackId || a.trackName),
-        app_name: a.trackName, app_icon: a.artworkUrl,
-      })),
-      { onConflict: "keyword,store,country,recorded_on,app_id" }
-    );
-  }
-}
-
 // Everything iOS needs before relevancy scoring: the search itself must stay
 // serial (Apple's per-IP rate limit, via enqueueAppleRequest), but nothing
 // past this point does — see the route handler below, which runs this in a
@@ -66,54 +37,20 @@ type IosBase = {
   rank: number | null; topTitles: string[];
 };
 
+// Search, volume, difficulty and today's persisted snapshot all come from
+// fetchIosCoreMetrics (shared with Keyword Inspector) — this only adds the
+// app-specific rank/chance on top.
 async function fetchIosMetricsBase(term: string, country: string, appName: string, storeId: string, supabase: SupabaseClient): Promise<IosBase | null | "rate_limited"> {
-  try {
-    let apps: RawIosApp[] | null = await getCachedIosSearch(supabase, term, country);
+  const core = await fetchIosCoreMetrics(supabase, term, country);
+  if (core === null || core === "rate_limited") return core;
+  const { volume, diff, results, apps } = core;
 
-    if (!apps) {
-      const result = await searchIosLive(term, country);
-      if (result === "rate_limited") return "rate_limited";
-      if (result === null) return null;
-      apps = result;
-    }
+  const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
+  const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
+  const chance  = computeChance(diff, rank);
+  const topTitles = apps.slice(0, 10).map((r) => r.trackName);
 
-    const count = apps.length;
-    const top5 = apps.slice(0, 5);
-
-    const kwTokens = term.toLowerCase().split(/\s+/).filter(Boolean);
-    const titleApps = apps.filter((a) => kwTokens.every((w) => a.trackName.toLowerCase().includes(w)));
-    const avgTitleRatings = titleApps.length === 0
-      ? 0
-      : titleApps.reduce((s, a) => s + a.userRatingCount, 0) / titleApps.length;
-    const ratingVolume = avgTitleRatings < 1_000
-      ? 5
-      : Math.min(Math.round((Math.log10(avgTitleRatings) / Math.log10(10_000_000)) * 100), 100);
-    // Autocomplete popularity when available; rating-count estimate otherwise
-    // (unsupported country, Apple hints error) — see libs/keyword-autocomplete.ts.
-    const volume = await resolveIosVolume(supabase, term, country, ratingVolume, { apps });
-
-    const avgRatings = top5.length > 0
-      ? top5.reduce((s, r) => s + r.userRatingCount, 0) / top5.length
-      : 0;
-    const diff = avgRatings < 10
-      ? 0
-      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
-
-    // Persist on every check, not just a fresh iTunes call — a cache hit still
-    // has a full apps[] result set to record into keyword_rankings_history, and
-    // the upsert is keyed on (term/keyword,store,country,recorded_on[,app_id]),
-    // so re-writing the same day's data here is a no-op, not a duplicate.
-    await persistIosSearch(supabase, term, country, apps, volume, diff);
-
-    const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
-    const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
-    const chance  = computeChance(diff, rank);
-    const topTitles = apps.slice(0, 10).map((r) => r.trackName);
-
-    return { volume, diff, chance, results: count, rank, topTitles };
-  } catch {
-    return null;
-  }
+  return { volume, diff, chance, results, rank, topTitles };
 }
 
 // AI provider down → leave both null rather than guessing. A null relevancy is
@@ -134,94 +71,33 @@ async function scoreMetrics(term: string, appName: string, base: IosBase, appMet
   return { volume: base.volume, diff: base.diff, chance: base.chance, opportunity, results: base.results, relevancy, rank: base.rank, intentThemeId };
 }
 
-// Same write persistIosSearch performs for iOS — apps[] here already has
-// appId/title/icon for every result, so there's no reason Android's
-// keyword_rankings_history should depend on a separate manual live search.
-async function persistAndroidSearch(
-  supabase: SupabaseClient, term: string, country: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  apps: any[]
-) {
-  if (!apps.length) return;
-  const today = new Date().toISOString().split("T")[0];
-  const normTerm = term.toLowerCase().trim();
-  await supabase.from("keyword_rankings_history").upsert(
-    apps.map((a, i) => ({
-      keyword: normTerm, store: "android", country, recorded_on: today,
-      position: i + 1, app_id: a.appId ?? a.title, app_name: a.title, app_icon: a.icon,
-    })),
-    { onConflict: "keyword,store,country,recorded_on,app_id" }
-  );
-}
-
 async function fetchAndroidMetrics(term: string, country: string, appName: string, storeId: string, appMeta: AppMeta, withRelevancy: boolean, aiReachable: boolean, supabase: SupabaseClient, themes: IntentTheme[]): Promise<Metrics | null> {
-  try {
-    const gplay = await import("google-play-scraper");
-    const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  // Search, volume, difficulty and today's persisted snapshot (popularity +
+  // rankings history) — shared with Keyword Inspector.
+  const core = await fetchAndroidCoreMetrics(supabase, term, country);
+  if (!core) return null;
+  const { volume, diff, results: count, apps } = core;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName, apps.map((r: any) => r.appId), storeId);
+  const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
+  const chance  = computeChance(diff, rank);
+
+  let relevancy: number | null = null;
+  let opportunity: number | null = null;
+  let intentThemeId: string | null = null;
+  // AI provider down → leave both null (see comment in scoreMetrics).
+  if (withRelevancy && aiReachable) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
-
-    // Mirrors persistIosSearch's placement in fetchIosMetricsBase — re-writing
-    // the same day's data is a no-op via the upsert's onConflict key, not a duplicate.
-    await persistAndroidSearch(supabase, term, country, apps);
-
-    const count = apps.length;
-    // Play suggest popularity (letter-by-letter, same walk as iOS), with the
-    // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
-    const volume = await resolveAndroidVolume(supabase, term, country, computeAndroidTitleVolume(apps, term));
-
-    const top5 = apps.slice(0, 5);
-    // Use rating *count* (install signal), not star rating — same approach as iOS.
-    // Star ratings cluster at 4.0–4.5 for virtually all apps, giving every keyword
-    // a diff of 87–97 regardless of actual competition.
-    // Plain search() results never carry ratings/reviews (only score/scoreText) —
-    // those fields only come back from the full app-detail lookup, so fetch it
-    // for just the top 5 rather than paying that cost for every result.
-    // A failed detail lookup (transient error, rate limit) isn't the same
-    // signal as "0 ratings" — null so it's excluded from the average instead
-    // of dragging diff down for reasons unrelated to actual competition.
-    const top5RatingCounts = await Promise.all(
-      top5.map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-        try {
-          const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
-          return full?.ratings ?? full?.reviews ?? 0;
-        } catch {
-          return null;
-        }
-      })
-    );
-    const resolvedRatingCounts = top5RatingCounts.filter((n): n is number => n !== null);
-    const avgRatings = resolvedRatingCounts.length > 0
-      ? resolvedRatingCounts.reduce((s: number, n: number) => s + n, 0) / resolvedRatingCounts.length
-      : 0;
-    const diff = avgRatings < 10
-      ? 0
-      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName, apps.map((r: any) => r.appId), storeId);
-    const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
-    const chance  = computeChance(diff, rank);
-
-    let relevancy: number | null = null;
-    let opportunity: number | null = null;
-    let intentThemeId: string | null = null;
-    // AI provider down → leave both null (see comment in scoreMetrics).
-    if (withRelevancy && aiReachable) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
-      const result = await computeRelevancy(term, appName, appMeta.subtitle, topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
-      relevancy = result.score;
-      intentThemeId = result.intentThemeId;
-      const base = Math.sqrt(volume * chance);
-      opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
-    }
-
-    return { volume, diff, chance, opportunity, results: count, relevancy, rank, intentThemeId };
-  } catch {
-    return null;
+    const topTitles = apps.slice(0, 10).map((r: any) => r.title ?? "");
+    const result = await computeRelevancy(term, appName, appMeta.subtitle, topTitles, appMeta.embedding, appMeta.description, themes, appMeta.developer);
+    relevancy = result.score;
+    intentThemeId = result.intentThemeId;
+    const base = Math.sqrt(volume * chance);
+    opportunity = Math.round(base * Math.pow(relevancy / 100, 2));
   }
+
+  return { volume, diff, chance, opportunity, results: count, relevancy, rank, intentThemeId };
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
@@ -394,24 +270,11 @@ export async function GET(request: NextRequest) {
 
     freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
 
-    // iOS already wrote its popularity snapshot (and rankings history) inside
-    // fetchIosMetricsBase, scoped to genuine fresh successes only — doing it
-    // again here unconditionally is what used to let a degraded 403 fallback
-    // poison the shared cache for every other app/workspace querying this
-    // term today.
-    if (store === "android") {
-      const today = new Date().toISOString().split("T")[0];
-      await Promise.all(
-        entries
-          .filter(([, m]) => m !== null)
-          .map(([term, m]) =>
-            supabase.from("keyword_volume_history").upsert(
-              { term: (term as string).toLowerCase(), store, country, score: m!.volume, recorded_on: today },
-              { onConflict: "term,store,country,recorded_on" }
-            )
-          )
-      );
-    }
+    // Both stores already wrote their popularity snapshot (and rankings
+    // history) inside fetchIosCoreMetrics / fetchAndroidCoreMetrics, scoped
+    // to genuine fresh successes only — doing it again here unconditionally
+    // is what used to let a degraded 403 fallback poison the shared cache for
+    // every other app/workspace querying this term today.
   }
 
   const merged = { ...dbCache, ...freshMetrics };

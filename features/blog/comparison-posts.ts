@@ -387,7 +387,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           "No keyword or app caps on Pro, versus 2,500 keywords and 10 apps on Sonar Indie.",
           "Relevancy scoring that tells you how well each keyword fits your app, and opportunity scoring that combines it with volume and difficulty.",
           "Estimated downloads per keyword, based on your real totals from App Store Connect or Google Play Console.",
-          "AI keyword suggestions, long-tail discovery, and intent grouping on Pro.",
+          "AI keyword suggestions, Keyword Inspector for any keyword in any country, long-tail discovery, and intent grouping on Pro.",
         ],
       },
       { type: "heading", text: "Which one should you pick?" },

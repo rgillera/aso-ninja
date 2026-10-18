@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { REPORT_MONTHS, HISTORY_MONTHS_BY_PLAN, planNeededForMoreHistory } from "@/libs/keyword-report-window";
 import type { PlanSlug } from "@/libs/contracts";
 import type { MonthlyKeywordStats, PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
+import { unrankedLabel } from "./types";
 
 const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat("en", { month: "short", year: "numeric" });
 
@@ -36,9 +37,9 @@ function sheetName(label: string): string {
 
 // A real number (shown as "#12" via numFmt) rather than a "#12" string, so
 // sorting the column in Excel/Sheets is numeric instead of alphabetical.
-// "Unranked" stays text, which sorts after numbers in ascending order.
-function rankCellValue(rank: number | null | undefined): number | string {
-  return typeof rank === "number" ? rank : "Unranked";
+// The unranked label stays text, which sorts after numbers in ascending order.
+function rankCellValue(rank: number | null | undefined, store?: string): number | string {
+  return typeof rank === "number" ? rank : unrankedLabel(store);
 }
 
 // The current calendar month plus the REPORT_MONTHS-1 before it, most recent
@@ -89,7 +90,10 @@ export async function exportPerformanceReport(
   // Gates whether the Est. Downloads column renders at all: a below-Pro
   // workspace gets no column rather than one that's just dashes down the
   // whole sheet.
-  downloadsAccess?: boolean
+  downloadsAccess?: boolean,
+  // Labels a missing rank — "Not in top results" on Android, whose search
+  // only returns one page (see unrankedLabel in ./types).
+  store?: string
 ) {
   const unlockedMonths = HISTORY_MONTHS_BY_PLAN[planSlug] ?? HISTORY_MONTHS_BY_PLAN.free;
   const trackedSinceMonth = appTrackedSince ? appTrackedSince.slice(0, 7) : null;
@@ -203,7 +207,7 @@ export async function exportPerformanceReport(
       const row = sheet.addRow({
         keyword: term,
         volume: noData ? "No data yet" : stats!.avgVolume ?? "-",
-        ranking: noData ? "No data yet" : rankCellValue(stats!.bestRank),
+        ranking: noData ? "No data yet" : rankCellValue(stats!.bestRank, store),
         change: changeValue,
         ...(showDownloads
           ? { downloads: noData ? "No data yet" : stats!.estimatedDownloads ?? "-" }

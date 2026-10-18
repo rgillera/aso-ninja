@@ -8,19 +8,21 @@ import {
 import { XMarkIcon, ArrowTrendingUpIcon } from "@heroicons/react/24/outline";
 
 import type { DownloadsHistoryWeek } from "@/app/api/keywords/downloads-history/route";
+import { unrankedLabel } from "./types";
 
 type HistoryResponse = { history: DownloadsHistoryWeek[] };
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
-function formatRank(rank: number | null | undefined): string {
+function formatRank(rank: number | null | undefined, store?: string): string {
   if (rank === undefined) return "Not checked yet";
-  return rank === null ? "Unranked" : `#${rank}`;
+  return rank === null ? unrankedLabel(store) : `#${rank}`;
 }
 
 type Props = {
   term: string;
   appId: string;
+  store?: string;
   onClose: () => void;
 };
 
@@ -41,7 +43,7 @@ function dotShape(props: unknown) {
   return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
 }
 
-function tooltipContent(props: unknown) {
+function tooltipContent(props: unknown, store?: string) {
   const { active, payload } = props as { active?: boolean; payload?: { payload: DownloadsHistoryWeek }[] };
   if (!active || !payload || !payload.length) return null;
   const week = payload[0].payload;
@@ -51,13 +53,13 @@ function tooltipContent(props: unknown) {
       <p className="mt-0.5 text-gray-200 light:text-gray-800">
         Est. downloads: <span className="font-semibold">{week.estimated != null ? `~${week.estimated}` : "-"}</span>
       </p>
-      <p className="mt-0.5 text-gray-400 light:text-gray-600">Rank: {formatRank(week.rank)}</p>
+      <p className="mt-0.5 text-gray-400 light:text-gray-600">Rank: {formatRank(week.rank, store)}</p>
       {week.days < 7 && <p className="mt-0.5 text-gray-500">{week.days} of 7 days synced</p>}
     </div>
   );
 }
 
-export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
+export function DownloadsHistoryPanel({ term, appId, store, onClose }: Props) {
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -141,7 +143,7 @@ export function DownloadsHistoryPanel({ term, appId, onClose }: Props) {
                     allowDecimals={false}
                     tickFormatter={(v) => DOWNLOADS_FORMATTER.format(v)}
                   />
-                  <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                  <Tooltip content={(p: unknown) => tooltipContent(p, store)} cursor={{ stroke: "#ffffff20" }} />
                   <Line type="linear" dataKey="estimated" name="Est. downloads" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>

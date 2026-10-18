@@ -27,6 +27,7 @@ import {
   MagnifyingGlassCircleIcon,
   ScaleIcon,
   BanknotesIcon,
+  DocumentMagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
@@ -56,6 +57,7 @@ function PlanLockBadge({ minPlan }: { minPlan: PlanSlug }) {
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
+  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, minPlan: "pro" },
   { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance", icon: ArrowTrendingUpIcon },
   { label: "Group by Intent", href: "/dashboard/keywords/intent", icon: TagIcon, minPlan: "pro" },

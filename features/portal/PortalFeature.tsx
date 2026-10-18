@@ -36,7 +36,7 @@ const features = [
   {
     name: "Know which keywords are worth chasing",
     description:
-      "Get AI keyword suggestions for your app, scored for relevancy and opportunity with estimated downloads, so you spend effort where it pays off.",
+      "Check popularity and difficulty for any keyword in any country with Keyword Inspector, and get AI keyword suggestions scored for relevancy and opportunity, so you spend effort where it pays off.",
     icon: SparklesIcon,
   },
   {

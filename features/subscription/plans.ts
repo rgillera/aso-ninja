@@ -66,6 +66,7 @@ export const PLANS: Plan[] = [
       "Unlimited keywords",
       "Relevancy & opportunity scoring (1,000 keywords)",
       "AI keyword suggestions",
+      "Keyword Inspector for any keyword & country",
       "Long tail keywords & intent grouping",
       "Est. downloads per keyword",
       "5 competitors per app",

@@ -534,7 +534,7 @@ export default function KeywordPerformancePage() {
       });
       if (!res.ok) throw new Error("Export failed");
       const data: PerformanceReportResult & { _catchingUp?: string[]; _downloadsAccess?: boolean } = await res.json();
-      await exportPerformanceReport(activeApp.name, terms, data, planSlug, activeApp.created_at, data._downloadsAccess);
+      await exportPerformanceReport(activeApp.name, terms, data, planSlug, activeApp.created_at, data._downloadsAccess, activeApp.store);
 
       // A handful of keywords had nothing for this month yet at the moment
       // of export — they're being filled in behind the scenes now, kept in
@@ -882,6 +882,7 @@ export default function KeywordPerformancePage() {
         <DownloadsHistoryPanel
           term={downloadsHistoryTerm}
           appId={activeApp.id}
+          store={activeApp.store}
           onClose={() => setDownloadsHistoryTerm(null)}
         />
       )}

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
-import { computeIosVolumeAndDiff, computeAndroidTitleVolume } from "@/libs/keyword-volume";
+import { computeIosVolumeAndDiff, computeAndroidTitleVolume, difficultyFromRatings } from "@/libs/keyword-volume";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
@@ -288,9 +288,7 @@ export async function GET(req: Request) {
         const avgRatings = resolvedRatingCounts.length > 0
           ? resolvedRatingCounts.reduce((s: number, n: number) => s + n, 0) / resolvedRatingCounts.length
           : 0;
-        const diff = avgRatings < 10
-          ? 0
-          : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
+        const diff = difficultyFromRatings(avgRatings);
 
         await supabase.from("keyword_volume_history").upsert(
           { term, store: "android", country, score: volume, diff, recorded_on: today },

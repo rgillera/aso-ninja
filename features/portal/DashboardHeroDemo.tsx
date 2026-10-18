@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   MagnifyingGlassIcon,
   MagnifyingGlassCircleIcon,
+  DocumentMagnifyingGlassIcon,
   InformationCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
@@ -230,6 +231,7 @@ export function DashboardHeroDemo() {
               <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-gray-400">Keyword Intelligence</p>
               <div className="space-y-1">
                 <NavRow icon={MagnifyingGlassIcon} label="Keyword Research" active />
+                <NavRow icon={DocumentMagnifyingGlassIcon} label="Keyword Inspector" />
                 <NavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
                 <NavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" />
                 <NavRow icon={TagIcon} label="Group by Intent" />

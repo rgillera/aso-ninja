@@ -6,6 +6,7 @@ import {
   ClockIcon,
   ChartBarIcon,
   MagnifyingGlassIcon,
+  DocumentMagnifyingGlassIcon,
   PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
@@ -62,7 +63,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
         howToUse: [
           "Start with Reports for a quick health check of your current store listing",
           "Use Metadata — Preview, Timeline, and Benchmark — to draft, review, and benchmark your listing's text and creative",
-          "Use Keywords — Keyword Research, Long Tail Keywords, Keyword Performance, and Ranked Keywords — to find, track, and monitor the terms your app should rank for",
+          "Use Keywords — Keyword Research, Keyword Inspector, Long Tail Keywords, Keyword Performance, and Ranked Keywords — to find, track, and monitor the terms your app should rank for",
           "Use Reviews & Ratings to track your star rating, read user feedback, and turn it into a concrete improvement plan",
           "Pick a topic from the list on the left at any time to see exactly what it's for, why it matters, and how to use it",
         ],
@@ -207,6 +208,29 @@ export const LEARN_GROUPS: LearnGroup[] = [
         goodToKnow: [
           "Relevancy and Opportunity are scored for up to 10 keywords on Free; Basic and up get a much bigger scoring pool; AI Suggestions require Pro",
           "Adding keywords is subject to your workspace's tracked-app and keyword limits",
+        ],
+      },
+      {
+        id: "keywords-inspector",
+        label: "Keyword Inspector",
+        icon: DocumentMagnifyingGlassIcon,
+        minPlan: "pro",
+        description:
+          "Keyword Inspector shows how popular any keyword is, how hard it is to rank for, and which apps rank for it right now, in any country. It's for checking a keyword before you commit to it, with no app needed.",
+        benefits: [
+          "Vet a keyword's popularity and difficulty before adding it to an app",
+          "Compare the same keyword across countries and between the App Store and Google Play",
+          "See the top 20 apps ranking for a keyword today, with their ratings and prices",
+        ],
+        howToUse: [
+          "Enter a keyword, pick a store and country, and click Inspect",
+          "Use Popularity history to see whether demand for the keyword is growing or fading",
+          "Add the keywords worth targeting to your app in Keyword Research so they get ongoing rank tracking",
+        ],
+        goodToKnow: [
+          "Popularity is the same score shown as Volume in Keyword Research",
+          "Google Play only shows its first page of about 20 to 30 search results, so result counts are shown for the App Store only",
+          "Requires Pro",
         ],
       },
       {

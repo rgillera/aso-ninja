@@ -10,7 +10,7 @@ import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
-import { recomputeOpportunity, computeAndroidTitleVolume } from "@/libs/keyword-volume";
+import { recomputeOpportunity, computeAndroidTitleVolume, difficultyFromRatings } from "@/libs/keyword-volume";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -119,18 +119,27 @@ function computeIosVolumeAndDiff(apps: RawIosApp[], term: string) {
 }
 
 // Mirrors the android branch of app/api/cron/refresh-keywords/route.ts.
+// Plain search() results never carry ratings/reviews (only score/scoreText),
+// so the top 5's rating counts come from per-app detail lookups, same as the
+// cron. A failed lookup is null and left out of the average rather than
+// counted as 0 ratings, which would drag diff down for no real reason.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeAndroidVolumeAndDiff(apps: any[], term: string) {
+async function computeAndroidVolumeAndDiff(api: any, apps: any[], term: string, country: string) {
   const volume = computeAndroidTitleVolume(apps, term);
 
-  const top5 = apps.slice(0, 5);
-  const avgRatings = top5.length > 0
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ? top5.reduce((s: number, r: any) => s + (r.ratings ?? r.reviews ?? 0), 0) / top5.length
-    : 0;
-  const diff = avgRatings < 10
-    ? 0
-    : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(1_000_000)) * 100), 100);
+  const top5RatingCounts = await Promise.all(
+    apps.slice(0, 5).map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      try {
+        const full: any = await api.app({ appId: r.appId, country, lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+        return (full?.ratings ?? full?.reviews ?? 0) as number;
+      } catch {
+        return null;
+      }
+    })
+  );
+  const resolved = top5RatingCounts.filter((n): n is number => n !== null);
+  const avgRatings = resolved.length > 0 ? resolved.reduce((s, n) => s + n, 0) / resolved.length : 0;
+  const diff = difficultyFromRatings(avgRatings);
 
   return { volume, diff };
 }
@@ -220,17 +229,18 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let api: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let apps: any[];
   try {
     const gplay = await import("google-play-scraper");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const api = (gplay.default ?? gplay) as any;
+    api = gplay.default ?? gplay;
     apps = await api.search({ term: normTerm, country: countryLower, num: 250 });
   } catch {
     return { ok: false, error: "Google Play search failed." };
   }
 
-  const { volume: titleVolume, diff } = computeAndroidVolumeAndDiff(apps, normTerm);
+  const { volume: titleVolume, diff } = await computeAndroidVolumeAndDiff(api, apps, normTerm, countryLower);
   const volume = await resolveAndroidVolume(admin, normTerm, countryLower, titleVolume, { fresh: true });
 
   await admin.from("keyword_volume_history").upsert(

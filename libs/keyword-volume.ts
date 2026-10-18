@@ -7,6 +7,17 @@
 // whichever path happens to be the one that checks it.
 export type RawStoreApp = { trackId: number; trackName: string; userRatingCount: number };
 
+// Difficulty (0-100) from the average rating count of a keyword's top 5
+// results, log-scaled so 10M+ ratings = 100. The one scale every writer uses
+// (both stores) — a 1M ceiling used to live in some paths, which pinned most
+// competitive keywords at 95-100 and made the same keyword's diff jump
+// whenever a differently-scaled path re-saved it.
+export function difficultyFromRatings(avgRatings: number) {
+  return avgRatings < 10
+    ? 0
+    : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(10_000_000)) * 100), 100);
+}
+
 export function computeIosVolumeAndDiff(apps: RawStoreApp[], term: string) {
   const kwTokens = term.split(/\s+/).filter(Boolean);
   const titleApps = apps.filter((a) =>
@@ -24,10 +35,7 @@ export function computeIosVolumeAndDiff(apps: RawStoreApp[], term: string) {
   const top5 = apps.slice(0, 5);
   const avgRatings =
     top5.length > 0 ? top5.reduce((s, r) => s + r.userRatingCount, 0) / top5.length : 0;
-  const diff =
-    avgRatings < 10
-      ? 0
-      : Math.min(Math.round((Math.log10(avgRatings) / Math.log10(10_000_000)) * 100), 100);
+  const diff = difficultyFromRatings(avgRatings);
 
   return { volume, diff };
 }
