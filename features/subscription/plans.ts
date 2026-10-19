@@ -35,7 +35,6 @@ export const PLANS: Plan[] = [
       "Keyword research & ranking tracking",
       "ASO reports & metadata optimization",
       "Keyword translations",
-      "1 month of history",
     ],
   },
   {
