@@ -35,6 +35,9 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
   // `rows.length - unlockedMonths` of them are the locked/blurred tease.
   const lockedCount = Math.max(0, rows.length - unlockedMonths);
   const currentIndex = rows.length - 1;
+  // With only the current month unlocked there's no trend to show (they've
+  // already seen this month's volume), so the whole panel is the lock screen.
+  const fullyLocked = lockedCount > 0 && unlockedMonths <= 1;
   const windowLabel = lockedCount === 0
     ? `Last ${rows.length} month${rows.length === 1 ? "" : "s"}`
     : `${unlockedMonths === 1 ? "This month" : `Last ${unlockedMonths} months`} · past ${lockedCount} month${lockedCount === 1 ? "" : "s"} locked`;
@@ -133,6 +136,22 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 Volume snapshots accumulate automatically each time this keyword is checked.
               </p>
+            </div>
+          ) : fullyLocked ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
+              <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
+              <p className="text-sm font-semibold text-white light:text-gray-900">Volume history locked</p>
+              <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
+                Upgrade to{" "}
+                <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+                to see how this keyword&apos;s volume has trended over the past months.
+              </p>
+              <Link
+                href="/dashboard/subscription"
+                className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+              >
+                Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+              </Link>
             </div>
           ) : (
             <>

@@ -81,6 +81,9 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
   // of them are the locked/blurred tease — same split as Volume History.
   const lockedCount = Math.max(0, weekly.length - unlockedWeeks);
   const currentIndex = weekly.length - 1;
+  // With only the current month unlocked there's barely a trend to show, so
+  // the whole panel is the lock screen — same as Volume History.
+  const fullyLocked = lockedCount > 0 && unlockedMonths <= 1;
   const windowLabel = lockedCount === 0
     ? `Last ${unlockedMonths} month${unlockedMonths === 1 ? "" : "s"}`
     : `${unlockedMonths === 1 ? "This month" : `Last ${unlockedMonths} months`} · earlier history locked`;
@@ -155,6 +158,22 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
                 Rank snapshots accumulate automatically each time this keyword is checked.
               </p>
+            </div>
+          ) : fullyLocked ? (
+            <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
+              <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
+              <p className="text-sm font-semibold text-white light:text-gray-900">Rank history locked</p>
+              <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
+                Upgrade to{" "}
+                <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+                to see how this keyword&apos;s rank has moved over the past months.
+              </p>
+              <Link
+                href="/dashboard/subscription"
+                className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+              >
+                Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+              </Link>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
