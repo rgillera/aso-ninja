@@ -35,9 +35,17 @@ type Store = "ios" | "android";
 const RESULTS_DISPLAY_LIMIT = 20;
 const RECENT_LIMIT = 8;
 const PREFS_KEY = "keyword-inspector-prefs";
-const RECENT_KEY = "keyword-inspector-recent";
 
 type Recent = { term: string; store: Store; country: string };
+
+const sameRecent = (a: Recent, b: Recent) => a.term === b.term && a.store === b.store && a.country === b.country;
+
+// Newest first, no repeats, capped. `first` wins over `rest` for order.
+function mergeRecent(first: Recent[], rest: Recent[]): Recent[] {
+  return [...first, ...rest]
+    .filter((r, i, all) => all.findIndex((x) => sameRecent(x, r)) === i)
+    .slice(0, RECENT_LIMIT);
+}
 
 const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 
@@ -378,7 +386,6 @@ export default function KeywordInspectorPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     setStore(nextStore);
     setCountry(nextCountry);
-    setRecent(readJson<Recent[]>(RECENT_KEY) ?? []);
     if (linkTerm && !isLocked) {
       setTerm(linkTerm);
       inspect({ term: linkTerm, store: nextStore, country: nextCountry });
@@ -389,6 +396,21 @@ export default function KeywordInspectorPage() {
     // Only on mount: switching apps later shouldn't clobber a choice made here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Recent searches live server-side (keyword_inspector_searches, written by
+  // the inspect route), so they follow the user across devices and an admin
+  // viewing as them sees theirs. Merged rather than replaced: a search
+  // started before this loads (a link from Keyword Research) stays on top.
+  function loadRecent() {
+    fetch("/api/keywords/inspect/recent")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { recent?: Recent[] } | null) => {
+        if (data?.recent) setRecent((prev) => mergeRecent(prev, data.recent!));
+      })
+      .catch(() => {});
+  }
+
+  useEffect(loadRecent, []);
 
   function rememberPrefs(next: { store: Store; country: string }) {
     writeJson(PREFS_KEY, next);
@@ -412,12 +434,8 @@ export default function KeywordInspectorPage() {
     setAppsError(null);
     setAppsLoading(true);
 
-    // Built from storage, not the `recent` state: a linked inspection runs
-    // from the mount effect, before that state has been filled.
-    const stored = readJson<Recent[]>(RECENT_KEY) ?? [];
-    const nextRecent = [current, ...stored.filter((r) => !(r.term === current.term && r.store === current.store && r.country === current.country))].slice(0, RECENT_LIMIT);
-    setRecent(nextRecent);
-    writeJson(RECENT_KEY, nextRecent);
+    // Shown right away; the inspect request below is what saves it.
+    setRecent((prev) => mergeRecent([current], prev));
 
     const params = new URLSearchParams({ term: normTerm, store: current.store, country: current.country, workspaceId: workspaceId ?? "" });
     // Resolves to the inspection (or null) so the results list below can
@@ -538,15 +556,28 @@ export default function KeywordInspectorPage() {
     inspect(r);
   }
 
+  // Optimistic. A failed delete (e.g. view-only while an admin views as the
+  // user) reloads the list so the row comes back instead of looking removed.
+  async function deleteRecent(body: Recent | Record<string, never>) {
+    const res = await fetch("/api/keywords/inspect/recent", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setRecent([]);
+      loadRecent();
+    }
+  }
+
   function removeRecent(r: Recent) {
-    const next = recent.filter((x) => !(x.term === r.term && x.store === r.store && x.country === r.country));
-    setRecent(next);
-    writeJson(RECENT_KEY, next);
+    setRecent((prev) => prev.filter((x) => !sameRecent(x, r)));
+    deleteRecent(r);
   }
 
   function clearRecent() {
     setRecent([]);
-    writeJson(RECENT_KEY, []);
+    deleteRecent({});
   }
 
   // A plain title bar, not the app header the other Keywords pages use: the

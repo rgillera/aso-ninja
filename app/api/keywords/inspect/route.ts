@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/libs/supabase/server";
+import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
@@ -51,9 +51,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Keyword Inspector requires the Pro plan or above." }, { status: 403 });
   }
 
-  const core = store === "ios"
-    ? await fetchIosCoreMetrics(supabase, term, country)
-    : await fetchAndroidCoreMetrics(supabase, term, country);
+  // Logged up front, so a search the store then rate-limits still shows in
+  // Recent (the user can retry it from there). Skipped while an admin views
+  // as this user: those searches aren't theirs. Best-effort, never fails the
+  // inspection.
+  const record = (await isImpersonating())
+    ? Promise.resolve()
+    : Promise.resolve(
+        supabase.rpc("record_keyword_inspector_search", {
+          p_term: term.toLowerCase(),
+          p_store: store,
+          p_country: country,
+          p_workspace_id: workspaceId || null,
+        })
+      ).then(() => {}, () => {});
+
+  const [core] = await Promise.all([
+    store === "ios"
+      ? fetchIosCoreMetrics(supabase, term, country)
+      : fetchAndroidCoreMetrics(supabase, term, country),
+    record,
+  ]);
 
   if (core === "rate_limited") {
     return NextResponse.json({ error: "The App Store is busy right now. Try again in a minute." }, { status: 429 });
