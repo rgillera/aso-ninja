@@ -1,3 +1,5 @@
+import { FREE_DAILY_INSPECTIONS } from "@/features/aso/keywords/inspector/limits";
+
 export type PlanId = "free" | "basic" | "pro" | "pro_plus" | "enterprise";
 
 export type Plan = {
@@ -33,6 +35,7 @@ export const PLANS: Plan[] = [
       "100 tracked keywords",
       "Relevancy & opportunity scoring (40 keywords)",
       "Keyword research & ranking tracking",
+      `Keyword Inspector (${FREE_DAILY_INSPECTIONS} lookups a day)`,
       "ASO reports & metadata optimization",
       "Keyword translations",
     ],
@@ -65,7 +68,7 @@ export const PLANS: Plan[] = [
       "Unlimited keywords",
       "Relevancy & opportunity scoring (1,000 keywords)",
       "AI keyword suggestions",
-      "Keyword Inspector for any keyword & country",
+      "Unlimited Keyword Inspector",
       "Long tail keywords & intent grouping",
       "Est. downloads per keyword",
       "5 competitors per app",
