@@ -151,7 +151,7 @@ type Props = {
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
   onCompetitorAdded?: (competitor: CompetitorApp) => void;
-  /** Steps 2–4 of the 5-step onboarding coach mark (step 5, the sidebar, lives outside this page) — see TOUR_STEPS in @/features/onboarding/tour. */
+  /** The "opportunity" and "inspect" steps of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };
@@ -242,9 +242,6 @@ export function KeywordTable({
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
-  // Keyword Inspector is Pro+. Below that the link still shows (with a lock)
-  // and lands on the Inspector's upgrade screen.
-  const inspectorLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -288,16 +285,16 @@ export function KeywordTable({
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
 
-  // Steps 2–4 of the 5-step coach mark (see TOUR_STEPS in
+  // The coach mark's "opportunity" and "inspect" steps (see TOUR_STEPS in
   // @/features/onboarding/tour and the `tourStep`/`onAdvanceTour` props
-  // above) — step 1 (Keyword Suggestions) lives in the sibling
-  // KeywordSuggestionsPanel and step 5 (the sidebar) lives outside this page
-  // entirely, which is why the step state itself is owned by the parent
-  // page instead of here. Each ref below is a target the TourTooltip
-  // instances further down point at.
-  const tableContainerRef = useRef<HTMLDivElement>(null);
+  // above). The other steps live in KeywordSuggestionsPanel, the Keyword
+  // Inspector and the sidebar, which is why the step state itself is owned
+  // by the parent page instead of here. Each ref below is a target the
+  // TourTooltip instances further down point at.
   const opportunityThRef = useRef<HTMLTableCellElement>(null);
-  const addKeywordBoxRef = useRef<HTMLDivElement>(null);
+  // The top row's Inspect link: after the Opportunity sort, the best
+  // keyword to look at.
+  const inspectLinkRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     if (!colPickerOpen) return;
@@ -638,25 +635,7 @@ export function KeywordTable({
   }
 
   return (
-    <div
-      ref={tableContainerRef}
-      className={`mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10 transition-all ${
-        tourStep === "table" ? "ring-2 ring-indigo-400/70" : ""
-      }`}
-    >
-      <TourTooltip
-        targetRef={tableContainerRef}
-        active={tourStep === "table"}
-        step={TOUR_STEPS.indexOf("table") + 1}
-        total={TOUR_STEPS.length}
-        icon={<TableCellsIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
-        message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. Every keyword you track shows up here with its volume, difficulty, relevancy, and more. Hover a <span className="font-semibold text-white light:text-gray-900">Volume</span> number to see estimated daily searches and impressions.</>
-        }
-        buttonLabel="Next"
-        onAdvance={onAdvanceTour}
-        anchor="top"
-      />
+    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10 transition-all">
 
       {/* Filter toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex-wrap gap-y-2">
@@ -815,20 +794,11 @@ export function KeywordTable({
       {/* Add keyword input + Edit columns */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <div
-          ref={addKeywordBoxRef}
-          className={`relative flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 ${
-            tourStep === "addKeyword" ? "ring-2 ring-indigo-400/70 bg-indigo-500/5" : "light:ring-black/[0.08]"
-          }`}
+          className="relative flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 light:ring-black/[0.08]"
         >
-          {tourStep === "addKeyword" && <TourPulse />}
           <input
             value={keywordInput}
-            onChange={(e) => {
-              setKeywordInput(e.target.value);
-              // Typing here is the whole point of this step — treat it as
-              // "got it" and advance the tour instead of waiting for a click.
-              if (tourStep === "addKeyword") onAdvanceTour();
-            }}
+            onChange={(e) => setKeywordInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="Enter comma-separated keywords to add…"
             className="flex-1 bg-transparent text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
@@ -934,26 +904,10 @@ export function KeywordTable({
         )}
       </div>
 
-      {/* Step 3 of the coach mark — points at the add-keyword box above.
-          Deliberately advances on typing (see the input's onChange), not
-          just Next/outside-click — see TourTooltip for the shared dismiss
-          logic every step here uses. */}
-      <TourTooltip
-        targetRef={addKeywordBoxRef}
-        active={tourStep === "addKeyword"}
-        step={TOUR_STEPS.indexOf("addKeyword") + 1}
-        total={TOUR_STEPS.length}
-        icon={<PlusIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
-        message={
-          <>This is where you add keywords. Type one or more, <span className="font-semibold text-white light:text-gray-900">comma separated</span>, then press Enter or hit Add.</>
-        }
-        buttonLabel="Next"
-        onAdvance={onAdvanceTour}
-      />
-
-      {/* Step 4 — points at the Opportunity column header below. Sorting by
-          it is the instruction itself, so that click also advances (see the
-          column header's onClick further down). */}
+      {/* Points at the Opportunity column header below, and introduces the
+          table along the way. Sorting by it is the instruction itself, so
+          that click also advances (see the column header's onClick further
+          down). */}
       <TourTooltip
         targetRef={opportunityThRef}
         active={tourStep === "opportunity"}
@@ -961,9 +915,25 @@ export function KeywordTable({
         total={TOUR_STEPS.length}
         icon={<ArrowsUpDownIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Opportunity</span> score. Sort this column to find the best keyword to target.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. <span className="font-semibold text-white light:text-gray-900">Opportunity</span> blends volume, difficulty and relevancy into one score. Sort it to find the best keyword to target.</>
         }
         buttonLabel="Next"
+        onAdvance={onAdvanceTour}
+      />
+
+      {/* Points at the top row's Inspect link, which carries the tour on to
+          the Keyword Inspector (`tip=tour`). No Next button: the click is the
+          step. Shows once the row has loaded (TourTooltip waits for its
+          target to exist). */}
+      <TourTooltip
+        targetRef={inspectLinkRef}
+        active={tourStep === "inspect"}
+        step={TOUR_STEPS.indexOf("inspect") + 1}
+        total={TOUR_STEPS.length}
+        icon={<DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+        message={
+          <>Click <span className="font-semibold text-white light:text-gray-900">Inspect</span> to see how many people search for &ldquo;{displayed[0]?.keyword}&rdquo; every day, and whether your app can rank for it.</>
+        }
         onAdvance={onAdvanceTour}
       />
 
@@ -1027,6 +997,7 @@ export function KeywordTable({
           <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
             {pageRows.map((row, j) => {
               const i = pageStart + j;
+              const tourInspect = tourStep === "inspect" && i === 0 && !row.loading;
               return (
               <tr key={i} className={`hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
                 <td className="px-4 py-3.5">
@@ -1073,7 +1044,7 @@ export function KeywordTable({
                     </td>
                   ))
                 )}
-                <td className="pr-4 py-3.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <td className={`pr-4 py-3.5 transition-opacity ${tourInspect ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
@@ -1083,13 +1054,19 @@ export function KeywordTable({
                       Live search
                     </button>
                     <Link
-                      href={`/dashboard/keywords/inspector?${new URLSearchParams({ term: row.keyword, store, country: country.toLowerCase() })}`}
-                      title={inspectorLocked ? "Open in Keyword Inspector (Pro)" : "Open in Keyword Inspector"}
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                      ref={tourInspect ? inspectLinkRef : undefined}
+                      href={`/dashboard/keywords/inspector?${new URLSearchParams({
+                        term: row.keyword, store, country: country.toLowerCase(),
+                        ...(tourInspect ? { tip: "tour" } : {}),
+                      })}`}
+                      title="Open in Keyword Inspector"
+                      className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap ${
+                        tourInspect ? "ring-1 ring-indigo-400/70 text-white light:text-gray-900" : ""
+                      }`}
                     >
+                      {tourInspect && <TourPulse />}
                       <DocumentMagnifyingGlassIcon className="size-3" />
                       Inspect
-                      {inspectorLocked && <LockClosedIcon className="size-2.5" />}
                     </Link>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}

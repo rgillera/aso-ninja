@@ -18,7 +18,8 @@ const SidebarTourContext = createContext<SidebarTourValue>({
 export const SidebarTourProvider = SidebarTourContext.Provider;
 
 /**
- * Lets a page (currently just Keywords Research's onboarding coach mark)
+ * Lets a page (Keywords Research or the Keyword Inspector, whichever is
+ * showing when the onboarding coach mark reaches its last step)
  * highlight the sidebar and hand it a dismiss handler for the tour's last
  * step. Needed because DashboardSidebar and the page that drives the tour
  * are siblings under DashboardShell, not parent/child — a plain prop can't

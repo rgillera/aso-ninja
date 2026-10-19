@@ -317,12 +317,12 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     document.cookie = `lastAppId=${appId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     document.cookie = `lastPreview=; path=/; max-age=0; SameSite=Lax`;
     onDone();
-    // `tip=tour` tells the research page to walk this first-timer through a
-    // 5-step coach mark once, right after they land: Keyword Suggestions
-    // section → Keyword Table section → how to add a keyword → the
-    // Opportunity column → the sidebar — see TOUR_STEPS in
-    // @/features/onboarding/tour and the `tourStep` state in
-    // KeywordResearchPage for the rest of that handoff. It reads and strips
+    // `tip=tour` tells the research page to walk this first-timer through
+    // the coach mark once, right after they land: Keyword Suggestions →
+    // the Opportunity column → Inspect, on into the Keyword Inspector and
+    // finally the sidebar — see TOUR_STEPS in @/features/onboarding/tour and
+    // the `tourStep` state in KeywordResearchPage for the rest of that
+    // handoff. It reads and strips
     // the param itself, so there's nothing to clean up here.
     window.location.href = "/dashboard/keywords/research?tip=tour";
   }

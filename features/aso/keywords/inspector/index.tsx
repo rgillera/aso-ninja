@@ -13,13 +13,15 @@ import {
   XMarkIcon,
   PlusIcon,
   CheckIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
-import { FeatureLocked } from "@/features/subscription/FeatureLocked";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
+import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
 import { Toggle } from "@/features/aso/keywords/research/ui";
 // The same history panel Keyword Research's Volume column opens.
@@ -27,8 +29,9 @@ import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHi
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
 import { CountryPicker } from "./CountryPicker";
+import type { InspectorUsage } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
-import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
+import type { KeywordInspection, InspectorLimitReached } from "@/app/api/keywords/inspect/route";
 
 type Store = "ios" | "android";
 
@@ -257,6 +260,51 @@ function ResultRow({
   );
 }
 
+// "2 of 3 free lookups left today" under the form, for capped plans only.
+function UsageBadge({ usage }: { usage: InspectorUsage }) {
+  if (usage.limit === null) return null;
+  const left = Math.max(0, usage.limit - usage.used);
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+      <span className={left === 0 ? "text-amber-400 light:text-amber-700" : ""}>
+        {left === 0
+          ? "No free lookups left today"
+          : `${left} of ${usage.limit} free ${usage.limit === 1 ? "lookup" : "lookups"} left today`}
+      </span>
+      <span aria-hidden="true">·</span>
+      <Link href="/dashboard/subscription" className="font-medium text-violet-400 light:text-violet-700 hover:underline">
+        Upgrade to Pro for unlimited
+      </Link>
+    </p>
+  );
+}
+
+// Shown in place of the results once today's free lookups are used up.
+function DailyLimitCard({ term, limit }: { term: string; limit: number | null }) {
+  return (
+    <div className="rounded-2xl bg-[#1a1d24] light:bg-white flex flex-col items-center py-12 px-6 text-center">
+      <div className="relative flex size-14 items-center justify-center rounded-2xl bg-violet-500/10">
+        <DocumentMagnifyingGlassIcon className="size-7 text-violet-400 light:text-violet-700" />
+        <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+          <LockClosedIcon className="size-3 text-violet-400 light:text-violet-700" />
+        </span>
+      </div>
+      <p className="mt-4 text-base font-semibold text-white light:text-gray-900">
+        Upgrade to see &ldquo;{term}&rdquo;
+      </p>
+      <p className="mt-1 max-w-sm text-sm text-gray-500">
+        You&apos;ve used your {limit ?? ""} free lookups for today. Pro gets unlimited lookups in every country, or come back tomorrow for {limit === 1 ? "another" : `${limit} more`}.
+      </p>
+      <Link
+        href="/dashboard/subscription"
+        className="mt-5 rounded-xl bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-400 light:text-violet-700 hover:bg-violet-500/20 transition-colors"
+      >
+        Upgrade to Pro
+      </Link>
+    </div>
+  );
+}
+
 // "Track for <app>": adds the inspected keyword to the active app's tracked
 // list, through the same save route Keyword Research uses. Only offered when
 // the active app lives on the inspected store and country, since a tracked
@@ -308,7 +356,32 @@ export default function KeywordInspectorPage() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug = usePlanSlug();
-  const isLocked = !isPlanAtLeast(planSlug, "pro");
+
+  // Today's allowance (null until loaded). Capped below Pro, see ./limits.
+  const [usage, setUsage] = useState<InspectorUsage | null>(null);
+  // The shown query hit the daily limit: the upgrade card replaces results.
+  const [limitReached, setLimitReached] = useState(false);
+
+  // The onboarding coach mark's Inspector steps (TOUR_STEPS in
+  // @/features/onboarding/tour). Keywords Research's "inspect" step links
+  // here with ?tip=tour; the mount effect below picks it up. Each step's
+  // bubble waits for its section to load, and a section that never shows
+  // (failed lookup) is skipped further down.
+  const [tourStep, setTourStep] = useState<TourStep | null>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+  const insightsRef = useRef<HTMLElement>(null);
+
+  function advanceTour() {
+    setTourStep((step) => (step ? TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1] ?? null : null));
+  }
+
+  // The last step lights up the sidebar, a sibling of this page (see
+  // SidebarTourContext), same as Keywords Research does.
+  const { setSidebarTour } = useSidebarTour();
+  useEffect(() => {
+    setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
+    return () => setSidebarTour({ active: false, onAdvance: () => {} });
+  }, [tourStep, setSidebarTour]);
 
   const [term, setTerm] = useState("");
   const [store, setStore] = useState<Store>("ios");
@@ -386,8 +459,10 @@ export default function KeywordInspectorPage() {
     /* eslint-disable react-hooks/set-state-in-effect */
     setStore(nextStore);
     setCountry(nextCountry);
-    if (linkTerm && !isLocked) {
+    if (linkTerm) {
+      const tour = url.get("tip") === "tour";
       setTerm(linkTerm);
+      if (tour) setTourStep("inspectorSearches");
       inspect({ term: linkTerm, store: nextStore, country: nextCountry });
     }
     /* eslint-enable react-hooks/set-state-in-effect */
@@ -412,6 +487,16 @@ export default function KeywordInspectorPage() {
 
   useEffect(loadRecent, []);
 
+  // Reloaded on a workspace or plan change, since the limit follows the plan.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/keywords/inspect/usage?${new URLSearchParams({ workspaceId: workspaceId ?? "" })}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: InspectorUsage | null) => { if (data && !cancelled) setUsage(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [workspaceId, planSlug]);
+
   function rememberPrefs(next: { store: Store; country: string }) {
     writeJson(PREFS_KEY, next);
   }
@@ -423,6 +508,7 @@ export default function KeywordInspectorPage() {
     const id = ++requestId.current;
 
     setQuery(current);
+    setLimitReached(false);
     setTrackError(null);
     setMetrics(null);
     setMetricsError(null);
@@ -444,8 +530,11 @@ export default function KeywordInspectorPage() {
       try {
         const res = await fetch(`/api/keywords/inspect?${params}`);
         const data = await res.json();
+        if (data?.usage) setUsage(data.usage as InspectorUsage);
         if (!res.ok) {
-          if (id === requestId.current) setMetricsError(data.error ?? "Couldn't check this keyword right now.");
+          if (id !== requestId.current) return null;
+          if ((data as InspectorLimitReached).code === "daily_limit") setLimitReached(true);
+          else setMetricsError(data.error ?? "Couldn't check this keyword right now.");
           return null;
         }
         if (id === requestId.current) setMetrics(data as KeywordInspection);
@@ -596,25 +685,6 @@ export default function KeywordInspectorPage() {
     </div>
   );
 
-  if (isLocked) {
-    return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
-        {header}
-        <FeatureLocked
-          minPlan="pro"
-          icon={DocumentMagnifyingGlassIcon}
-          title="Keyword Inspector is a Pro feature"
-          description="Upgrade to Pro or above to inspect any keyword in any country and see if you can rank for it."
-          benefits={[
-            "Check estimated daily searches, popularity and difficulty for any keyword, no app needed",
-            "Switch between 170+ App Store and Google Play countries",
-            "Find the beatable spots in the top 10 and where your app ranks",
-          ]}
-        />
-      </div>
-    );
-  }
-
   const busy = metricsLoading || appsLoading;
   // Google Play's search page returns a single page of ~20-30 apps with no
   // pagination token, so its result count says nothing about competition
@@ -648,6 +718,32 @@ export default function KeywordInspectorPage() {
     : 0;
   const pop = metrics ? popularityLabel(metrics.popularity) : null;
   const diff = metrics ? difficultyLabel(metrics.difficulty) : null;
+
+  // A tour step whose section isn't going to show (lookup failed, or the
+  // daily limit card took over) moves on instead of waiting forever.
+  const tourTargetMissing = !!query && (
+    (tourStep === "inspectorSearches" && !metricsLoading && (!metrics || limitReached)) ||
+    (tourStep === "inspectorRank" && !appsLoading && (!apps?.length || limitReached))
+  );
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (tourTargetMissing) advanceTour();
+  }, [tourTargetMissing]);
+
+  const tourRankMessage = !query ? null : (
+    <>
+      {sameStore && yourRankIdx >= 0
+        ? <>Your app ranks <span className="font-semibold text-white light:text-gray-900">#{yourRankIdx + 1}</span> for &ldquo;{query.term}&rdquo;.</>
+        : sameStore
+          ? <>Your app isn&apos;t ranking for &ldquo;{query.term}&rdquo; yet.</>
+          : null}{" "}
+      {weakSpots.length > 0
+        ? <>{weakSpots.length === 1 ? "One app" : `${weakSpots.length} apps`} in the top {WEAK_SPOT_RANGE} {weakSpots.length === 1 ? "has" : "have"} few ratings or low stars, so {weakSpots.length === 1 ? "it's" : "they're"} the <span className="font-semibold text-white light:text-gray-900">easiest spots to take</span>.</>
+        : sameStore && yourRankIdx >= 0 && yourRankIdx < WEAK_SPOT_RANGE
+          ? <>Every other app in the top {WEAK_SPOT_RANGE} is well established, so this spot is worth holding on to.</>
+          : <>Every app in the top {WEAK_SPOT_RANGE} is well established, so a keyword with lower Difficulty may be a better first target.</>}
+    </>
+  );
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
@@ -706,6 +802,8 @@ export default function KeywordInspectorPage() {
               </button>
             </div>
 
+            {usage && <UsageBadge usage={usage} />}
+
             {recent.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-gray-600 light:text-gray-400 mr-1">Recent</span>
@@ -753,7 +851,9 @@ export default function KeywordInspectorPage() {
             </div>
           )}
 
-          {query && (
+          {query && limitReached && <DailyLimitCard term={query.term} limit={usage?.limit ?? null} />}
+
+          {query && !limitReached && (
             <>
               {/* ── Scores ── */}
               <section>
@@ -811,7 +911,9 @@ export default function KeywordInspectorPage() {
                 )}
 
                 {metrics && pop && diff && (
-                  <div className={`grid grid-cols-2 gap-3 ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+                  <div ref={statsRef} className={`grid grid-cols-2 gap-3 rounded-2xl transition-all ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"} ${
+                    tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#111318] light:ring-offset-[#f5f6f8] ring-indigo-400/70" : ""
+                  }`}>
                     <StatCard label="Popularity" hint="Estimated search demand (0 to 100), from App Store and Google Play search signals. Shown as Volume in Keyword Research.">
                       <div className="flex items-baseline gap-2">
                         <span className="text-2xl font-semibold text-white light:text-gray-900">{metrics.popularity}</span>
@@ -842,7 +944,12 @@ export default function KeywordInspectorPage() {
 
               {/* ── Insights: your app's rank + beatable spots ── */}
               {apps && apps.length > 0 && (
-                <section className={`grid gap-3 ${sameStore ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""}`}>
+                <section
+                  ref={insightsRef}
+                  className={`grid gap-3 rounded-2xl transition-all ${sameStore ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""} ${
+                    tourStep === "inspectorRank" ? "ring-2 ring-offset-4 ring-offset-[#111318] light:ring-offset-[#f5f6f8] ring-indigo-400/70" : ""
+                  }`}
+                >
                   {sameStore && activeApp && allResults && (
                     <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4">
                       <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
@@ -978,6 +1085,29 @@ export default function KeywordInspectorPage() {
           )}
         </div>
       </div>
+
+      <TourTooltip
+        targetRef={statsRef}
+        active={tourStep === "inspectorSearches" && !!metrics}
+        step={TOUR_STEPS.indexOf("inspectorSearches") + 1}
+        total={TOUR_STEPS.length}
+        icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+        message={metrics && query && (
+          <>About <span className="font-semibold text-white light:text-gray-900">{NUMBER_FORMATTER.format(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Popularity is the demand, and Difficulty is how hard the top spots are to take.</>
+        )}
+        buttonLabel="Next"
+        onAdvance={advanceTour}
+      />
+      <TourTooltip
+        targetRef={insightsRef}
+        active={tourStep === "inspectorRank" && !!apps?.length}
+        step={TOUR_STEPS.indexOf("inspectorRank") + 1}
+        total={TOUR_STEPS.length}
+        icon={<TrophyIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+        message={tourRankMessage}
+        buttonLabel="Next"
+        onAdvance={advanceTour}
+      />
 
       {showHistory && query && (
         <VolumeHistoryPanel term={query.term} store={query.store} country={query.country} onClose={() => setShowHistory(false)} />

@@ -28,7 +28,7 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
-  /** Step 1 of the 5-step onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
+  /** Step 1 of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };

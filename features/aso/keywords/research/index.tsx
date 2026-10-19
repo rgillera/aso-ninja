@@ -44,9 +44,9 @@ export default function KeywordResearchPage() {
   const translateLocked = !isPlanAtLeast(planSlug, "free");
   // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
   // so we can walk them across the page once, right as they land: Keyword
-  // Suggestions section → Keyword Table section → how to add a keyword →
-  // the Opportunity column → the sidebar (TOUR_STEPS, in that order — no
-  // dedicated step for Volume, see the comment on TOUR_STEPS for why).
+  // Suggestions section → the table's Opportunity column → the top row's
+  // Inspect link, which hands off to the Keyword Inspector (TOUR_STEPS, in
+  // that order — see the comment there for the full route).
   // Captured via a lazy initializer (not the searchParams value
   // itself) so each step's own dismiss logic — clicking its X, completing
   // its instruction, clicking elsewhere — isn't fighting a prop that keeps
@@ -74,6 +74,10 @@ export default function KeywordResearchPage() {
   function advanceTour() {
     setTourStep((step) => {
       if (!step) return null;
+      // The Inspector steps only exist on the Inspector, which "inspect"
+      // reaches by its link. Dismissing "inspect" here instead (outside
+      // click) skips them and goes straight to the sidebar.
+      if (step === "inspect") return "sidebar";
       const next = TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1];
       return next ?? null;
     });

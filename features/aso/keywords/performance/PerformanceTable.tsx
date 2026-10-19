@@ -31,7 +31,6 @@ import { CompetitorsBar } from "./CompetitorsBar";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
-import type { TourStep } from "@/features/onboarding/tour";
 import type { MonthCoverage } from "@/app/api/keywords/month-coverage/route";
 
 type Props = {
@@ -66,8 +65,6 @@ type Props = {
   onExportReport: () => void;
   exportingReport?: boolean;
   monthCoverage?: MonthCoverage | null;
-  tourStep?: TourStep | null;
-  onAdvanceTour?: () => void;
 };
 
 const PAGE_SIZE = 25;
@@ -205,7 +202,6 @@ export function PerformanceTable({
   onRefetchRanks, refetchingRanks, stuckRankCount,
   translateToggle, translateLocked = false, onTranslateToggle,
   onExportReport, exportingReport = false, monthCoverage = null,
-  tourStep = null, onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
@@ -361,8 +357,6 @@ export function PerformanceTable({
         onExportReport={onExportReport}
         exportingReport={exportingReport}
         monthCoverage={monthCoverage}
-        tourStep={tourStep}
-        onAdvanceTour={onAdvanceTour}
       />
 
       <CompetitorsBar

@@ -214,9 +214,8 @@ export const LEARN_GROUPS: LearnGroup[] = [
         id: "keywords-inspector",
         label: "Keyword Inspector",
         icon: DocumentMagnifyingGlassIcon,
-        minPlan: "pro",
         description:
-          "Keyword Inspector shows how popular any keyword is, how hard it is to rank for, and which apps rank for it right now, in any country. It's for checking a keyword before you commit to it, with no app needed.",
+          "Keyword Inspector shows how popular any keyword is, how hard it is to rank for, and which apps rank for it right now, in any country. It's for checking a keyword before you commit to it, with no app needed. Free plans get 3 lookups a day, and Pro and above are unlimited.",
         benefits: [
           "Vet a keyword's popularity, difficulty and estimated daily searches before adding it to an app",
           "Compare the same keyword across countries and between the App Store and Google Play",

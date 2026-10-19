@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
-import { getWorkspacePlanState } from "@/features/subscription/actions";
-import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { extractIosSubtitle } from "@/libs/store/appstore";
 
 const MAX_APPS = 20;
@@ -29,14 +27,16 @@ async function scrapeIosSubtitle(trackId: number, name: string, country: string)
 
 const cachedIosSubtitle = unstable_cache(scrapeIosSubtitle, ["ios-subtitle"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
-// POST /api/keywords/subtitles — body: { country, workspaceId, apps: [{ trackId, name }] }
+// POST /api/keywords/subtitles — body: { country, apps: [{ trackId, name }] }
 // App Store subtitles for Keyword Inspector's results list, loaded after the
 // list itself so it never waits on 20 page fetches. Google Play doesn't need
-// this: its search results already carry the short description.
+// this: its search results already carry the short description. Open to
+// every signed-in user, like the Inspector itself: it only fills in rows of a
+// lookup the inspect route already allowed, and is cached for days.
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { country: rawCountry, workspaceId, apps: rawApps } = body as {
-    country?: string; workspaceId?: string; apps?: { trackId?: number; name?: string }[];
+  const { country: rawCountry, apps: rawApps } = body as {
+    country?: string; apps?: { trackId?: number; name?: string }[];
   };
   const country = (rawCountry ?? "us").toLowerCase();
   if (!/^[a-z]{2}$/.test(country)) return NextResponse.json({ error: "Invalid country." }, { status: 400 });
@@ -49,12 +49,6 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-
-  const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
-  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  if (!isPlanAtLeast(planSlug, "pro")) {
-    return NextResponse.json({ error: "Keyword Inspector requires the Pro plan or above." }, { status: 403 });
-  }
 
   // A few at a time rather than all 20 at once, to stay gentle on Apple.
   // A failed lookup just leaves that app out; the row keeps showing its developer.

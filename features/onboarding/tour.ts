@@ -18,20 +18,27 @@
 // self-evident + already has a hover tooltip — before adding another
 // column as its own step.
 //
-// Spans four components across two pages because the tour points at things
-// that live in different places: "suggestions" (KeywordSuggestionsPanel) and
-// "table"/"addKeyword"/"opportunity" (KeywordTable) are all children of the
-// Keywords Research page itself; "sidebar" points at DashboardSidebar — a
-// sibling of that page under DashboardShell, reached via SidebarTourContext
-// since it isn't a descendant the page can hand a prop to directly — and
-// doubles as the handoff to the last step, since clicking the highlighted
-// Keyword Performance link (while this step is active) is what carries the
-// `tip=tour-export` continuation into the next page load. "exportReport"
-// then lands on the Keyword Performance page (a full navigation, not a
-// client-side route change — see DashboardSidebar's Keyword Performance
-// link — so this step's state is re-derived from that query param rather
-// than carried over in memory) and points at PerformanceFilters' Export
-// Keyword Report button, reached via KeywordPerformancePage's own
-// `tourStep` state, the same pattern as the Research page's.
-export const TOUR_STEPS = ["suggestions", "table", "addKeyword", "opportunity", "sidebar", "exportReport"] as const;
+// Spans three pages. "suggestions" (KeywordSuggestionsPanel) and
+// "opportunity"/"inspect" (KeywordTable) live on Keywords Research, which
+// owns the step state. "inspect" points at the top row's Inspect link; it
+// has no Next button, because the click is the step: it carries `tip=tour`
+// to the Keyword Inspector, which picks the tour back up on its own state
+// for "inspectorSearches" (the stat cards) and "inspectorRank" (your app's
+// rank + beatable spots). That lookup counts toward a free user's daily
+// limit like any other. The Inspector is the payoff: how many people search
+// the keyword and whether this app can rank for it, which is the question
+// a first-timer came with.
+//
+// "sidebar" is last and lights up the Keyword Performance link in
+// DashboardSidebar (a sibling of the page, reached via SidebarTourContext)
+// with a Done button, not a forced click: on day one a new app has no rank
+// history yet, so Performance is mostly empty and a weak place to end.
+// Whichever page is showing when the tour reaches it drives it: the
+// Inspector normally, or Keywords Research if "inspect" was dismissed.
+//
+// Table and Opportunity used to be separate steps, and there was a forced
+// "add a keyword" step (the wizard already had them add some) and an
+// "export report" step on Keyword Performance. Folded or cut to keep the
+// tour at six steps with the Inspector in it.
+export const TOUR_STEPS = ["suggestions", "opportunity", "inspect", "inspectorSearches", "inspectorRank", "sidebar"] as const;
 export type TourStep = typeof TOUR_STEPS[number];

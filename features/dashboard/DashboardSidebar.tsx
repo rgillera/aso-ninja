@@ -90,7 +90,7 @@ function NewLinkBadge({ href, badge, workspaces, currentPath }: { href: string; 
 
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug; newBadge?: NewBadge }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
-  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, minPlan: "pro", newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
+  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
   { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance", icon: ArrowTrendingUpIcon },
   { label: "Group by Intent", href: "/dashboard/keywords/intent", icon: TagIcon, minPlan: "pro" },
@@ -343,9 +343,10 @@ export default function DashboardSidebar({
           icon={<MapIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
           message={
             <>
-              One more step: click <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> below to see how your tracked keywords rank over time and export a full report.
+              That&apos;s the tour. Check <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> anytime to see how your keywords rank day by day, and export a full report.
             </>
           }
+          buttonLabel="Done"
           onAdvance={onAdvanceTour}
           anchor="right"
         />
@@ -395,12 +396,7 @@ export default function DashboardSidebar({
             {keywordLinks.map((link) => (
               <a
                 key={link.href}
-                // Carries the tour's handoff into the next page load while the
-                // "sidebar" step is active and this is the link it's pointing at —
-                // see the TOUR_STEPS comment on why this is a query param rather
-                // than in-memory state (this is a full page navigation, not a
-                // client-side route change).
-                href={tourActive && link.href === "/dashboard/keywords/performance" ? `${link.href}?tip=tour-export` : link.href}
+                href={link.href}
                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   currentPath.startsWith(link.href)
                     ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
