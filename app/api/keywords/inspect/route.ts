@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
-import { getWorkspacePlanState } from "@/features/subscription/actions";
-import { inspectorDailyLimit, type InspectorUsage } from "@/features/aso/keywords/inspector/limits";
+import type { InspectorUsage } from "@/features/aso/keywords/inspector/limits";
+import { inspectorLimitFor } from "@/features/aso/keywords/inspector/serverLimit";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
@@ -56,9 +56,7 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
-  const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
-  const limit = inspectorDailyLimit(planSlug);
+  const limit = await inspectorLimitFor(supabase, user.id, workspaceId);
   const impersonating = await isImpersonating();
 
   // Capped plans use one of today's lookups first. Skipped while an admin
