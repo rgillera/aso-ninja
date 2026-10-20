@@ -168,7 +168,7 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
     fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us", workspaceId })}`)
       .then((r) => r.json())
       .then((d: AISuggestionsResult) => { setData(d); setLoading(false); })
-      .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [], longtail: [] }); setLoading(false); });
+      .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [] }); setLoading(false); });
   }, [activeApp?.name, activeApp?.country, activeApp?.store_id, workspaceId, locked, fetched]);
 
   useEffect(() => {
@@ -178,7 +178,6 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
       ...(data?.generic ?? []),
       ...(data?.branded ?? []),
       ...(data?.relevancy ?? []),
-      ...(data?.longtail ?? []),
     ].map((k) => k.term);
     const terms = [...new Set(allTerms)].filter((t) => !(t in translations));
     if (!terms.length) return;
@@ -251,16 +250,6 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
       <AISuggestionsSection
         label="High-Relevancy Keywords"
         keywords={loading ? null : (data?.relevancy ?? null)}
-        trackedSet={trackedSet}
-        onAdd={onAddKeyword}
-        onRemove={onRemoveKeyword}
-        onAddAll={onAddKeywords}
-        translations={translateToggle ? translations : undefined}
-        translating={translateToggle && translating}
-      />
-      <AISuggestionsSection
-        label="Long-tail Keywords"
-        keywords={loading ? null : (data?.longtail ?? null)}
         trackedSet={trackedSet}
         onAdd={onAddKeyword}
         onRemove={onRemoveKeyword}
