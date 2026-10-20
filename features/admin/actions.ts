@@ -12,6 +12,8 @@ import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity, computeAndroidTitleVolume, difficultyFromRatings } from "@/libs/keyword-volume";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { persistIpadRank } from "@/libs/store/ipad-only";
+import { fetchAllRows } from "@/libs/supabase/fetch-all";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -94,6 +96,82 @@ export async function searchKeywordsAction(query: string): Promise<KeywordRefres
   return [...groups.values()].sort((a, b) => a.term.localeCompare(b.term));
 }
 
+export type AppRefreshGroup = {
+  // Same listing tracked by several workspaces is one group: rankings/volume
+  // are shared per (term, store, country), so refreshing it once covers all.
+  key: string;
+  name: string;
+  iconUrl: string | null;
+  store: "ios" | "android";
+  country: string;
+  workspaceNames: string[];
+  // Distinct active terms across every workspace tracking this listing.
+  terms: string[];
+};
+
+// Lookup for the "by app" mode: finds tracked apps by name (optionally
+// narrowed to a store/country) and returns the terms each one tracks, so the
+// page can run refreshKeywordAction over them one at a time.
+export async function searchAppsAction(query: string, store: "ios" | "android" | "all", country: string): Promise<AppRefreshGroup[]> {
+  await requireSuperAdmin();
+
+  const q = query.trim();
+  if (q.length < 2) return [];
+
+  const admin = createAdminClient();
+
+  let appsQuery = admin
+    .from("apps")
+    .select("id, name, store, country, store_id, icon_url, workspaces(name)")
+    .ilike("name", `%${q}%`)
+    .not("country", "is", null)
+    .order("name", { ascending: true })
+    .limit(50);
+  if (store !== "all") appsQuery = appsQuery.eq("store", store);
+  if (country !== "all") appsQuery = appsQuery.eq("country", country.toUpperCase());
+
+  const { data: appRows } = await appsQuery;
+  if (!appRows?.length) return [];
+
+  const appIds = appRows.map((a) => a.id);
+  const { data: links } = await fetchAllRows<{ app_id: string; keywords: { term: string } | null }>((from, to) =>
+    admin
+      .from("app_keywords")
+      .select("app_id, keywords!inner(term, status)")
+      .in("app_id", appIds)
+      .eq("keywords.status", "active")
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: { app_id: string; keywords: { term: string } | null }[] | null; error: { message: string } | null }>
+  );
+
+  const termsByApp = new Map<string, string[]>();
+  for (const link of links) {
+    if (!link.keywords?.term) continue;
+    const list = termsByApp.get(link.app_id) ?? [];
+    list.push(link.keywords.term);
+    termsByApp.set(link.app_id, list);
+  }
+
+  const groups = new Map<string, AppRefreshGroup & { termSet: Set<string> }>();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const app of appRows as any[]) {
+    const key = `${app.store}|${app.country}|${app.store_id || app.name}`;
+    const workspaceName = app.workspaces?.name ?? "Unknown workspace";
+    const group: AppRefreshGroup & { termSet: Set<string> } = groups.get(key) ?? {
+      key, name: app.name, iconUrl: app.icon_url ?? null, store: app.store, country: app.country,
+      workspaceNames: [], terms: [], termSet: new Set<string>(),
+    };
+    if (!group.workspaceNames.includes(workspaceName)) group.workspaceNames.push(workspaceName);
+    for (const term of termsByApp.get(app.id) ?? []) group.termSet.add(term.toLowerCase().trim());
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map(({ termSet, ...g }) => ({ ...g, terms: [...termSet].sort() }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.store.localeCompare(b.store) || a.country.localeCompare(b.country));
+}
+
 // Mirrors computeIosVolumeAndDiff in app/api/cron/refresh-keywords/route.ts —
 // duplicated rather than imported since that function is module-private, and
 // this admin action deliberately follows the cron's formula (the ongoing
@@ -159,7 +237,7 @@ async function syncTrackedAppRanks(
   const { data: rows } = await admin
     .from("keyword_metrics")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select("app_id, keyword_id, diff, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id), keywords!inner(term, status)" as any)
+    .select("app_id, keyword_id, diff, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id, icon_url, ipad_only), keywords!inner(term, status)" as any)
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.store", store)
@@ -167,21 +245,37 @@ async function syncTrackedAppRanks(
 
   if (!rows?.length) return;
 
+  // iPad-only apps never appear in the iPhone results — rank them from one
+  // extra iPad search, same as the cron's refreshKeywordMetrics. A failed or
+  // rate-limited iPad search leaves their rows untouched.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updates = (rows as any[]).map((row) => {
+  const ipadRows = (rows as any[]).filter((row) => store === "ios" && row.apps.ipad_only === true);
+  const ipadSearch = ipadRows.length ? await searchIosLive(term, countryUpper.toLowerCase(), "ipad") : null;
+  const ipadApps = Array.isArray(ipadSearch) ? ipadSearch : null;
+  const ipadRanks = new Map<string, number | null>();
+  if (ipadApps) {
+    for (const row of ipadRows) {
+      ipadRanks.set(row.app_id, await persistIpadRank(admin, {
+        term, country: countryUpper, storeId: row.apps.store_id, appName: row.apps.name, appIcon: row.apps.icon_url,
+      }, ipadApps));
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates = (rows as any[]).filter((row) => !ipadRows.includes(row) || ipadRanks.has(row.app_id)).map((row) => {
     const rankIdx = findRankIdx(resultNames, row.apps.name, resultIds, row.apps.store_id);
-    const rank = rankIdx >= 0 ? rankIdx + 1 : null;
+    const rank = ipadRanks.has(row.app_id) ? ipadRanks.get(row.app_id) ?? null : rankIdx >= 0 ? rankIdx + 1 : null;
     const chance = computeChance(row.diff ?? 0, rank);
     const opportunity = recomputeOpportunity(row, volume, chance);
     return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
   });
 
-  await admin.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
+  if (updates.length) await admin.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
 }
 
 export type RefreshResult =
   | { ok: true; resultsCount: number; recordedOn: string; volume: number }
-  | { ok: false; error: string };
+  | { ok: false; error: string; rateLimited?: boolean };
 
 // Forces a fresh live rank + volume fetch for one (term, store, country)
 // triple, bypassing whatever staleness state the daily cron's fairness
@@ -202,7 +296,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
 
   if (store === "ios") {
     const result = await searchIosLive(normTerm, countryLower);
-    if (result === "rate_limited") return { ok: false, error: "Apple rate-limited this request — try again in a minute." };
+    if (result === "rate_limited") return { ok: false, error: "Apple rate-limited this request. Try again in a minute.", rateLimited: true };
     if (result === null) return { ok: false, error: "iTunes search failed." };
 
     const { volume: ratingVolume, diff } = computeIosVolumeAndDiff(result, normTerm);
