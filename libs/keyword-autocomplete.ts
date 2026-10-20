@@ -293,8 +293,12 @@ function longTailScore(ratingVolume: number) {
 // wonByDefault as rivals but aren't real competing searches, and nutriscan
 // itself only scrapes in at "nutr" in 10th place (44). Real head terms
 // surface within 1-3 letters even there (nutrition 58, calorie 59, noom 58,
-// gcash 95).
-const LATE_SCORE_MAX = 47;
+// gcash 95). The same padding happens at fewer letters when the prefix is a
+// rare letter combination: in the US, "ikisaki" (13 ratings) is the 10th and
+// last suggestion at "iki", behind ikia / ikick / ikitesurf, which scores 53.
+// So the cap covers anything not suggested within 2 letters (95 - 30·ln 3 ≈
+// 62); head terms are still well above it.
+const LATE_SCORE_MAX = 62;
 
 // Ceiling for a late-suggested brand name, from how many ratings its app has
 // in this storefront: a brand gets searched roughly in proportion to its
@@ -312,15 +316,30 @@ function titleBrand(trackName: string) {
   return normalize(trackName.split(/:| [-–—|] /)[0]).replace(/[^\p{L}\p{N}]+$/u, "");
 }
 
-// Ratings of the most-rated app whose title brand is exactly this keyword,
-// or null when the keyword isn't any result's brand, in which case it keeps
-// its autocomplete score. Single words only: a title brand like "Habit
-// Tracker" or "Calorie Counter" is a generic phrase, not a name; CJK has no
-// spaces to tell the two apart, so it's skipped too. "macro" isn't the brand
-// of "Macro Tracker: ...", nor "nutrition" of "Nutrition Coach: ...".
+// A name can also sit anywhere in the title ("AI Travel Planner Ikisaki"),
+// where titleBrand can't see it. A word that only one or two result titles
+// use is a name; generic words show up in many (US: planner 40, itinerary 16,
+// ikigai 33 vs ikisaki 1, wanderlog 1, tripit 1).
+const MAX_NAME_TITLES = 2;
+
+function titleWords(trackName: string) {
+  return normalize(trackName).split(/[^\p{L}\p{N}]+/u);
+}
+
+// Ratings of the most-rated app whose title brand is exactly this keyword
+// (or whose title is one of the few that use it as a word), or null when the
+// keyword isn't any result's brand, in which case it keeps its autocomplete
+// score. Single words only: a title brand like "Habit Tracker" or "Calorie
+// Counter" is a generic phrase, not a name; CJK has no spaces to tell the two
+// apart, so it's skipped too. "macro" isn't the brand of "Macro Tracker:
+// ...", nor "nutrition" of "Nutrition Coach: ...".
 function topBrandRatings(apps: { trackName: string; userRatingCount: number }[], kw: string): number | null {
   if (kw.includes(" ") || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(kw)) return null;
-  const brandApps = apps.filter((a) => titleBrand(a.trackName) === kw);
+  let brandApps = apps.filter((a) => titleBrand(a.trackName) === kw);
+  if (!brandApps.length) {
+    const named = apps.filter((a) => titleWords(a.trackName).includes(kw));
+    if (named.length <= MAX_NAME_TITLES) brandApps = named;
+  }
   if (!brandApps.length) return null;
   return Math.max(...brandApps.map((a) => a.userRatingCount ?? 0));
 }
