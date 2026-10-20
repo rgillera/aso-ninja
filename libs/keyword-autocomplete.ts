@@ -293,12 +293,17 @@ function longTailScore(ratingVolume: number) {
 // wonByDefault as rivals but aren't real competing searches, and nutriscan
 // itself only scrapes in at "nutr" in 10th place (44). Real head terms
 // surface within 1-3 letters even there (nutrition 58, calorie 59, noom 58,
-// gcash 95). The same padding happens at fewer letters when the prefix is a
-// rare letter combination: in the US, "ikisaki" (13 ratings) is the 10th and
-// last suggestion at "iki", behind ikia / ikick / ikitesurf, which scores 53.
-// So the cap covers anything not suggested within 2 letters (95 - 30·ln 3 ≈
-// 62); head terms are still well above it.
-const LATE_SCORE_MAX = 62;
+// gcash 95).
+const LATE_SCORE_MAX = 47;
+
+// The same padding happens at fewer letters when the prefix is a rare letter
+// combination: in the US, "ikisaki" (13 ratings) is the 10th and last
+// suggestion at "iki", behind ikia / ikick / ikitesurf, which scores 53. So a
+// name only one or two titles use (see MAX_NAME_TITLES) is capped up to a
+// first suggestion at 3 letters (95 - 30·ln 3 ≈ 62). Not title brands in
+// general: "Maps+" (228 ratings) is the title brand for "maps" (61), a head
+// term that ~30 other titles use.
+const RARE_NAME_SCORE_MAX = 62;
 
 // Ceiling for a late-suggested brand name, from how many ratings its app has
 // in this storefront: a brand gets searched roughly in proportion to its
@@ -327,21 +332,23 @@ function titleWords(trackName: string) {
 }
 
 // Ratings of the most-rated app whose title brand is exactly this keyword
-// (or whose title is one of the few that use it as a word), or null when the
-// keyword isn't any result's brand, in which case it keeps its autocomplete
-// score. Single words only: a title brand like "Habit Tracker" or "Calorie
+// (or whose title is one of the few that use it as a word), plus the highest
+// autocomplete score that brand evidence can cap, or null when the keyword
+// isn't any result's brand, in which case it keeps its autocomplete score.
+// Single words only: a title brand like "Habit Tracker" or "Calorie
 // Counter" is a generic phrase, not a name; CJK has no spaces to tell the two
 // apart, so it's skipped too. "macro" isn't the brand of "Macro Tracker:
 // ...", nor "nutrition" of "Nutrition Coach: ...".
-function topBrandRatings(apps: { trackName: string; userRatingCount: number }[], kw: string): number | null {
+function topBrandRatings(
+  apps: { trackName: string; userRatingCount: number }[], kw: string
+): { ratings: number; scoreMax: number } | null {
   if (kw.includes(" ") || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(kw)) return null;
-  let brandApps = apps.filter((a) => titleBrand(a.trackName) === kw);
-  if (!brandApps.length) {
-    const named = apps.filter((a) => titleWords(a.trackName).includes(kw));
-    if (named.length <= MAX_NAME_TITLES) brandApps = named;
-  }
+  const topRatings = (list: typeof apps) => Math.max(...list.map((a) => a.userRatingCount ?? 0));
+  const named = apps.filter((a) => titleWords(a.trackName).includes(kw));
+  if (named.length && named.length <= MAX_NAME_TITLES) return { ratings: topRatings(named), scoreMax: RARE_NAME_SCORE_MAX };
+  const brandApps = apps.filter((a) => titleBrand(a.trackName) === kw);
   if (!brandApps.length) return null;
-  return Math.max(...brandApps.map((a) => a.userRatingCount ?? 0));
+  return { ratings: topRatings(brandApps), scoreMax: LATE_SCORE_MAX };
 }
 
 export type IosVolumeOptions = VolumeOptions & {
@@ -365,9 +372,9 @@ export async function resolveIosVolume(
   const autocomplete = await getAutocompleteVolume(supabase, term, country, "ios", opts);
   if (autocomplete === null) return ratingVolume;
   if (autocomplete.score === NEVER_SUGGESTED_SCORE) return longTailScore(ratingVolume);
-  if (opts.apps && autocomplete.score <= LATE_SCORE_MAX) {
-    const top = topBrandRatings(opts.apps, normalize(term));
-    if (top !== null) return Math.min(autocomplete.score, brandCeiling(top));
+  if (opts.apps && autocomplete.score <= RARE_NAME_SCORE_MAX) {
+    const brand = topBrandRatings(opts.apps, normalize(term));
+    if (brand && autocomplete.score <= brand.scoreMax) return Math.min(autocomplete.score, brandCeiling(brand.ratings));
   }
   return autocomplete.score;
 }
