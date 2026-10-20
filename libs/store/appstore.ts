@@ -36,8 +36,9 @@ export async function searchAppStore(
   q: string,
   country: string
 ): Promise<AppSearchResult[] | null> {
+  // "software" alone omits iPad-only apps; adding iPadSoftware lets them be found and tracked.
   const res = await itunesFetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=software&country=${country}&limit=15`
+    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=software,iPadSoftware&country=${country}&limit=15`
   );
   if (!res) return null;
   try {
