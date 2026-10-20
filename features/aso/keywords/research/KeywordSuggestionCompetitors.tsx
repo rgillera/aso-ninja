@@ -6,7 +6,7 @@ import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { CompetitorKeywordsResult, CompetitorKeyword, GapBucket } from "@/app/api/keywords/competitor-keywords/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
-import Link from "next/link";
+import { ManageCompetitorsModal } from "./ManageCompetitorsModal";
 import { AnalyzeAllButton } from "./ui";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
@@ -15,6 +15,7 @@ type Props = {
   activeApp?: ActiveApp;
   trackedKeywords: Keyword[];
   competitors: CompetitorApp[];
+  onCompetitorsChange?: (competitors: CompetitorApp[]) => void;
   onAddKeyword: (keyword: string) => void;
   onAddKeywords?: (keywords: string[]) => void;
   onRemoveKeyword?: (keyword: string) => void;
@@ -246,7 +247,7 @@ function UncheckedList({ keywords, trackedSet, onAdd, onRemove, translationFor, 
 }
 
 export function KeywordSuggestionCompetitors({
-  activeApp, trackedKeywords, competitors, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, active,
+  activeApp, trackedKeywords, competitors, onCompetitorsChange, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, active,
 }: Props) {
   const planSlug = usePlanSlug();
   const [data, setData] = useState<CompetitorKeywordsResult | null>(null);
@@ -258,6 +259,7 @@ export function KeywordSuggestionCompetitors({
   const [selected, setSelected] = useState<GapBucket>(DEFAULT_ORDER[0]);
   const PAGE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE);
+  const [showCompetitorModal, setShowCompetitorModal] = useState(false);
 
   // Tracks the most recently *started* request's key. Compared against (not
   // an effect-cleanup flag) because this effect calls setFetchKey on itself,
@@ -348,12 +350,29 @@ export function KeywordSuggestionCompetitors({
     // few for the 5 to 8 the gap matrix is built around.
     if (!isPlanAtLeast(planSlug, "pro")) {
       return (
-        <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
-          The {PLAN_BADGE[planSlug].label} plan includes 1 competitor. Add one above to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.{" "}
-          <Link href="/dashboard/subscription" className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline">
-            View plans
-          </Link>
-        </p>
+        <>
+          <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
+            The {PLAN_BADGE[planSlug].label} plan includes 1 competitor.{" "}
+            {activeApp && onCompetitorsChange ? (
+              <button
+                type="button"
+                onClick={() => setShowCompetitorModal(true)}
+                className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline"
+              >
+                Add one
+              </button>
+            ) : "Add one"}{" "}
+            to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.
+          </p>
+          {showCompetitorModal && activeApp && onCompetitorsChange && (
+            <ManageCompetitorsModal
+              activeApp={activeApp}
+              selected={competitors}
+              onSave={onCompetitorsChange}
+              onClose={() => setShowCompetitorModal(false)}
+            />
+          )}
+        </>
       );
     }
     return (

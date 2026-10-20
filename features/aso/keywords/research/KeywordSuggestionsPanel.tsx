@@ -134,6 +134,7 @@ export function KeywordSuggestionsPanel({
             <KeywordSuggestionCompetitors
               {...tabProps}
               competitors={competitors}
+              onCompetitorsChange={onCompetitorsChange}
               translateToggle={translateToggle}
               active={open && activeTab === "Competitor Gap"}
             />
