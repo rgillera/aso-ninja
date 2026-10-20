@@ -5,8 +5,17 @@ import PortalFooter from "@/features/portal/PortalFooter";
 
 export const metadata: Metadata = {
   title: "Our Story",
+  description:
+    "How a developer who built apps nobody used learned ASO the hard way, started ASO Ninja, and built AppASO to make pro-level ASO data free.",
   alternates: {
     canonical: "/our-story",
+  },
+  openGraph: {
+    type: "website",
+    url: "/our-story",
+    title: "Our Story | AppASO",
+    description:
+      "How a developer who built apps nobody used learned ASO the hard way, started ASO Ninja, and built AppASO to make pro-level ASO data free.",
   },
 };
 

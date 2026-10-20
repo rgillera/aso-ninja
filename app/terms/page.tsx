@@ -3,8 +3,17 @@ import LegalLayout from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
+  description:
+    "The terms that govern your use of AppASO, the free App Store Optimization tool for iOS and Android.",
   alternates: {
     canonical: "/terms",
+  },
+  openGraph: {
+    type: "website",
+    url: "/terms",
+    title: "Terms of Service | AppASO",
+    description:
+      "The terms that govern your use of AppASO, the free App Store Optimization tool for iOS and Android.",
   },
 };
 

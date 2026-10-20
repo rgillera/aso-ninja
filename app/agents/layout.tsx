@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/libs/supabase/server";
@@ -5,6 +6,11 @@ import { isAgentEmail } from "@/libs/agents/is-agent-email";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { AgentsShell } from "@/features/agents/AgentsShell";
 import { ThemeProvider, type Theme } from "@/features/dashboard/ThemeContext";
+
+// Signed-in app; keep it out of search results.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AgentsLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();

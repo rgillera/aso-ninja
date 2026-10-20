@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import LoginPage from "@/features/auth/LoginPage";
+
+export const metadata: Metadata = {
+  title: "Log In",
+  description: "Log in to AppASO to track your App Store and Google Play keyword rankings.",
+  alternates: { canonical: "/login" },
+};
 
 type PageProps = { searchParams: Promise<{ next?: string; deleted?: string }> };
 

@@ -297,7 +297,7 @@ export function DashboardHeroDemo() {
               </span>
             </div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-semibold text-gray-900">Keyword Research</h1>
+              <p className="text-sm font-semibold text-gray-900">Keyword Research</p>
               <InformationCircleIcon className="size-4 text-gray-500" />
             </div>
           </div>

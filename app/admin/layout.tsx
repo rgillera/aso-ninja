@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createRealUserClient, getImpersonation } from "@/libs/supabase/server";
@@ -5,6 +6,11 @@ import { ImpersonationBanner } from "@/features/admin/ImpersonationBanner";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { AdminShell } from "@/features/admin/AdminShell";
 import { ThemeProvider, type Theme } from "@/features/dashboard/ThemeContext";
+
+// Signed-in app; keep it out of search results.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createRealUserClient();

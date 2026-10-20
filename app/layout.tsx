@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import MaintenancePage from "@/components/MaintenancePage";
+import { siteDescription, siteTitle } from "@/libs/seo";
 // @ts-ignore: Allow side-effect CSS import without type declarations
 import "./globals.css";
 
@@ -35,11 +36,11 @@ const maintenanceEnabled =
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "AppASO - Free ASO Tool",
+    default: siteTitle,
     template: "%s | AppASO",
   },
-  description:
-    "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
+  description: siteDescription,
+  applicationName: "AppASO",
   keywords: [
     "aso",
     "app store optimization",
@@ -55,14 +56,17 @@ export const metadata: Metadata = {
     "app store performance",
     "app store optimization software",
     "app aso",
-    "aso for apps"
+    "aso for apps",
+    "free aso tool",
+    "aso tool for android",
+    "aso tool for ios",
   ],
   authors: [{ name: "AppASO" }],
   creator: "AppASO",
   publisher: "AppASO",
-  alternates: {
-    canonical: "/",
-  },
+  // No site-wide `alternates.canonical` or `openGraph.url` here: metadata merges
+  // shallowly, so every page that doesn't set its own would inherit "/" and
+  // tell search engines it's a duplicate of the homepage.
   robots: {
     index: true,
     follow: true,
@@ -75,18 +79,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "/",
     siteName: "AppASO",
-    title: "AppASO - Free ASO Tool",
-    description:
-      "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
+    title: siteTitle,
+    description: siteDescription,
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AppASO - Free ASO Tool",
-    description:
-      "Free ASO for your app. Track keyword rankings, optimize metadata, monitor reviews, and analyze competitors for iOS and Android in one workspace.",
+    title: siteTitle,
+    description: siteDescription,
   },
 };
 

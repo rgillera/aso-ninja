@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -10,6 +11,11 @@ import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import type { Theme } from "@/features/dashboard/ThemeContext";
 import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
+
+// Signed-in app; keep it out of search results.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();

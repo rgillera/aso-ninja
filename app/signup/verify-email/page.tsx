@@ -1,5 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import VerifyEmailPage from "@/features/auth/VerifyEmailPage";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type PageProps = { searchParams: Promise<{ email?: string; next?: string }> };
 

@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: "AppASO",
   },
+  robots: { index: false, follow: false },
 };
 
 export default async function MobileLayout({ children }: { children: React.ReactNode }) {

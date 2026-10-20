@@ -3,8 +3,17 @@ import LegalLayout from "@/components/LegalLayout";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
+  description:
+    "How AppASO collects, uses, and protects your data when you use our App Store Optimization tool.",
   alternates: {
     canonical: "/privacy",
+  },
+  openGraph: {
+    type: "website",
+    url: "/privacy",
+    title: "Privacy Policy | AppASO",
+    description:
+      "How AppASO collects, uses, and protects your data when you use our App Store Optimization tool.",
   },
 };
 
