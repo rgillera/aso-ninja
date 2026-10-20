@@ -79,7 +79,7 @@ export default function SearchPreviewModal({ app, storeData, onClose }: Props) {
                 <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
                   {screenshots.length > 0
                     ? screenshots.slice(0, 3).map((url, i) => (
-                        <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="h-44 w-24 shrink-0 rounded-xl object-cover object-top" />
+                        <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="h-44 w-auto max-w-none shrink-0 rounded-xl" />
                       ))
                     : [0, 1, 2].map((i) => <div key={i} className="h-44 w-24 shrink-0 rounded-xl bg-gray-200" />)}
                 </div>

@@ -32,7 +32,7 @@ function extractIosScreenshots(html: string): string[] {
     if (IOS_EXCLUDE.test(base)) continue;
     const [w, h] = m[2].split("x").map(Number);
     if (h <= w) continue;
-    if (!seen.has(base)) { seen.add(base); results.push(`${base}300x650bb.webp`); }
+    if (!seen.has(base)) { seen.add(base); results.push(`${base}400x650bb.webp`); }
     if (results.length >= 6) break;
   }
   return results;

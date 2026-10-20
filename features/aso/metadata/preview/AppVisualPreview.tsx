@@ -175,9 +175,8 @@ export default function AppVisualPreview({
               </div>
             ))}
             {storeScreenshots.map((url, i) => (
-              <div key={`store-${i}`} className="w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] light:bg-gray-100">
-                <img src={url} alt={`Screenshot ${i + 1}`} className="size-full object-cover" />
-              </div>
+              // Fixed height, natural width: iPad-only apps ship 3:4 shots that a phone-shaped box would crop.
+              <img key={`store-${i}`} src={url} alt={`Screenshot ${i + 1}`} className="h-[243px] w-auto max-w-none shrink-0 rounded-xl bg-[#0d0f14] light:bg-gray-100" />
             ))}
           </div>
           {canScrollRight && (

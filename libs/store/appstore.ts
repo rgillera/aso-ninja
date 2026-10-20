@@ -114,7 +114,7 @@ async function scrapeIosAppPage(storeId: string, country: string): Promise<{ scr
     while ((m = re.exec(html)) !== null) {
       const base = m[1]; if (EXCLUDE.test(base)) continue;
       const [w, h] = m[2].split("x").map(Number); if (h <= w) continue;
-      if (!seen.has(base)) { seen.add(base); screenshotUrls.push(`${base}300x650bb.webp`); }
+      if (!seen.has(base)) { seen.add(base); screenshotUrls.push(`${base}400x650bb.webp`); }
       if (screenshotUrls.length >= 6) break;
     }
     const hasPreviewVideo = /"videoUrl":"https?:\/\/[^"]+"/.test(html);

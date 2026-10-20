@@ -154,7 +154,7 @@ function IosPreview({ app, dark, storeData, videoUrl }: { app: App; dark: boolea
               <video src={videoUrl} className="w-[150px] h-[280px] shrink-0 rounded-2xl object-cover" muted loop autoPlay playsInline />
             )}
             {screenshots.map((url, i) => (
-              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[150px] h-[280px] shrink-0 rounded-2xl object-cover object-top" />
+              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="h-[280px] w-auto max-w-none shrink-0 rounded-2xl" />
             ))}
             {screenshots.length === 0 && !videoUrl && [...Array(2)].map((_, i) => (
               <div key={i} className={`w-[150px] h-[280px] rounded-2xl shrink-0 ${screenshotBg}`} />
@@ -395,7 +395,7 @@ function AndroidPreview({ app, dark, storeData, videoUrl }: { app: App; dark: bo
               <video src={videoUrl} className="w-[145px] h-[270px] shrink-0 rounded-xl object-cover" muted loop autoPlay playsInline />
             )}
             {screenshots.map((url, i) => (
-              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="w-[145px] h-[270px] shrink-0 rounded-xl object-cover object-top" />
+              <img key={i} src={url} alt={`Screenshot ${i + 1}`} className="h-[270px] w-auto max-w-none shrink-0 rounded-xl" />
             ))}
             {screenshots.length === 0 && !videoUrl && [...Array(3)].map((_, i) => (
               <div key={i} className={`w-[145px] h-[270px] rounded-xl shrink-0 ${screenshotBg}`} />
