@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isGeminiReachable } from "@/libs/gemini";
@@ -13,7 +13,7 @@ import {
   fetchAndroidAppMeta,
   searchIosLive,
 } from "@/libs/keyword-relevancy";
-import { resolveIpadOnly, persistIpadRank } from "@/libs/store/ipad-only";
+import { resolveIpadOnly, persistIpadRank, refreshMissingIpadRanks } from "@/libs/store/ipad-only";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
   // for the refresh cron and the Performance tab's live rank checks too.
   // Defined (the app's icon, for its rank rows) only for an iPad-only app.
   const { data: appRow } = store === "ios" && appId
-    ? await supabase.from("apps").select("id, store, store_id, country, icon_url, ipad_only").eq("id", appId).maybeSingle()
+    ? await supabase.from("apps").select("id, store, store_id, country, name, icon_url, ipad_only").eq("id", appId).maybeSingle()
     : { data: null };
   const ipadIcon = appRow && await resolveIpadOnly(appRow) ? (appRow.icon_url ?? null) : undefined;
 
@@ -207,6 +207,14 @@ export async function GET(request: NextRequest) {
   }
 
   const uncached = terms.filter((t) => !dbCache[t]);
+
+  // An iPad-only app's cached rows may be missing a rank it has (scored
+  // before it was known to be iPad-only, or a rate-limited iPad search) —
+  // re-checked in the background so this response doesn't wait on Apple.
+  if (ipadIcon !== undefined && appRow) {
+    const missingRank = terms.filter((t) => dbCache[t] && dbCache[t].rank === null);
+    if (missingRank.length) after(() => refreshMissingIpadRanks(appRow, missingRank));
+  }
 
   let freshMetrics: Record<string, Metrics> = {};
   let rateLimited = false;

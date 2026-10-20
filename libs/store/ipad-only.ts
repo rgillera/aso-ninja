@@ -2,6 +2,9 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { itunesFetch } from "@/libs/store/appstore";
 import type { RawIosApp } from "@/libs/keyword-relevancy";
 import { isIpadOnlyListing } from "@/libs/store/ipad-devices";
+import { searchIosLive } from "@/libs/keyword-relevancy";
+import { computeChance } from "@/libs/keyword-rank-match";
+import { recomputeOpportunity } from "@/libs/keyword-volume";
 
 // Only rank comes from iPad search (see libs/store/ipad-devices.ts): volume
 // and difficulty stay on the shared iPhone search, since popularity
@@ -51,4 +54,58 @@ export async function persistIpadRank(
     .from("keyword_rankings_history")
     .upsert({ ...base, position: found ? idx + 1 : null }, { onConflict: "keyword,store,country,recorded_on,app_id", ignoreDuplicates: !found });
   return found ? idx + 1 : null;
+}
+
+// Cached keyword_metrics rows (7-day TTL) for an iPad-only app can be missing
+// a rank it really has: scored before the app was known to be iPad-only (rank
+// came from iPhone search, where it never appears), or its iPad search was
+// rate-limited at the time. Re-checks just those terms against iPad search and
+// patches rank/chance/opportunity in place — no relevancy re-score. Runs after
+// the response (see the metrics route); a term already checked today (its
+// rankings_history row, real or "not found") is skipped, so each term costs
+// at most one search a day. Budgeted to stay inside the function's lifetime;
+// whatever it doesn't reach is picked up on a later load.
+const MISSING_RANK_BUDGET_MS = 50 * 1000;
+
+export async function refreshMissingIpadRanks(
+  app: { id: string; store_id: string; name: string; icon_url: string | null; country: string | null },
+  terms: string[]
+) {
+  if (!terms.length) return;
+  const supabase = createAdminClient();
+  const country = (app.country ?? "US").toLowerCase();
+  const today = new Date().toISOString().split("T")[0];
+  const startedAt = Date.now();
+
+  const { data: checked } = await supabase
+    .from("keyword_rankings_history")
+    .select("keyword")
+    .eq("store", "ios").eq("country", country).eq("recorded_on", today).eq("app_id", app.store_id)
+    .in("keyword", terms);
+  const checkedToday = new Set((checked ?? []).map((r) => r.keyword as string));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rows } = await (supabase as any)
+    .from("keyword_metrics")
+    .select("keyword_id, diff, volume, relevancy, relevancy_scored, opportunity, keywords!inner(term)")
+    .eq("app_id", app.id)
+    .is("rank", null)
+    .in("keywords.term", terms);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (rows ?? []) as any[]) {
+    if (Date.now() - startedAt > MISSING_RANK_BUDGET_MS) break;
+    const term = row.keywords?.term as string | undefined;
+    if (!term || checkedToday.has(term)) continue;
+    const ipadApps = await searchIosLive(term, country, "ipad");
+    if (ipadApps === "rate_limited") break;
+    if (!ipadApps) continue;
+    const rank = await persistIpadRank(supabase, { term, country, storeId: app.store_id, appName: app.name, appIcon: app.icon_url }, ipadApps);
+    if (rank === null) continue;
+    const chance = computeChance(row.diff ?? 0, rank);
+    await supabase
+      .from("keyword_metrics")
+      .update({ rank, chance, opportunity: recomputeOpportunity(row, row.volume ?? 0, chance) })
+      .eq("app_id", app.id).eq("keyword_id", row.keyword_id);
+  }
 }
