@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { isIpadOnlyListing } from "@/libs/store/ipad-devices";
 import type { AppSearchResult, StoreData, CategoryBenchmark, ChartApp } from "@/libs/contracts";
 import { average, median } from "./benchmark-utils";
 import { CATEGORY_MAP } from "@/libs/categories";
@@ -36,15 +37,23 @@ export async function searchAppStore(
   q: string,
   country: string
 ): Promise<AppSearchResult[] | null> {
-  // "software" alone omits iPad-only apps; adding iPadSoftware lets them be found and tracked.
-  const res = await itunesFetch(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=software,iPadSoftware&country=${country}&limit=15`
+  // iPhone results come first and exactly as Apple orders them; "software"
+  // alone omits iPad-only apps, so a parallel iPadSoftware search appends
+  // any iPad-only matches (up to 5) after them. A failed iPad search just
+  // means no extras.
+  const search = (entity: string) => itunesFetch(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=${entity}&country=${country}&limit=15`
   );
+  const [res, ipadRes] = await Promise.all([search("software"), search("iPadSoftware")]);
   if (!res) return null;
   try {
-    const data = await res.json();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (data.results ?? []).map((r: any) => ({
+    const iphone: any[] = (await res.json()).results ?? [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ipad: any[] = ipadRes ? ((await ipadRes.json().catch(() => null))?.results ?? []) : [];
+    const seen = new Set(iphone.map((r) => r.trackId));
+    const ipadOnly = ipad.filter((r) => !seen.has(r.trackId) && isIpadOnlyListing(r)).slice(0, 5);
+    return [...iphone, ...ipadOnly].map((r) => ({
       name: r.trackName,
       store: "ios" as const,
       bundleId: r.bundleId,

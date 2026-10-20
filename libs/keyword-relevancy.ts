@@ -341,20 +341,26 @@ export async function fetchIosAppMeta(appName: string, country: string, withEmbe
   const cached = appMetaCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < APP_META_TTL) return cached.meta;
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(appName)}&entity=software,iPadSoftware&limit=5&country=${country}`;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res  = await fetch(url, { cache: "no-store" } as any);
-    const data = res.ok ? await res.json() : {};
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apps: any[] = data.results ?? [];
     const name  = appName.toLowerCase().trim();
-    // Exact → starts-with → contains: catches "NutriSnap: Calorie Counter" for query "nutrisnap"
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const match = apps.find((a: any) => (a.trackName ?? "").toLowerCase().trim() === name)
+    const findIn = async (entity: string): Promise<any> => {
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(appName)}&entity=${entity}&limit=5&country=${country}`;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ?? apps.find((a: any) => (a.trackName ?? "").toLowerCase().trim().startsWith(name))
+      const res  = await fetch(url, { cache: "no-store" } as any);
+      const data = res.ok ? await res.json() : {};
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ?? apps.find((a: any) => (a.trackName ?? "").toLowerCase().includes(name));
+      const apps: any[] = data.results ?? [];
+      // Exact → starts-with → contains: catches "NutriSnap: Calorie Counter" for query "nutrisnap"
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return apps.find((a: any) => (a.trackName ?? "").toLowerCase().trim() === name)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?? apps.find((a: any) => (a.trackName ?? "").toLowerCase().trim().startsWith(name))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ?? apps.find((a: any) => (a.trackName ?? "").toLowerCase().includes(name));
+    };
+    // iPhone search first, as before; iPad-only apps never appear there, so
+    // only a miss falls back to the iPad store.
+    const match = (await findIn("software")) ?? (await findIn("iPadSoftware"));
     const description = ((match?.description ?? "") as string).slice(0, 500);
     const category    = (match?.primaryGenreName ?? "") as string;
     const developer   = ((match?.sellerName ?? match?.artistName ?? "") as string);
