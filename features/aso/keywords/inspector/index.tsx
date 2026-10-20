@@ -250,6 +250,10 @@ function ResultRow({
         <div className="flex items-center gap-2 min-w-0">
           <p className="truncate text-sm font-medium text-white light:text-gray-900"><KeywordHighlight text={app.name} term={term} active={highlight} /></p>
           {isYou && <span className="shrink-0 rounded-full bg-indigo-500/15 px-1.5 py-px text-[10px] font-semibold text-indigo-300 light:text-indigo-700">Your app</span>}
+          {/* Paid apps only: nearly every result is free, so a price column was all "Free". */}
+          {app.price && app.price.toLowerCase() !== "free" && (
+            <span className="shrink-0 rounded-full bg-white/[0.06] light:bg-black/[0.05] px-1.5 py-px text-[10px] font-semibold text-gray-300 light:text-gray-700">{app.price}</span>
+          )}
         </div>
         {subtitleLoading && (
           <div className="my-1 h-2.5 w-40 max-w-full rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
@@ -290,7 +294,6 @@ function ResultRow({
           <EstimateStat value={estimate === undefined ? undefined : estimate?.revenue ?? null} basis={estimate?.revenueBasis} label="revenue/mo" format={formatRevenue} />
         </>
       )}
-      <span className="hidden sm:block w-16 shrink-0 pt-1 text-right text-xs text-gray-500">{app.price}</span>
     </div>
   );
 }
