@@ -343,12 +343,17 @@ function topBrandRatings(
   apps: { trackName: string; userRatingCount: number }[], kw: string
 ): { ratings: number; scoreMax: number } | null {
   if (kw.includes(" ") || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(kw)) return null;
-  const topRatings = (list: typeof apps) => Math.max(...list.map((a) => a.userRatingCount ?? 0));
+  // The ceiling comes from every title using the word, not just the brand
+  // match: "Activities - Peace of Mind" (0 ratings) and "Maps+" (228) are
+  // title brands for real searches, which the bigger apps using the word
+  // (8,283 and 7.4M ratings) lift back out of the cap. A real name's other
+  // titles are clones of itself (nutrisnap) or nothing at all (ikisaki).
   const named = apps.filter((a) => titleWords(a.trackName).includes(kw));
-  if (named.length && named.length <= MAX_NAME_TITLES) return { ratings: topRatings(named), scoreMax: RARE_NAME_SCORE_MAX };
-  const brandApps = apps.filter((a) => titleBrand(a.trackName) === kw);
-  if (!brandApps.length) return null;
-  return { ratings: topRatings(brandApps), scoreMax: LATE_SCORE_MAX };
+  if (!named.length) return null;
+  const ratings = Math.max(...named.map((a) => a.userRatingCount ?? 0));
+  if (named.length <= MAX_NAME_TITLES) return { ratings, scoreMax: RARE_NAME_SCORE_MAX };
+  if (!apps.some((a) => titleBrand(a.trackName) === kw)) return null;
+  return { ratings, scoreMax: LATE_SCORE_MAX };
 }
 
 export type IosVolumeOptions = VolumeOptions & {
