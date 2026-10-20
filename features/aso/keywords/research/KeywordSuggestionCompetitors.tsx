@@ -346,39 +346,41 @@ export function KeywordSuggestionCompetitors({
   }
 
   if (!competitors.length) {
-    // Free and Basic allow a single competitor (plans.competitor_limit), too
-    // few for the 5 to 8 the gap matrix is built around.
-    if (!isPlanAtLeast(planSlug, "pro")) {
-      return (
-        <>
-          <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
-            The {PLAN_BADGE[planSlug].label} plan includes 1 competitor.{" "}
-            {activeApp && onCompetitorsChange ? (
-              <button
-                type="button"
-                onClick={() => setShowCompetitorModal(true)}
-                className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline"
-              >
-                Add one
-              </button>
-            ) : "Add one"}{" "}
-            to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.
-          </p>
-          {showCompetitorModal && activeApp && onCompetitorsChange && (
-            <ManageCompetitorsModal
-              activeApp={activeApp}
-              selected={competitors}
-              onSave={onCompetitorsChange}
-              onClose={() => setShowCompetitorModal(false)}
-            />
-          )}
-        </>
-      );
-    }
+    const canManage = Boolean(activeApp && onCompetitorsChange);
+    const addLink = (label: string) => canManage ? (
+      <button
+        type="button"
+        onClick={() => setShowCompetitorModal(true)}
+        className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline"
+      >
+        {label}
+      </button>
+    ) : label;
+
     return (
-      <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
-        Add {isPlanAtLeast(planSlug, "pro_plus") ? "5 to 8" : "up to 5"} search competitors above to build your keyword gap matrix.
-      </p>
+      <>
+        <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
+          {/* Free and Basic allow a single competitor (plans.competitor_limit),
+              too few for the 5 to 8 the gap matrix is built around. */}
+          {!isPlanAtLeast(planSlug, "pro") ? (
+            <>
+              The {PLAN_BADGE[planSlug].label} plan includes 1 competitor. {addLink("Add one")} to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.
+            </>
+          ) : (
+            <>
+              {addLink(`Add ${isPlanAtLeast(planSlug, "pro_plus") ? "5 to 8" : "up to 5"} search competitors`)} to build your keyword gap matrix.
+            </>
+          )}
+        </p>
+        {showCompetitorModal && activeApp && onCompetitorsChange && (
+          <ManageCompetitorsModal
+            activeApp={activeApp}
+            selected={competitors}
+            onSave={onCompetitorsChange}
+            onClose={() => setShowCompetitorModal(false)}
+          />
+        )}
+      </>
     );
   }
 
