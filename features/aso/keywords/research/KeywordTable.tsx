@@ -19,6 +19,7 @@ import {
   LockClosedIcon,
   ExclamationTriangleIcon,
   DocumentMagnifyingGlassIcon,
+  PuzzlePieceIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
@@ -1067,6 +1068,14 @@ export function KeywordTable({
                       {tourInspect && <TourPulse />}
                       <DocumentMagnifyingGlassIcon className="size-3" />
                       Inspect
+                    </Link>
+                    <Link
+                      href={`/dashboard/keywords/combination?${new URLSearchParams({ seed: row.keyword })}`}
+                      title="Find long tail keywords for this keyword"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                    >
+                      <PuzzlePieceIcon className="size-3" />
+                      Long tail
                     </Link>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}

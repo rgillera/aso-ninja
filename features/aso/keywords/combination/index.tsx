@@ -39,6 +39,7 @@ export default function KeywordCombinationPage() {
   const isLocked = !isPlanAtLeast(planSlug, "pro");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
   const [groups, setGroups] = useState<CombinationGroup[]>([]);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set());
   const [pendingTerms, setPendingTerms] = useState<Set<string>>(new Set());
   const [translateToggle, setTranslateToggle] = useState(false);
@@ -121,40 +122,62 @@ export default function KeywordCombinationPage() {
     if (!params) return;
 
     (async () => {
-      try {
-        const res = await fetch(`/api/keywords/combination-groups?${new URLSearchParams(params)}`);
-        const data: { groups: SavedCombinationGroup[] } = await res.json();
-        if (data.groups?.length) {
-          setGroups(data.groups.map(toCombinationGroup));
-          return;
-        }
-      } catch {
-        setGroups([]);
-        return;
-      }
-
-      // DB has nothing yet — this app may have groups sitting in this
-      // browser's localStorage from before groups were persisted server-side.
-      // Recover them once, push them up to the DB, then stop relying on
-      // localStorage entirely (a different appId, e.g. after this preview
-      // gets formally tracked, would otherwise "lose" them again).
-      const legacyIds = [activeApp.id, activeApp.store_id].filter(Boolean) as string[];
-      for (const id of legacyIds) {
-        try {
-          const raw = localStorage.getItem(`combinations-${id}`);
-          if (!raw) continue;
-          const legacy = JSON.parse(raw) as CombinationGroup[];
-          if (!legacy.length) continue;
-          setGroups(legacy);
-          legacy.forEach((g) => { void saveGroupToDb(g.seed, g.children, g.expanded); });
-          localStorage.removeItem(`combinations-${id}`);
-          return;
-        } catch { /* ignore malformed legacy entry */ }
-      }
-      setGroups([]);
+      await loadGroups(params);
+      setGroupsLoaded(true);
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.store_id, activeApp?.bundle_id, activeApp?.store, workspaceId]);
+
+  async function loadGroups(params: Record<string, string>) {
+    if (!activeApp) return;
+    try {
+      const res = await fetch(`/api/keywords/combination-groups?${new URLSearchParams(params)}`);
+      const data: { groups: SavedCombinationGroup[] } = await res.json();
+      if (data.groups?.length) {
+        setGroups(data.groups.map(toCombinationGroup));
+        return;
+      }
+    } catch {
+      setGroups([]);
+      return;
+    }
+
+    // DB has nothing yet — this app may have groups sitting in this
+    // browser's localStorage from before groups were persisted server-side.
+    // Recover them once, push them up to the DB, then stop relying on
+    // localStorage entirely (a different appId, e.g. after this preview
+    // gets formally tracked, would otherwise "lose" them again).
+    const legacyIds = [activeApp.id, activeApp.store_id].filter(Boolean) as string[];
+    for (const id of legacyIds) {
+      try {
+        const raw = localStorage.getItem(`combinations-${id}`);
+        if (!raw) continue;
+        const legacy = JSON.parse(raw) as CombinationGroup[];
+        if (!legacy.length) continue;
+        setGroups(legacy);
+        legacy.forEach((g) => { void saveGroupToDb(g.seed, g.children, g.expanded); });
+        localStorage.removeItem(`combinations-${id}`);
+        return;
+      } catch { /* ignore malformed legacy entry */ }
+    }
+    setGroups([]);
+  }
+
+  // A "Long tail" link from Keyword Research (?seed=) adds that keyword as a
+  // seed once the saved groups are in, so an existing group isn't duplicated.
+  // Read from window.location rather than useSearchParams so the page doesn't
+  // need a Suspense boundary (same as the Keyword Inspector).
+  const linkSeedHandled = useRef(false);
+  useEffect(() => {
+    if (!groupsLoaded || isLocked || linkSeedHandled.current) return;
+    linkSeedHandled.current = true;
+    const seed = new URLSearchParams(window.location.search).get("seed")?.trim();
+    if (!seed) return;
+    // Drop the param so a refresh doesn't re-add a group the user removed.
+    window.history.replaceState(null, "", window.location.pathname);
+    void handleAddSeeds([seed]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupsLoaded, isLocked]);
 
   // Fetch app subtitle/short-description for AI context
   const loadedSubtitleFor = useRef<string | undefined>(undefined);
