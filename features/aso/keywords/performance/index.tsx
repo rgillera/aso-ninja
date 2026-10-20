@@ -371,7 +371,7 @@ export default function KeywordPerformancePage() {
   // app has no store_id yet (previewed but not fully tracked), matching what
   // "unranked" already means elsewhere in this file (falls back to "").
   const trackedApp = activeApp?.store_id
-    ? { id: activeApp.store_id, name: activeApp.name ?? "", icon: activeApp.icon_url ?? "" }
+    ? { id: activeApp.store_id, name: activeApp.name ?? "", icon: activeApp.icon_url ?? "", ipadOnly: activeApp.ipad_only === true }
     : undefined;
 
   async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {

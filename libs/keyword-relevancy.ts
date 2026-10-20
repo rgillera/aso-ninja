@@ -341,7 +341,7 @@ export async function fetchIosAppMeta(appName: string, country: string, withEmbe
   const cached = appMetaCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < APP_META_TTL) return cached.meta;
   try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(appName)}&entity=software&limit=5&country=${country}`;
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(appName)}&entity=software,iPadSoftware&limit=5&country=${country}`;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const res  = await fetch(url, { cache: "no-store" } as any);
     const data = res.ok ? await res.json() : {};
@@ -441,8 +441,11 @@ export async function getCachedIosSearch(
 // Live iTunes search, no persistence — callers that need to write results
 // into keyword_volume_history/keyword_rankings_history do so themselves
 // (see persistIosSearch in app/api/keywords/metrics/route.ts).
-export async function searchIosLive(term: string, country: string): Promise<RawIosApp[] | "rate_limited" | null> {
-  const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=software&limit=200&country=${country}`;
+// device "ipad" searches the iPad store instead (entity=iPadSoftware): only
+// for ranking iPad-only apps, never for the shared volume/rankings snapshot.
+export async function searchIosLive(term: string, country: string, device: "iphone" | "ipad" = "iphone"): Promise<RawIosApp[] | "rate_limited" | null> {
+  const entity = device === "ipad" ? "iPadSoftware" : "software";
+  const searchUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=${entity}&limit=200&country=${country}`;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const searchRes = await enqueueAppleRequest(() => fetch(searchUrl, { cache: "no-store" } as any));
   if (!searchRes.ok) return searchRes.status === 403 ? "rate_limited" : null;

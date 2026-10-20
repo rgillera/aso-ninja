@@ -21,4 +21,7 @@ export type App = {
   // limit — reconcile_app_limits keeps pinned apps ahead of older ones. See
   // supabase/migrations/20261017000002_free_app_limit_grace.sql.
   pinned_at?: string | null;
+  // iPad-only listing, ranked against iPad search instead of iPhone search.
+  // null until first checked — see libs/store/ipad-only.ts.
+  ipad_only?: boolean | null;
 };

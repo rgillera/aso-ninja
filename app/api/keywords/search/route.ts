@@ -49,12 +49,16 @@ export async function POST(request: NextRequest) {
     store: string;
     country: string;
     apps: AppSearchResult[];
-    trackedApp?: { id: string; name: string; icon: string };
+    trackedApp?: { id: string; name: string; icon: string; ipadOnly?: boolean };
   };
   if (!keyword) return NextResponse.json({ ok: true });
+  // An iPad search (see TrackedApp in liveSearch.ts) ranks everyone else by
+  // their iPad position; storing those under store "ios" would overwrite
+  // other apps' iPhone ranks, so only the tracked app's own row is kept.
+  const kept = trackedApp?.ipadOnly ? (apps ?? []).filter((app) => String(app.trackId) === trackedApp.id) : (apps ?? []);
   const today = new Date().toISOString().split("T")[0];
   const supabase = await createClient();
-  const rows = (apps ?? []).map((app) => ({
+  const rows = kept.map((app) => ({
     keyword:     keyword.toLowerCase().trim(),
     store,
     country:     country.toLowerCase(),

@@ -11,7 +11,9 @@ import {
   computeRelevancy,
   fetchIosAppMeta,
   fetchAndroidAppMeta,
+  searchIosLive,
 } from "@/libs/keyword-relevancy";
+import { resolveIpadOnly, persistIpadRank } from "@/libs/store/ipad-only";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -39,14 +41,23 @@ type IosBase = {
 
 // Search, volume, difficulty and today's persisted snapshot all come from
 // fetchIosCoreMetrics (shared with Keyword Inspector) — this only adds the
-// app-specific rank/chance on top.
-async function fetchIosMetricsBase(term: string, country: string, appName: string, storeId: string, supabase: SupabaseClient): Promise<IosBase | null | "rate_limited"> {
+// app-specific rank/chance on top. An iPad-only app (ipadIcon !== undefined)
+// never shows up in that iPhone search, so its rank comes from a second,
+// iPad search instead; a failed iPad search leaves rank null.
+async function fetchIosMetricsBase(term: string, country: string, appName: string, storeId: string, supabase: SupabaseClient, ipadIcon?: string | null): Promise<IosBase | null | "rate_limited"> {
   const core = await fetchIosCoreMetrics(supabase, term, country);
   if (core === null || core === "rate_limited") return core;
   const { volume, diff, results, apps } = core;
 
-  const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
-  const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
+  let rank: number | null;
+  if (ipadIcon !== undefined) {
+    const ipadApps = await searchIosLive(term, country, "ipad");
+    if (ipadApps === "rate_limited") return ipadApps;
+    rank = ipadApps ? await persistIpadRank(supabase, { term, country, storeId, appName, appIcon: ipadIcon }, ipadApps) : null;
+  } else {
+    const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
+    rank = rankIdx >= 0 ? rankIdx + 1 : null;
+  }
   const chance  = computeChance(diff, rank);
   const topTitles = apps.slice(0, 10).map((r) => r.trackName);
 
@@ -136,6 +147,14 @@ export async function GET(request: NextRequest) {
   if (!terms.length) return NextResponse.json({});
 
   const supabase = await createClient();
+
+  // Resolved even when every term is a cache hit, so apps.ipad_only gets set
+  // for the refresh cron and the Performance tab's live rank checks too.
+  // Defined (the app's icon, for its rank rows) only for an iPad-only app.
+  const { data: appRow } = store === "ios" && appId
+    ? await supabase.from("apps").select("id, store, store_id, country, icon_url, ipad_only").eq("id", appId).maybeSingle()
+    : { data: null };
+  const ipadIcon = appRow && await resolveIpadOnly(appRow) ? (appRow.icon_url ?? null) : undefined;
 
   // Every plan (Free included) gets a relevancy/opportunity pool now, so
   // access is purely a function of that pool rather than a tier check —
@@ -244,7 +263,7 @@ export async function GET(request: NextRequest) {
     if (store === "ios") {
       const baseEntries: [string, IosBase][] = [];
       for (const term of uncached) {
-        const result = await fetchIosMetricsBase(term, country, appName, storeId, supabase);
+        const result = await fetchIosMetricsBase(term, country, appName, storeId, supabase, ipadIcon);
         if (result === "rate_limited") { rateLimited = true; continue; }
         if (result === null) continue;
         baseEntries.push([term, result]);

@@ -6,6 +6,8 @@ import { computeIosVolumeAndDiff, computeAndroidTitleVolume, difficultyFromRatin
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
+import { searchIosLive } from "@/libs/keyword-relevancy";
+import { persistIpadRank } from "@/libs/store/ipad-only";
 
 // Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
 // small batches now — see TIME_BUDGET_MS below for why it no longer tries to
@@ -79,7 +81,7 @@ async function refreshKeywordMetrics(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: rows } = await (supabase as any)
     .from("keyword_metrics")
-    .select("app_id, keyword_id, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id), keywords!inner(term, status)")
+    .select("app_id, keyword_id, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id, icon_url, ipad_only), keywords!inner(term, status)")
     .eq("keywords.term", term)
     .eq("keywords.status", "active")
     .eq("apps.status", "active")
@@ -88,10 +90,26 @@ async function refreshKeywordMetrics(
 
   if (!rows?.length) return;
 
+  // iPad-only apps are never in the iPhone results above — rank them from one
+  // extra iPad search, paid only when some iPad-only app tracks this term. A
+  // failed or rate-limited iPad search leaves their rows untouched.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updates = (rows as any[]).map((row) => {
+  const ipadRows = (rows as any[]).filter((row) => store === "ios" && row.apps.ipad_only === true);
+  const ipadSearch = ipadRows.length ? await searchIosLive(term, country, "ipad") : null;
+  const ipadApps = Array.isArray(ipadSearch) ? ipadSearch : null;
+  const ipadRanks = new Map<string, number | null>();
+  if (ipadApps) {
+    for (const row of ipadRows) {
+      ipadRanks.set(row.app_id, await persistIpadRank(supabase, {
+        term, country, storeId: row.apps.store_id, appName: row.apps.name, appIcon: row.apps.icon_url,
+      }, ipadApps));
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const updates = (rows as any[]).filter((row) => !ipadRows.includes(row) || ipadRanks.has(row.app_id)).map((row) => {
     const rankIdx = findRankIdx(names, row.apps.name, ids, row.apps.store_id);
-    const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
+    const rank    = ipadRanks.has(row.app_id) ? ipadRanks.get(row.app_id) ?? null : rankIdx >= 0 ? rankIdx + 1 : null;
     const chance  = computeChance(row.diff ?? 0, rank);
 
     if (isSignificantRankChange(row.rank, rank)) {
@@ -102,7 +120,7 @@ async function refreshKeywordMetrics(
     return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
   });
 
-  await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
+  if (updates.length) await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
 }
 
 // Sends exactly one push per user for the whole cron run, covering every

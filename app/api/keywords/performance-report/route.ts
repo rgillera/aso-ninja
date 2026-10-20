@@ -8,6 +8,8 @@ import { computeWeight } from "@/libs/keyword-downloads-apportionment";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { REPORT_MONTHS } from "@/libs/keyword-report-window";
+import { searchIosLive } from "@/libs/keyword-relevancy";
+import { resolveIpadOnly, persistIpadRank } from "@/libs/store/ipad-only";
 
 // Lets the background catch-up pass below (kicked off via `after()`) keep
 // running past a normal request's lifetime — same ceiling refresh-keywords
@@ -26,7 +28,12 @@ export const maxDuration = 300;
 // refresh-keywords' TIME_BUDGET_MS, so a large gap list can't run forever.
 const BACKFILL_BUDGET_MS = 4 * 60 * 1000;
 
-async function backfillCurrentMonth(terms: string[], store: string, country: string, today: string) {
+// ipadApp: set when the report's app is iPad-only. Its rank isn't in the
+// iPhone search, so it gets one extra iPad search per term (see
+// libs/store/ipad-only.ts).
+type IpadApp = { storeId: string; name: string; icon: string | null };
+
+async function backfillCurrentMonth(terms: string[], store: string, country: string, today: string, ipadApp: IpadApp | null) {
   const supabase = createAdminClient();
   const startedAt = Date.now();
 
@@ -76,6 +83,11 @@ async function backfillCurrentMonth(terms: string[], store: string, country: str
             })),
             { onConflict: "keyword,store,country,recorded_on,app_id" }
           );
+        }
+        if (ipadApp) {
+          const ipadApps = await searchIosLive(term, country, "ipad");
+          if (ipadApps === "rate_limited") break;
+          if (ipadApps) await persistIpadRank(supabase, { term, country, storeId: ipadApp.storeId, appName: ipadApp.name, appIcon: ipadApp.icon }, ipadApps);
         }
       } else if (store === "android") {
         const gplay = await import("google-play-scraper");
@@ -290,7 +302,13 @@ export async function POST(request: NextRequest) {
       })
     : [];
   if (catchingUp.length) {
-    after(() => backfillCurrentMonth(catchingUp, store, country, today));
+    const { data: appRow } = store === "ios" && appId
+      ? await supabase.from("apps").select("id, store, store_id, country, name, icon_url, ipad_only").eq("id", appId).maybeSingle()
+      : { data: null };
+    const ipadApp = appRow && await resolveIpadOnly(appRow)
+      ? { storeId: appRow.store_id, name: appRow.name, icon: appRow.icon_url }
+      : null;
+    after(() => backfillCurrentMonth(catchingUp, store, country, today, ipadApp));
   }
 
   return NextResponse.json({

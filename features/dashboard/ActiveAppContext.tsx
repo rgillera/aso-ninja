@@ -15,6 +15,8 @@ export type ActiveApp = {
   // Export Report to tell "no data because this predates tracking" apart
   // from a genuine gap — see exportReport.ts's appTrackedSince.
   created_at?: string;
+  // apps.ipad_only — ranks come from iPad search. See libs/store/ipad-only.ts.
+  ipad_only?: boolean | null;
 };
 
 const ActiveAppContext = createContext<ActiveApp | undefined>(undefined);

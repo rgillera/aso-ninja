@@ -21,7 +21,10 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-export type TrackedApp = { id: string; name: string; icon: string };
+// ipadOnly: rank against iPad search (entity=iPadSoftware) instead, since an
+// iPad-only app never appears in iPhone results. Only the tracked app's own
+// row from that search gets stored — see the POST in /api/keywords/search.
+export type TrackedApp = { id: string; name: string; icon: string; ipadOnly?: boolean };
 
 // Fetches live App/Play Store rankings for a keyword and persists them to
 // keyword_rankings_history. iOS goes straight to Apple's CDN from the browser
@@ -65,7 +68,8 @@ async function fetchLiveSearchResultsInner(
     // to "Unranked" while Rank History still showed #53 from the cron. Still
     // one request either way, so this doesn't add to the rate-limited queue.
     // LiveSearchPanel trims what it displays back to the top 20.
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(keyword)}&entity=software&limit=200&country=${country}`;
+    const entity = trackedApp?.ipadOnly ? "iPadSoftware" : "software";
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(keyword)}&entity=${entity}&limit=200&country=${country}`;
     const res = await fetch(url);
     if (!res.ok) {
       // A short retry isn't enough headroom for Apple's actual cooldown once
