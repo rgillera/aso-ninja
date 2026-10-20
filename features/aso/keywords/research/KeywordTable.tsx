@@ -1049,10 +1049,11 @@ export function KeywordTable({
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
+                      title="Live App Store search"
                       className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     >
                       <MagnifyingGlassIcon className="size-3" />
-                      Live search
+                      Results
                     </button>
                     <Link
                       ref={tourInspect ? inspectLinkRef : undefined}
