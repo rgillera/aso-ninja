@@ -1,15 +1,11 @@
 import { createAdminClient } from "@/libs/supabase/admin";
 import { itunesFetch } from "@/libs/store/appstore";
 import type { RawIosApp } from "@/libs/keyword-relevancy";
+import { isIpadOnlyListing } from "@/libs/store/ipad-devices";
 
-// iPad-only apps never appear in entity=software (iPhone) search results, so
-// rank for them has to come from a separate entity=iPadSoftware search. Only
-// rank does: volume and difficulty stay on the shared iPhone search, since
-// popularity (autocomplete) isn't split by device anyway.
-export function isIpadOnlyListing(r: { supportedDevices?: string[] }): boolean {
-  const devices = r.supportedDevices ?? [];
-  return devices.some((d) => d.startsWith("iPad")) && !devices.some((d) => d.startsWith("iPhone") || d.startsWith("iPod"));
-}
+// Only rank comes from iPad search (see libs/store/ipad-devices.ts): volume
+// and difficulty stay on the shared iPhone search, since popularity
+// (autocomplete) isn't split by device anyway.
 
 type IpadOnlyApp = { id: string; store: string; store_id: string; country: string | null; ipad_only?: boolean | null };
 

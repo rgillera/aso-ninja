@@ -22,7 +22,7 @@ import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { TourTooltip } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
-import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
+import { fetchLiveSearchResults, resolveIpadOnlyClient, type TrackedApp } from "@/features/aso/keywords/research/liveSearch";
 import { Toggle } from "@/features/aso/keywords/research/ui";
 // The same history panel Keyword Research's Volume column opens.
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
@@ -454,6 +454,9 @@ export default function KeywordInspectorPage() {
   // can show "Tracking" instead. null = not loaded (or no active app).
   const [trackedTerms, setTrackedTerms] = useState<Set<string> | null>(null);
   const [trackSaving, setTrackSaving] = useState(false);
+  // Set per search: the results list and "Your app's rank" came from iPad
+  // search because the active app is iPad-only.
+  const [ipadResults, setIpadResults] = useState(false);
   const [trackError, setTrackError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -589,9 +592,20 @@ export default function KeywordInspectorPage() {
       }
     })();
 
+    // An iPad-only app is never in iPhone results, so its rank (and the list
+    // it ranks in) comes from iPad search instead — see TrackedApp in
+    // liveSearch.ts. The server's fallback topApps are iPhone results, so
+    // they're not used in that case.
+    let trackedApp: TrackedApp | undefined;
     const appsPromise = (async () => {
       try {
-        const results = await fetchLiveSearchResults(normTerm, current.store, current.country, undefined, true);
+        const ipadOnly = current.store === "ios" && await resolveIpadOnlyClient(activeApp);
+        if (id !== requestId.current) return;
+        setIpadResults(ipadOnly);
+        trackedApp = ipadOnly && activeApp?.store_id
+          ? { id: activeApp.store_id, name: activeApp.name, icon: activeApp.icon_url ?? "", ipadOnly: true }
+          : undefined;
+        const results = await fetchLiveSearchResults(normTerm, current.store, current.country, trackedApp, true);
         if (id !== requestId.current) return;
         const top = results.slice(0, RESULTS_DISPLAY_LIMIT);
         setApps(top);
@@ -604,7 +618,7 @@ export default function KeywordInspectorPage() {
         // its results instead of an error when it has them.
         const inspection = await metricsPromise;
         if (id !== requestId.current) return;
-        if (inspection?.topApps?.length) {
+        if (inspection?.topApps?.length && !trackedApp) {
           setApps(inspection.topApps);
           setAllResults(inspection.topApps);
           if (current.store === "ios") loadIosSubtitles(inspection.topApps, current.country, id);
@@ -1080,7 +1094,7 @@ export default function KeywordInspectorPage() {
               {/* ── Live search results ── */}
               <section>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                  <h2 className="text-sm font-semibold text-white light:text-gray-900">Top {RESULTS_DISPLAY_LIMIT} search results</h2>
+                  <h2 className="text-sm font-semibold text-white light:text-gray-900">Top {RESULTS_DISPLAY_LIMIT} {ipadResults ? "iPad " : ""}search results</h2>
                   {apps && apps.length > 0 && (
                     <label className="flex items-center gap-2 cursor-pointer">
                       <Toggle checked={highlightKeyword} onChange={() => setHighlightKeyword((v) => !v)} />

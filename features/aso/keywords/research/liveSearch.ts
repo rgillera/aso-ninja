@@ -1,4 +1,5 @@
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
+import { isIpadOnlyListing } from "@/libs/store/ipad-devices";
 
 // Every caller (Research's per-add background search, Performance's, the
 // LiveSearchPanel's manual button, multiple "+ Analyze all" clicks fired in
@@ -25,6 +26,32 @@ function enqueue<T>(fn: () => Promise<T>): Promise<T> {
 // iPad-only app never appears in iPhone results. Only the tracked app's own
 // row from that search gets stored — see the POST in /api/keywords/search.
 export type TrackedApp = { id: string; name: string; icon: string; ipadOnly?: boolean };
+
+// Whether to rank this app against iPad search. Uses apps.ipad_only when the
+// server has resolved it; a previewed app (no apps row) or one not resolved
+// yet gets one browser-side iTunes lookup, cached for the session. A failed
+// lookup reads as false and isn't cached, so the next search retries.
+const ipadOnlyCache = new Map<string, boolean>();
+
+export async function resolveIpadOnlyClient(
+  app: { store: string; store_id?: string; country?: string | null; ipad_only?: boolean | null } | undefined
+): Promise<boolean> {
+  if (app?.store !== "ios" || !app.store_id) return false;
+  if (app.ipad_only === true || app.ipad_only === false) return app.ipad_only;
+  const key = `${app.store_id}:${(app.country ?? "us").toLowerCase()}`;
+  const cached = ipadOnlyCache.get(key);
+  if (cached !== undefined) return cached;
+  try {
+    const res = await fetch(`https://itunes.apple.com/lookup?id=${app.store_id}&country=${(app.country ?? "us").toLowerCase()}`);
+    const r = res.ok ? (await res.json()).results?.[0] : null;
+    if (!r) return false;
+    const ipadOnly = isIpadOnlyListing(r);
+    ipadOnlyCache.set(key, ipadOnly);
+    return ipadOnly;
+  } catch {
+    return false;
+  }
+}
 
 // Fetches live App/Play Store rankings for a keyword and persists them to
 // keyword_rankings_history. iOS goes straight to Apple's CDN from the browser

@@ -9,7 +9,7 @@ import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext"
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPanel";
-import { fetchLiveSearchResults } from "@/features/aso/keywords/research/liveSearch";
+import { fetchLiveSearchResults, resolveIpadOnlyClient } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PerformanceTable } from "./PerformanceTable";
@@ -371,15 +371,18 @@ export default function KeywordPerformancePage() {
   // app has no store_id yet (previewed but not fully tracked), matching what
   // "unranked" already means elsewhere in this file (falls back to "").
   const trackedApp = activeApp?.store_id
-    ? { id: activeApp.store_id, name: activeApp.name ?? "", icon: activeApp.icon_url ?? "", ipadOnly: activeApp.ipad_only === true }
+    ? { id: activeApp.store_id, name: activeApp.name ?? "", icon: activeApp.icon_url ?? "" }
     : undefined;
 
   async function runLiveSearchInBackground(terms: string[], store: "ios" | "android", country: string) {
     // Spacing between calls is enforced centrally in liveSearch.ts (shared
     // across every caller app-wide), so this just fires them in order.
+    // iPad-only apps rank against iPad search (see TrackedApp in liveSearch.ts).
+    const ipadOnly = store === "ios" && await resolveIpadOnlyClient(activeApp);
+    const tracked = trackedApp && { ...trackedApp, ipadOnly };
     for (const term of terms) {
       try {
-        await fetchLiveSearchResults(term, store, country, trackedApp);
+        await fetchLiveSearchResults(term, store, country, tracked);
         // Refresh after each term (not just once at the end) so a keyword
         // that resolves early in a long batch drops off "N unranked"
         // immediately instead of the count sitting frozen until every term
