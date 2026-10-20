@@ -32,6 +32,9 @@ import { CountryPicker } from "./CountryPicker";
 import type { InspectorUsage } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { KeywordInspection, InspectorLimitReached } from "@/app/api/keywords/inspect/route";
+import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
+import type { AppEstimate } from "@/libs/contracts";
+import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 
 type Store = "ios" | "android";
 
@@ -194,8 +197,30 @@ function MatchPill({ label, value, hint }: { label: string; value: string | null
   );
 }
 
+const storeIdOf = (app: AppSearchResult, store: Store) => (store === "ios" ? (app.trackId ? String(app.trackId) : "") : app.appId ?? "");
+
+// One "value / label" estimate on a result row, in the same two-line style as
+// the rating. undefined = still loading, null = no estimate for this app.
+function EstimateStat({ value, basis, label, format }: {
+  value: number | null | undefined;
+  basis?: string;
+  label: string;
+  format: (n: number) => string;
+}) {
+  return (
+    <div className="hidden md:block w-20 shrink-0 pt-1 text-right" title={basis ? `Rough estimate: ${basis}` : undefined}>
+      {value === undefined ? (
+        <div className="ml-auto mt-0.5 h-3 w-10 rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
+      ) : (
+        <p className="text-xs tabular-nums text-gray-300 light:text-gray-700">{value === null ? "-" : format(value)}</p>
+      )}
+      <p className="text-[11px] text-gray-500">{label}</p>
+    </div>
+  );
+}
+
 function ResultRow({
-  app, store, country, subtitle, subtitleLoading, term, highlight, isYou,
+  app, store, country, subtitle, subtitleLoading, term, highlight, isYou, estimate, showEstimates,
 }: {
   app: AppSearchResult;
   store: Store;
@@ -207,6 +232,10 @@ function ResultRow({
   highlight: boolean;
   // This row is the active app: tinted, with a "Your app" tag.
   isYou: boolean;
+  // undefined = still loading, null = none for this app.
+  estimate: AppEstimate | null | undefined;
+  // Off when the storefront has no estimate model.
+  showEstimates: boolean;
 }) {
   const storeUrl = store === "ios"
     ? app.trackId ? `https://apps.apple.com/${country}/app/id${app.trackId}` : null
@@ -255,6 +284,12 @@ function ResultRow({
           {app.ratingCount ? `${formatCount(app.ratingCount)} ratings` : store === "android" ? "" : "No ratings"}
         </p>
       </div>
+      {showEstimates && (
+        <>
+          <EstimateStat value={estimate === undefined ? undefined : estimate?.downloads ?? null} basis={estimate?.downloadsBasis} label="downloads/mo" format={formatDownloads} />
+          <EstimateStat value={estimate === undefined ? undefined : estimate?.revenue ?? null} basis={estimate?.revenueBasis} label="revenue/mo" format={formatRevenue} />
+        </>
+      )}
       <span className="hidden sm:block w-16 shrink-0 pt-1 text-right text-xs text-gray-500">{app.price}</span>
     </div>
   );
@@ -396,6 +431,9 @@ export default function KeywordInspectorPage() {
   const [highlightKeyword, setHighlightKeyword] = useState(false);
   const [iosSubtitles, setIosSubtitles] = useState<Record<string, string>>({});
   const [subtitlesLoading, setSubtitlesLoading] = useState(false);
+  // Monthly downloads/revenue per result, keyed by store id. null = loading
+  // (or not requested yet); supported false = no model for this storefront.
+  const [estimates, setEstimates] = useState<KeywordResultEstimates | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
@@ -517,6 +555,7 @@ export default function KeywordInspectorPage() {
     setAllResults(null);
     setIosSubtitles({});
     setSubtitlesLoading(false);
+    setEstimates(null);
     setAppsError(null);
     setAppsLoading(true);
 
@@ -555,6 +594,7 @@ export default function KeywordInspectorPage() {
         setApps(top);
         setAllResults(results);
         if (current.store === "ios") loadIosSubtitles(top, current.country, id);
+        loadEstimates(top, current.store, current.country, id);
       } catch {
         // Live search failed (usually the store rate-limiting this browser's
         // IP). The server already ran the same search for the scores, so show
@@ -565,6 +605,7 @@ export default function KeywordInspectorPage() {
           setApps(inspection.topApps);
           setAllResults(inspection.topApps);
           if (current.store === "ios") loadIosSubtitles(inspection.topApps, current.country, id);
+          loadEstimates(inspection.topApps, current.store, current.country, id);
         } else setAppsError("Couldn't load search results right now. Try again in a minute.");
       } finally {
         if (id === requestId.current) setAppsLoading(false);
@@ -594,6 +635,24 @@ export default function KeywordInspectorPage() {
       // Best-effort: rows already show the developer instead.
     } finally {
       if (id === requestId.current) setSubtitlesLoading(false);
+    }
+  }
+
+  // Same second-step pattern as subtitles: each app's estimate needs its full
+  // store listing, so the list renders first. A failed request shows dashes.
+  async function loadEstimates(list: AppSearchResult[], store: Store, country: string, id: number) {
+    const ids = list.map((a) => storeIdOf(a, store)).filter(Boolean);
+    if (!ids.length) return;
+    try {
+      const res = await fetch("/api/keywords/estimates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store, country, ids }),
+      });
+      const data = res.ok ? ((await res.json()) as KeywordResultEstimates) : null;
+      if (id === requestId.current) setEstimates(data ?? { supported: true, estimates: {} });
+    } catch {
+      if (id === requestId.current) setEstimates({ supported: true, estimates: {} });
     }
   }
 
@@ -1077,6 +1136,8 @@ export default function KeywordInspectorPage() {
                         term={query.term}
                         highlight={highlightKeyword}
                         isYou={!!yourStoreId && (query.store === "ios" ? String(app.trackId) : app.appId) === yourStoreId}
+                        estimate={estimates ? estimates.estimates[storeIdOf(app, query.store)] ?? null : undefined}
+                        showEstimates={estimates?.supported !== false}
                       />
                   ))}
                 </div>
