@@ -10,31 +10,42 @@ export type AISuggestionsResult = {
   generic:    { term: string; volume: number }[];
   branded:    { term: string; volume: number }[];
   relevancy:  { term: string; volume: number }[];
+  longtail:   { term: string; volume: number }[];
 };
 
-async function generateKeywords(
+type Category = "discovery" | "generic" | "branded" | "relevancy";
+
+function buildPrompt(
   appName: string,
   description: string,
-  category: "discovery" | "generic" | "branded" | "relevancy",
+  category: Category,
   count: number,
   country: string,
-): Promise<string[]> {
+): string {
   const market = localeInstructions(country);
-  const prompts: Record<typeof category, string> = {
-    discovery: `You are an App Store Optimization expert. Generate ${count} discovery keywords for the app "${appName}".
+  const prompts: Record<Category, string> = {
+    // Also returns the long-tail list in the same response, so Long-tail
+    // costs no extra Gemini call. Parsed by generateDiscoveryAndLongTail.
+    discovery: `You are an App Store Optimization expert. For the app "${appName}", generate two lists:
+1. "discovery": ${count} discovery keywords
+2. "longtail": ${count} long-tail keywords
 Description: ${description.slice(0, 400)}
 
-Discovery keywords are niche, long-tail, or specific-use-case keywords that users search when they know exactly what they want.
-Examples: "calorie tracker for runners", "intermittent fasting timer", "macro calculator keto"
+Discovery keywords are niche or specific-use-case keywords that users search when they know exactly what they want.
+Examples: "fasting timer", "macro calculator", "keto tracker"
+
+Long-tail keywords are longer, very specific search phrases with lower competition and high intent.
+Examples: "calorie tracker for runners", "intermittent fasting timer for women", "keto macro calculator app"
 
 Rules:
-- 1-3 words each
+- Discovery: 1-3 words each, mix of single words and short phrases
+- Long-tail: 3-5 words each, natural phrases a user would actually type
 - No brand names of competitors
 - Relevant to this specific app's functionality
-- Mix of single words and short phrases
+- Do not repeat a keyword across the two lists
 ${market}
 
-Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
+Reply with ONLY a JSON object. Example: {"discovery":["keyword one"],"longtail":["longer keyword phrase here"]}`,
 
     generic: `You are an App Store Optimization expert. Generate ${count} high-volume generic keywords for the app "${appName}".
 Description: ${description.slice(0, 400)}
@@ -80,19 +91,53 @@ ${market}
 
 Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`,
   };
+  return prompts[category];
+}
 
+async function generateKeywords(
+  appName: string,
+  description: string,
+  category: Exclude<Category, "discovery">,
+  count: number,
+  country: string,
+): Promise<string[]> {
   try {
-    const raw = await generateText(prompts[category], 0.4);
+    const raw = await generateText(buildPrompt(appName, description, category, count, country), 0.4);
     if (!raw) return [];
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return [];
-    const parsed = JSON.parse(match[0]) as unknown[];
-    return parsed
-      .filter((k): k is string => typeof k === "string")
-      .map((k) => k.toLowerCase().trim())
-      .filter((k) => k.length >= 2 && k.length <= 50)
-      .slice(0, count);
+    return cleanTerms(JSON.parse(match[0]), count, 50);
   } catch { return []; }
+}
+
+function cleanTerms(parsed: unknown, count: number, maxLen: number): string[] {
+  if (!Array.isArray(parsed)) return [];
+  return parsed
+    .filter((k): k is string => typeof k === "string")
+    .map((k) => k.toLowerCase().trim())
+    .filter((k) => k.length >= 2 && k.length <= maxLen)
+    .slice(0, count);
+}
+
+// The discovery prompt returns {"discovery": [...], "longtail": [...]}.
+async function generateDiscoveryAndLongTail(
+  appName: string,
+  description: string,
+  count: number,
+  country: string,
+): Promise<{ discovery: string[]; longtail: string[] }> {
+  const empty = { discovery: [], longtail: [] };
+  try {
+    const raw = await generateText(buildPrompt(appName, description, "discovery", count, country), 0.4);
+    if (!raw) return empty;
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return empty;
+    const parsed = JSON.parse(match[0]) as { discovery?: unknown; longtail?: unknown };
+    return {
+      discovery: cleanTerms(parsed.discovery, count, 50),
+      longtail:  cleanTerms(parsed.longtail,  count, 70),
+    };
+  } catch { return empty; }
 }
 
 // Keywords only rank for what people type in that storefront, so the
@@ -121,7 +166,7 @@ function deduplicateAcross(...sections: string[][]): string[][] {
   });
 }
 
-const EMPTY: AISuggestionsResult = { discovery: [], generic: [], branded: [], relevancy: [] };
+const EMPTY: AISuggestionsResult = { discovery: [], generic: [], branded: [], relevancy: [], longtail: [] };
 
 // GET /api/keywords/ai-suggestions?appName=...&country=us&workspaceId=...&onboarding=1
 export async function GET(request: NextRequest) {
@@ -157,20 +202,21 @@ export async function GET(request: NextRequest) {
 
   if (!allowed) return NextResponse.json(EMPTY);
 
-  const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
-    generateKeywords(appName, description, "discovery", 30, country),
+  const [{ discovery: rawDiscovery, longtail: rawLongtail }, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
+    generateDiscoveryAndLongTail(appName, description, 30, country),
     generateKeywords(appName, description, "generic",   30, country),
     generateKeywords(appName, description, "branded",   30, country),
     generateKeywords(appName, description, "relevancy", 30, country),
   ]);
 
-  const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =
-    deduplicateAcross(rawDiscovery, rawGeneric, rawBranded, rawRelevancy);
+  const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms, longtailTerms] =
+    deduplicateAcross(rawDiscovery, rawGeneric, rawBranded, rawRelevancy, rawLongtail);
 
   return NextResponse.json({
     discovery: discoveryTerms.map((term) => ({ term, volume: 0 })),
     generic:   genericTerms.map((term)   => ({ term, volume: 0 })),
     branded:   brandedTerms.map((term)   => ({ term, volume: 0 })),
     relevancy: relevancyTerms.map((term) => ({ term, volume: 0 })),
+    longtail:  longtailTerms.map((term)  => ({ term, volume: 0 })),
   } satisfies AISuggestionsResult);
 }
