@@ -24,9 +24,9 @@ type MemberWithProfile = WorkspaceMember & {
 };
 
 const ACCESS_LABELS: Record<WorkspaceAccess, string> = {
-  aso_intelligence: "ASO Intelligence",
-  market_intelligence: "Market Intelligence",
+  aso_intelligence: "Keyword Intelligence",
   asa_intelligence: "ASA Intelligence",
+  market_intelligence: "Market Intelligence",
 };
 
 type Props = {
@@ -225,7 +225,7 @@ export default function WorkspacePage({
                 <div>
                   <label htmlFor="ws-slug" className={labelClass}>Slug</label>
                   <div className="flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent">
-                    <span className="pl-3.5 pr-1 text-sm text-gray-600 light:text-gray-400 shrink-0">asoninja.com/</span>
+                    <span className="pl-3.5 pr-1 text-sm text-gray-600 light:text-gray-400 shrink-0">appaso.io/</span>
                     <input
                       id="ws-slug"
                       name="slug"
