@@ -60,7 +60,10 @@ function AppCard({
           <p className="mt-0.5 text-[10px] text-gray-500 truncate leading-tight">
             {countryFlag(entry.country)} {COUNTRY_MAP[entry.country] ?? entry.country}
           </p>
-          {entry.trackedId && <ConnectedBadge />}
+          {/* Always rendered so followed and unfollowed cards share one height */}
+          <div className={entry.trackedId ? undefined : "invisible"} aria-hidden={!entry.trackedId}>
+            <ConnectedBadge />
+          </div>
         </div>
       </a>
       {/* Sibling of the link, not nested: a button inside <a> is invalid HTML */}

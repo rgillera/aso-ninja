@@ -40,11 +40,11 @@ export default function PortalHero({
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-5xl text-center">
           <PortalEyebrow>Built for App Store &amp; Google Play</PortalEyebrow>
-          <h1 className="mt-6 text-balance text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+          <h1 className="mt-8 sm:mt-10 text-balance text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
             <span className="text-indigo-600">App ASO tool with pro-level data,</span>{" "}
             <span className="sm:block">without the $299 price tag.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-balance text-lg font-medium text-gray-600 sm:text-xl">
+          <p className="mx-auto mt-8 sm:mt-10 max-w-2xl text-balance text-lg font-medium text-gray-600 sm:text-xl">
             Start free. Upgrade from <span className="font-bold text-gray-900">$29/mo</span> as you grow, from solo indie devs to publishing teams.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-y-4 gap-x-6 sm:flex-row">
