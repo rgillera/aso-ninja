@@ -282,7 +282,11 @@ export function KeywordSuggestionCompetitors({
   useEffect(() => {
     if (!active) return;
     if (!activeApp?.store_id || !competitors.length) {
+      // Forget the last key too: re-adding the same competitors would
+      // otherwise match it and skip the fetch, leaving data null forever.
       setData(null);
+      setFetchKey(null);
+      latestKeyRef.current = null;
       return;
     }
     const key = `${activeApp.store_id}-${activeApp.store}-${activeApp.country}-${competitors.map((c) => c.storeId).sort().join(",")}-${refreshCount}`;

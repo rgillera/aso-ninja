@@ -44,6 +44,11 @@ function wordTokens(text: string): string[] {
   return tokens;
 }
 
+// Scripts written without spaces between words. A bigram there is the two
+// segments run together ("写真" + "編集" → "写真編集"), which is how the
+// keyword is typed and stored; a space would never match rank history.
+const NO_SPACE_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+
 function extractTerms(text: string): string[] {
   const words = wordTokens(text);
   const singles = [...new Set(words.filter((w) => w.length >= 2 && !ALL_STOP_WORDS.has(w)))];
@@ -53,7 +58,7 @@ function extractTerms(text: string): string[] {
   for (let i = 0; i < words.length - 1; i++) {
     const a = words[i], b = words[i + 1];
     if (a.length >= 2 && !ALL_STOP_WORDS.has(a) && b.length >= 2 && !ALL_STOP_WORDS.has(b)) {
-      const pair = `${a} ${b}`;
+      const pair = NO_SPACE_SCRIPT.test(a) && NO_SPACE_SCRIPT.test(b) ? a + b : `${a} ${b}`;
       if (!seen.has(pair)) { seen.add(pair); bigrams.push(pair); }
     }
   }

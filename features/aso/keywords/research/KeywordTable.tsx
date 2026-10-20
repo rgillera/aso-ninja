@@ -1047,6 +1047,21 @@ export function KeywordTable({
                 )}
                 <td className={`pr-4 py-3.5 transition-opacity ${tourInspect ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
                   <div className="flex items-center gap-1.5">
+                    <Link
+                      ref={tourInspect ? inspectLinkRef : undefined}
+                      href={`/dashboard/keywords/inspector?${new URLSearchParams({
+                        term: row.keyword, store, country: country.toLowerCase(),
+                        ...(tourInspect ? { tip: "tour" } : {}),
+                      })}`}
+                      title="Open in Keyword Inspector"
+                      className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap ${
+                        tourInspect ? "ring-1 ring-indigo-400/70 text-white light:text-indigo-900" : ""
+                      }`}
+                    >
+                      {tourInspect && <TourPulse />}
+                      <DocumentMagnifyingGlassIcon className="size-3" />
+                      Inspect
+                    </Link>
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
                       title="Live App Store search"
@@ -1055,21 +1070,6 @@ export function KeywordTable({
                       <MagnifyingGlassIcon className="size-3" />
                       Results
                     </button>
-                    <Link
-                      ref={tourInspect ? inspectLinkRef : undefined}
-                      href={`/dashboard/keywords/inspector?${new URLSearchParams({
-                        term: row.keyword, store, country: country.toLowerCase(),
-                        ...(tourInspect ? { tip: "tour" } : {}),
-                      })}`}
-                      title="Open in Keyword Inspector"
-                      className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap ${
-                        tourInspect ? "ring-1 ring-indigo-400/70 text-white light:text-gray-900" : ""
-                      }`}
-                    >
-                      {tourInspect && <TourPulse />}
-                      <DocumentMagnifyingGlassIcon className="size-3" />
-                      Inspect
-                    </Link>
                     <Link
                       href={`/dashboard/keywords/combination?${new URLSearchParams({ seed: row.keyword })}`}
                       title="Find long tail keywords for this keyword"
