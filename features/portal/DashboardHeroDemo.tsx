@@ -65,11 +65,11 @@ const ROWS = [
   { keyword: "instagram connect", volume: 5, diff: 72, chance: 52, relevancy: 69, opportunity: 8, estDownloads: 2_800, rank: 48 },
 ];
 
-// The keyword the loop adds. It lands at the bottom, then sorting by
-// Opportunity (63) lifts it to the second row.
+// The keyword the loop adds. Like the real table, a new keyword lands at the
+// top; sorting by Opportunity (63) then settles it into the second row.
 const NEW_ROW = { keyword: "photo sharing", volume: 61, diff: 88, chance: 71, relevancy: 82, opportunity: 63, estDownloads: 38_000, rank: 4 };
 
-const ALL_ROWS = [...ROWS, { ...NEW_ROW, isNew: true as const }];
+const ALL_ROWS = [{ ...NEW_ROW, isNew: true as const }, ...ROWS];
 const SORTED_ROWS = [...ALL_ROWS].sort((a, b) => b.opportunity - a.opportunity);
 
 // The Inspector's top results for NEW_ROW.keyword. Competitors are made up;
@@ -183,8 +183,8 @@ const TIMELINE: [Step, number][] = [
   ["pressAdd", 220],
   ["loadingRow", 700],
   ["added", 700],
-  // Sort by Opportunity: rows slide into order and the new keyword rises
-  // from the bottom to #2, which is why it's the one worth inspecting.
+  // Sort by Opportunity: rows slide into order, and the new keyword ends up
+  // at #2 under the top scorer, which is why it's the one worth inspecting.
   ["toSort", 650],
   ["pressSort", 220],
   ["sorting", 750],
