@@ -116,7 +116,7 @@ export default function RatingsDashboardPage() {
               ratingCount={result?.current.ratingCount ?? null}
             />
 
-            <div className="rounded-xl bg-[#141417] light:bg-white">
+            <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
               <RatingsGainedChart
                 key={activeApp.id}
                 series={result?.series ?? []}

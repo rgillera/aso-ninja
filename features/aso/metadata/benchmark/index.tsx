@@ -92,7 +92,7 @@ function RatingCard({ rating, avgRating }: { rating?: number; avgRating: number 
 
 function BenchmarkCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#141417] light:bg-white p-5">
+    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-5">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">{title}</p>
       <div className="flex flex-1 flex-col justify-center">{children}</div>
     </div>

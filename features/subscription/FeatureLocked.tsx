@@ -54,7 +54,7 @@ export function FeatureLocked({
 }) {
   const color = TIER_COLOR[minPlan] ?? TIER_COLOR.enterprise!;
   return (
-    <div className="mx-6 mt-6 rounded-2xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-14 px-6 text-center">
+    <div className="mx-6 mt-6 rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-14 px-6 text-center">
       <div className={`relative flex size-16 items-center justify-center rounded-2xl ${color.ring}`}>
         <Icon className={`size-8 ${color.icon}`} />
         <span className={`absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#141417] light:bg-white`}>

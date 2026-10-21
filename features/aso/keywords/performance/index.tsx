@@ -29,6 +29,7 @@ import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-s
 import type { PerformanceReportResult } from "@/app/api/keywords/performance-report/route";
 import type { MonthCoverage } from "@/app/api/keywords/month-coverage/route";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 // Caps how many automatic background retries a stuck ("Unknown" rank)
 // keyword gets before we stop nagging Apple/Google for it — a genuinely
@@ -769,13 +770,9 @@ export default function KeywordPerformancePage() {
         {tab === "chart" ? (
           <div className="px-6 pt-4 pb-6">
             <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-              <div className="flex items-center justify-between px-5 pt-4 pb-1">
-                <div>
-                  <p className="text-sm font-semibold text-white light:text-gray-900">Visibility Score</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Last 30 days</p>
-                </div>
+              <CardHeader title="Visibility Score" subtitle="Last 30 days">
                 {visibilityLoading && <div className="size-3 rounded-full border-2 border-gray-600 border-t-indigo-400 animate-spin" />}
-              </div>
+              </CardHeader>
               <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />
             </div>
           </div>

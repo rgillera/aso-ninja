@@ -428,7 +428,7 @@ export default function AppConnectionSettings({ app }: Props) {
             ]}
           />
         ) : (
-        <div className="w-full rounded-xl bg-[#141417] light:bg-white overflow-hidden">
+        <div className="w-full rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
             <h2 className="text-sm font-semibold text-white light:text-gray-900">
               {app.store === "ios" ? "App Store Connect" : "Google Play Console"}
@@ -516,7 +516,7 @@ export default function AppConnectionSettings({ app }: Props) {
               />
             </div>
           ) : (
-            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#141417] light:bg-white overflow-hidden scroll-mt-6">
+            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden scroll-mt-6">
               <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
                 <h2 className="text-sm font-semibold text-white light:text-gray-900">Apple Search Ads</h2>
                 <p className="mt-1 text-xs text-gray-500">

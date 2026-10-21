@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { ChartBarIcon, CalendarDaysIcon } from "@heroicons/react/24/outline";
 import { bucketSeries, STAR_COLORS, type Granularity, type SeriesPoint } from "./types";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 const GRANULARITIES: { id: Granularity; label: string }[] = [
   { id: "day", label: "Day" },
@@ -40,8 +41,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-2">
-        <p className="text-sm font-semibold text-white light:text-gray-900">Review distribution per star</p>
+      <CardHeader title="Review distribution per star">
 
         <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-1.5">
           <CalendarDaysIcon className="size-3.5 text-gray-500" />
@@ -61,9 +61,9 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
             className="bg-transparent text-xs text-gray-300 light:text-gray-700 focus:outline-none [color-scheme:dark] light:[color-scheme:light]"
           />
         </div>
-      </div>
+      </CardHeader>
 
-      <div className="flex items-center gap-1 px-5 pb-2">
+      <div className="flex items-center gap-1 px-5 pt-3 pb-2">
         {GRANULARITIES.map((g) => (
           <button
             key={g.id}

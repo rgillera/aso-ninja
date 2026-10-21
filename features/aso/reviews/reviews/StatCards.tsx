@@ -15,7 +15,7 @@ function DeltaChip({ pct }: { pct: number | null }) {
 
 function StatCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white p-5 flex flex-col">
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-5 flex flex-col">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-3">{label}</p>
       {children}
     </div>

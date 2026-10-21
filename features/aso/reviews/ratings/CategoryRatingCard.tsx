@@ -1,5 +1,6 @@
 import { ArrowUpIcon, ArrowDownIcon, StarIcon } from "@heroicons/react/24/solid";
 import type { CategoryBenchmark } from "@/libs/contracts";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 function formatCompact(n: number) {
   return Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(n);
@@ -29,37 +30,39 @@ export function CategoryRatingCard({ rating, category }: Props) {
   const categoryLabel = category?.genreName || "category";
 
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
-      <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">My category ({categoryLabel})</p>
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title={`My category (${categoryLabel})`} />
+      <div className="p-5">
 
-      {category ? (
-        <>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
-                {category.avgRating != null ? category.avgRating.toFixed(2) : "—"}
-                <StarIcon className="size-4 text-amber-400 light:text-amber-700" />
-              </p>
-              <p className="mt-1 text-xs text-gray-500">average rating</p>
+        {category ? (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
+                  {category.avgRating != null ? category.avgRating.toFixed(2) : "—"}
+                  <StarIcon className="size-4 text-amber-400 light:text-amber-700" />
+                </p>
+                <p className="mt-1 text-xs text-gray-500">average rating</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">
+                  {category.medianRatingCount != null ? formatCompact(category.medianRatingCount) : "—"}
+                </p>
+                <p className="mt-1 text-xs text-gray-500">median ratings (top apps)</p>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">
-                {category.medianRatingCount != null ? formatCompact(category.medianRatingCount) : "—"}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">median ratings (top apps)</p>
-            </div>
-          </div>
-          {rating != null && category.avgRating != null && (
-            <div className="mt-3">
-              <DeltaBadge value={rating} avg={category.avgRating} />
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="text-xs text-gray-600 light:text-gray-400">
-          Category comparison isn&rsquo;t available for this app right now.
-        </p>
-      )}
+            {rating != null && category.avgRating != null && (
+              <div className="mt-3">
+                <DeltaBadge value={rating} avg={category.avgRating} />
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-xs text-gray-600 light:text-gray-400">
+            Category comparison isn&rsquo;t available for this app right now.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

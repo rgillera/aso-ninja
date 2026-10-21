@@ -63,7 +63,7 @@ export default function AgentsSummaryPage({ contacts, agentEmails, metricsByAgen
           </div>
 
           {CRM_STATUSES.map((s) => (
-            <div key={s} className="rounded-xl bg-[#141417] light:bg-white p-5">
+            <div key={s} className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-5">
               <p className={`text-3xl font-bold leading-none ${CRM_STATUS_ACCENT_TEXT[s]}`}>{statusCounts[s].toLocaleString()}</p>
               <p className="mt-2 text-xs font-medium text-gray-500">{CRM_STATUS_LABELS[s]}</p>
             </div>

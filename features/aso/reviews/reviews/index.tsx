@@ -107,7 +107,7 @@ export default function ReviewsDashboardPage() {
           <>
             <StatCards stats={result?.stats ?? { avgRating: null, avgRatingDeltaPct: null, totalNew: 0, totalNewDeltaPct: null, starDistribution: { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0 } }} />
 
-            <div className="rounded-xl bg-[#141417] light:bg-white">
+            <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
               <ReviewDistributionChart
                 series={result?.series ?? []}
                 from={from}

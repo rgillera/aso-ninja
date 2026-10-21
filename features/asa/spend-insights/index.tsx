@@ -13,6 +13,7 @@ import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import { findWastedSpend, findUntappedOpportunities, type WastedSpendRow, type UntappedOpportunityRow } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { AsaConnectionStatus, AsaKeywordRow } from "@/libs/asa-connections/types";
@@ -34,7 +35,7 @@ function NoAppSelected() {
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "amber" | "emerald" }) {
   const color = tone === "amber" ? "text-amber-400 light:text-amber-700" : "text-emerald-400 light:text-emerald-700";
   return (
-    <div className="flex-1 rounded-xl bg-[#141417] light:bg-white px-5 py-4">
+    <div className="flex-1 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm px-5 py-4">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 light:text-gray-400">{label}</p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
     </div>
@@ -51,12 +52,12 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-          <ExclamationTriangleIcon className="size-3.5 text-amber-400 light:text-amber-700" />
-          Possibly wasted spend
-        </span>
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden">
+      <CardHeader
+        title="Possibly wasted spend"
+        count={rows.length}
+        icon={<ExclamationTriangleIcon className="size-4 text-amber-400 light:text-amber-700" />}
+      >
         {rows.length > 0 && (
           <button
             onClick={handleExport}
@@ -66,7 +67,7 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
             Export CSV
           </button>
         )}
-      </div>
+      </CardHeader>
 
       {rows.length === 0 ? (
         <p className="px-4 py-6 text-xs text-gray-600 light:text-gray-400">No overlap found — you&apos;re not currently bidding on keywords you already rank top 3 for organically.</p>
@@ -108,12 +109,12 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
-          <ArrowTrendingUpIcon className="size-3.5 text-emerald-400 light:text-emerald-700" />
-          Untapped opportunities
-        </span>
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden">
+      <CardHeader
+        title="Untapped opportunities"
+        count={rows.length}
+        icon={<ArrowTrendingUpIcon className="size-4 text-emerald-400 light:text-emerald-700" />}
+      >
         {rows.length > 0 && (
           <button
             onClick={handleExport}
@@ -123,7 +124,7 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
             Export CSV
           </button>
         )}
-      </div>
+      </CardHeader>
 
       {rows.length === 0 ? (
         <p className="px-4 py-6 text-xs text-gray-600 light:text-gray-400">No high-value gaps found — your best tracked keywords are either already targeted or already ranking well organically.</p>
@@ -239,17 +240,17 @@ export default function SpendInsightsPage() {
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-16 text-center">
             <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
             <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : connLoading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : !connection?.connected ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-16 text-center">
             <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">Apple Search Ads isn&apos;t connected yet</p>
             {activeApp.id && activeApp.id !== "__preview__" ? (
@@ -272,7 +273,7 @@ export default function SpendInsightsPage() {
             {error}
           </div>
         ) : loading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : (

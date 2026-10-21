@@ -11,6 +11,7 @@ import { daysSince } from "@/libs/store/benchmark-utils";
 import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 import type { CompareApp } from "./types";
 import { compareKey, storeUrl, FIELD_LIMITS } from "./types";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 type Props = {
   apps: CompareApp[];
@@ -166,7 +167,8 @@ export function CompareTable({ apps, country, onRemove }: Props) {
   const lightboxUrls = lightboxApp?.storeData?.screenshotUrls ?? [];
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Side-by-side comparison" count={apps.length} />
       <div className="overflow-x-auto">
         <table className="border-collapse">
           <thead>

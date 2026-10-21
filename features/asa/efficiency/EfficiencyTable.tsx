@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { MagnifyingGlassIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import type { EfficiencyRow, EfficiencyTag } from "./types";
 
 type Props = { rows: EfficiencyRow[] };
@@ -77,7 +78,8 @@ export function EfficiencyTable({ rows }: Props) {
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Keywords" count={rows.length} />
       <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1.5 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2 py-1.5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />

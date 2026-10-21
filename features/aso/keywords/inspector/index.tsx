@@ -35,6 +35,7 @@ import type { KeywordInspection, InspectorLimitReached } from "@/app/api/keyword
 import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
 import type { AppEstimate } from "@/libs/contracts";
 import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 type Store = "ios" | "android";
 
@@ -125,7 +126,7 @@ function ScoreBar({ value, className }: { value: number; className: string }) {
 
 function StatCard({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#141417] light:bg-white p-4" title={hint}>
+    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4" title={hint}>
       <p className="text-xs font-medium text-gray-500">{label}</p>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -134,7 +135,7 @@ function StatCard({ label, hint, children }: { label: string; hint: string; chil
 
 function StatSkeleton() {
   return (
-    <div className="rounded-2xl bg-[#141417] light:bg-white p-4 animate-pulse">
+    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4 animate-pulse">
       <div className="h-3 w-20 rounded bg-white/[0.06] light:bg-black/[0.06]" />
       <div className="mt-3 h-7 w-14 rounded bg-white/[0.06] light:bg-black/[0.06]" />
       <div className="mt-3 h-1.5 w-full rounded bg-white/[0.06] light:bg-black/[0.06]" />
@@ -320,7 +321,7 @@ function UsageBadge({ usage }: { usage: InspectorUsage }) {
 // Shown in place of the results once today's free lookups are used up.
 function DailyLimitCard({ term, limit }: { term: string; limit: number | null }) {
   return (
-    <div className="rounded-2xl bg-[#141417] light:bg-white flex flex-col items-center py-12 px-6 text-center">
+    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center py-12 px-6 text-center">
       <div className="relative flex size-14 items-center justify-center rounded-2xl bg-violet-500/10">
         <DocumentMagnifyingGlassIcon className="size-7 text-violet-400 light:text-violet-700" />
         <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#141417] light:bg-white">
@@ -828,7 +829,7 @@ export default function KeywordInspectorPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 sm:px-6 py-6 space-y-6">
           {/* ── Query form ── */}
-          <form onSubmit={onSubmit} className="rounded-2xl bg-[#141417] light:bg-white p-4 space-y-3">
+          <form onSubmit={onSubmit} className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4 space-y-3">
             <div className="flex flex-col gap-3 md:flex-row">
               <label className="relative flex-1">
                 <span className="sr-only">Keyword</span>
@@ -1027,7 +1028,7 @@ export default function KeywordInspectorPage() {
                   }`}
                 >
                   {sameStore && activeApp && allResults && (
-                    <div className="rounded-2xl bg-[#141417] light:bg-white p-4">
+                    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4">
                       <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
                         <TrophyIcon className="size-3.5" />
                         Your app&apos;s rank
@@ -1064,7 +1065,7 @@ export default function KeywordInspectorPage() {
                       </p>
                     </div>
                   )}
-                  <div className="rounded-2xl bg-[#141417] light:bg-white p-4">
+                  <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4">
                     <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
                       <LightBulbIcon className="size-3.5" />
                       Beatable spots in the top {WEAK_SPOT_RANGE}
@@ -1118,7 +1119,8 @@ export default function KeywordInspectorPage() {
                     )}
                   </div>
                 )}
-                <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden">
+                <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+                  <CardHeader title="Top ranking apps" count={apps?.length || undefined} />
                   {appsLoading && (
                     <div className="divide-y divide-white/[0.05] light:divide-black/[0.05]">
                       {Array.from({ length: 6 }).map((_, i) => (

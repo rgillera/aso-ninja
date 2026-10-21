@@ -61,7 +61,7 @@ export function PromptRow({ appId, workspaceId, prompt, onChecked, onRemoved }: 
   const { latest } = prompt;
 
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white px-4 py-3 space-y-2">
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm px-4 py-3 space-y-2">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm text-gray-200 light:text-gray-800 truncate">&ldquo;{prompt.prompt}&rdquo;</p>

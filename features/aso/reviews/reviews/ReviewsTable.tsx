@@ -41,7 +41,7 @@ export function ReviewsTable({ reviews }: Props) {
   );
 
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden">
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-center gap-1.5 px-5 py-3 text-sm text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"

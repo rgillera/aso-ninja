@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/solid";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 type Unit = "day" | "week" | "month";
 
@@ -42,61 +43,63 @@ export function AssessYourApp({ rating, ratingCount }: Props) {
   }
 
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
-      <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">Assess your app</p>
-      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300 light:text-gray-700">
-        <span>To reach</span>
-        <input
-          type="number"
-          step={0.01}
-          min={1}
-          max={5}
-          value={target}
-          onChange={(e) => setTarget(Number(e.target.value))}
-          className="w-16 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
-        />
-        <span>stars in</span>
-        <input
-          type="number"
-          min={1}
-          value={duration}
-          onChange={(e) => setDuration(Math.max(1, Number(e.target.value)))}
-          className="w-14 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
-        />
-        <select
-          value={unit}
-          onChange={(e) => setUnit(e.target.value as Unit)}
-          className="rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
-        >
-          <option value="day">day</option>
-          <option value="week">week</option>
-          <option value="month">month</option>
-        </select>
-        <span>you need a variation of</span>
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Assess your app" />
+      <div className="p-5">
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300 light:text-gray-700">
+          <span>To reach</span>
+          <input
+            type="number"
+            step={0.01}
+            min={1}
+            max={5}
+            value={target}
+            onChange={(e) => setTarget(Number(e.target.value))}
+            className="w-16 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          />
+          <span>stars in</span>
+          <input
+            type="number"
+            min={1}
+            value={duration}
+            onChange={(e) => setDuration(Math.max(1, Number(e.target.value)))}
+            className="w-14 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          />
+          <select
+            value={unit}
+            onChange={(e) => setUnit(e.target.value as Unit)}
+            className="rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          >
+            <option value="day">day</option>
+            <option value="week">week</option>
+            <option value="month">month</option>
+          </select>
+          <span>you need a variation of</span>
 
-        {!canCompute ? (
-          <span className="text-gray-500">—</span>
-        ) : result === null ? (
-          <span className="text-amber-400 light:text-amber-700">pick a star value different from your target</span>
-        ) : result.alreadyThere ? (
-          <span className="text-emerald-400 light:text-emerald-700">you already meet or exceed this target</span>
-        ) : (
-          <span className={`inline-flex items-center gap-1 font-semibold ${result.variation >= 0 ? "text-emerald-400 light:text-emerald-700" : "text-rose-400 light:text-rose-700"}`}>
-            {result.variation >= 0 ? <ArrowUpIcon className="size-3.5" /> : <ArrowDownIcon className="size-3.5" />}
-            {Math.abs(result.variation).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </span>
-        )}
+          {!canCompute ? (
+            <span className="text-gray-500">—</span>
+          ) : result === null ? (
+            <span className="text-amber-400 light:text-amber-700">pick a star value different from your target</span>
+          ) : result.alreadyThere ? (
+            <span className="text-emerald-400 light:text-emerald-700">you already meet or exceed this target</span>
+          ) : (
+            <span className={`inline-flex items-center gap-1 font-semibold ${result.variation >= 0 ? "text-emerald-400 light:text-emerald-700" : "text-rose-400 light:text-rose-700"}`}>
+              {result.variation >= 0 ? <ArrowUpIcon className="size-3.5" /> : <ArrowDownIcon className="size-3.5" />}
+              {Math.abs(result.variation).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </span>
+          )}
 
-        <span>{unit === "day" ? "daily" : unit === "week" ? "weekly" : "monthly"}</span>
-        <input
-          type="number"
-          min={1}
-          max={5}
-          value={starValue}
-          onChange={(e) => setStarValue(Math.min(5, Math.max(1, Number(e.target.value))))}
-          className="w-12 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
-        />
-        <span>star ratings.</span>
+          <span>{unit === "day" ? "daily" : unit === "week" ? "weekly" : "monthly"}</span>
+          <input
+            type="number"
+            min={1}
+            max={5}
+            value={starValue}
+            onChange={(e) => setStarValue(Math.min(5, Math.max(1, Number(e.target.value))))}
+            className="w-12 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          />
+          <span>star ratings.</span>
+        </div>
       </div>
     </div>
   );

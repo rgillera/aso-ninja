@@ -15,6 +15,7 @@ import { AddPromptForm } from "./AddPromptForm";
 import { PromptRow } from "./PromptRow";
 import { VisibilityTrendChart } from "./VisibilityTrendChart";
 import type { TrackedPrompt, AiVisibilityHistoryPoint, AiVisibilityListResult } from "./types";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 function NoAppSelected() {
   const resolving = useActiveAppResolving();
@@ -150,11 +151,11 @@ export default function AiVisibilityPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        <div className="rounded-xl bg-[#141417] light:bg-white px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-2">
-            Track a discovery prompt
-          </p>
-          <AddPromptForm activeApp={activeApp} workspaceId={workspaceId} appId={appId} prompts={prompts} onAdded={handleAdded} />
+        <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+          <CardHeader title="Track a discovery prompt" />
+          <div className="px-4 py-3">
+            <AddPromptForm activeApp={activeApp} workspaceId={workspaceId} appId={appId} prompts={prompts} onAdded={handleAdded} />
+          </div>
         </div>
 
         <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
@@ -167,7 +168,7 @@ export default function AiVisibilityPage() {
               Loading tracked prompts…
             </div>
           ) : prompts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center px-6 rounded-xl bg-[#141417] light:bg-white">
+            <div className="flex flex-col items-center justify-center py-12 text-center px-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
               <SparklesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-400 light:text-gray-600">No prompts tracked yet</p>
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">

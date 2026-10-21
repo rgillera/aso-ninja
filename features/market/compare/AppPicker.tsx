@@ -48,7 +48,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
       </div>
 
       {query.trim() && !atLimit && (
-        <div className="mt-2 max-w-md rounded-xl bg-[#141417] light:bg-white overflow-hidden">
+        <div className="mt-2 max-w-md rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm overflow-hidden">
           {searching ? (
             <div className="p-2 space-y-1.5">
               {[...Array(3)].map((_, i) => (

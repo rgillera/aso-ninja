@@ -16,6 +16,7 @@ import { KeywordSuggestionCompetitors } from "./KeywordSuggestionCompetitors";
 import { KeywordSuggestionCombinations } from "./KeywordSuggestionCombinations";
 import { CompetitorsBar } from "@/features/aso/keywords/performance/CompetitorsBar";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 
 type Props = {
   onAddKeyword: (keyword: string) => void;
@@ -58,8 +59,8 @@ export function KeywordSuggestionsPanel({
   return (
     <div
       ref={panelRef}
-      className={`mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10 transition-all ${
-        tourStep === "suggestions" ? "ring-2 ring-indigo-400/70" : ""
+      className={`mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm transition-all ${
+        tourStep === "suggestions" ? "ring-2! ring-indigo-400/70!" : ""
       }`}
     >
       <TourTooltip
@@ -75,16 +76,14 @@ export function KeywordSuggestionsPanel({
         onAdvance={onAdvanceTour}
         anchor="top"
       />
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
-        <span className="text-sm font-semibold text-white light:text-gray-900">Keyword Suggestions</span>
+      <CardHeader title="Keyword Suggestions" divider={open}>
         <button
           onClick={() => setOpen((v) => !v)}
           className="p-1 rounded text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
         >
           {open ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
         </button>
-      </div>
+      </CardHeader>
 
       {open && (
         <>

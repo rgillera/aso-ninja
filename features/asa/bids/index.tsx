@@ -93,17 +93,17 @@ export default function BidSuggestionsPage() {
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-16 text-center">
             <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
             <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : loading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : keywords.length === 0 ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-16 text-center">
             <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">No tracked keywords yet</p>
             <p className="text-xs text-gray-600 light:text-gray-400 mt-1">

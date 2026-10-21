@@ -148,7 +148,7 @@ export default function AppExplorerPage() {
         <ExplorerFilters filters={filters} onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))} />
 
         {error ? (
-          <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center justify-center py-16 text-center">
             <ExclamationTriangleIcon className="size-8 text-amber-500 light:text-amber-700/70 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">{error}</p>
           </div>

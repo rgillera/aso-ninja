@@ -1,4 +1,5 @@
 import { StarIcon } from "@heroicons/react/24/solid";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import { STAR_COLORS, type RatingHistogram } from "./types";
 
 function formatCompact(n: number) {
@@ -46,34 +47,36 @@ export function CurrentRatingCard({ store, rating, ratingCount, ratingHistogram 
   const hasBreakdown = !!ratingHistogram && STAR_ORDER.some((star) => ratingHistogram[star] > 0);
 
   return (
-    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
-      <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">Current rating</p>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
-            {rating != null ? rating.toFixed(2) : "—"}
-            <StarIcon className="size-4 text-amber-400 light:text-amber-700" />
-          </p>
-          <p className="mt-1 text-xs text-gray-500">current average rating</p>
+    <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Current rating" />
+      <div className="p-5">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="flex items-center gap-1.5 text-2xl font-bold text-white light:text-gray-900 leading-none">
+              {rating != null ? rating.toFixed(2) : "—"}
+              <StarIcon className="size-4 text-amber-400 light:text-amber-700" />
+            </p>
+            <p className="mt-1 text-xs text-gray-500">current average rating</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">
+              {ratingCount != null ? ratingCount.toLocaleString() : "—"}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">total ratings</p>
+          </div>
         </div>
-        <div>
-          <p className="text-2xl font-bold text-white light:text-gray-900 leading-none">
-            {ratingCount != null ? ratingCount.toLocaleString() : "—"}
-          </p>
-          <p className="mt-1 text-xs text-gray-500">total ratings</p>
-        </div>
-      </div>
 
-      <div className="mt-4">
-        {hasBreakdown ? (
-          <StarBreakdown histogram={ratingHistogram!} />
-        ) : (
-          <p className="text-xs text-gray-600 light:text-gray-400">
-            {store === "ios"
-              ? "Apple doesn’t publish a per-star breakdown for App Store ratings — only the average and total shown above are available."
-              : "No per-star breakdown available for this app yet."}
-          </p>
-        )}
+        <div className="mt-4">
+          {hasBreakdown ? (
+            <StarBreakdown histogram={ratingHistogram!} />
+          ) : (
+            <p className="text-xs text-gray-600 light:text-gray-400">
+              {store === "ios"
+                ? "Apple doesn’t publish a per-star breakdown for App Store ratings — only the average and total shown above are available."
+                : "No per-star breakdown available for this app yet."}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

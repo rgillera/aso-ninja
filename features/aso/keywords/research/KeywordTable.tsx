@@ -25,6 +25,7 @@ import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
 import { LiveSearchPanel } from "./LiveSearchPanel";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
@@ -637,6 +638,7 @@ export function KeywordTable({
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm transition-all">
+      <CardHeader title="Tracked keywords" count={keywords.length} />
 
       {/* Filter toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex-wrap gap-y-2">
