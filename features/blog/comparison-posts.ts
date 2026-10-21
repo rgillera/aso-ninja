@@ -11,7 +11,7 @@ import type { BlogPost } from "./posts";
 const SIGNUP_CTA = {
   type: "cta" as const,
   heading: "Try AppASO free",
-  body: "Track 100 keywords across unlimited iOS and Android apps for free. Upgrade to Pro for unlimited keywords, relevancy scoring, and download estimates from $24/mo billed yearly. No credit card required.",
+  body: "Track 100 keywords across 2 iOS or Android apps or countries for free. Upgrade to Pro for unlimited keywords, relevancy scoring, and download estimates from $24/mo billed yearly. No credit card required.",
   label: "Create free account",
   href: "/signup",
 };
@@ -20,7 +20,7 @@ const APPASO_PLANS_TABLE = {
   type: "table" as const,
   headers: ["AppASO plan", "Price", "Tracked keywords", "Apps", "History", "Highlights"],
   rows: [
-    ["Free", "$0", "100", "Unlimited", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 40 keywords"],
+    ["Free", "$0", "100", "2 apps or countries", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 40 keywords"],
     ["Pro", "$29/mo, or $24/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, AI keyword suggestions, 5 competitors per app, 3 seats"],
     ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), keyword simulator, 8 competitors per app"],
     ["Enterprise", "Custom", "Custom", "Unlimited", "Custom", "Custom limits for publishers and agencies"],
@@ -91,7 +91,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           ["Tracked keywords", "1,500", "Unlimited"],
           ["Apps", "10", "Unlimited"],
           ["History", "12 months", "6 months (1 year on Pro+)"],
-          ["Relevancy scoring", "Yes", "Yes, up to 700 keywords"],
+          ["Relevancy scoring", "Yes", "Yes, up to 1,000 keywords"],
           ["Downloads per keyword", "Organic installs per keyword", "Est. downloads per keyword, from your connected App Store Connect or Play Console totals"],
           ["Platforms", "iOS & Google Play", "iOS & Google Play"],
         ],
@@ -119,7 +119,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "faq",
         items: [
           { question: "How much does AppTweak cost?", answer: "As of October 2026, AppTweak's ASO plans are Essential at $79/mo (500 keywords, 5 apps), Grow at $249/mo (1,500 keywords, 10 apps), Grow Plus at $499/mo (3,000 keywords, 15 apps), and a custom Enterprise plan." },
-          { question: "Is there a free alternative to AppTweak?", answer: "Yes. AppASO has a free plan with 100 tracked keywords across unlimited iOS and Android apps, including keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords." },
+          { question: "Is there a free alternative to AppTweak?", answer: "Yes. AppASO has a free plan with 100 tracked keywords across 2 iOS or Android apps or countries, including keyword research, rank tracking, metadata optimization, and relevancy scoring for 40 keywords." },
           { question: "Does AppASO show downloads per keyword like AppTweak?", answer: "Yes, on Pro. AppASO estimates downloads per keyword by splitting your real total downloads from App Store Connect or Google Play Console across the keywords you rank for. AppTweak includes organic installs per keyword from its $249/mo Grow plan." },
         ],
       },
@@ -236,7 +236,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         headers: ["Feature", "AppTweak", "AppASO"],
         rows: [
           ["Platforms", "iOS & Google Play", "iOS & Google Play"],
-          ["Relevancy scoring", "All plans", "All plans (20 keywords free, 700 on Pro, 4,000 on Pro+)"],
+          ["Relevancy scoring", "All plans", "All plans (40 keywords free, 1,000 on Pro, 5,000 on Pro+)"],
           ["Downloads per keyword", "From Grow ($249/mo)", "From Pro ($29/mo), based on your connected store account's real totals"],
           ["Historical data", "6 months to all time", "1 month free, 6 months Pro, 1 year Pro+"],
           ["Rank tracking", "Included", "Refreshed at least weekly, plus on demand"],
@@ -313,7 +313,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         headers: ["Feature", "MobileAction", "AppASO"],
         rows: [
           ["Downloads per keyword", "Pro ($239/mo)", "Pro ($29/mo), based on your connected store account's real totals"],
-          ["Relevancy scoring", "Not listed on ASO plans", "All plans (20 keywords free, 700 on Pro)"],
+          ["Relevancy scoring", "Not listed on ASO plans", "All plans (40 keywords free, 1,000 on Pro)"],
           ["Competitors per app", "3 Lite, 10 Basic, 15 Pro", "5 Pro, 8 Pro+"],
           ["Apple Search Ads tooling", "Core strength, with ad intelligence", "ASA & market intelligence on Pro"],
           ["Rank tracking", "Included", "Refreshed at least weekly, plus on demand"],
@@ -329,7 +329,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         items: [
           { question: "Which is cheaper, AppASO or MobileAction?", answer: "For unlimited keyword tracking and downloads per keyword, AppASO is cheaper: Pro is $29/mo, or $24/mo billed yearly. MobileAction's cheapest plan is Lite at $15/mo, but it's limited to 100 keywords and 5 apps." },
           { question: "Does MobileAction track more competitors?", answer: "Yes. MobileAction tracks 10 competitors per app on Basic and 15 on Pro. AppASO tracks 5 per app on Pro and 8 on Pro+." },
-          { question: "Does AppASO have a free plan?", answer: "Yes. AppASO's free plan includes 100 tracked keywords across unlimited iOS and Android apps, with no credit card required." },
+          { question: "Does AppASO have a free plan?", answer: "Yes. AppASO's free plan includes 100 tracked keywords across 2 iOS or Android apps or countries, with no credit card required." },
         ],
       },
       SIGNUP_CTA,

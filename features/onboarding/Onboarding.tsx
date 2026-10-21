@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useState } from "react";
+import { ADS_CONVERSIONS, trackAdsConversion } from "@/libs/google-ads";
 import { loadOnboarding, saveOnboarding } from "./onboarding-checklist";
 import { OnboardingWizard } from "./OnboardingWizard";
 
@@ -34,6 +35,9 @@ export function Onboarding({ hasApp, workspaceId }: Props) {
     }
     /* eslint-disable-next-line react-hooks/set-state-in-effect */
     setShow(true);
+    // Fires again on each reload until the wizard is finished; the workspace
+    // ID as transaction ID keeps Google Ads counting it once.
+    trackAdsConversion(ADS_CONVERSIONS.signup, `signup-${workspaceId}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workspaceId]);
 

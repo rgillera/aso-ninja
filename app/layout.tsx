@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
+import { GoogleAdsTag } from "@/components/GoogleAdsTag";
 import MaintenancePage from "@/components/MaintenancePage";
 import { siteDescription, siteTitle } from "@/libs/seo";
 // @ts-ignore: Allow side-effect CSS import without type declarations
@@ -117,6 +118,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}
         <Analytics />
+        <GoogleAdsTag />
       </body>
     </html>
   );

@@ -15,6 +15,7 @@ import {
 import { searchStoreApps } from "@/features/dashboard/searchAction";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
+import { ADS_CONVERSIONS, trackAdsConversion } from "@/libs/google-ads";
 import type { AppSearchResult } from "@/libs/contracts";
 import type { AISuggestionsResult } from "@/app/api/keywords/ai-suggestions/route";
 
@@ -300,7 +301,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     }).catch(() => {});
   }
 
-  function handleFinish() {
+  async function handleFinish() {
     if (!selected || !addedKeywords.length || !appId) return;
     // A client-side router.push isn't enough here: Keywords Research reads its
     // active app off DashboardShell's `allApps`, which app/dashboard/layout.tsx
@@ -317,6 +318,9 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     document.cookie = `lastAppId=${appId}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
     document.cookie = `lastPreview=; path=/; max-age=0; SameSite=Lax`;
     onDone();
+    // Awaited (it's capped well under a second) so the navigation below
+    // can't cancel the conversion hit before it leaves the page.
+    await trackAdsConversion(ADS_CONVERSIONS.activation, `activation-${workspaceId}`);
     // `tip=tour` tells the research page to walk this first-timer through
     // the coach mark once, right after they land: Keyword Suggestions →
     // the Opportunity column → Inspect, on into the Keyword Inspector and

@@ -212,7 +212,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: "faq",
         items: [
-          { question: "What is the cheapest ASO tool that covers iOS and Google Play?", answer: "AppASO has a free plan with 100 tracked keywords across unlimited iOS and Android apps, and Pro costs $29/mo, or $24/mo billed yearly, for unlimited keywords. Astro is cheaper at $9/mo billed yearly, but it only covers the App Store and runs only on a Mac." },
+          { question: "What is the cheapest ASO tool that covers iOS and Google Play?", answer: "AppASO has a free plan with 100 tracked keywords across 2 iOS or Android apps or countries, and Pro costs $29/mo, or $24/mo billed yearly, for unlimited keywords. Astro is cheaper at $9/mo billed yearly, but it only covers the App Store and runs only on a Mac." },
           { question: "Which ASO tool is best for indie developers?", answer: "It depends on your platforms and budget. Solo iOS developers on a Mac often pick Astro. Indie developers shipping on both iOS and Android, or who want relevancy scoring and downloads per keyword without enterprise pricing, are AppASO's core audience." },
           { question: "Does AppASO replace Sensor Tower?", answer: "No. Sensor Tower is built for market-wide download and revenue intelligence used in strategy and investment decisions. AppASO is built for day-to-day ASO: tracking your own keywords and improving your own listing." },
         ],
