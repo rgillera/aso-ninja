@@ -97,6 +97,32 @@
   75%, 100% { transform: scale(1.25); opacity: 0; }
 }
 
+/* The row the homepage hero demo (features/portal/DashboardHeroDemo.tsx)
+   adds to its tracked keywords table: a short drop-in so it reads as new. */
+@keyframes hero-row-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Keyword Performance chart in the hero demo: the chart wipes in left to
+   right (a clip, so it works with its non-scaling strokes), then the
+   end-of-line marker fades in. */
+@keyframes hero-wipe {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes hero-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Fills the active chapter label under the hero demo over the length of
+   that chapter (its duration is set inline from the demo's TIMELINE). */
+@keyframes hero-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 /*
  * Shadow tokens for the public site — the portal home page, the legal/blog/
  * about-style pages, and the standalone auth screens (login, signup,

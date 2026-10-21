@@ -1,6 +1,7 @@
 "use client";
 
-import { DashboardHeroDemo } from "./DashboardHeroDemo";
+import { PlayIcon } from "@heroicons/react/20/solid";
+import { DashboardHeroDemo, DEMO_RESTART_EVENT } from "./DashboardHeroDemo";
 import PortalEyebrow from "./PortalEyebrow";
 
 const TRUSTED_AVATARS = [
@@ -54,8 +55,24 @@ export default function PortalHero({
             >
               {isAuthenticated ? "Go to dashboard" : "Create free account"}
             </a>
-            <a href="#how-it-works" className="text-sm font-semibold text-gray-700 transition-colors hover:text-gray-900">
-              See how it works <span aria-hidden="true">→</span>
+            {/* Scrolls to the product demo and restarts it from step 1. Still a
+                plain anchor link to the demo if this script never runs. */}
+            <a
+              href="#product-demo"
+              onClick={(e) => {
+                const demo = document.getElementById("product-demo");
+                if (!demo) return;
+                e.preventDefault();
+                const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                demo.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+                window.dispatchEvent(new Event(DEMO_RESTART_EVENT));
+              }}
+              className="group inline-flex items-center gap-2 text-sm font-semibold text-gray-700 transition-colors hover:text-gray-900"
+            >
+              <span className="flex size-7 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm ring-1 ring-gray-950/10 transition-transform group-hover:scale-105">
+                <PlayIcon className="ml-0.5 size-3.5" />
+              </span>
+              Watch the tour
             </a>
           </div>
           {!isAuthenticated && (
@@ -89,7 +106,7 @@ export default function PortalHero({
           </div>
         </div>
 
-        <div className="relative mx-auto mt-20 max-w-6xl">
+        <div id="product-demo" className="relative mx-auto mt-20 max-w-6xl scroll-mt-24">
           <div
             aria-hidden="true"
             className="absolute -inset-x-10 -inset-y-6 -z-10 rounded-[2.5rem] bg-gradient-to-b from-indigo-200/40 to-transparent blur-2xl"
