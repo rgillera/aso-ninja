@@ -217,17 +217,17 @@ export const LEARN_GROUPS: LearnGroup[] = [
         description:
           "Keyword Inspector shows how popular any keyword is, how hard it is to rank for, and which apps rank for it right now, in any country. It's for checking a keyword before you commit to it, with no app needed. Free plans get 3 lookups a day, and Pro and above are unlimited.",
         benefits: [
-          "Vet a keyword's popularity, difficulty and estimated daily searches before adding it to an app",
+          "Vet a keyword's volume, difficulty and estimated daily searches before adding it to an app",
           "Compare the same keyword across countries and between the App Store and Google Play",
           "See the top 20 apps ranking for a keyword today, with their ratings and prices",
         ],
         howToUse: [
           "Enter a keyword, pick a store and country, and click Inspect",
-          "Use Popularity history to see whether demand for the keyword is growing or fading",
+          "Use Volume history to see whether demand for the keyword is growing or fading",
           "Add the keywords worth targeting to your app in Keyword Research so they get ongoing rank tracking",
         ],
         goodToKnow: [
-          "Popularity is the same score shown as Volume in Keyword Research",
+          "Volume is the same score shown in Keyword Research and Keyword Performance",
           "Google Play only shows its first page of about 20 to 30 search results, so result counts are shown for the App Store only",
           "Requires Pro",
         ],

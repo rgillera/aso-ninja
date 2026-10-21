@@ -148,7 +148,7 @@ export function VolumeHistoryPanel({ keyword, store, country, onClose }: Props) 
             <div className="h-40 flex flex-col items-center justify-center gap-2 text-center">
               <p className="text-sm text-gray-400 light:text-gray-600">No history yet</p>
               <p className="text-xs text-gray-600 light:text-gray-400 max-w-xs">
-                Popularity is recorded each time keywords are fetched. Check back tomorrow to see the trend build up.
+                Volume is recorded each time keywords are fetched. Check back tomorrow to see the trend build up.
               </p>
             </div>
           )}

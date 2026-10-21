@@ -32,6 +32,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const lastPreview = cookieStore.get("lastPreview")?.value;
   const lastWorkspaceId = cookieStore.get("lastWorkspaceId")?.value;
   const initialTheme: Theme = cookieStore.get("theme")?.value === "dark" ? "dark" : "light";
+  const initialSidebarCollapsed = cookieStore.get("sidebarCollapsed")?.value === "1";
 
   const [{ data: workspaces }, { data: apps }, { data: memberships }] = await Promise.all([
     supabase.from("workspaces").select("*").order("created_at", { ascending: true }),
@@ -95,6 +96,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           initialWorkspaceLimit={initialWorkspaceLimit}
           initialCompetitorLimit={initialCompetitorLimit}
           initialTheme={initialTheme}
+          initialSidebarCollapsed={initialSidebarCollapsed}
         >
           {children}
         </DashboardShell>

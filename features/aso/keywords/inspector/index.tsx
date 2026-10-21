@@ -757,7 +757,7 @@ export default function KeywordInspectorPage() {
       </div>
       <div>
         <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
-        <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty, daily searches and live results for any keyword, and whether you can rank for it</p>
+        <p className="text-xs text-gray-500 leading-tight">Volume, difficulty, daily searches and live results for any keyword, and whether you can rank for it</p>
       </div>
     </div>
   );
@@ -949,7 +949,7 @@ export default function KeywordInspectorPage() {
                         className="flex items-center gap-1.5 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
                       >
                         <ArrowTrendingUpIcon className="size-3.5" />
-                        Popularity history
+                        Volume history
                       </button>
                     )}
                     {canTrack && activeApp && trackedTerms && (
@@ -991,7 +991,7 @@ export default function KeywordInspectorPage() {
                   <div ref={statsRef} className={`grid grid-cols-2 gap-3 rounded-2xl transition-all ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"} ${
                     tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}>
-                    <StatCard label="Popularity" hint="Estimated search demand (0 to 100), from App Store and Google Play search signals. Shown as Volume in Keyword Research.">
+                    <StatCard label="Volume" hint="Estimated search demand (0 to 100), from App Store and Google Play search signals.">
                       <div className="flex items-baseline gap-2">
                         <span className="text-2xl font-semibold text-white light:text-gray-900">{metrics.popularity}</span>
                         <span className={`text-xs font-medium ${pop.className}`}>{pop.label}</span>
@@ -1005,7 +1005,7 @@ export default function KeywordInspectorPage() {
                       </div>
                       <ScoreBar value={metrics.difficulty} className={diff.bar} />
                     </StatCard>
-                    <StatCard label="Est. daily searches" hint="A ballpark modeled from Popularity, for comparing keywords. Not a store-reported count.">
+                    <StatCard label="Est. daily searches" hint="A ballpark modeled from Volume, for comparing keywords. Not a store-reported count.">
                       <span className="text-2xl font-semibold text-white light:text-gray-900">~{NUMBER_FORMATTER.format(metrics.estDailySearches)}</span>
                       <p className="mt-2 text-[11px] text-gray-500">searches per day</p>
                     </StatCard>
@@ -1173,7 +1173,7 @@ export default function KeywordInspectorPage() {
         total={TOUR_STEPS.length}
         icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={metrics && query && (
-          <>About <span className="font-semibold text-white light:text-gray-900">{NUMBER_FORMATTER.format(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Popularity is the demand, and Difficulty is how hard the top spots are to take.</>
+          <>About <span className="font-semibold text-white light:text-gray-900">{NUMBER_FORMATTER.format(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Volume is the demand, and Difficulty is how hard the top spots are to take.</>
         )}
         buttonLabel="Next"
         onAdvance={advanceTour}

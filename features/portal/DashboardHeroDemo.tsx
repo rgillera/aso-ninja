@@ -945,7 +945,7 @@ export function DashboardHeroDemo() {
               </span>
               <div>
                 <p className="text-sm font-semibold text-gray-900 leading-tight">Keyword Inspector</p>
-                <p className="text-xs text-gray-500 leading-tight">Popularity, difficulty, daily searches and live results for any keyword</p>
+                <p className="text-xs text-gray-500 leading-tight">Volume, difficulty, daily searches and live results for any keyword</p>
               </div>
             </div>
 
@@ -966,7 +966,7 @@ export function DashboardHeroDemo() {
               </div>
 
               <div className="grid grid-cols-4 gap-3">
-                <InspectorStat label="Popularity" value={String(NEW_ROW.volume)} bar={NEW_ROW.volume} />
+                <InspectorStat label="Volume" value={String(NEW_ROW.volume)} bar={NEW_ROW.volume} />
                 <InspectorStat label="Difficulty" value={String(NEW_ROW.diff)} bar={NEW_ROW.diff} />
                 <div ref={searchesRef}>
                   <InspectorStat label="Est. daily searches" value="~9.8K" sub="people a day" />

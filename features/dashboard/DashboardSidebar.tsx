@@ -28,6 +28,8 @@ import {
   ScaleIcon,
   BanknotesIcon,
   DocumentMagnifyingGlassIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
@@ -88,6 +90,27 @@ function NewLinkBadge({ href, badge, workspaces, currentPath }: { href: string; 
   );
 }
 
+// Desktop-only icon rail. Kept in a cookie, not localStorage, so the server
+// renders the right width: nav links are full page loads, and a client-only
+// read would flash the full sidebar on every one.
+const COLLAPSED_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function writeCollapsedCookie(value: boolean) {
+  document.cookie = `sidebarCollapsed=${value ? "1" : "0"}; path=/; max-age=${COLLAPSED_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
+// Section label in the full sidebar; a hairline in the icon rail.
+function SectionHeading({ label, rail }: { label: string; rail: boolean }) {
+  return (
+    <>
+      <p className={`px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400 ${rail ? "lg:hidden" : ""}`}>
+        {label}
+      </p>
+      {rail && <div className="hidden lg:block mx-3 mb-2 border-t border-white/[0.07] light:border-black/[0.08]" />}
+    </>
+  );
+}
+
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug; newBadge?: NewBadge }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
   { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
@@ -130,6 +153,8 @@ type Props = {
   planSlug?: PlanSlug;
   /** Max workspaces the current user may own under their plan; null = unlimited */
   workspaceLimit?: number | null;
+  /** Collapsed to the icon rail on first render, from the sidebarCollapsed cookie */
+  initialCollapsed?: boolean;
   /** Below the lg breakpoint the sidebar renders as an off-canvas drawer, shown when true */
   isMobileOpen?: boolean;
   /** Closes the drawer — backdrop click, a nav link click, or Escape */
@@ -151,6 +176,7 @@ export default function DashboardSidebar({
   role,
   planSlug = "free",
   workspaceLimit,
+  initialCollapsed = false,
   isMobileOpen = false,
   onMobileClose,
 }: Props) {
@@ -191,6 +217,12 @@ export default function DashboardSidebar({
 
   const ref = useRef<HTMLDivElement>(null);
   const { active: tourActive, onAdvance: onAdvanceTour } = useSidebarTour();
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  // The tour's last step points at a nav label, so it always gets the full sidebar.
+  // All rail styling is lg:-prefixed: the mobile drawer is always full width.
+  const rail = collapsed && !tourActive;
+  const railHide = rail ? "lg:hidden" : "";
+  const railLink = rail ? "lg:justify-center lg:px-0" : "";
   const navRef = useRef<HTMLElement>(null);
 
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
@@ -231,26 +263,27 @@ export default function DashboardSidebar({
         // is mostly cosmetic — avoids the drawer visibly staying open mid-navigation.
         if ((e.target as HTMLElement).closest("a")) onMobileClose?.();
       }}
-      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0a0a0c] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0a0a0c] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-all duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } ${rail ? "lg:w-16" : ""}`}
     >
       {/* Workspace switcher */}
-      <div className="relative p-3 border-b border-white/[0.07] light:border-black/[0.08]" ref={ref}>
+      <div className={`relative p-3 border-b border-white/[0.07] light:border-black/[0.08] ${rail ? "lg:px-2" : ""}`} ref={ref}>
         <div className="group flex items-center rounded-lg hover:bg-white/5 light:hover:bg-black/[0.04] transition-colors">
           <button
             onClick={() => setOpen(!open)}
-            className="flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 text-sm font-medium text-white light:text-gray-900"
+            title={rail ? active?.name ?? "My Workspace" : undefined}
+            className={`flex flex-1 min-w-0 items-center gap-2.5 px-3 py-1.5 text-sm font-medium text-white light:text-gray-900 ${railLink}`}
           >
             <div className="flex size-6 shrink-0 items-center justify-center rounded bg-indigo-500 text-xs font-bold text-white">
               {active ? workspaceInitial(active.name) : "W"}
             </div>
-            <span className="truncate">{active?.name ?? "My Workspace"}</span>
+            <span className={`truncate ${railHide}`}>{active?.name ?? "My Workspace"}</span>
           </button>
           <a
             href={active ? `/dashboard/settings/workspace/${active.id}` : "#"}
             title="Workspace settings"
-            className={`shrink-0 rounded p-1.5 mr-1 transition-all ${
+            className={`shrink-0 rounded p-1.5 mr-1 transition-all ${railHide} ${
               currentPath.startsWith("/dashboard/settings/workspace")
                 ? "text-indigo-400 light:text-indigo-600"
                 : "opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-white/10 light:hover:bg-black/[0.06]"
@@ -260,12 +293,29 @@ export default function DashboardSidebar({
           </a>
           <ChevronDownIcon
             onClick={() => setOpen(!open)}
-            className={`size-4 shrink-0 text-gray-500 mr-3 cursor-pointer transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+            className={`size-4 shrink-0 text-gray-500 mr-3 cursor-pointer transition-transform duration-150 ${open ? "rotate-180" : ""} ${railHide}`}
           />
         </div>
 
+        {/* Collapse toggle, sitting on the sidebar's right edge at the header
+            divider. Desktop only: below lg the sidebar is a drawer with its own close. */}
+        {!tourActive && (
+          <button
+            type="button"
+            onClick={() => {
+              setCollapsed(!collapsed);
+              writeCollapsedCookie(!collapsed);
+            }}
+            title={rail ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={rail ? "Expand sidebar" : "Collapse sidebar"}
+            className="absolute -right-3 bottom-0 z-30 hidden size-6 translate-y-1/2 items-center justify-center rounded-full bg-[#141417] light:bg-white text-gray-500 ring-1 ring-white/[0.1] light:ring-black/[0.1] shadow-md shadow-black/20 light:shadow-black/5 hover:text-white light:hover:text-gray-900 transition-colors lg:flex"
+          >
+            {rail ? <ChevronDoubleRightIcon className="size-3" /> : <ChevronDoubleLeftIcon className="size-3" />}
+          </button>
+        )}
+
         {open && (
-          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 overflow-hidden">
+          <div className={`absolute left-4 right-4 top-full z-50 mt-1 rounded-xl ${rail ? "lg:left-2 lg:right-auto lg:w-64" : ""} bg-[#141417] light:bg-white shadow-xl shadow-black/30 overflow-hidden`}>
             <div className="px-2 py-1.5">
               <p className="px-2 py-1 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
                 Workspaces
@@ -331,7 +381,7 @@ export default function DashboardSidebar({
       {/* Nav */}
       <nav
         ref={navRef}
-        className={`flex-1 overflow-y-auto p-2.5 space-y-0.5 transition-all ${
+        className={`flex-1 overflow-y-auto overflow-x-hidden p-2.5 space-y-0.5 transition-all ${rail ? "lg:px-2" : ""} ${
           tourActive ? "ring-2 ring-inset ring-indigo-400/70 rounded-lg" : ""
         }`}
       >
@@ -352,52 +402,54 @@ export default function DashboardSidebar({
         />
         <a
           href={active ? `/dashboard?ws=${active.id}` : "/dashboard"}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          title={rail ? "My Apps" : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
             currentPath === "/dashboard"
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <Squares2X2Icon className="size-5 shrink-0" />
-          My Apps
+          <span className={railHide}>My Apps</span>
         </a>
 
         {hasAsoIntelligence && (
         <>
         <a
           href={reportHref()}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          title={rail ? "Reports" : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
             isOnReport
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <DocumentChartBarIcon className="size-5 shrink-0" />
-          Reports
+          <span className={railHide}>Reports</span>
         </a>
 
         <a
           href={metadataPreviewHref()}
-          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          title={rail ? "Metadata" : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
             isOnMetadataPreview
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <EyeIcon className="size-5 shrink-0" />
-          Metadata
+          <span className={railHide}>Metadata</span>
         </a>
 
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
-            Keyword Intelligence
-          </p>
+          <SectionHeading label="Keyword Intelligence" rail={rail} />
           <div className="space-y-0.5">
             {keywordLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                title={rail ? link.label : undefined}
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
                   currentPath.startsWith(link.href)
                     ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                     : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
@@ -405,11 +457,11 @@ export default function DashboardSidebar({
               >
                 {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
                 <link.icon className="size-5 shrink-0" />
-                <span className="flex-1 whitespace-nowrap">{link.label}</span>
-                {link.newBadge && (
+                <span className={`flex-1 whitespace-nowrap ${railHide}`}>{link.label}</span>
+                {link.newBadge && !rail && (
                   <NewLinkBadge href={link.href} badge={link.newBadge} workspaces={workspaces} currentPath={currentPath} />
                 )}
-                {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                {link.minPlan && !rail && !isPlanAtLeast(planSlug, link.minPlan) && (
                   <PlanLockBadge minPlan={link.minPlan} />
                 )}
               </a>
@@ -421,25 +473,24 @@ export default function DashboardSidebar({
 
         {hasAsaIntelligence && (
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
-            ASA Intelligence
-          </p>
+          <SectionHeading label="ASA Intelligence" rail={rail} />
           <div className="space-y-0.5">
             <a
               href="/dashboard/asa/bids"
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              title={rail ? "Bid Suggestions" : undefined}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
                 currentPath.startsWith("/dashboard/asa/bids")
                   ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                   : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
               }`}
             >
               <BanknotesIcon className="size-5 shrink-0" />
-              <span className="flex-1">Bid Suggestions</span>
-              {!isPlanAtLeast(planSlug, "pro") && <PlanLockBadge minPlan="pro" />}
+              <span className={`flex-1 ${railHide}`}>Bid Suggestions</span>
+              {!rail && !isPlanAtLeast(planSlug, "pro") && <PlanLockBadge minPlan="pro" />}
             </a>
 
             {/* Campaign Data — collapsible: Active Bids, Spend Insights, Efficiency all read from a connected Apple Search Ads account */}
-            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${
+            <div className={`w-full flex items-center justify-between rounded-lg text-sm font-medium transition-colors ${railHide} ${
               asaAccountLinks.some((l) => currentPath.startsWith(l.href))
                 ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                 : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
@@ -462,21 +513,25 @@ export default function DashboardSidebar({
               </button>
             </div>
 
-            {asaAccountOpen && (
-              <div className="ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5">
+            {/* The rail has no room for a nested group, so it shows the three flat */}
+            {(asaAccountOpen || rail) && (
+              <div className={`ml-4 pl-3 border-l border-white/[0.07] light:border-black/[0.08] space-y-0.5 ${
+                rail ? `lg:ml-0 lg:pl-0 lg:border-l-0 ${asaAccountOpen ? "" : "hidden lg:block"}` : ""
+              }`}>
                 {asaAccountLinks.map((link) => (
                   <a
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    title={rail ? link.label : undefined}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
                       currentPath.startsWith(link.href)
                         ? "text-white light:text-indigo-700 bg-white/10 light:bg-indigo-50"
                         : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                     }`}
                   >
                     <link.icon className="size-5 shrink-0" />
-                    <span className="flex-1 whitespace-nowrap">{link.label}</span>
-                    {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                    <span className={`flex-1 whitespace-nowrap ${railHide}`}>{link.label}</span>
+                    {link.minPlan && !rail && !isPlanAtLeast(planSlug, link.minPlan) && (
                       <PlanLockBadge minPlan={link.minPlan} />
                     )}
                   </a>
@@ -489,9 +544,7 @@ export default function DashboardSidebar({
 
         {hasMarketIntelligence && (
         <div className="pt-3">
-          <p className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
-            Market Intelligence
-          </p>
+          <SectionHeading label="Market Intelligence" rail={rail} />
           <div className="space-y-0.5">
             {marketLinks.map((link) => {
               const isActive = currentPath.startsWith(link.href);
@@ -499,15 +552,16 @@ export default function DashboardSidebar({
                 <a
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  title={rail ? link.label : undefined}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
                     isActive
                       ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                       : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
                   }`}
                 >
                   <link.icon className="size-5 shrink-0" />
-                  <span className="flex-1">{link.label}</span>
-                  {link.minPlan && !isPlanAtLeast(planSlug, link.minPlan) && (
+                  <span className={`flex-1 ${railHide}`}>{link.label}</span>
+                  {link.minPlan && !rail && !isPlanAtLeast(planSlug, link.minPlan) && (
                     <PlanLockBadge minPlan={link.minPlan} />
                   )}
                 </a>
@@ -519,55 +573,60 @@ export default function DashboardSidebar({
       </nav>
 
       {/* Account footer */}
-      <div className="border-t border-white/[0.07] light:border-black/[0.08] p-2.5 space-y-0.5">
+      <div className={`border-t border-white/[0.07] light:border-black/[0.08] p-2.5 space-y-0.5 ${rail ? "lg:px-2" : ""}`}>
         <a
           href="/dashboard/certification"
-          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
+          title={rail ? "Learn & Get Certified" : undefined}
+          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${railLink} ${
             currentPath.startsWith("/dashboard/certification")
               ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
               : "text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
           }`}
         >
           <TrophyIcon className="size-5 shrink-0" />
-          Learn &amp; Get Certified
+          <span className={railHide}>Learn &amp; Get Certified</span>
         </a>
         <a
           href="mailto:hello@appaso.io"
-          className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+          title={rail ? "Email support" : undefined}
+          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium ${railLink} text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors`}
         >
           <EnvelopeIcon className="size-5 shrink-0" />
-          Email support
+          <span className={railHide}>Email support</span>
         </a>
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"
-            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+            title={rail ? `Manage Plan (${planBadge.label})` : undefined}
+            className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium ${railLink} text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors`}
           >
             <CreditCardIcon className="size-5 shrink-0" />
-            <span className="flex-1">Manage Plan</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${planBadge.className}`}>
+            <span className={`flex-1 ${railHide}`}>Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${railHide} ${planBadge.className}`}>
               {planBadge.label}
             </span>
           </a>
         ) : (
           <div
             title="Only the workspace owner can manage the plan"
-            className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-600 cursor-not-allowed"
+            className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium ${railLink} text-gray-600 cursor-not-allowed`}
           >
             <CreditCardIcon className="size-5 shrink-0" />
-            <span className="flex-1">Manage Plan</span>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${planBadge.className}`}>
+            <span className={`flex-1 ${railHide}`}>Manage Plan</span>
+            <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium opacity-60 ${railHide} ${planBadge.className}`}>
               {planBadge.label}
             </span>
           </div>
         )}
         <a
           href="/dashboard/settings/account"
-          className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors"
+          title={rail ? "Account settings" : undefined}
+          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium ${railLink} text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors`}
         >
           <UserCircleIcon className="size-5 shrink-0" />
-          Account settings
+          <span className={railHide}>Account settings</span>
         </a>
+
       </div>
     </aside>
     </>

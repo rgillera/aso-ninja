@@ -99,12 +99,13 @@ type Props = {
   initialWorkspaceLimit?: number | null;
   initialCompetitorLimit?: number | null;
   initialTheme: Theme;
+  initialSidebarCollapsed: boolean;
   children: React.ReactNode;
 };
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTheme, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTheme, initialSidebarCollapsed, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -489,6 +490,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           role={currentRole}
           planSlug={planSlug}
           workspaceLimit={workspaceLimit}
+          initialCollapsed={initialSidebarCollapsed}
           isMobileOpen={mobileNavOpen}
           onMobileClose={() => setMobileNavOpen(false)}
         />
