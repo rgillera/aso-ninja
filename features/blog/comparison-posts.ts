@@ -5,9 +5,8 @@ import type { BlogPost } from "./posts";
 // MobileAction, Sonar and Astro were all checked 2026-10-03). AppASO figures
 // mirror features/subscription/plans.ts; update both together when pricing
 // changes. Keep the "where they win" sections honest: AppASO's volume is a
-// score based on live App Store and Google Play search suggestions (not
-// Apple Search Ads popularity), and tracked rankings refresh at least
-// weekly, not daily.
+// score based on live App Store and Google Play search suggestions, and
+// tracked rankings refresh at least weekly, not daily.
 
 const SIGNUP_CTA = {
   type: "cta" as const,
@@ -100,7 +99,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "Where AppTweak is still the better choice" },
       {
         type: "paragraph",
-        text: "Be honest with yourself about what you need. AppTweak has years of historical data, market-wide intelligence, and a much larger dataset behind it. AppASO's search volume is based on live App Store and Google Play search suggestions rather than Apple's Search Ads popularity score, tracked rankings refresh at least once a week rather than daily, and history goes back 6 months on Pro. If you manage a large portfolio, report to stakeholders on long-term trends, or need market intelligence beyond your own keywords, AppTweak's depth is worth the price.",
+        text: "Be honest with yourself about what you need. AppTweak has years of historical data, market-wide intelligence, and a much larger dataset behind it. AppASO's tracked rankings refresh at least once a week rather than daily, and history goes back 6 months on Pro. If you manage a large portfolio, report to stakeholders on long-term trends, or need market intelligence beyond your own keywords, AppTweak's depth is worth the price.",
       },
       {
         type: "paragraph",
@@ -180,7 +179,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
           "Apple Search Ads campaign management and ad intelligence are core to MobileAction. AppASO Pro includes ASA and market intelligence features, but MobileAction goes much deeper on paid UA.",
           "More competitors per app: 10 on Basic and 15 on Pro, versus 5 on AppASO Pro and 8 on Pro+.",
           "Longer-established datasets and ad creative insights across 40+ ad networks on Enterprise.",
-          "AppASO's search volume is based on live App Store and Google Play search suggestions, not Apple's popularity score, and tracked rankings refresh at least weekly, not daily.",
+          "AppASO's tracked rankings refresh at least weekly, not daily.",
         ],
       },
       { type: "heading", text: "AppASO plans at a glance" },
@@ -343,8 +342,8 @@ export const COMPARISON_POSTS: BlogPost[] = [
     seoTitle: "AppASO vs Sonar: ASO Tool Comparison (2026)",
     title: "AppASO vs Sonar: Honest Comparison for Indie App Developers",
     excerpt:
-      "Sonar and AppASO are both priced for indie developers. Here's how they really differ: popularity data, rank tracking, keyword limits, relevancy, and downloads per keyword.",
-    metaDescription: "AppASO vs Sonar for indie app developers: Apple popularity data, daily ranks, keyword limits, relevancy scoring, download estimates, and pricing compared.",
+      "Sonar and AppASO are both priced for indie developers. Here's how they really differ: rank tracking, keyword limits, relevancy, and downloads per keyword.",
+    metaDescription: "AppASO vs Sonar for indie app developers: daily ranks, history, keyword limits, relevancy scoring, download estimates, and pricing compared.",
     date: "2026-09-30",
     updated: "2026-10-03",
     readTime: "5 min read",
@@ -372,7 +371,6 @@ export const COMPARISON_POSTS: BlogPost[] = [
       {
         type: "bullets",
         items: [
-          "iOS search popularity comes straight from Apple. AppASO's volume score is based on live App Store and Google Play search suggestions.",
           "Daily rank tracking for every tracked keyword. AppASO refreshes tracked rankings at least weekly, plus whenever you research a keyword.",
           "Unlimited historical data, versus 6 months on AppASO Pro and 1 year on Pro+.",
           "A REST API, CLI, and MCP access for developers who want to script their ASO.",
@@ -393,13 +391,12 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "Which one should you pick?" },
       {
         type: "paragraph",
-        text: "If Apple's own popularity numbers, daily rank checks, or API access matter most, Sonar is a great choice. If you'd rather start free, track without caps, and see which keywords actually fit your app and bring in downloads, AppASO is the better fit. Both are a fraction of what the big platforms charge.",
+        text: "If daily rank checks, unlimited history, or API access matter most, Sonar is a great choice. If you'd rather start free, track without caps, and see which keywords actually fit your app and bring in downloads, AppASO is the better fit. Both are a fraction of what the big platforms charge.",
       },
       {
         type: "faq",
         items: [
           { question: "How much does Sonar cost?", answer: "As of October 2026, Sonar's Indie plan costs $29/mo or $290/yr for 10 apps and 2,500 keywords, and the Agency plan costs $149/mo for 50 apps and 10,000 keywords. A 7-day free trial is available." },
-          { question: "Does Sonar use Apple's search popularity data?", answer: "Yes. Sonar shows Apple-reported search popularity for iOS. AppASO's volume score is based on live App Store and Google Play search suggestions." },
           { question: "Which tool tracks rankings more often?", answer: "Sonar tracks rankings daily. AppASO refreshes tracked rankings at least once a week, plus whenever you research a keyword." },
         ],
       },
@@ -507,7 +504,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         headers: ["Tool", "Starting price", "Platforms", "Keyword limit", "Best for"],
         rows: [
           ["AppASO", "Free; Pro $29/mo", "iOS & Google Play", "100 free, unlimited on Pro", "Indie devs on both stores who want relevancy and downloads per keyword"],
-          ["Sonar", "$29/mo, or $290/yr", "iOS & Google Play", "2,500 on Indie", "Devs who want Apple's popularity data, daily ranks, and an API"],
+          ["Sonar", "$29/mo, or $290/yr", "iOS & Google Play", "2,500 on Indie", "Devs who want daily ranks, unlimited history, and an API"],
           ["Astro", "$9/mo billed yearly", "iOS only, Mac app", "Unlimited", "Solo iOS developers on a Mac"],
           ["MobileAction Lite", "$15/mo", "iOS & Google Play", "100", "Small apps that may grow into Apple Search Ads"],
         ],
@@ -519,12 +516,12 @@ export const COMPARISON_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Where it falls short: search volume is based on live App Store and Google Play search suggestions rather than Apple's popularity score, tracked rankings refresh at least weekly rather than daily, and Pro keeps 6 months of history.",
+        text: "Where it falls short: tracked rankings refresh at least weekly rather than daily, and Pro keeps 6 months of history.",
       },
       { type: "heading", text: "2. Sonar" },
       {
         type: "paragraph",
-        text: "Sonar's Indie plan costs $29/mo or $290/yr for 10 apps and 2,500 keywords, with daily rank tracking, Apple-reported iOS search popularity, unlimited history, unlimited competitors, and a REST API, CLI, and MCP access. It's a strong choice for developers who like to script their workflow.",
+        text: "Sonar's Indie plan costs $29/mo or $290/yr for 10 apps and 2,500 keywords, with daily rank tracking, unlimited history, unlimited competitors, and a REST API, CLI, and MCP access. It's a strong choice for developers who like to script their workflow.",
       },
       {
         type: "paragraph",
@@ -553,7 +550,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Only on iOS, working alone on a Mac: Astro.",
-          "Want Apple's own popularity data, daily ranks, or an API: Sonar.",
+          "Want daily ranks, unlimited history, or an API: Sonar.",
           "On iOS and Android, and want relevancy and downloads per keyword, or want to start free: AppASO.",
           "Planning to invest in Apple Search Ads soon: MobileAction.",
         ],
@@ -561,7 +558,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       {
         type: "faq",
         items: [
-          { question: "What is the best AppTweak alternative for indie developers?", answer: "For iOS-only developers on a Mac, Astro is the cheapest. For Apple's own popularity data, daily ranks, and an API, Sonar is strong. For iOS and Android with relevancy scoring, downloads per keyword, and a free plan, AppASO fits best." },
+          { question: "What is the best AppTweak alternative for indie developers?", answer: "For iOS-only developers on a Mac, Astro is the cheapest. For daily ranks, unlimited history, and an API, Sonar is strong. For iOS and Android with relevancy scoring, downloads per keyword, and a free plan, AppASO fits best." },
           { question: "Is there a free AppTweak alternative?", answer: "AppASO has a free plan with 100 tracked keywords across 2 apps. Sonar offers a 7-day free trial, and Astro and MobileAction are paid." },
           { question: "Which AppTweak alternative supports Google Play?", answer: "AppASO, Sonar, and MobileAction all support Google Play. Astro covers the App Store only." },
         ],
