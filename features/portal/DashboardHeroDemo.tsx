@@ -230,7 +230,7 @@ const TOTAL_MS = STEP_START[TIMELINE.length - 1] + TIMELINE[TIMELINE.length - 1]
 // The labelled chapters under the demo. Each runs from its first step up to
 // the next chapter's first step; clicking one jumps the loop there.
 const SCENES: { label: string; start: Step }[] = [
-  { label: "Add & sort", start: "rest" },
+  { label: "Add a keyword", start: "rest" },
   { label: "Inspect it", start: "toInspect" },
   { label: "Find long tail", start: "back" },
   { label: "Track performance", start: "toPerfNav" },
