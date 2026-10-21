@@ -85,7 +85,7 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
           ))}
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-1.5">
           <CalendarDaysIcon className="size-3.5 text-gray-500" />
           <input
             type="date"
@@ -138,7 +138,7 @@ export function RatingsGainedChart({ series, hasStarBreakdown }: Props) {
           />
           <Tooltip
             formatter={(value, name) => [typeof value === "number" ? Math.round(value * 100) / 100 : value, name]}
-            contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: "#9ca3af" }} />

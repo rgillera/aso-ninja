@@ -56,7 +56,7 @@ function SignupButton({ size = "lg" }: { size?: "sm" | "lg" }) {
   return (
     <a
       href="/signup"
-      className={`group inline-flex items-center justify-center gap-1.5 rounded-full bg-gray-950 font-semibold text-white transition-colors hover:bg-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+      className={`group inline-flex items-center justify-center gap-1.5 rounded-full bg-indigo-600 font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
         size === "lg" ? "px-6 py-3.5 text-sm sm:text-base" : "px-4 py-2 text-sm"
       }`}
     >
@@ -262,7 +262,7 @@ export default function AdLandingPage({ page }: { page: AdLandingPageData }) {
           </p>
           <a
             href="/signup"
-            className="group mt-9 inline-flex items-center gap-1.5 rounded-full bg-white px-6 py-3.5 text-sm font-semibold text-gray-950 transition-colors hover:bg-indigo-50 sm:text-base"
+            className="group mt-9 inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 sm:text-base"
           >
             Create free account
             <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" />

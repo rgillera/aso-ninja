@@ -89,7 +89,7 @@ function LineChart({ data }: { data: Snapshot[] }) {
 
       {/* Dots */}
       {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={data.length === 1 ? 5 : 3} fill="#6366f1" stroke="#1a1d24" strokeWidth="2" />
+        <circle key={i} cx={p.x} cy={p.y} r={data.length === 1 ? 5 : 3} fill="#6366f1" stroke="#141417" strokeWidth="2" />
       ))}
     </svg>
   );
@@ -115,7 +115,7 @@ export function VolumeHistoryPanel({ keyword, store, country, onClose }: Props) 
       <div className="fixed inset-0 z-[9998] bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Panel */}
-      <div className="fixed z-[9999] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[92vw] bg-[#1a1d24] light:bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="fixed z-[9999] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] max-w-[92vw] bg-[#141417] light:bg-white rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           <div>

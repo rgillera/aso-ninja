@@ -4,10 +4,10 @@ import { LockClosedIcon, RectangleStackIcon } from "@heroicons/react/24/outline"
 export function WorkspaceFrozen({ workspaceName }: { workspaceName: string }) {
   return (
     <div className="h-full flex items-center justify-center px-6">
-      <div className="max-w-sm w-full rounded-2xl bg-[#1a1d24] light:bg-white flex flex-col items-center py-14 px-6 text-center">
+      <div className="max-w-sm w-full rounded-2xl bg-[#141417] light:bg-white flex flex-col items-center py-14 px-6 text-center">
         <div className="relative flex size-16 items-center justify-center rounded-2xl bg-amber-400/10">
           <RectangleStackIcon className="size-8 text-amber-400 light:text-amber-700" />
-          <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+          <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#141417] light:bg-white">
             <LockClosedIcon className="size-3 text-amber-400 light:text-amber-700" />
           </span>
         </div>

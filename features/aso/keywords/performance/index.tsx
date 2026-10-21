@@ -45,7 +45,7 @@ function NoAppSelected() {
   const resolving = useActiveAppResolving();
   if (resolving) return <ActiveAppLoading />;
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="text-center">
         <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
@@ -710,7 +710,7 @@ export default function KeywordPerformancePage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <AppHeader app={activeApp} title="Monitor Performance" />
         <FeatureLocked
           minPlan="free"
@@ -728,7 +728,7 @@ export default function KeywordPerformancePage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp ?? null} title="Monitor Performance" />
 
       {saveError && (
@@ -768,7 +768,7 @@ export default function KeywordPerformancePage() {
 
         {tab === "chart" ? (
           <div className="px-6 pt-4 pb-6">
-            <div className="rounded-xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 light:shadow-black/10">
+            <div className="rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
               <div className="flex items-center justify-between px-5 pt-4 pb-1">
                 <div>
                   <p className="text-sm font-semibold text-white light:text-gray-900">Visibility Score</p>

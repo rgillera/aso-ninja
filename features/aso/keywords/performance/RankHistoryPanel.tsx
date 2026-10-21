@@ -116,7 +116,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
     const index = weekly.findIndex((w) => w.week === entry.week);
     const isLocked = index < lockedCount;
     return (
-      <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
+      <div className="rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
         <p className="text-gray-400 light:text-gray-600">Week of {formatDay(entry.recorded_on)}</p>
         {isLocked ? (
           <p className="mt-0.5 flex items-center gap-1 text-violet-400 light:text-violet-700">

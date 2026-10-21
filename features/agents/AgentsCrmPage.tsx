@@ -466,7 +466,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
         )}
 
         {canManage && showAddForm && (
-          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3">
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-[#141417] light:bg-white px-4 py-3">
             <input
               value={addName}
               onChange={(e) => setAddName(e.target.value)}
@@ -509,7 +509,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
             <p className="mt-1.5 text-[11px] font-medium text-indigo-300/80 light:text-indigo-700">Calls Today</p>
           </div>
           {DAILY_ACTIVITY_STATUSES.map((s) => (
-            <div key={s} className="rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3">
+            <div key={s} className="rounded-xl bg-[#141417] light:bg-white px-4 py-3">
               <p className={`text-xl font-bold leading-none ${CRM_STATUS_ACCENT_TEXT[s]}`}>{(dailyMetrics.statusCounts[s] ?? 0).toLocaleString()}</p>
               <p className="mt-1.5 text-[11px] font-medium text-gray-500">{CRM_STATUS_LABELS[s]}</p>
             </div>
@@ -517,7 +517,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
         </div>
 
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
               value={search}
@@ -530,7 +530,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
           <select
             value={statusFilter}
             onChange={(e) => { setStatusFilter(e.target.value as CrmStatus | "all"); setPage(0); }}
-            className="rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none"
+            className="rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none"
           >
             <option value="all">All statuses</option>
             {CRM_STATUSES.map((s) => (
@@ -541,7 +541,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
           <div className="relative" ref={countryFilterRef}>
             <button
               onClick={() => setShowCountryFilter((v) => !v)}
-              className={`flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs transition-colors ${
+              className={`flex items-center gap-1.5 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-xs transition-colors ${
                 countryFilter !== "all"
                   ? "text-white light:text-indigo-700 ring-1 ring-indigo-500/50"
                   : "text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900"
@@ -557,7 +557,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
             </button>
 
             {showCountryFilter && (
-              <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+              <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
                 <div className="flex items-center gap-2 border-b border-white/[0.07] light:border-black/[0.08] px-3 py-2">
                   <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
                   <input
@@ -629,7 +629,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
           )}
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -706,7 +706,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
                           className={`rounded-full px-2 py-1 text-[11px] font-medium outline-none cursor-pointer disabled:opacity-50 ${CRM_STATUS_BADGE_CLASSES[c.status]}`}
                         >
                           {CRM_STATUSES.map((s) => (
-                            <option key={s} value={s} className="bg-[#1a1d24] text-white">{CRM_STATUS_LABELS[s]}</option>
+                            <option key={s} value={s} className="bg-[#141417] text-white">{CRM_STATUS_LABELS[s]}</option>
                           ))}
                         </select>
                       </td>
@@ -825,7 +825,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-[#1a1d24] light:bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-[#141417] light:bg-white p-5 shadow-xl"
           >
             <h2 className="text-sm font-semibold text-white light:text-gray-900">Remove contact?</h2>
             <p className="mt-2 text-sm text-gray-400 light:text-gray-600">
@@ -856,7 +856,7 @@ export default function AgentsCrmPage({ contacts, canManage, dailyMetrics }: Pro
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-sm rounded-2xl bg-[#1a1d24] light:bg-white p-5 shadow-xl"
+            className="w-full max-w-sm rounded-2xl bg-[#141417] light:bg-white p-5 shadow-xl"
           >
             <h2 className="text-sm font-semibold text-white light:text-gray-900">Remove {selectedIds.size.toLocaleString()} contacts?</h2>
             <p className="mt-2 text-sm text-gray-400 light:text-gray-600">

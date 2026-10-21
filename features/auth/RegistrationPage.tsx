@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { registerAction, signInWithGoogleAction } from "./actions";
+import AuthBackdrop from "./AuthBackdrop";
 
 type RegistrationPageProps = { next?: string };
 
@@ -9,7 +10,8 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
   const [state, action, pending] = useActionState(registerAction, null);
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex flex-col items-center justify-center px-4">
+    <div className="relative isolate min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      <AuthBackdrop />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="mt-6 text-2xl font-semibold text-gray-900">Create your account</h1>
@@ -24,7 +26,7 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-clay-lg ring-1 ring-black/5">
+        <div className="bg-white rounded-2xl p-8 shadow-clay-lg ring-1 ring-gray-950/[0.07]">
           <form action={action} className="space-y-5">
             {next && <input type="hidden" name="next" value={next} />}
             {state?.error && typeof state.error === "string" && (
@@ -100,7 +102,7 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white transition-colors"
+              className="w-full rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white transition-colors"
             >
               {pending ? "Creating your workspace…" : "Create account"}
             </button>
@@ -128,7 +130,7 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
             {next && <input type="hidden" name="next" value={next} />}
             <button
               type="submit"
-              className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 ring-1 ring-black/5 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="mt-6 w-full flex items-center justify-center gap-3 rounded-full bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 ring-1 ring-black/5 hover:bg-gray-100 hover:text-gray-900 transition-colors"
             >
               <svg className="size-4" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

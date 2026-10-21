@@ -125,7 +125,7 @@ export function AiInsights({ apps, country }: Props) {
 
   if (locked) {
     return (
-      <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-8 px-4 text-center">
+      <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-8 px-4 text-center">
         <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-500 light:text-amber-700 mb-3">
           <LockClosedIcon className="size-2.5" />
           Pro+
@@ -137,7 +137,7 @@ export function AiInsights({ apps, country }: Props) {
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
           <span className="text-indigo-400 light:text-indigo-600">✦</span>

@@ -125,7 +125,7 @@ function ScoreBar({ value, className }: { value: number; className: string }) {
 
 function StatCard({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4" title={hint}>
+    <div className="rounded-2xl bg-[#141417] light:bg-white p-4" title={hint}>
       <p className="text-xs font-medium text-gray-500">{label}</p>
       <div className="mt-1.5">{children}</div>
     </div>
@@ -134,7 +134,7 @@ function StatCard({ label, hint, children }: { label: string; hint: string; chil
 
 function StatSkeleton() {
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4 animate-pulse">
+    <div className="rounded-2xl bg-[#141417] light:bg-white p-4 animate-pulse">
       <div className="h-3 w-20 rounded bg-white/[0.06] light:bg-black/[0.06]" />
       <div className="mt-3 h-7 w-14 rounded bg-white/[0.06] light:bg-black/[0.06]" />
       <div className="mt-3 h-1.5 w-full rounded bg-white/[0.06] light:bg-black/[0.06]" />
@@ -183,7 +183,7 @@ function KeywordHighlight({ text, term, active }: { text: string; term: string; 
 // results list. value null = still loading (App Store subtitles).
 function MatchPill({ label, value, hint }: { label: string; value: string | null; hint: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-1.5" title={hint}>
+    <div className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-1.5" title={hint}>
       <span className="text-xs text-gray-500">{label}</span>
       {value === null ? (
         <span className="flex items-center gap-1 text-xs text-gray-500" role="status">
@@ -243,7 +243,7 @@ function ResultRow({
   return (
     <div className={`flex items-start gap-3 px-4 py-3 border-b border-white/[0.05] light:border-black/[0.05] last:border-0 ${isYou ? "bg-indigo-500/[0.08]" : ""}`}>
       <span className="w-6 shrink-0 pt-3 text-center text-xs font-semibold text-gray-500">{app.position}</span>
-      <div className={`size-10 shrink-0 overflow-hidden bg-[#0d0f14] light:bg-gray-100 ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
+      <div className={`size-10 shrink-0 overflow-hidden bg-[#0a0a0c] light:bg-gray-100 ${store === "android" ? "rounded-xl" : "rounded-2xl"}`}>
         {app.icon && <img src={app.icon} alt="" className="size-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">
@@ -320,10 +320,10 @@ function UsageBadge({ usage }: { usage: InspectorUsage }) {
 // Shown in place of the results once today's free lookups are used up.
 function DailyLimitCard({ term, limit }: { term: string; limit: number | null }) {
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white flex flex-col items-center py-12 px-6 text-center">
+    <div className="rounded-2xl bg-[#141417] light:bg-white flex flex-col items-center py-12 px-6 text-center">
       <div className="relative flex size-14 items-center justify-center rounded-2xl bg-violet-500/10">
         <DocumentMagnifyingGlassIcon className="size-7 text-violet-400 light:text-violet-700" />
-        <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+        <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#141417] light:bg-white">
           <LockClosedIcon className="size-3 text-violet-400 light:text-violet-700" />
         </span>
       </div>
@@ -822,13 +822,13 @@ export default function KeywordInspectorPage() {
   );
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       {header}
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 sm:px-6 py-6 space-y-6">
           {/* ── Query form ── */}
-          <form onSubmit={onSubmit} className="rounded-2xl bg-[#1a1d24] light:bg-white p-4 space-y-3">
+          <form onSubmit={onSubmit} className="rounded-2xl bg-[#141417] light:bg-white p-4 space-y-3">
             <div className="flex flex-col gap-3 md:flex-row">
               <label className="relative flex-1">
                 <span className="sr-only">Keyword</span>
@@ -839,12 +839,12 @@ export default function KeywordInspectorPage() {
                   placeholder="Enter a keyword, e.g. habit tracker"
                   maxLength={100}
                   autoFocus
-                  className="w-full rounded-xl bg-[#111318] light:bg-[#f5f6f8] py-2.5 pl-9 pr-3 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-indigo-500/60"
+                  className="w-full rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] py-2.5 pl-9 pr-3 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-indigo-500/60"
                 />
               </label>
 
               <div className="flex gap-3">
-                <div className="flex rounded-xl bg-[#111318] light:bg-[#f5f6f8] p-1" role="radiogroup" aria-label="Store">
+                <div className="flex rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] p-1" role="radiogroup" aria-label="Store">
                   {(["ios", "android"] as const).map((s) => (
                     <button
                       key={s}
@@ -988,7 +988,7 @@ export default function KeywordInspectorPage() {
 
                 {metrics && pop && diff && (
                   <div ref={statsRef} className={`grid grid-cols-2 gap-3 rounded-2xl transition-all ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"} ${
-                    tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#111318] light:ring-offset-[#f5f6f8] ring-indigo-400/70" : ""
+                    tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}>
                     <StatCard label="Popularity" hint="Estimated search demand (0 to 100), from App Store and Google Play search signals. Shown as Volume in Keyword Research.">
                       <div className="flex items-baseline gap-2">
@@ -1023,11 +1023,11 @@ export default function KeywordInspectorPage() {
                 <section
                   ref={insightsRef}
                   className={`grid gap-3 rounded-2xl transition-all ${sameStore ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""} ${
-                    tourStep === "inspectorRank" ? "ring-2 ring-offset-4 ring-offset-[#111318] light:ring-offset-[#f5f6f8] ring-indigo-400/70" : ""
+                    tourStep === "inspectorRank" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}
                 >
                   {sameStore && activeApp && allResults && (
-                    <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4">
+                    <div className="rounded-2xl bg-[#141417] light:bg-white p-4">
                       <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
                         <TrophyIcon className="size-3.5" />
                         Your app&apos;s rank
@@ -1064,7 +1064,7 @@ export default function KeywordInspectorPage() {
                       </p>
                     </div>
                   )}
-                  <div className="rounded-2xl bg-[#1a1d24] light:bg-white p-4">
+                  <div className="rounded-2xl bg-[#141417] light:bg-white p-4">
                     <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
                       <LightBulbIcon className="size-3.5" />
                       Beatable spots in the top {WEAK_SPOT_RANGE}
@@ -1118,7 +1118,7 @@ export default function KeywordInspectorPage() {
                     )}
                   </div>
                 )}
-                <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden">
+                <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden">
                   {appsLoading && (
                     <div className="divide-y divide-white/[0.05] light:divide-black/[0.05]">
                       {Array.from({ length: 6 }).map((_, i) => (

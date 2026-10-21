@@ -21,7 +21,7 @@ export function HoverTooltip({ text, children, className = "" }: { text: ReactNo
       {pos && createPortal(
         <div
           style={{ position: "fixed", left: pos.x, top: pos.y - 8, transform: "translate(-50%, -100%)", zIndex: 99999 }}
-          className="w-52 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 leading-relaxed whitespace-pre-line shadow-2xl pointer-events-none"
+          className="w-52 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 leading-relaxed whitespace-pre-line shadow-2xl pointer-events-none"
         >
           {text}
         </div>,

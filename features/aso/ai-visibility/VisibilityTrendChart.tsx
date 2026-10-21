@@ -58,7 +58,7 @@ export function VisibilityTrendChart({ history, loading }: { history: AiVisibili
           <Tooltip
             labelFormatter={(d) => formatDate(String(d))}
             formatter={(v) => [v, "Prompts mentioning you"]}
-            contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
           <Area

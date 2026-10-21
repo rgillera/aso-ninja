@@ -92,7 +92,7 @@ function RatingCard({ rating, avgRating }: { rating?: number; avgRating: number 
 
 function BenchmarkCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#1a1d24] light:bg-white p-5">
+    <div className="flex h-full min-h-[160px] flex-col rounded-xl bg-[#141417] light:bg-white p-5">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">{title}</p>
       <div className="flex flex-1 flex-col justify-center">{children}</div>
     </div>
@@ -101,7 +101,7 @@ function BenchmarkCard({ title, children }: { title: string; children: React.Rea
 
 function EmptyState({ title, message }: { title: string; message: string }) {
   return (
-    <main className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8] p-6">
+    <main className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8] p-6">
       <div className="text-center max-w-sm">
         <ExclamationTriangleIcon className="size-8 text-gray-700 light:text-gray-300 mx-auto mb-3" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">{title}</p>
@@ -116,7 +116,7 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
 
   if (!isPlanAtLeast(planSlug, "pro")) {
     return (
-      <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <main className="flex flex-col h-full overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
           <p className="text-sm font-semibold text-white light:text-gray-900">{app.name}</p>
@@ -153,13 +153,13 @@ export default function MetadataBenchmark({ app, storeData, benchmark, daysSince
   const categoryLabel = benchmark?.genreName || storeData.primaryGenreName || "category";
 
   return (
-    <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <main className="flex flex-col h-full overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
         <div className="flex items-center gap-3">
           {app.icon_url ? (
             <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
           ) : (
-            <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
+            <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 shrink-0 flex items-center justify-center">
               <DevicePhoneMobileIcon className="size-4 text-gray-500" />
             </div>
           )}

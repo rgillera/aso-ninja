@@ -40,7 +40,7 @@ export function useActiveAppResolving() {
 
 export function ActiveAppLoading() {
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="flex flex-col items-center gap-3">
         <span className="size-6 rounded-full border-2 border-gray-600 light:border-gray-300 border-t-indigo-400 light:border-t-indigo-600 animate-spin" />
         <p className="text-sm text-gray-500">Please wait...</p>

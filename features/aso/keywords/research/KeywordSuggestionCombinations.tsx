@@ -73,7 +73,7 @@ function ShufflePill({ term, tracked, onAdd, onRemove }: {
           ? hovered
             ? "bg-red-500/10 ring-1 ring-red-500/40 text-red-400 light:text-red-600 cursor-pointer"
             : "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
-          : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
+          : "bg-[#0a0a0c] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
       }`}
     >
       {tracked
@@ -169,7 +169,7 @@ export function KeywordSuggestionCombinations({ trackedKeywords, onAddKeyword, o
             onChange={(e) => updateWord(i, e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleShuffle()}
             placeholder={`Word ${i + 1}`}
-            className="min-w-[80px] flex-1 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1.5 text-xs text-gray-200 light:text-gray-800 placeholder:text-gray-600 light:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+            className="min-w-[80px] flex-1 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2.5 py-1.5 text-xs text-gray-200 light:text-gray-800 placeholder:text-gray-600 light:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
           />
         ))}
         <button

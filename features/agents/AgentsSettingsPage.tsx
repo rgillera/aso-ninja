@@ -44,7 +44,7 @@ export default function AgentsSettingsPage({ loginEmail, replyToEmail, canManage
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+        <div className="rounded-2xl bg-[#141417] light:bg-white shadow-lg shadow-black/20 p-6">
           <h2 className="text-sm font-semibold text-white light:text-gray-900">Your email</h2>
           <p className="mt-1.5 text-xs text-gray-500 leading-relaxed">
             When a contact&rsquo;s status changes to Left Voicemail, Spoke - Interested, Follow-up Scheduled, or
@@ -124,7 +124,7 @@ function TemplateEditor({ status, initial }: { status: CrmStatus; initial: Templ
   }
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white shadow-lg shadow-black/20 p-6">
+    <div className="rounded-2xl bg-[#141417] light:bg-white shadow-lg shadow-black/20 p-6">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-white light:text-gray-900">{CRM_STATUS_LABELS[status]}</h3>
         <button

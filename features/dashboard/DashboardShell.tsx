@@ -477,7 +477,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <AllAppsProvider value={allApps}>
     <NavigationGuardProvider value={{ guardMessage, setGuardMessage }}>
     <SidebarTourProvider value={{ ...sidebarTour, setSidebarTour }}>
-      <div className="flex h-screen bg-[#111318] light:bg-[#f5f6f8] overflow-hidden" onClickCapture={handleNavClickCapture}>
+      <div className="flex h-screen bg-[#0e0e10] light:bg-[#f7f7f8] overflow-hidden" onClickCapture={handleNavClickCapture}>
         <DashboardSidebar
           currentPath={pathname}
           workspaces={workspaces}
@@ -492,7 +492,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           isMobileOpen={mobileNavOpen}
           onMobileClose={() => setMobileNavOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
           <div className="flex items-center gap-3 border-b border-white/[0.07] light:border-black/[0.08] px-4 py-3 lg:hidden">
             <button
               type="button"

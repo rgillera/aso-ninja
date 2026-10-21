@@ -138,10 +138,10 @@ export function CombinationTable({
   }) : groups;
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       {/* Add seed keywords */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
-        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
+        <div className="flex-1 flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all">
           <input
             value={seedInput}
             onChange={(e) => setSeedInput(e.target.value)}
@@ -173,7 +173,7 @@ export function CombinationTable({
               <button
                 key={term}
                 onClick={() => onAddSeeds([term])}
-                className="flex items-center gap-1 rounded-md bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900 px-2.5 py-1 text-xs transition-all"
+                className="flex items-center gap-1 rounded-md bg-[#0a0a0c] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900 px-2.5 py-1 text-xs transition-all"
               >
                 <PlusIcon className="size-3 text-gray-500 shrink-0" />
                 {term}
@@ -244,7 +244,7 @@ export function CombinationTable({
                         checked={groupChecked}
                         onChange={() => toggleGroupSelect(group)}
                         disabled={!terms.length}
-                        className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
+                        className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                       />
                     </td>
                     <td className="px-4 py-3.5">
@@ -289,7 +289,7 @@ export function CombinationTable({
                     <td className="pr-4 py-3.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() => onRemoveGroup(group.seed)}
-                        className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
+                        className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors opacity-0 group-hover:opacity-100"
                       >
                         <XMarkIcon className="size-3" />
                       </button>
@@ -307,7 +307,7 @@ export function CombinationTable({
                             checked={tracked || selected.has(child.term)}
                             onChange={() => toggleChild(child.term)}
                             disabled={tracked || pending}
-                            className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 disabled:opacity-40"
+                            className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500 disabled:opacity-40"
                           />
                         </td>
                         <td className="px-4 py-3 pl-9">
@@ -336,7 +336,7 @@ export function CombinationTable({
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => onLiveSearch(child.term)}
-                              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                             >
                               <MagnifyingGlassIcon className="size-3" />
                             </button>
@@ -348,7 +348,7 @@ export function CombinationTable({
                                   ? "bg-indigo-500/20 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
                                   : pending
                                   ? "bg-white/[0.04] light:bg-black/[0.04] ring-white/[0.08] light:ring-black/[0.08] text-gray-600 light:text-gray-400 cursor-wait"
-                                  : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
+                                  : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
                               }`}
                             >
                               {tracked

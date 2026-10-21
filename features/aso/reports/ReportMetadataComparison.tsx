@@ -105,7 +105,7 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
         <button
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
           title={`Remove ${name}`}
-          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] light:ring-white transition-opacity group-hover:opacity-100"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#141417] light:ring-white transition-opacity group-hover:opacity-100"
         >
           <XMarkIcon className="size-2.5" />
         </button>
@@ -125,7 +125,7 @@ function CardShell({
 }) {
   const [expanded, setExpanded] = useState(true);
   return (
-    <div id={id} className="scroll-mt-4 rounded-3xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div id={id} className="scroll-mt-4 rounded-3xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
         <div className="flex items-center gap-2">
           {tone && <span className={`size-2.5 rounded-full ${DOT_CLASS[tone]}`} />}
@@ -372,7 +372,7 @@ function DescriptionCard({
           >
             <TableCellsIcon className="size-4" />
           </button>
-          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#2a2d36] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#27272b] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
             Cross-Competitors Density
           </div>
         </div>
@@ -387,7 +387,7 @@ function DescriptionCard({
               className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3 py-2 text-sm text-white light:text-gray-900 outline-none"
             >
               {[10, 20, 50, 100].map((n) => (
-                <option key={n} value={n} className="bg-[#1a1d24]">Display {n} rows</option>
+                <option key={n} value={n} className="bg-[#141417]">Display {n} rows</option>
               ))}
             </select>
           </div>
@@ -515,7 +515,7 @@ function ScreenshotsCard({
           >
             <TableCellsIcon className="size-4" />
           </button>
-          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#2a2d36] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+          <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#27272b] px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
             Cross-Competitors Screenshots
           </div>
         </div>

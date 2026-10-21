@@ -43,7 +43,7 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
 }
 
 const inputBase =
-  "w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border px-3.5 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition";
+  "w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 border px-3.5 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:border-transparent transition";
 const labelClass = "block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5";
 
 // Was a row in DashboardSidebar's footer — moved here since it's a per-device

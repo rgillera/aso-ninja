@@ -165,7 +165,7 @@ export function AddPromptForm({ activeApp, workspaceId, appId, prompts, onAdded 
           onChange={(e) => setValue(e.target.value)}
           placeholder={suggestLoading ? "Loading suggestions…" : placeholder ? `e.g. "${placeholder}"` : ""}
           maxLength={200}
-          className="flex-1 rounded-lg bg-[#1a1d24] light:bg-white border border-white/[0.08] light:border-black/[0.08] px-3 py-2 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
+          className="flex-1 rounded-lg bg-[#141417] light:bg-white border border-white/[0.08] light:border-black/[0.08] px-3 py-2 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500/50"
         />
         <button
           type="submit"

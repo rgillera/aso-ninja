@@ -38,18 +38,18 @@ function AppCard({
       <a
         href={entry.href}
         onClick={() => onNavigate(entry)}
-        className="flex items-center gap-2.5 rounded-xl bg-[#1a1d24] light:bg-white px-3 py-2.5 pr-7 w-[200px] hover:bg-[#1e2129] light:hover:bg-gray-50 hover:ring-white/[0.12] light:hover:ring-black/[0.16] transition-all"
+        className="flex items-center gap-2.5 rounded-xl bg-[#141417] light:bg-white px-3 py-2.5 pr-7 w-[200px] hover:bg-[#1a1a1d] light:hover:bg-gray-50 hover:ring-white/[0.12] light:hover:ring-black/[0.16] transition-all"
       >
         {/* Icon + store badge */}
         <div className="relative shrink-0">
           {entry.iconUrl ? (
             <img src={entry.iconUrl} alt={entry.name} className="size-9 rounded-xl object-cover" />
           ) : (
-            <div className="size-9 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+            <div className="size-9 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
               <DevicePhoneMobileIcon className="size-4 text-gray-600 light:text-gray-400" />
             </div>
           )}
-          <div className="absolute -bottom-1 -left-1 rounded-full bg-[#1a1d24] light:bg-white p-px">
+          <div className="absolute -bottom-1 -left-1 rounded-full bg-[#141417] light:bg-white p-px">
             {entry.store === "ios" ? <IosIcon /> : <AndroidIcon />}
           </div>
         </div>

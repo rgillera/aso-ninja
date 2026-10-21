@@ -56,7 +56,7 @@ export function NavigationDrawer({
       />
 
       <div
-        className={`fixed left-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-[#15171d] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed left-0 top-0 z-50 flex h-full w-80 max-w-[85vw] flex-col bg-[#121214] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-5">
           <h2 className="text-base font-medium text-gray-100">Menu</h2>

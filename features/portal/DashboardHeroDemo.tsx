@@ -266,7 +266,7 @@ export function DashboardHeroDemo() {
         </aside>
 
         {/* Main */}
-        <div className="flex-1 min-w-0 bg-[#f5f6f8]">
+        <div className="flex-1 min-w-0 bg-[#f7f7f8]">
           {/* Top search bar */}
           <div className="flex items-center gap-2 px-5 py-3 border-b border-black/[0.08]">
             <MagnifyingGlassIcon className="size-4 text-gray-400 shrink-0" />

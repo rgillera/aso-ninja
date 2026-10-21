@@ -19,38 +19,38 @@ export default function PortalHero({
   trustedByCount: number;
 }) {
   return (
-    <section className="relative isolate overflow-hidden bg-[#f5f6f8] pt-36 pb-24 sm:pb-28">
-      {/* Faint dot grid instead of a blurred gradient blob — reads as
-          structure/product rather than decoration, and stays put instead of
-          smearing a big soft shape across the fold. Fades out before the
-          product screenshot so it never competes with it. */}
+    <section className="relative isolate overflow-hidden bg-white pt-36 pb-24 sm:pb-28">
+      {/* Faint line grid that fades out from the top, plus one soft glow
+          behind the headline. Both stay well above the product screenshot so
+          they never compete with it. Same treatment as the ad landing pages. */}
       <div
         aria-hidden="true"
-        className="absolute inset-x-0 top-0 -z-10 h-[34rem] [mask-image:linear-gradient(to_bottom,black,transparent)]"
+        className="absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
         style={{
-          backgroundImage: "radial-gradient(rgba(79,70,229,0.16) 1px, transparent 1px)",
-          backgroundSize: "22px 22px",
+          backgroundImage:
+            "linear-gradient(to right, rgba(17,24,39,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(17,24,39,0.05) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
         }}
       />
       <div
         aria-hidden="true"
-        className="absolute left-1/2 top-[-8rem] -z-10 h-[36rem] w-[60rem] -translate-x-1/2 rounded-full bg-gradient-to-b from-indigo-300/40 to-transparent blur-3xl"
+        className="absolute left-1/2 top-32 -z-10 h-72 w-[44rem] max-w-full -translate-x-1/2 rounded-full bg-indigo-400/20 blur-3xl"
       />
 
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-5xl text-center">
           <PortalEyebrow>Built for App Store &amp; Google Play</PortalEyebrow>
-          <h1 className="mt-8 sm:mt-10 text-balance text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            <span className="text-indigo-600">App ASO tool with pro-level data,</span>{" "}
+          <h1 className="mt-8 sm:mt-10 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:text-6xl sm:leading-[1.05]">
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">App ASO tool with pro-level data,</span>{" "}
             <span className="sm:block">without the $299 price tag.</span>
           </h1>
-          <p className="mx-auto mt-8 sm:mt-10 max-w-2xl text-balance text-lg font-medium text-gray-600 sm:text-xl">
+          <p className="mx-auto mt-8 sm:mt-10 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
             Start free. Upgrade from <span className="font-bold text-gray-900">$29/mo</span> as you grow, from solo indie devs to publishing teams.
           </p>
           <div className="mt-9 flex flex-col items-center justify-center gap-y-4 gap-x-6 sm:flex-row">
             <a
               href={isAuthenticated ? "/dashboard" : "/signup"}
-              className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
               {isAuthenticated ? "Go to dashboard" : "Create free account"}
             </a>
@@ -75,7 +75,7 @@ export default function PortalHero({
               {TRUSTED_AVATARS.map(({ initial, className }) => (
                 <span
                   key={initial}
-                  className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold text-white ring-2 ring-[#f5f6f8] ${className}`}
+                  className={`flex size-7 items-center justify-center rounded-full text-xs font-semibold text-white ring-2 ring-white ${className}`}
                 >
                   {initial}
                 </span>
@@ -92,7 +92,7 @@ export default function PortalHero({
         <div className="relative mx-auto mt-20 max-w-6xl">
           <div
             aria-hidden="true"
-            className="absolute -inset-x-10 -inset-y-6 -z-10 rounded-[2.5rem] bg-gradient-to-b from-indigo-200/60 via-violet-200/30 to-transparent blur-2xl"
+            className="absolute -inset-x-10 -inset-y-6 -z-10 rounded-[2.5rem] bg-gradient-to-b from-indigo-200/40 to-transparent blur-2xl"
           />
 
           {/* Browser-chrome frame instead of a bare screenshot — grounds the

@@ -83,7 +83,7 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
             onChange={(e) => setIssuerId(e.target.value)}
             placeholder="69a6de7f-...-47e3-e053-5b8c7c11a4d1"
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Users and Access → Integrations
@@ -96,7 +96,7 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
             onChange={(e) => setKeyId(e.target.value)}
             placeholder="2X9R4HXF34"
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Shown next to the key you generate on that same page
@@ -109,7 +109,7 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
             onChange={(e) => setVendorNumber(e.target.value)}
             placeholder="e.g. 12345678"
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Reports
@@ -133,7 +133,7 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
             placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             App Store Connect → Users and Access → Integrations, shown right after you generate the key. Only downloadable once, so save the file.
@@ -231,7 +231,7 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
             onChange={(e) => setBucketId(e.target.value)}
             placeholder="pubsite_prod_rev_01234567890987654321"
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Play Console → Setup → API access → Download reports
@@ -255,7 +255,7 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
             placeholder='{"type": "service_account", "client_email": "...", "private_key": "..."}'
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             Google Cloud Console → IAM &amp; Admin → Service Accounts → Keys
@@ -408,7 +408,7 @@ export default function AppConnectionSettings({ app }: Props) {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={app} title="Settings" />
 
       <div className="flex-1 overflow-y-auto scroll-smooth p-6">
@@ -428,7 +428,7 @@ export default function AppConnectionSettings({ app }: Props) {
             ]}
           />
         ) : (
-        <div className="w-full rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+        <div className="w-full rounded-xl bg-[#141417] light:bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
             <h2 className="text-sm font-semibold text-white light:text-gray-900">
               {app.store === "ios" ? "App Store Connect" : "Google Play Console"}
@@ -475,7 +475,7 @@ export default function AppConnectionSettings({ app }: Props) {
                   <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#0a0a0c] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
                   >
                     <ArrowPathIcon className={`size-3.5 ${syncing ? "animate-spin" : ""}`} />
                     {syncing ? "Syncing…" : "Sync now"}
@@ -516,7 +516,7 @@ export default function AppConnectionSettings({ app }: Props) {
               />
             </div>
           ) : (
-            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden scroll-mt-6">
+            <div id="apple-search-ads" className="mt-6 w-full rounded-xl bg-[#141417] light:bg-white overflow-hidden scroll-mt-6">
               <div className="px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
                 <h2 className="text-sm font-semibold text-white light:text-gray-900">Apple Search Ads</h2>
                 <p className="mt-1 text-xs text-gray-500">

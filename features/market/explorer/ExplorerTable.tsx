@@ -120,10 +120,10 @@ export function ExplorerTable({ apps, loading, country }: Props) {
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       {/* Search + count */}
       <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex items-center gap-3">
-        <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1.5 w-64">
+        <div className="flex items-center gap-1.5 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2.5 py-1.5 w-64">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
@@ -198,7 +198,7 @@ export function ExplorerTable({ apps, loading, country }: Props) {
                           <div className="relative shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05] light:bg-black/[0.04]" />
-                            <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+                            <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#141417] light:bg-white">
                               <StoreIcon store={app.store} className="size-2.5 text-gray-300 light:text-gray-700" />
                             </span>
                           </div>

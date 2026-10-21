@@ -68,7 +68,7 @@ function CategoryRow({ item }: { item: ScoreSummaryItem }) {
   const tone = toneForPercent(item.percent);
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-      <div className="rounded-2xl bg-[#14171d] light:bg-gray-50 px-4 py-3 lg:w-56 lg:shrink-0">
+      <div className="rounded-2xl bg-[#111113] light:bg-gray-50 px-4 py-3 lg:w-56 lg:shrink-0">
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 light:text-gray-600">{item.label}</p>
         <div className="flex items-center gap-3">
           <div className="h-1.5 flex-1 rounded-full bg-white/[0.08] light:bg-black/[0.08]">
@@ -85,7 +85,7 @@ function CategoryRow({ item }: { item: ScoreSummaryItem }) {
               key={tag.label}
               onClick={() => scrollToAnchor(anchor)}
               disabled={!anchor}
-              className="flex items-center gap-2 rounded-xl bg-[#14171d] light:bg-gray-50 px-3.5 py-2.5 text-sm text-gray-200 light:text-gray-800 transition-colors enabled:hover:text-white light:enabled:hover:text-gray-900 enabled:hover:ring-white/20 light:enabled:hover:ring-black/20"
+              className="flex items-center gap-2 rounded-xl bg-[#111113] light:bg-gray-50 px-3.5 py-2.5 text-sm text-gray-200 light:text-gray-800 transition-colors enabled:hover:text-white light:enabled:hover:text-gray-900 enabled:hover:ring-white/20 light:enabled:hover:ring-black/20"
             >
               <span className={`size-2.5 rounded-full ${DOT_CLASS[tag.tone]}`} />
               {tag.label}
@@ -112,9 +112,9 @@ type ReportAsoScoreSingleProps = {
 // CompetitorsBar, not a corner button.
 export function ReportAsoScoreSingle({ score, summaryItems }: ReportAsoScoreSingleProps) {
   return (
-    <div className="rounded-3xl bg-[#1a1d24] light:bg-white p-5 shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-3xl bg-[#141417] light:bg-white p-5 ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex flex-col gap-5 lg:flex-row lg:items-stretch">
-        <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#14171d] light:bg-gray-50 px-8 py-6">
+        <div className="flex shrink-0 items-center justify-center rounded-2xl bg-[#111113] light:bg-gray-50 px-8 py-6">
           <ScoreRing score={score} />
         </div>
         <div className="flex flex-1 flex-col justify-center gap-3">

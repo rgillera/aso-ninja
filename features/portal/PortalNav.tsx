@@ -22,21 +22,21 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
   }, []);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
-      <nav
-        className={`mx-auto flex max-w-6xl items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-300 sm:px-5 ${
-          scrolled
-            ? "bg-white/90 shadow-clay ring-1 ring-black/[0.06] backdrop-blur-md"
-            : "bg-white/60 ring-1 ring-black/[0.04] backdrop-blur-sm"
-        }`}
-      >
+    // Full-width bar with a hairline that only appears once the page scrolls
+    // under it, same as the ad landing pages' header.
+    <header
+      className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${
+        scrolled || open ? "border-gray-950/[0.06] bg-white/80 backdrop-blur-md" : "border-transparent bg-transparent"
+      }`}
+    >
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <a href="/" className="flex items-center gap-2">
           <span className="flex items-end gap-0.5 rounded-lg bg-gray-950 p-1.5">
             <span className="h-2.5 w-1 rounded-sm bg-indigo-500" />
             <span className="h-4 w-1 rounded-sm bg-indigo-400" />
             <span className="h-5 w-1 rounded-sm bg-indigo-300" />
           </span>
-          <span className="text-lg font-bold text-gray-900 tracking-tight">
+          <span className="text-lg font-bold tracking-tight text-gray-950">
             App<span className="text-indigo-600">ASO</span>
           </span>
         </a>
@@ -46,7 +46,7 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
             <a
               key={l.href}
               href={l.href}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-950/[0.04] hover:text-gray-900"
+              className="rounded-full px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-950"
             >
               {l.label}
             </a>
@@ -57,18 +57,18 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
           {isAuthenticated ? (
             <a
               href="/dashboard"
-              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500"
+              className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
             >
               Dashboard
             </a>
           ) : (
             <>
-              <a href="/login" className="rounded-full px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-950/[0.04] hover:text-gray-900">
+              <a href="/login" className="rounded-full px-3.5 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-950">
                 Sign in
               </a>
               <a
                 href="/signup"
-                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500"
+                className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
               >
                 Create free account
               </a>
@@ -85,7 +85,7 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
       </nav>
 
       {open && (
-        <div className="mx-auto mt-2 flex max-w-6xl flex-col gap-1 rounded-2xl bg-white p-3 shadow-clay ring-1 ring-black/[0.06] lg:hidden">
+        <div className="flex flex-col gap-1 border-t border-gray-950/[0.06] bg-white px-4 py-3 lg:hidden">
           {links.map((l) => (
             <a
               key={l.href}
@@ -98,13 +98,13 @@ export default function PortalNav({ isAuthenticated }: { isAuthenticated: boolea
           ))}
           <hr className="my-1 border-black/[0.06]" />
           {isAuthenticated ? (
-            <a href="/dashboard" className="rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500">
+            <a href="/dashboard" className="rounded-full bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-indigo-500">
               Dashboard
             </a>
           ) : (
             <>
               <a href="/login" className="rounded-xl px-3.5 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-950/[0.04] hover:text-gray-900">Sign in</a>
-              <a href="/signup" className="rounded-xl bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500">
+              <a href="/signup" className="rounded-full bg-indigo-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-indigo-500">
                 Create free account
               </a>
             </>

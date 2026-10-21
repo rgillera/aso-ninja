@@ -60,7 +60,7 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             onChange={(e) => setClientId(e.target.value)}
             placeholder="SEARCHADS.a1b2c3d4-..."
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Apple Search Ads → Account Settings → API</p>
         </div>
@@ -71,7 +71,7 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             onChange={(e) => setTeamId(e.target.value)}
             placeholder="SEARCHADS.a1b2c3d4-..."
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Shown on the same API settings page</p>
         </div>
@@ -82,7 +82,7 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             onChange={(e) => setKeyId(e.target.value)}
             placeholder="2X9R4HXF34"
             required
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">Shown next to the key you generate</p>
         </div>
@@ -104,7 +104,7 @@ export function ConnectAsaForm({ workspaceId, onConnected }: Props) {
             placeholder="-----BEGIN PRIVATE KEY-----&#10;...&#10;-----END PRIVATE KEY-----"
             required
             rows={6}
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-xs font-mono text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
             The private-key.pem file you generated yourself in step 2 — never uploaded to Apple, so paste or upload your own copy here.

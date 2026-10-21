@@ -71,7 +71,7 @@ export function CountryPicker({ value, onChange }: { value: string; onChange: (c
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Country"
-        className="flex h-full w-full items-center gap-2 rounded-xl bg-[#111318] light:bg-[#f5f6f8] py-2.5 pl-3 pr-10 text-left text-sm text-white light:text-gray-900 outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60"
+        className="flex h-full w-full items-center gap-2 rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] py-2.5 pl-3 pr-10 text-left text-sm text-white light:text-gray-900 outline-none focus-visible:ring-1 focus-visible:ring-indigo-500/60"
       >
         <span className="shrink-0">{countryFlag(selected)}</span>
         <span className="truncate">{COUNTRY_MAP[selected] ?? selected}</span>
@@ -81,7 +81,7 @@ export function CountryPicker({ value, onChange }: { value: string; onChange: (c
       {/* Styled to match the country picker in the app search
           (features/dashboard/DashboardSearch.tsx). */}
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-full min-w-[14rem] overflow-hidden rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10">
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-full min-w-[14rem] overflow-hidden rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10">
           <div className="px-2 pt-2 pb-1">
             <input
               autoFocus

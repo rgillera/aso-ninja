@@ -116,7 +116,7 @@ export function SimulatedRelevancyTable({ rows, hasSimulated }: { rows: Simulato
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search keyword…"
-            className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-gray-600 light:text-gray-400 outline-none focus:ring-indigo-500/40"
+            className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 pl-8 pr-7 py-1.5 text-xs text-white placeholder:text-gray-600 light:text-gray-400 outline-none focus:ring-indigo-500/40"
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 light:text-gray-400 hover:text-gray-300 light:hover:text-gray-700">

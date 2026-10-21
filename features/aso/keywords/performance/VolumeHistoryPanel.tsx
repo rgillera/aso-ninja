@@ -96,7 +96,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     const index = rows.findIndex((r) => r.month === entry.month);
     const isLockedBar = index < lockedCount;
     return (
-      <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
+      <div className="rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
         <p className="text-gray-400 light:text-gray-600">{formatMonth(entry.recorded_on)}</p>
         {isLockedBar ? (
           <p className="mt-0.5 flex items-center gap-1 text-violet-400 light:text-violet-700">

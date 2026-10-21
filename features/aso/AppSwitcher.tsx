@@ -9,7 +9,7 @@ function AppIcon({ app }: { app: App }) {
   return app.icon_url ? (
     <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl shrink-0 object-cover" />
   ) : (
-    <div className="size-8 rounded-xl bg-[#0d0f14] shrink-0 flex items-center justify-center">
+    <div className="size-8 rounded-xl bg-[#0a0a0c] shrink-0 flex items-center justify-center">
       <DevicePhoneMobileIcon className="size-4 text-gray-500" />
     </div>
   );
@@ -41,7 +41,7 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
     <div className="relative" ref={ref}>
       <button
         onClick={() => canSwitch && setOpen((v) => !v)}
-        className="flex items-center gap-3 rounded-xl bg-[#1a1d24] px-4 py-2.5 transition-colors shadow-lg shadow-black/20 hover:bg-[#22252f]"
+        className="flex items-center gap-3 rounded-xl bg-[#141417] px-4 py-2.5 transition-colors shadow-lg shadow-black/20 hover:bg-[#1d1d21]"
       >
         <AppIcon app={current} />
         <div className="text-left">
@@ -58,7 +58,7 @@ export default function AppSwitcher({ current, apps }: { current: App; apps: App
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-xl bg-[#1a1d24] shadow-xl shadow-black/30 overflow-hidden">
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-xl bg-[#141417] shadow-xl shadow-black/30 overflow-hidden">
           <div className="p-1.5 max-h-72 overflow-y-auto">
             {apps.map((a) => (
               <a

@@ -16,7 +16,7 @@ type Props = { rows: GrowthRow[]; from: string; to: string };
 
 export function GrowthTable({ rows, from, to }: Props) {
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <table className="w-full">
         <thead>
           <tr className="border-b border-white/[0.07] light:border-black/[0.08]">

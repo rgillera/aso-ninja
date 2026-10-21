@@ -29,7 +29,7 @@ export function CategoryRatingCard({ rating, category }: Props) {
   const categoryLabel = category?.genreName || "category";
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white p-5">
+    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">My category ({categoryLabel})</p>
 
       {category ? (

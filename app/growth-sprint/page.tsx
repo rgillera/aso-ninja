@@ -182,7 +182,7 @@ export default async function GrowthSprintPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-[#f5f6f8] min-h-screen">
+    <div className="bg-white min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
@@ -193,7 +193,7 @@ export default async function GrowthSprintPage() {
 
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">90-Day ASO Growth Sprint</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
               A focused 90 days to <span className="text-indigo-600">fix what&apos;s holding your app&apos;s growth back</span>
             </h1>
             <p className="mt-6 text-lg text-gray-600">
@@ -206,7 +206,7 @@ export default async function GrowthSprintPage() {
                 href={calendlyUrl ?? "mailto:hello@appaso.io"}
                 target={calendlyUrl ? "_blank" : undefined}
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 Book your free audit call
               </a>
@@ -227,7 +227,7 @@ export default async function GrowthSprintPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">The three phases</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 Your 90 days, step by step
               </h2>
               <p className="mt-6 text-lg text-gray-600">
@@ -241,7 +241,7 @@ export default async function GrowthSprintPage() {
               <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
                 {phases.map((phase) => (
                   <div key={phase.title} className="relative flex flex-col items-start text-left">
-                    <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 shadow-clay-sm ring-8 ring-[#f5f6f8]">
+                    <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 shadow-clay-sm ring-8 ring-white">
                       <phase.icon className="size-5 text-white" aria-hidden="true" />
                     </div>
                     <p className="mt-5 text-xs font-semibold text-indigo-600 uppercase tracking-widest">{phase.n}</p>
@@ -269,7 +269,7 @@ export default async function GrowthSprintPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">What you get</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 Deliverables, not just hours
               </h2>
               <p className="mt-6 text-lg text-gray-600">
@@ -299,7 +299,7 @@ export default async function GrowthSprintPage() {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Getting started</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 One sprint. Clear price. Real deliverables.
               </h2>
             </div>
@@ -308,7 +308,7 @@ export default async function GrowthSprintPage() {
               <div className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:p-10 lg:col-span-3">
                 <p className="text-sm font-semibold text-gray-500">90-Day ASO Growth Sprint</p>
                 <p className="mt-4 flex items-baseline gap-x-2">
-                  <span className="text-4xl font-bold tracking-tight text-gray-900">$1,500</span>
+                  <span className="text-4xl font-semibold tracking-tight text-gray-900">$1,500</span>
                   <span className="text-sm font-semibold text-gray-500">/month for 3 months</span>
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
@@ -326,7 +326,7 @@ export default async function GrowthSprintPage() {
                   href={calendlyUrl ?? "mailto:hello@appaso.io"}
                   target={calendlyUrl ? "_blank" : undefined}
                   rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="mt-8 inline-flex w-fit items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  className="mt-8 inline-flex w-fit items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                 >
                   Book your free audit call
                 </a>
@@ -402,7 +402,7 @@ export default async function GrowthSprintPage() {
                   href={calendlyUrl ?? "mailto:hello@appaso.io"}
                   target={calendlyUrl ? "_blank" : undefined}
                   rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
                 >
                   Talk to us
                 </a>

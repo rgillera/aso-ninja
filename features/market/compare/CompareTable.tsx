@@ -96,7 +96,7 @@ function bestIndices(values: (number | null | undefined)[]): Set<number> {
 function MetricRow({ label, title, cells, bestSet, wrap = false }: { label: string; title?: string; cells: ReactNode[]; bestSet?: Set<number>; wrap?: boolean }) {
   return (
     <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
-      <td title={title} className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
+      <td title={title} className="sticky left-0 bg-[#141417] light:bg-white px-4 py-3 align-top text-xs font-medium text-gray-500 whitespace-nowrap">{label}</td>
       {cells.map((cell, i) => (
         <td
           key={i}
@@ -166,12 +166,12 @@ export function CompareTable({ apps, country, onRemove }: Props) {
   const lightboxUrls = lightboxApp?.storeData?.screenshotUrls ?? [];
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <table className="border-collapse">
           <thead>
             <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
-              <th className="sticky left-0 bg-[#1a1d24] light:bg-white px-4 py-3 text-left text-xs font-medium text-gray-500 w-40" />
+              <th className="sticky left-0 bg-[#141417] light:bg-white px-4 py-3 text-left text-xs font-medium text-gray-500 w-40" />
               {apps.map((app) => {
                 const key = compareKey(app.store, app.storeId);
                 return (
@@ -181,7 +181,7 @@ export function CompareTable({ apps, country, onRemove }: Props) {
                         <div className="relative shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={app.iconUrl} alt="" className="size-9 rounded-lg bg-white/[0.05] light:bg-black/[0.04]" />
-                          <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+                          <span className="absolute -bottom-1 -right-1 flex size-4 items-center justify-center rounded-full bg-[#141417] light:bg-white">
                             <StoreIcon store={app.store} className="size-2.5 text-gray-300 light:text-gray-700" />
                           </span>
                         </div>

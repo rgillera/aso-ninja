@@ -48,7 +48,7 @@ function tooltipContent(props: unknown, store?: string) {
   if (!active || !payload || !payload.length) return null;
   const week = payload[0].payload;
   return (
-    <div className="rounded-lg border border-white/10 bg-[#1a1d24] light:bg-white px-3 py-2 text-xs">
+    <div className="rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
       <p className="text-gray-400 light:text-gray-600">Week of {formatShortDate(week.week)}</p>
       <p className="mt-0.5 text-gray-200 light:text-gray-800">
         Est. downloads: <span className="font-semibold">{week.estimated != null ? `~${week.estimated}` : "-"}</span>

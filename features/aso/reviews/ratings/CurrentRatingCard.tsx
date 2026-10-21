@@ -20,7 +20,7 @@ function StarBreakdown({ histogram }: { histogram: RatingHistogram }) {
           <div key={star} className="flex items-center gap-2 text-xs">
             <span className="w-3 text-gray-400 light:text-gray-600">{star}</span>
             <StarIcon className="size-3 text-amber-400 light:text-amber-700 shrink-0" />
-            <div className="flex-1 h-2 rounded-full bg-[#0d0f14] light:bg-gray-50 overflow-hidden">
+            <div className="flex-1 h-2 rounded-full bg-[#0a0a0c] light:bg-gray-50 overflow-hidden">
               <div
                 className="h-full rounded-full"
                 style={{ width: `${pct}%`, backgroundColor: STAR_COLORS[star] }}
@@ -46,7 +46,7 @@ export function CurrentRatingCard({ store, rating, ratingCount, ratingHistogram 
   const hasBreakdown = !!ratingHistogram && STAR_ORDER.some((star) => ratingHistogram[star] > 0);
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white p-5">
+    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">Current rating</p>
       <div className="grid grid-cols-2 gap-4">
         <div>

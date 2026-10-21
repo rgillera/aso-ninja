@@ -24,7 +24,7 @@ export function AgentsShell({ children, canManage }: { children: React.ReactNode
   const visibleLinks = agentLinks.filter((link) => !link.adminOnly || canManage);
 
   return (
-    <div className="flex h-screen bg-[#111318] light:bg-[#f5f6f8] overflow-hidden">
+    <div className="flex h-screen bg-[#0e0e10] light:bg-[#f7f7f8] overflow-hidden">
       {isMobileOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 lg:hidden"
@@ -37,7 +37,7 @@ export function AgentsShell({ children, canManage }: { children: React.ReactNode
         onClick={(e) => {
           if ((e.target as HTMLElement).closest("a")) setIsMobileOpen(false);
         }}
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 max-w-[85vw] shrink-0 flex-col bg-[#0d0f14] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 max-w-[85vw] shrink-0 flex-col bg-[#0a0a0c] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -89,7 +89,7 @@ export function AgentsShell({ children, canManage }: { children: React.ReactNode
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <div className="flex items-center gap-3 border-b border-white/[0.07] light:border-black/[0.08] px-4 py-3 lg:hidden">
           <button
             type="button"

@@ -21,7 +21,7 @@ function NoAppSelected() {
   const resolving = useActiveAppResolving();
   if (resolving) return <ActiveAppLoading />;
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="text-center">
         <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
@@ -34,7 +34,7 @@ function NoAppSelected() {
 function StatCard({ label, value, tone }: { label: string; value: string; tone: "amber" | "emerald" }) {
   const color = tone === "amber" ? "text-amber-400 light:text-amber-700" : "text-emerald-400 light:text-emerald-700";
   return (
-    <div className="flex-1 rounded-xl bg-[#1a1d24] light:bg-white px-5 py-4">
+    <div className="flex-1 rounded-xl bg-[#141417] light:bg-white px-5 py-4">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-600 light:text-gray-400">{label}</p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${color}`}>{value}</p>
     </div>
@@ -51,7 +51,7 @@ function WastedSpendPanel({ rows }: { rows: WastedSpendRow[] }) {
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
           <ExclamationTriangleIcon className="size-3.5 text-amber-400 light:text-amber-700" />
@@ -108,7 +108,7 @@ function UntappedOpportunityPanel({ rows }: { rows: UntappedOpportunityRow[] }) 
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1.5">
           <ArrowTrendingUpIcon className="size-3.5 text-emerald-400 light:text-emerald-700" />
@@ -210,7 +210,7 @@ export default function SpendInsightsPage() {
 
   if (locked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <AppHeader app={activeApp ?? null} title="Spend Insights" />
         <FeatureLocked
           minPlan="pro"
@@ -230,7 +230,7 @@ export default function SpendInsightsPage() {
   if (!activeApp) return <NoAppSelected />;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp} title="Spend Insights" />
       <div className="flex items-center gap-1.5 px-6 pt-3 text-xs text-gray-500">
         <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
@@ -239,17 +239,17 @@ export default function SpendInsightsPage() {
 
       <div className="flex-1 overflow-y-auto">
         {activeApp.store !== "ios" ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
             <DevicePhoneMobileIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">ASA Intelligence is only available for iOS apps</p>
             <p className="text-xs text-gray-600 light:text-gray-400 mt-1">Apple Search Ads doesn&apos;t apply to Android listings.</p>
           </div>
         ) : connLoading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : !connection?.connected ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
             <BanknotesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">Apple Search Ads isn&apos;t connected yet</p>
             {activeApp.id && activeApp.id !== "__preview__" ? (
@@ -272,7 +272,7 @@ export default function SpendInsightsPage() {
             {error}
           </div>
         ) : loading ? (
-          <div className="mx-6 my-6 rounded-xl bg-[#1a1d24] light:bg-white flex items-center justify-center py-16">
+          <div className="mx-6 my-6 rounded-xl bg-[#141417] light:bg-white flex items-center justify-center py-16">
             <p className="text-sm text-gray-500">Loading…</p>
           </div>
         ) : (

@@ -46,7 +46,7 @@ function AppIconCell({ name, iconUrl, onRemove }: { name: string; iconUrl: strin
         <button
           onClick={onRemove}
           title={`Remove ${name}`}
-          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#1a1d24] light:ring-white transition-opacity group-hover:opacity-100"
+          className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-white opacity-0 shadow ring-1 ring-[#141417] light:ring-white transition-opacity group-hover:opacity-100"
         >
           <XMarkIcon className="size-2.5" />
         </button>
@@ -85,7 +85,7 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
   }
 
   return (
-    <div className="rounded-3xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-3xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex items-center gap-2 border-b border-white/[0.07] light:border-black/[0.08] px-5 py-3">
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-500">Summary</h3>
         <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400" />
@@ -160,7 +160,7 @@ export function ReportAsoScore({ score, summaryItems, primaryApp, competitors, o
                 {expanded === item.label && item.tags.map((tag, tagIdx) => {
                   const anchor = TAG_ANCHOR[tag.label];
                   return (
-                    <tr key={tag.label} className="border-t border-white/[0.04] light:border-black/[0.05] bg-[#14171d] light:bg-gray-50">
+                    <tr key={tag.label} className="border-t border-white/[0.04] light:border-black/[0.05] bg-[#111113] light:bg-gray-50">
                       <td className="whitespace-nowrap py-2.5 pl-9 pr-5">
                         {anchor ? (
                           <button

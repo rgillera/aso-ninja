@@ -29,7 +29,7 @@ export default async function MobileLayout({ children }: { children: React.React
   const impersonation = await getImpersonation();
 
   return (
-    <div className="min-h-full overscroll-y-contain bg-[#111318] text-gray-300">
+    <div className="min-h-full overscroll-y-contain bg-[#0e0e10] text-gray-300">
       {!impersonation && <MixpanelIdentify userId={user.id} email={user.email} />}
       {!impersonation && <ActivityHeartbeat />}
       <InstallBanner />

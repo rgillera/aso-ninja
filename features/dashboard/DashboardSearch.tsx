@@ -70,11 +70,11 @@ function AppIconWithBadge({
           onError={() => setFailed(true)}
         />
       ) : (
-        <div className="size-11 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+        <div className="size-11 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
           <DevicePhoneMobileIcon className="size-5 text-gray-600 light:text-gray-400" />
         </div>
       )}
-      <div className="absolute -bottom-1 -left-1 rounded-full bg-[#111318] light:bg-white p-px">
+      <div className="absolute -bottom-1 -left-1 rounded-full bg-[#0e0e10] light:bg-white p-px">
         {store === "ios" ? (
           <img src="/app-store.svg" alt="" className="size-3.5" />
         ) : (
@@ -280,7 +280,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
 
       {/* Popup */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 bg-[#111318] light:bg-white border-t border-white/[0.07] light:border-black/[0.08] shadow-2xl shadow-black/50 light:shadow-black/10">
+        <div className="absolute left-0 right-0 top-full z-50 bg-[#0e0e10] light:bg-white border-t border-white/[0.07] light:border-black/[0.08] shadow-2xl shadow-black/50 light:shadow-black/10">
 
           {/* Tabs */}
           <div className="flex items-end gap-6 px-5 pt-4 border-b border-white/[0.07] light:border-black/[0.08]">
@@ -306,7 +306,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
             <div className="relative" ref={countryRef}>
               <button
                 onClick={() => { setCountryOpen(v => !v); setCountryQuery(""); }}
-                className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-gray-100 px-3.5 py-2 text-sm text-gray-200 light:text-gray-800 hover:text-white light:hover:text-gray-900 transition-colors min-w-[160px]"
+                className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-gray-100 px-3.5 py-2 text-sm text-gray-200 light:text-gray-800 hover:text-white light:hover:text-gray-900 transition-colors min-w-[160px]"
               >
                 <span className="text-base leading-none">{countryFlag(country)}</span>
                 <span className="flex-1 text-left truncate">{COUNTRY_MAP[country] ?? country}</span>
@@ -314,7 +314,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
               </button>
 
               {countryOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1.5 z-50 w-56 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
                   <div className="px-2 pt-2 pb-1">
                     <input
                       autoFocus
@@ -350,7 +350,7 @@ export function DashboardSearch({ apps, workspaceId, stayInPlace, onSelectApp, h
             </div>
 
             {/* Store filter */}
-            <div className="flex items-center rounded-lg bg-[#1a1d24] light:bg-gray-100 p-1 gap-0.5">
+            <div className="flex items-center rounded-lg bg-[#141417] light:bg-gray-100 p-1 gap-0.5">
               {(["all", "ios", "android"] as StoreFilter[]).map(s => (
                 <button
                   key={s}

@@ -117,14 +117,14 @@ export default async function OurStoryPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-[#f5f6f8] min-h-screen">
+    <div className="bg-white min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
         <section className="pt-32 pb-16 sm:pb-20">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Our story</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
               From growing our own apps{" "}
               <span className="text-indigo-600">to building the tools we needed</span>
             </h1>
@@ -143,7 +143,7 @@ export default async function OurStoryPage() {
                   <div className="space-y-10">
                     {milestones.map((m) => (
                       <div key={m.date} className="relative pl-8">
-                        <span className="absolute left-0 top-1.5 size-3.5 rounded-full bg-indigo-500 ring-4 ring-[#f5f6f8]" />
+                        <span className="absolute left-0 top-1.5 size-3.5 rounded-full bg-indigo-500 ring-4 ring-white" />
                         <p className="text-sm font-semibold text-indigo-600">{m.date}</p>
                         <h3 className="mt-1 text-base font-semibold text-gray-900">{m.title}</h3>
                         <p className="mt-2 text-sm text-gray-600 leading-relaxed">{m.description}</p>
@@ -201,7 +201,7 @@ export default async function OurStoryPage() {
 
                 {chapters.map((chapter) => (
                   <div key={chapter.title}>
-                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">{chapter.title}</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-gray-900">{chapter.title}</h2>
                     <div className="mt-4 space-y-4 text-base leading-relaxed text-gray-700 sm:text-lg">
                       {chapter.blocks.map((block, i) =>
                         typeof block === "string" ? (
@@ -235,7 +235,7 @@ export default async function OurStoryPage() {
               <div className="mt-20 text-center">
                 <a
                   href="/signup"
-                  className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                  className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
                 >
                   Create free account
                 </a>

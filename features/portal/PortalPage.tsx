@@ -23,7 +23,7 @@ export default async function PortalPage() {
   const trustedByCount = 3000 + (registeredUsers ?? 0);
 
   return (
-    <div className="bg-[#f5f6f8]">
+    <div className="bg-white">
       <PortalNav isAuthenticated={isAuthenticated} />
       <PortalHero isAuthenticated={isAuthenticated} trustedByCount={trustedByCount} />
       <PortalHowItWorks />

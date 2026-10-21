@@ -25,7 +25,7 @@ function NoAppSelected() {
   const resolving = useActiveAppResolving();
   if (resolving) return <ActiveAppLoading />;
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="text-center">
         <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
@@ -570,7 +570,7 @@ export default function KeywordResearchPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp ?? null} title="Keyword Research" />
 
       {rateLimited && (

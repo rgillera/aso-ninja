@@ -19,7 +19,7 @@ export default function SearchPreviewModal({ app, storeData, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-6" onClick={onClose}>
       <div
-        className="relative w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl bg-[#1a1d24] light:bg-white p-8 shadow-2xl light:shadow-black/10"
+        className="relative w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl bg-[#141417] light:bg-white p-8 shadow-2xl light:shadow-black/10"
         onClick={(e) => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute right-5 top-5 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">

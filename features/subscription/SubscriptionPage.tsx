@@ -63,7 +63,7 @@ const cardStyles: Record<CardTone, {
   divider: string;
 }> = {
   default: {
-    card: "bg-[#1a1d24] light:bg-white ring-1 ring-white/[0.08] light:ring-black/5 light:shadow-sm",
+    card: "bg-[#141417] light:bg-white ring-1 ring-white/[0.08] light:ring-black/5 light:shadow-sm",
     title: "text-white light:text-gray-900",
     subtitle: "text-gray-500",
     desc: "text-gray-400 light:text-gray-600",

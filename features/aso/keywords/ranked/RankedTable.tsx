@@ -66,8 +66,8 @@ function Dropdown({ label, active, children }: { label: string; active?: boolean
           active
             ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
             : open
-              ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white"
-              : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
+              ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white"
+              : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
         }`}
       >
         {label}
@@ -76,7 +76,7 @@ function Dropdown({ label, active, children }: { label: string; active?: boolean
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 mt-1.5 min-w-[200px] rounded-lg bg-[#1a1d24] light:bg-white shadow-2xl p-3">
+          <div className="absolute z-20 mt-1.5 min-w-[200px] rounded-lg bg-[#141417] light:bg-white shadow-2xl p-3">
             {children}
           </div>
         </>
@@ -93,12 +93,12 @@ function RangeFields({ min, max, onMin, onMax, cap }: {
     <div className="flex items-center gap-2">
       <input type="number" min={0} max={cap} value={min}
         onChange={(e) => onMin(Math.max(0, Math.min(cap, parseInt(e.target.value, 10) || 0)))}
-        className="w-16 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
+        className="w-16 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
       />
       <span className="text-xs text-gray-600 light:text-gray-400">to</span>
       <input type="number" min={0} max={cap} value={max}
         onChange={(e) => onMax(Math.max(0, Math.min(cap, parseInt(e.target.value, 10) || 0)))}
-        className="w-16 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
+        className="w-16 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-xs text-gray-200 light:text-gray-800 outline-none focus:ring-indigo-500/40"
       />
     </div>
   );
@@ -211,11 +211,11 @@ export function RankedTable({
   );
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       {/* Filters */}
       <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
         <Dropdown label={filters.query ? `Keyword: ${filters.query}` : "Keyword"} active={!!filters.query}>
-          <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2 py-1.5">
+          <div className="flex items-center gap-1.5 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2 py-1.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input autoFocus value={filters.query} onChange={(e) => { onFiltersChange({ query: e.target.value }); setPage(0); }}
               placeholder="Search keyword"

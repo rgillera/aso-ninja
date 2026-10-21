@@ -47,7 +47,7 @@ export function SelectionActionBar({ count, total, onClear, onCopy, onStar, onEx
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] light:bg-white shadow-2xl px-2 py-2">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#141417] light:bg-white shadow-2xl px-2 py-2">
       <button
         onClick={onClear}
         title="Clear selection"

@@ -41,7 +41,7 @@ export function ReviewsTable({ reviews }: Props) {
   );
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+    <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-center gap-1.5 px-5 py-3 text-sm text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
@@ -74,7 +74,7 @@ export function ReviewsTable({ reviews }: Props) {
                         {r.title && <p className="text-sm font-medium text-gray-200 light:text-gray-800">{r.title}</p>}
                         {r.body && <p className="mt-0.5 text-xs text-gray-500 line-clamp-3">{r.body}</p>}
                         {r.replyBody && (
-                          <p className="mt-1.5 rounded bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-xs text-gray-500">
+                          <p className="mt-1.5 rounded bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-xs text-gray-500">
                             <span className="text-gray-400 light:text-gray-600 font-medium">Developer reply: </span>{r.replyBody}
                           </p>
                         )}

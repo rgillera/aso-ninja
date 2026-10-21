@@ -126,7 +126,7 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="bg-[#f5f6f8] min-h-screen">
+    <div className="bg-white min-h-screen">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -156,7 +156,7 @@ export default async function BlogPostPage({
               <p className="mt-6 text-sm font-semibold text-indigo-600 uppercase tracking-widest">
                 {post.category}
               </p>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
                 {post.title}
               </h1>
               <div className="mt-6 flex items-center gap-3">

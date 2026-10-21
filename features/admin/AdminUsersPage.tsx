@@ -125,7 +125,7 @@ function DeleteUserDialog({ user, onClose, onDeleted }: { user: AdminUserRow; on
         aria-modal="true"
         aria-labelledby="delete-user-title"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-2xl bg-[#1a1d24] light:bg-white p-6 shadow-xl ring-1 ring-red-500/20"
+        className="w-full max-w-md rounded-2xl bg-[#141417] light:bg-white p-6 shadow-xl ring-1 ring-red-500/20"
       >
         <h2 id="delete-user-title" className="flex items-center gap-2 text-base font-semibold text-red-400 light:text-red-600">
           <ExclamationTriangleIcon className="size-4" />
@@ -151,7 +151,7 @@ function DeleteUserDialog({ user, onClose, onDeleted }: { user: AdminUserRow; on
           onChange={(e) => setConfirmation(e.target.value)}
           autoComplete="off"
           autoFocus
-          className="w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] px-4 py-2.5 text-sm text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
+          className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] px-4 py-2.5 text-sm text-white light:text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition"
         />
 
         {error && (
@@ -287,7 +287,7 @@ export default function AdminUsersPage({ users }: Props) {
         </div>
 
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
               value={search}
@@ -299,7 +299,7 @@ export default function AdminUsersPage({ users }: Props) {
 
           <button
             onClick={handleExportEmails}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
           >
             <ArrowDownTrayIcon className="size-3.5" />
             Export all emails
@@ -312,7 +312,7 @@ export default function AdminUsersPage({ users }: Props) {
           </div>
         )}
 
-        <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

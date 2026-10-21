@@ -69,7 +69,7 @@ const cardStyles: Record<Variant, {
     desc: "text-gray-600",
     check: "text-indigo-600",
     feature: "text-gray-700",
-    cta: "bg-indigo-600 text-white shadow-clay-btn hover:bg-indigo-500",
+    cta: "bg-indigo-600 text-white hover:bg-indigo-500",
     badge: "bg-indigo-50 text-indigo-700",
   },
   featured: {
@@ -100,11 +100,11 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
   const [yearly, setYearly] = useState(false);
 
   return (
-    <section id="pricing" className="bg-[#eef0f5] py-24 sm:py-28">
+    <section id="pricing" className="bg-gray-50 py-24 sm:py-28">
       <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <PortalEyebrow>Pricing</PortalEyebrow>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
             Simple, transparent pricing
           </h2>
           <p className="mt-6 text-lg text-gray-600">
@@ -183,10 +183,10 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
                 <div className="mt-4 flex items-baseline gap-x-2">
                   {plan.contactSales ? (
-                    <span className={`text-4xl font-bold tracking-tight ${s.price}`}>Custom</span>
+                    <span className={`text-4xl font-semibold tracking-tight ${s.price}`}>Custom</span>
                   ) : (
                     <>
-                      <span className={`text-4xl font-bold tracking-tight ${s.price}`}>
+                      <span className={`text-4xl font-semibold tracking-tight ${s.price}`}>
                         {billing.price}
                       </span>
                       {!isFree && (
@@ -216,7 +216,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                   href={href}
                   target={plan.contactSales && salesUrl ? "_blank" : undefined}
                   rel={plan.contactSales && salesUrl ? "noopener noreferrer" : undefined}
-                  className={`mt-8 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
+                  className={`mt-8 inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
                 >
                   {cta}
                 </a>

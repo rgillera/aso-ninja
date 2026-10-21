@@ -130,7 +130,7 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
     <div
       ref={tipRef}
       style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
-      className="w-64 rounded-xl bg-[#1a1d24] light:bg-white ring-1 ring-indigo-400/40 shadow-2xl light:shadow-black/10 p-3.5"
+      className="w-64 rounded-xl bg-[#141417] light:bg-white ring-1 ring-indigo-400/40 shadow-2xl light:shadow-black/10 p-3.5"
     >
       <div className="flex items-start gap-2.5">
         {icon}

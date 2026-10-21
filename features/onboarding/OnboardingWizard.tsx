@@ -73,7 +73,7 @@ function ResultIcon({ iconUrl, name }: { iconUrl?: string | null; name: string }
   return iconUrl && !failed ? (
     <img src={iconUrl} alt={name} className="size-11 rounded-xl object-cover shrink-0" onError={() => setFailed(true)} />
   ) : (
-    <div className="size-11 shrink-0 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+    <div className="size-11 shrink-0 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
       <DevicePhoneMobileIcon className="size-5 text-gray-600 light:text-gray-400" />
     </div>
   );
@@ -332,7 +332,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#0a0b0d] light:bg-[#f5f6f8] px-4 py-8 overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#08080a] light:bg-[#f7f7f8] px-4 py-8 overflow-y-auto">
       <div className="w-full max-w-md rounded-2xl bg-[#141417] light:bg-white shadow-2xl light:shadow-black/10">
         {/* Progress */}
         <div className="flex items-center gap-1.5 px-6 pt-6">
@@ -353,7 +353,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
               Let&apos;s find the app you want to track. Search by name, bundle ID, or store URL.
             </p>
 
-            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3.5 py-2.5 transition-all">
+            <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3.5 py-2.5 transition-all">
               <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
               <input
                 ref={searchInputRef}
@@ -370,7 +370,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             <div className="relative mt-2" ref={countryRef}>
               <button
                 onClick={() => { setCountryOpen((v) => !v); setCountryQuery(""); }}
-                className="flex w-full items-center justify-between gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3.5 py-2.5 text-sm text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+                className="flex w-full items-center justify-between gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3.5 py-2.5 text-sm text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <span className="text-base leading-none">{countryFlag(country)}</span>
@@ -380,7 +380,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
               </button>
 
               {countryOpen && (
-                <div className="absolute top-full left-0 mt-1.5 z-10 w-full rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+                <div className="absolute top-full left-0 mt-1.5 z-10 w-full rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
                   <div className="px-2 pt-2 pb-1">
                     <input
                       autoFocus
@@ -510,7 +510,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
                           className={`group flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-all ${
                             isAdded
                               ? "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-700 hover:bg-red-500/10 hover:ring-red-500/40 hover:text-red-400 light:hover:text-red-600 cursor-pointer"
-                              : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
+                              : "bg-[#0a0a0c] light:bg-gray-50 text-gray-300 light:text-gray-700 hover:bg-indigo-500/10 hover:ring-1 hover:ring-indigo-500/50 hover:text-white light:hover:text-gray-900"
                           } ${isPending ? "opacity-50 cursor-wait" : ""}`}
                         >
                           {isPending ? (
@@ -535,7 +535,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
             {/* Manual add */}
             <p className="mt-4 text-xs text-gray-500">Or type your own</p>
             <div className="mt-1.5 flex items-center gap-2">
-              <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2.5 transition-all">
+              <div className="flex-1 flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2.5 transition-all">
                 <input
                   ref={keywordInputRef}
                   value={keywordInput}

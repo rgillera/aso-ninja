@@ -17,7 +17,7 @@ export default async function NotFound() {
 
   return (
     <div data-theme={theme} className="flex flex-1 flex-col">
-      <main className="flex flex-1 flex-col items-center justify-center bg-[#111318] light:bg-[#f5f6f8] px-4 py-16">
+      <main className="flex flex-1 flex-col items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8] px-4 py-16">
         <Link href="/" className="mb-12 flex items-center gap-2">
           <span className="flex items-end gap-0.5 rounded-lg bg-gray-950 p-1.5 ring-1 ring-white/10">
             <span className="h-2.5 w-1 rounded-sm bg-indigo-500" />
@@ -44,13 +44,13 @@ export default async function NotFound() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"
-              className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
+              className="rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-indigo-400"
             >
               Go to dashboard
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-gray-300 light:text-gray-700 ring-1 ring-white/10 light:ring-black/10 transition-colors hover:bg-white/[0.06] light:hover:bg-black/[0.04]"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-gray-300 light:text-gray-700 ring-1 ring-white/10 light:ring-black/10 transition-colors hover:bg-white/[0.06] light:hover:bg-black/[0.04]"
             >
               <ArrowLeftIcon className="size-4" />
               Back to home

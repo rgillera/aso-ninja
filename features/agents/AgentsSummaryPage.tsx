@@ -63,7 +63,7 @@ export default function AgentsSummaryPage({ contacts, agentEmails, metricsByAgen
           </div>
 
           {CRM_STATUSES.map((s) => (
-            <div key={s} className="rounded-xl bg-[#1a1d24] light:bg-white p-5">
+            <div key={s} className="rounded-xl bg-[#141417] light:bg-white p-5">
               <p className={`text-3xl font-bold leading-none ${CRM_STATUS_ACCENT_TEXT[s]}`}>{statusCounts[s].toLocaleString()}</p>
               <p className="mt-2 text-xs font-medium text-gray-500">{CRM_STATUS_LABELS[s]}</p>
             </div>
@@ -72,7 +72,7 @@ export default function AgentsSummaryPage({ contacts, agentEmails, metricsByAgen
 
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <h2 className="text-sm font-semibold text-white light:text-gray-900">Agent activity</h2>
-          <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-2">
             <CalendarDaysIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
               type="date"
@@ -84,7 +84,7 @@ export default function AgentsSummaryPage({ contacts, agentEmails, metricsByAgen
           </div>
         </div>
 
-        <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
+        <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

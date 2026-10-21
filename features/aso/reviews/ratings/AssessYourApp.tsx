@@ -42,7 +42,7 @@ export function AssessYourApp({ rating, ratingCount }: Props) {
   }
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white p-5">
+    <div className="rounded-xl bg-[#141417] light:bg-white p-5">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-4">Assess your app</p>
       <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300 light:text-gray-700">
         <span>To reach</span>
@@ -53,7 +53,7 @@ export function AssessYourApp({ rating, ratingCount }: Props) {
           max={5}
           value={target}
           onChange={(e) => setTarget(Number(e.target.value))}
-          className="w-16 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          className="w-16 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
         />
         <span>stars in</span>
         <input
@@ -61,12 +61,12 @@ export function AssessYourApp({ rating, ratingCount }: Props) {
           min={1}
           value={duration}
           onChange={(e) => setDuration(Math.max(1, Number(e.target.value)))}
-          className="w-14 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          className="w-14 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
         />
         <select
           value={unit}
           onChange={(e) => setUnit(e.target.value as Unit)}
-          className="rounded-lg bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          className="rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
         >
           <option value="day">day</option>
           <option value="week">week</option>
@@ -94,7 +94,7 @@ export function AssessYourApp({ rating, ratingCount }: Props) {
           max={5}
           value={starValue}
           onChange={(e) => setStarValue(Math.min(5, Math.max(1, Number(e.target.value))))}
-          className="w-12 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
+          className="w-12 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2 py-1 text-center text-white light:text-gray-900 focus:outline-none focus:ring-indigo-500"
         />
         <span>star ratings.</span>
       </div>

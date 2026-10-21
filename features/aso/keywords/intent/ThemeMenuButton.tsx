@@ -74,7 +74,7 @@ export function ThemeMenuButton({
         <div
           ref={menuRef}
           style={{ position: "fixed", left: pos.left, ...("top" in pos ? { top: pos.top } : { bottom: pos.bottom }), zIndex: 9999 }}
-          className="w-52 bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl py-1 max-h-72 overflow-y-auto"
+          className="w-52 bg-[#141417] light:bg-white rounded-xl overflow-hidden shadow-2xl py-1 max-h-72 overflow-y-auto"
         >
           {themes.map((t) => (
             <button

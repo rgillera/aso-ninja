@@ -55,7 +55,7 @@ function Alert({ state }: { state: { error?: string; success?: string } | null }
 const labelClass = "block text-sm font-medium text-gray-300 light:text-gray-700 mb-1.5";
 
 function inputClass(error?: boolean) {
-  return `w-full rounded-lg bg-[#0d0f14] light:bg-gray-50 border px-3.5 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
+  return `w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 border px-3.5 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition ${
     error ? "border-red-500/50" : "border-white/[0.07] light:border-black/[0.08]"
   }`;
 }
@@ -193,7 +193,7 @@ export default function WorkspacePage({
                         name="access"
                         value={access}
                         defaultChecked
-                        className="rounded border-white/[0.07] light:border-black/[0.08] bg-[#0d0f14] light:bg-white text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        className="rounded border-white/[0.07] light:border-black/[0.08] bg-[#0a0a0c] light:bg-white text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                       />
                       {ACCESS_LABELS[access]}
                     </label>
@@ -224,7 +224,7 @@ export default function WorkspacePage({
 
                 <div>
                   <label htmlFor="ws-slug" className={labelClass}>Slug</label>
-                  <div className="flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent">
+                  <div className="flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 border border-white/[0.07] light:border-black/[0.08] overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent">
                     <span className="pl-3.5 pr-1 text-sm text-gray-600 light:text-gray-400 shrink-0">appaso.io/</span>
                     <input
                       id="ws-slug"

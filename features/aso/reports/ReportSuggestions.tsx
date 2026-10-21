@@ -43,7 +43,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
 
   if (locked) {
     return (
-      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="flex items-center gap-2">
             <h3 className="text-base font-semibold text-white light:text-gray-900">ASO Suggestions</h3>
@@ -78,7 +78,7 @@ export function ReportSuggestions({ bundleId, store, initialDismissed, suggestio
   const pageItems = visible.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.07]">
         <div className="flex items-center gap-2">
           <h3 className="text-base font-semibold text-white light:text-gray-900">ASO Suggestions</h3>

@@ -83,7 +83,7 @@ export default function Timeline({ app }: TimelineProps) {
 
   if (isLocked) {
     return (
-      <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <main className="flex flex-col h-full overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
           {app.icon_url && <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />}
           <p className="text-sm font-semibold text-white light:text-gray-900">{app.name}</p>
@@ -104,7 +104,7 @@ export default function Timeline({ app }: TimelineProps) {
   }
 
   return (
-    <main className="flex flex-col h-full overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <main className="flex flex-col h-full overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <TimelineHeader
           app={app}
           rangeStart={rangeStart}

@@ -9,26 +9,12 @@ import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
 
-// Fonts are loaded via CSS (globals.css). The next/font/google module may not
-// be available in this environment, so provide fallback objects with the
-// same shape used below.
-
-const Geist = (opts: { variable: string; subsets?: string[] }) => ({
-  variable: opts.variable,
-});
-const Geist_Mono = (opts: { variable: string; subsets?: string[] }) => ({
-  variable: opts.variable,
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+// Geist comes from a plain Google Fonts stylesheet (the <link> tags below)
+// rather than next/font/google, which downloads the files at build time and
+// isn't available in this environment. globals.css maps --font-sans and
+// --font-mono onto it, with system fonts as the fallback while it loads.
+const FONT_STYLESHEET =
+  "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap";
 
 const maintenanceEnabled =
   process.env.MAINTENANCE_MODE === "1" ||
@@ -100,7 +86,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
       // The dashboard's theme toggle (features/dashboard/ThemeContext.tsx) sets
       // data-theme on this element out of band — via a synchronous inline
       // script (app/dashboard/layout.tsx) before hydration, and via a plain
@@ -115,6 +101,11 @@ export default function RootLayout({
       // else still gets normal hydration mismatch warnings.
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href={FONT_STYLESHEET} />
+      </head>
       <body className="min-h-full flex flex-col">
         {maintenanceEnabled ? <MaintenancePage /> : children}
         <Analytics />

@@ -171,7 +171,7 @@ export default function KeywordDensity({ description, originalDescription }: Pro
   const rows = computeKeywordDensity(description);
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex items-center gap-2 p-4">
         <button
           onClick={() => setTab("density")}

@@ -164,7 +164,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 self-start rounded-lg bg-[#1a1d24] light:bg-white hover:ring-white/[0.16] light:hover:ring-black/[0.16] px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+        className="flex items-center gap-1.5 self-start rounded-lg bg-[#141417] light:bg-white hover:ring-white/[0.16] light:hover:ring-black/[0.16] px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
       >
         <PlusIcon className="size-3.5" />
         Add your own intent
@@ -173,7 +173,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
   }
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3 flex flex-col gap-2 shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-xl bg-[#141417] light:bg-white px-4 py-3 flex flex-col gap-2 ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className="flex items-center gap-2">
         <input
           autoFocus
@@ -184,7 +184,7 @@ function AddIntentRow({ onAddIntent }: { onAddIntent: (label: string) => Promise
             if (e.key === "Escape") close();
           }}
           placeholder="e.g. shared pet care"
-          className="flex-1 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
+          className="flex-1 rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 text-xs text-gray-300 light:text-gray-700 placeholder-gray-600 light:placeholder-gray-400 outline-none"
         />
         <button
           onClick={submit}
@@ -240,7 +240,7 @@ function EditIntentForm({
             type="button"
             onClick={() => setColor(i)}
             title="Pick a color"
-            className={`size-4 rounded-full ${c.dot} ${color === i ? "ring-2 ring-offset-1 ring-offset-[#1a1d24] light:ring-offset-white ring-white/70 light:ring-black/50" : "opacity-50 hover:opacity-90"} transition-opacity`}
+            className={`size-4 rounded-full ${c.dot} ${color === i ? "ring-2 ring-offset-1 ring-offset-[#141417] light:ring-offset-white ring-white/70 light:ring-black/50" : "opacity-50 hover:opacity-90"} transition-opacity`}
           />
         ))}
       </div>
@@ -252,7 +252,7 @@ function EditIntentForm({
           if (e.key === "Enter") submit();
           if (e.key === "Escape") onCancel();
         }}
-        className="min-w-0 flex-1 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1 text-sm text-gray-200 light:text-gray-800 outline-none"
+        className="min-w-0 flex-1 rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1 text-sm text-gray-200 light:text-gray-800 outline-none"
       />
       {error && <p className="text-[11px] text-red-400 light:text-red-600 shrink-0">{error}</p>}
       <button
@@ -340,7 +340,7 @@ function GroupSection({
   const pageKeywords = filteredKeywords.slice(safePage * GROUP_PAGE_SIZE, (safePage + 1) * GROUP_PAGE_SIZE);
 
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       <div className={`flex items-center gap-2 px-4 py-3 ${collapsed ? "" : "border-b border-white/[0.07] light:border-black/[0.08]"}`}>
         <button
           onClick={() => setCollapsed((v) => !v)}
@@ -354,7 +354,7 @@ function GroupSection({
             type="checkbox"
             checked={allSelected}
             onChange={() => onToggleSelectAll(filteredKeywords.map((k) => k.term))}
-            className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
+            className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
             title="Select all in this group"
           />
         )}
@@ -393,7 +393,7 @@ function GroupSection({
         )}
         <div className="ml-auto flex items-center gap-2">
           {id === OTHER_ID && (
-            <div className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+            <div className="flex items-center gap-1.5 rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
               <MagnifyingGlassIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
               <input
                 value={search}
@@ -411,7 +411,7 @@ function GroupSection({
           <button
             onClick={copyGroup}
             disabled={!filteredKeywords.length}
-            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400 light:text-emerald-700" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+            className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ring-1 transition-colors disabled:opacity-40 disabled:cursor-default ${copied ? "bg-emerald-500/10 ring-emerald-500/30 text-emerald-400 light:text-emerald-700" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
             title="Copy every keyword in this group, comma-separated — ready to paste into ASA"
           >
             <ClipboardDocumentIcon className="size-3.5" />
@@ -438,7 +438,7 @@ function GroupSection({
                     type="checkbox"
                     checked={selected.has(k.term)}
                     onChange={() => onToggleSelect(k.term)}
-                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
+                    className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500 shrink-0"
                   />
                   <span className="text-sm text-gray-200 light:text-gray-800 flex-1 truncate">{k.term}</span>
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -447,7 +447,7 @@ function GroupSection({
                       themes={themes}
                       currentThemeId={id === OTHER_ID ? null : id}
                       onPick={(themeId) => onMove([k.term], themeId)}
-                      buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                      buttonClassName="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     />
                   </div>
                 </div>
@@ -504,7 +504,7 @@ function BulkMoveBar({
 }) {
   if (!count) return null;
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#1a1d24] light:bg-white shadow-2xl px-2 py-2">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1 rounded-full bg-[#141417] light:bg-white shadow-2xl px-2 py-2">
       <button
         onClick={onClear}
         title="Clear selection"
@@ -599,7 +599,7 @@ export function IntentBoard({
 
   return (
     <div className="mx-6 my-6 flex flex-col gap-4">
-      <div className="flex items-center gap-3 rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3.5 shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="flex items-center gap-3 rounded-xl bg-[#141417] light:bg-white px-4 py-3.5 ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
         <TagIcon className="size-5 text-indigo-400 light:text-indigo-600 shrink-0" />
         <div className="flex-1">
           <p className="text-sm font-medium text-white light:text-gray-900">Search-intent themes</p>

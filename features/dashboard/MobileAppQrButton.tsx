@@ -43,7 +43,7 @@ export function MobileAppQrButton({ variant = "pill" }: Props) {
 
   const popover = (
     <div
-      className={`absolute z-50 w-64 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 p-4 ${
+      className={`absolute z-50 w-64 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 p-4 ${
         variant === "row" ? "bottom-full left-0 mb-2" : "top-full right-0 mt-1.5"
       }`}
     >

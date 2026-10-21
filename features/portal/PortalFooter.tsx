@@ -26,7 +26,7 @@ const links = {
 
 export default function PortalFooter() {
   return (
-    <footer className="bg-[#eef0f5] border-t border-black/[0.06]">
+    <footer className="bg-gray-50 border-t border-black/[0.06]">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           <div className="max-w-xs">

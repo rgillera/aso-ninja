@@ -3,7 +3,7 @@
 /*
  * Lets any class in the authenticated app (dashboard + onboarding) carry a
  * `light:` counterpart alongside its dark (default, unprefixed) styling —
- * e.g. `bg-[#111318] light:bg-[#f5f6f8]`. It's additive rather than a
+ * e.g. `bg-[#0e0e10] light:bg-[#f7f7f8]`. It's additive rather than a
  * dark/light pair of full class sets, so the existing hardcoded-dark classes
  * stay the source of truth and `light:` only overrides what actually needs
  * to flip. Matches on a `data-theme="light"` attribute rather than Tailwind's
@@ -19,13 +19,13 @@
  * `body`'s background is the only thing painted before/behind every actual
  * page container (DashboardShell, the onboarding overlay, portal pages,
  * etc.) -- all of which hardcode the product's real dark palette directly
- * (bg-[#111318] and friends) rather than these variables; nothing else in
+ * (bg-[#0e0e10] and friends) rather than these variables; nothing else in
  * the app reads --background/--foreground or the bg-background/
  * text-foreground Tailwind classes they map to. Left at create-next-app's
  * defaults (white in light mode, #0a0a0a in dark mode), any sliver of raw
  * body showing through -- overscroll bounce, a safe-area inset, the frame
  * before a page's own dark container has painted -- reads as a jarring
- * mismatched seam instead of just more of the app's background. #111318 is
+ * mismatched seam instead of just more of the app's background. #0e0e10 is
  * the same tone DashboardShell and most page-level containers already use
  * as their own outermost layer, so a stray sliver of it disappears instead
  * of standing out. Still no prefers-color-scheme split: the authenticated
@@ -36,13 +36,13 @@
  * same reasoning as the dark-only case this comment used to describe.
  */
 :root {
-  --background: #111318;
+  --background: #0e0e10;
   --foreground: #ededed;
 }
 
 [data-theme="light"] {
-  --background: #f5f6f8;
-  --foreground: #111318;
+  --background: #f7f7f8;
+  --foreground: #0e0e10;
 }
 
 @theme inline {
@@ -102,23 +102,36 @@
  * about-style pages, and the standalone auth screens (login, signup,
  * forgot/reset password, invite, verify-email). None of that surface ever
  * toggles with the authenticated app's dark/light ThemeContext (see the
- * `light:` variant above) — it ships as one fixed light "clay" look: white
- * surfaces raised off a soft neutral canvas with a tinted (not plain black)
- * shadow, since a flat gray shadow reads muddy next to the indigo brand
- * color. `-inset` is for recessed elements (form inputs) instead of raised
- * ones. Declared as `--shadow-*` so Tailwind's theme namespace turns each
- * into a `shadow-*` utility automatically, same mechanism as --radius-* above.
+ * `light:` variant above). The names come from an earlier "clay" look with
+ * big indigo-tinted shadows; the values are now the flatter style the ad
+ * landing pages (features/landing) set: hairline borders do the separating,
+ * and shadows are barely-there neutral lifts. `-inset` is for recessed
+ * elements (form inputs) instead of raised ones. Declared as `--shadow-*` so
+ * Tailwind's theme namespace turns each into a `shadow-*` utility
+ * automatically, same mechanism as --radius-* above.
  */
 @theme inline {
-  --shadow-clay-sm: 0 1px 2px rgba(30, 27, 46, 0.04), 0 4px 10px -2px rgba(67, 56, 202, 0.12);
-  --shadow-clay: 0 1px 2px rgba(30, 27, 46, 0.03), 0 2px 6px -1px rgba(30, 27, 46, 0.04), 0 14px 28px -8px rgba(67, 56, 202, 0.16);
-  --shadow-clay-lg: 0 2px 4px rgba(30, 27, 46, 0.04), 0 8px 16px -4px rgba(30, 27, 46, 0.05), 0 28px 52px -12px rgba(67, 56, 202, 0.22);
-  --shadow-clay-btn: inset 0 1px 0 0 rgba(255, 255, 255, 0.25), 0 10px 20px -6px rgba(79, 70, 229, 0.45);
-  --shadow-clay-inset: inset 0 2px 5px 0 rgba(30, 27, 46, 0.07);
+  --shadow-clay-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-clay: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-clay-lg: 0 1px 2px rgba(16, 24, 40, 0.04), 0 16px 40px -16px rgba(16, 24, 40, 0.14);
+  --shadow-clay-btn: 0 1px 2px rgba(16, 24, 40, 0.1);
+  --shadow-clay-inset: inset 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/*
+ * Geist is loaded as a plain Google Fonts stylesheet in app/layout.tsx rather
+ * than through next/font (see the note there). These two variables are what
+ * --font-sans / --font-mono above resolve to.
+ */
+:root {
+  --font-geist-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
 }

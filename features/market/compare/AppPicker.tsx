@@ -36,7 +36,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
 
   return (
     <div className="px-6 pt-4">
-      <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all max-w-md">
+      <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all max-w-md">
         <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
         <input
           value={query}
@@ -48,7 +48,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
       </div>
 
       {query.trim() && !atLimit && (
-        <div className="mt-2 max-w-md rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden">
+        <div className="mt-2 max-w-md rounded-xl bg-[#141417] light:bg-white overflow-hidden">
           {searching ? (
             <div className="p-2 space-y-1.5">
               {[...Array(3)].map((_, i) => (
@@ -72,7 +72,7 @@ export function AppPicker({ country, addedKeys, atLimit, onAdd }: Props) {
                     <div className="relative shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={app.iconUrl} alt="" className="size-8 rounded-lg bg-white/[0.05] light:bg-black/[0.04]" />
-                      <span className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-[#1a1d24] light:bg-white">
+                      <span className="absolute -bottom-1 -right-1 flex size-3.5 items-center justify-center rounded-full bg-[#141417] light:bg-white">
                         <StoreIcon store={app.store} className="size-2 text-gray-300 light:text-gray-700" />
                       </span>
                     </div>

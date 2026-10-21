@@ -231,7 +231,7 @@ export default function DashboardSidebar({
         // is mostly cosmetic — avoids the drawer visibly staying open mid-navigation.
         if ((e.target as HTMLElement).closest("a")) onMobileClose?.();
       }}
-      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0d0f14] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-full w-72 max-w-[85vw] shrink-0 flex-col bg-[#0a0a0c] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] transition-transform duration-200 ease-in-out lg:static lg:z-auto lg:translate-x-0 ${
         isMobileOpen ? "translate-x-0" : "-translate-x-full"
       }`}
     >
@@ -265,7 +265,7 @@ export default function DashboardSidebar({
         </div>
 
         {open && (
-          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 overflow-hidden">
+          <div className="absolute left-4 right-4 top-full z-50 mt-1 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 overflow-hidden">
             <div className="px-2 py-1.5">
               <p className="px-2 py-1 text-xs font-semibold uppercase tracking-widest text-gray-600 light:text-gray-400">
                 Workspaces

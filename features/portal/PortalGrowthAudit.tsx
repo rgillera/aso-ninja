@@ -4,7 +4,7 @@ const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL;
 
 export default function PortalGrowthAudit() {
   return (
-    <section className="bg-[#eef0f5] py-24 sm:py-28">
+    <section className="bg-gray-50 py-24 sm:py-28">
       <div className="mx-auto max-w-5xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-2xl bg-white shadow-clay ring-1 ring-black/5">
           <div
@@ -14,7 +14,7 @@ export default function PortalGrowthAudit() {
           <div className="relative flex flex-col gap-10 px-6 py-12 sm:px-10 sm:py-14 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
               <PortalEyebrow>Free App Audit</PortalEyebrow>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 sm:text-4xl">
                 Want an expert to review your app?
               </h2>
               <p className="mt-4 text-base leading-7 text-gray-600">
@@ -27,7 +27,7 @@ export default function PortalGrowthAudit() {
                 href={calendlyUrl ?? "mailto:hello@appaso.io"}
                 target={calendlyUrl ? "_blank" : undefined}
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn transition-colors hover:bg-indigo-500"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500"
               >
                 Book a free audit
               </a>

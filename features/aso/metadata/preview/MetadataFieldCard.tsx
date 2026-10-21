@@ -46,7 +46,7 @@ export function MetadataSection({
   const showCurrentValue = originalValue !== undefined && originalValue !== "" && originalValue !== value;
 
   return (
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       {/* Card header */}
       <div className="flex items-center gap-1.5 px-5 pt-4 pb-3">
         <h3 className="text-sm font-semibold text-white light:text-gray-900">{title}</h3>
@@ -64,7 +64,7 @@ export function MetadataSection({
           store screen (see PhonePreview, which has its own real dark/light
           toggle for that), so it follows the site theme like any other
           recessed input well. */}
-      <div className={`mx-4 rounded-xl bg-[#0d0f14] light:bg-gray-50 ${exceeded ? "ring-1 ring-red-500/40" : ""} ${showCurrentValue ? "mb-2" : "mb-4"}`}>
+      <div className={`mx-4 rounded-xl bg-[#0a0a0c] light:bg-gray-50 ${exceeded ? "ring-1 ring-red-500/40" : ""} ${showCurrentValue ? "mb-2" : "mb-4"}`}>
         <div className="px-4 pt-3 pb-2">
           <textarea
             value={value}

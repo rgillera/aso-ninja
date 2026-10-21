@@ -59,7 +59,7 @@ export default async function BlogIndexPage() {
   };
 
   return (
-    <div className="bg-[#f5f6f8] min-h-screen">
+    <div className="bg-white min-h-screen">
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
@@ -71,7 +71,7 @@ export default async function BlogIndexPage() {
         <section className="pt-32 pb-16 sm:pb-24">
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Blog</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
               Guides to growing your{" "}
               <span className="text-indigo-600">app</span>
             </h1>

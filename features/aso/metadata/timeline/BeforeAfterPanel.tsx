@@ -16,7 +16,7 @@ export function BeforeAfterPanel({ event, selectedFields, showDiff, onShowDiffCh
   return (
     <div className="flex-1 overflow-y-auto">
       {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-[#111318] light:bg-[#f5f6f8] grid grid-cols-3 items-center border-b border-white/[0.07] light:border-black/[0.08] py-3 px-6">
+      <div className="sticky top-0 z-10 bg-[#0e0e10] light:bg-[#f7f7f8] grid grid-cols-3 items-center border-b border-white/[0.07] light:border-black/[0.08] py-3 px-6">
         <div className="text-center text-sm font-semibold text-gray-300 light:text-gray-700">
           Before <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 inline ml-0.5 -mt-0.5" />
         </div>
@@ -30,7 +30,7 @@ export function BeforeAfterPanel({ event, selectedFields, showDiff, onShowDiffCh
           <label className="flex items-center gap-1.5 cursor-pointer select-none">
             <span className="relative inline-flex h-4 w-7 shrink-0">
               <input type="checkbox" className="sr-only peer" checked={showDiff} onChange={e => onShowDiffChange(e.target.checked)} />
-              <span className="rounded-full bg-[#0d0f14] light:bg-gray-200 w-full peer-checked:bg-teal-600 transition-colors" />
+              <span className="rounded-full bg-[#0a0a0c] light:bg-gray-200 w-full peer-checked:bg-teal-600 transition-colors" />
               <span className="absolute top-0.5 left-0.5 size-3 rounded-full bg-white transition-transform peer-checked:translate-x-3 shadow" />
             </span>
             <span className="text-[10px] text-gray-500 whitespace-nowrap">Show changes</span>
@@ -54,7 +54,7 @@ export function BeforeAfterPanel({ event, selectedFields, showDiff, onShowDiffCh
         {panelFields.map(fu => (
           <div key={fu.field}>
             <div className="flex justify-center py-3">
-              <span className="rounded-full bg-[#1a1d24] light:bg-white px-3 py-0.5 text-[11px] text-gray-500">{fu.field}</span>
+              <span className="rounded-full bg-[#141417] light:bg-white px-3 py-0.5 text-[11px] text-gray-500">{fu.field}</span>
             </div>
 
             {fu.field === "Screenshots" && fu.screenshotsBefore ? (

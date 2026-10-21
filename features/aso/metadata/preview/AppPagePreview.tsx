@@ -112,13 +112,13 @@ export default function AppPagePreview({ app, allApps, storeData }: Props) {
     <>
     <div className="h-full flex flex-col overflow-hidden">
         {/* Page header */}
-        <div className="shrink-0 border-b border-white/[0.07] light:border-black/[0.08] bg-[#111318] light:bg-[#f5f6f8] px-6 py-4">
+        <div className="shrink-0 border-b border-white/[0.07] light:border-black/[0.08] bg-[#0e0e10] light:bg-[#f7f7f8] px-6 py-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               {previewApp.icon_url ? (
                 <img src={previewApp.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
               ) : (
-                <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
+                <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 shrink-0 flex items-center justify-center">
                   <DevicePhoneMobileIcon className="size-4 text-gray-500" />
                 </div>
               )}
@@ -145,7 +145,7 @@ export default function AppPagePreview({ app, allApps, storeData }: Props) {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 rounded-lg bg-[#1a1d24] light:bg-white p-1.5">
+              <div className="flex items-center gap-1 rounded-lg bg-[#141417] light:bg-white p-1.5">
                 <button onClick={() => setDark(false)} className={`rounded-md p-2 transition-colors ${!dark ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500"}`}>
                   <SunIcon className="size-4" />
                 </button>
@@ -160,7 +160,7 @@ export default function AppPagePreview({ app, allApps, storeData }: Props) {
         <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
           {/* Left: metadata fields */}
           <div className="flex flex-col lg:flex-1 lg:overflow-hidden lg:border-r lg:border-white/[0.07] light:lg:border-black/[0.08]">
-            <div className="shrink-0 flex flex-col gap-2 px-6 py-2 border-b border-white/[0.07] light:border-black/[0.08] bg-[#111318] light:bg-[#f5f6f8] sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:py-0">
+            <div className="shrink-0 flex flex-col gap-2 px-6 py-2 border-b border-white/[0.07] light:border-black/[0.08] bg-[#0e0e10] light:bg-[#f7f7f8] sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:py-0">
               <div className="flex">
                 {tabs.map((t) => (
                   <button
@@ -178,12 +178,12 @@ export default function AppPagePreview({ app, allApps, storeData }: Props) {
               </div>
               <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
                 <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">Clear all</button>
-                <button onClick={() => setShowSearchPreview(true)} className="rounded-lg bg-[#1a1d24] light:bg-white px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors">Search Preview</button>
-                <button onClick={() => setShowCompareVersions(true)} className="rounded-lg bg-[#1a1d24] light:bg-white px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors">Compare versions</button>
+                <button onClick={() => setShowSearchPreview(true)} className="rounded-lg bg-[#141417] light:bg-white px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors">Search Preview</button>
+                <button onClick={() => setShowCompareVersions(true)} className="rounded-lg bg-[#141417] light:bg-white px-3 py-1.5 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors">Compare versions</button>
               </div>
             </div>
 
-            <div className="flex-1 p-6 space-y-4 bg-[#111318] light:bg-[#f5f6f8] lg:overflow-y-auto">
+            <div className="flex-1 p-6 space-y-4 bg-[#0e0e10] light:bg-[#f7f7f8] lg:overflow-y-auto">
               {tab === "text" && (
                 <AppTextPreview
                   app={previewApp}

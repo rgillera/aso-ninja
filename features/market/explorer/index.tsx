@@ -117,7 +117,7 @@ export default function AppExplorerPage() {
 
   if (!isPlanAtLeast(planSlug, "pro")) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <div className="flex items-center gap-2 px-6 pt-6">
           <h1 className="text-xl font-semibold text-white light:text-gray-900">App Explorer</h1>
         </div>
@@ -138,7 +138,7 @@ export default function AppExplorerPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="flex items-center gap-2 px-6 pt-6">
         <h1 className="text-xl font-semibold text-white light:text-gray-900">App Explorer</h1>
         <InformationCircleIcon className="size-4 text-gray-600 light:text-gray-400" title="Ranked from Apple's and Google's public top-charts feeds (capped at 100 and 200 apps respectively, neither store exposes more). Est. downloads and revenue are rough models from chart ranks and public rating counts, not reported figures." />
@@ -148,7 +148,7 @@ export default function AppExplorerPage() {
         <ExplorerFilters filters={filters} onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))} />
 
         {error ? (
-          <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white flex flex-col items-center justify-center py-16 text-center">
             <ExclamationTriangleIcon className="size-8 text-amber-500 light:text-amber-700/70 mb-3" />
             <p className="text-sm font-medium text-gray-400 light:text-gray-600">{error}</p>
           </div>

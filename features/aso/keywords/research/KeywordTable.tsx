@@ -636,14 +636,14 @@ export function KeywordTable({
   }
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10 transition-all">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm transition-all">
 
       {/* Filter toolbar */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex-wrap gap-y-2">
         {/* Keyword search */}
         <button
           onClick={(e) => toggleFilterDropdown("keyword", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "keyword" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${kwSearch ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "keyword" ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           <MagnifyingGlassIcon className="size-3.5" />
           {kwSearch ? `"${kwSearch}"` : "Keyword"}
@@ -653,7 +653,7 @@ export function KeywordTable({
         {/* Volume filter */}
         <button
           onClick={(e) => toggleFilterDropdown("volume", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "volume" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${volumeFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "volume" ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {volumeFilter !== "any" ? `Volume: ${volumeFilter.charAt(0).toUpperCase() + volumeFilter.slice(1)}` : "Volume"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
@@ -662,7 +662,7 @@ export function KeywordTable({
         {/* Rank filter */}
         <button
           onClick={(e) => toggleFilterDropdown("rank", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${rankFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "rank" ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           {rankFilter === "any" ? "Rank" : rankFilter === "ranked" ? "Ranked" : rankFilter === "unranked" ? unrankedLabel(store) : rankFilter === "top3" ? "Top 3" : "Top 10"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
@@ -671,7 +671,7 @@ export function KeywordTable({
         {/* Relevancy filter — every plan has some relevancy pool now, so this is never locked */}
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
-          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0d0f14] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+          className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
         >
           <SparklesIcon className="size-3 text-violet-400 light:text-violet-700" />
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
@@ -679,7 +679,7 @@ export function KeywordTable({
         </button>
 
         {/* All / checked / starred segment */}
-        <div className="flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 p-0.5">
+        <div className="flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 p-0.5">
           <button
             onClick={() => setTableFilter("all")}
             className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${tableFilter === "all" ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-white light:hover:text-gray-900"}`}
@@ -723,11 +723,11 @@ export function KeywordTable({
         <div
           ref={filterDropdownRef}
           style={{ position: "fixed", top: filterPosRef.current.top, left: filterPosRef.current.left, zIndex: 9999 }}
-          className="bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl"
+          className="bg-[#141417] light:bg-white rounded-xl overflow-hidden shadow-2xl"
         >
           {openFilter === "keyword" && (
             <div className="p-2 w-56">
-              <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
+              <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-2.5 py-1.5 transition-all">
                 <MagnifyingGlassIcon className="size-3.5 text-gray-600 light:text-gray-400 shrink-0" />
                 <input
                   autoFocus
@@ -795,7 +795,7 @@ export function KeywordTable({
       {/* Add keyword input + Edit columns */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
         <div
-          className="relative flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 light:ring-black/[0.08]"
+          className="relative flex-1 flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-2 transition-all focus-within:ring-indigo-500/40 light:ring-black/[0.08]"
         >
           <input
             value={keywordInput}
@@ -821,7 +821,7 @@ export function KeywordTable({
         <div className="shrink-0" ref={colPickerRef}>
           <button
             onClick={openColPicker}
-            className={`flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 ring-1 px-3 py-2 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors ${colPickerOpen ? "ring-indigo-500/50 text-white" : "ring-white/[0.08] light:ring-black/[0.08]"}`}
+            className={`flex items-center gap-1.5 rounded-lg bg-[#0a0a0c] light:bg-gray-50 ring-1 px-3 py-2 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors ${colPickerOpen ? "ring-indigo-500/50 text-white" : "ring-white/[0.08] light:ring-black/[0.08]"}`}
           >
             <TableCellsIcon className="size-3.5" />
             Edit columns
@@ -833,7 +833,7 @@ export function KeywordTable({
           <div
             ref={colPickerMenuRef}
             style={{ position: "fixed", top: pickerRectRef.current.top, right: pickerRectRef.current.right, zIndex: 9999 }}
-            className="w-60 bg-[#1a1d24] light:bg-white rounded-xl overflow-hidden shadow-2xl"
+            className="w-60 bg-[#141417] light:bg-white rounded-xl overflow-hidden shadow-2xl"
           >
             {/* Search */}
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/[0.07] light:border-black/[0.08]">
@@ -952,7 +952,7 @@ export function KeywordTable({
                       allSelected ? new Set() : new Set(displayed.map((_, i) => i))
                     )
                   }
-                  className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
+                  className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                 />
               </th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 whitespace-nowrap">
@@ -1006,7 +1006,7 @@ export function KeywordTable({
                     type="checkbox"
                     checked={selected.has(i)}
                     onChange={() => toggleSelect(i)}
-                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
+                    className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                   />
                 </td>
                 <td className="px-4 py-3.5">
@@ -1065,7 +1065,7 @@ export function KeywordTable({
                     <button
                       onClick={() => setLiveSearchKeyword(row.keyword)}
                       title="Live App Store search"
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     >
                       <MagnifyingGlassIcon className="size-3" />
                       Results
@@ -1073,14 +1073,14 @@ export function KeywordTable({
                     <Link
                       href={`/dashboard/keywords/combination?${new URLSearchParams({ seed: row.keyword })}`}
                       title="Find long tail keywords for this keyword"
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                     >
                       <PuzzlePieceIcon className="size-3" />
                       Long tail
                     </Link>
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}
-                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
+                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                     >
                       <XMarkIcon className="size-3" />
                     </button>

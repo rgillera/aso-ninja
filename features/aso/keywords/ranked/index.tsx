@@ -28,7 +28,7 @@ function NoAppSelected() {
   const resolving = useActiveAppResolving();
   if (resolving) return <ActiveAppLoading />;
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="text-center">
         <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
@@ -84,7 +84,7 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
           <Tooltip
             labelFormatter={(d) => formatDate(String(d))}
             formatter={(v) => [v, "Ranked keywords"]}
-            contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
           <Area
@@ -150,7 +150,7 @@ export default function RankedKeywordsPage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <AppHeader app={activeApp ?? null} title="All Ranked Keywords" />
         <FeatureLocked
           minPlan="pro_plus"
@@ -169,7 +169,7 @@ export default function RankedKeywordsPage() {
   if (!activeApp) return <NoAppSelected />;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp} title="All Ranked Keywords" />
 
       <div className="flex-1 overflow-y-auto">
@@ -196,7 +196,7 @@ export default function RankedKeywordsPage() {
         </div>
 
         {tab === "chart" ? (
-          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
             <RankedChart history={history} loading={loading} />
           </div>
         ) : (

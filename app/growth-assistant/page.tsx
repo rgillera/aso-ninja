@@ -105,7 +105,7 @@ export default async function GrowthAssistantPage() {
   const isAuthenticated = !!user;
 
   return (
-    <div className="bg-[#f5f6f8] min-h-screen">
+    <div className="bg-white min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
@@ -116,7 +116,7 @@ export default async function GrowthAssistantPage() {
 
           <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
             <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">App Growth Assistant</p>
-            <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
               Not a generic VA. <span className="text-indigo-600">Expert-guided help for your app.</span>
             </h1>
             <p className="mt-6 text-lg text-gray-600">
@@ -129,7 +129,7 @@ export default async function GrowthAssistantPage() {
                 href={calendlyUrl ?? "mailto:hello@appaso.io"}
                 target={calendlyUrl ? "_blank" : undefined}
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 Get your dedicated assistant
               </a>
@@ -146,11 +146,11 @@ export default async function GrowthAssistantPage() {
           </div>
         </section>
 
-        <section className="bg-[#eef0f5] pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="bg-gray-50 pt-24 pb-24 sm:pt-32 sm:pb-32">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Why it&apos;s different</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 Not just another VA
               </h2>
               <p className="mt-6 text-lg text-gray-600">
@@ -198,7 +198,7 @@ export default async function GrowthAssistantPage() {
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">The offer</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 One dedicated assistant, 40 hours a week
               </h2>
             </div>
@@ -206,7 +206,7 @@ export default async function GrowthAssistantPage() {
             <div className="mx-auto mt-16 flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-clay ring-1 ring-black/5 sm:p-10">
               <p className="text-sm font-semibold text-gray-500">App Growth Assistant</p>
               <div className="mt-4 flex items-baseline gap-x-2">
-                <span className="text-5xl font-bold tracking-tight text-gray-900">$1,200</span>
+                <span className="text-5xl font-semibold tracking-tight text-gray-900">$1,200</span>
                 <span className="text-sm text-gray-500">/ month, to start</span>
               </div>
               <ul className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-x-8 gap-y-3 text-left sm:grid-cols-2">
@@ -225,7 +225,7 @@ export default async function GrowthAssistantPage() {
                 href={calendlyUrl ?? "mailto:hello@appaso.io"}
                 target={calendlyUrl ? "_blank" : undefined}
                 rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="mt-8 inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                className="mt-8 inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 Get your dedicated assistant
               </a>
@@ -257,11 +257,11 @@ export default async function GrowthAssistantPage() {
           </div>
         </section>
 
-        <section className="bg-[#eef0f5] pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="bg-gray-50 pt-24 pb-24 sm:pt-32 sm:pb-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">What they can handle</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 Skills built for app teams
               </h2>
               <p className="mt-6 text-lg text-gray-600">
@@ -297,7 +297,7 @@ export default async function GrowthAssistantPage() {
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">How it works</p>
-              <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
                 Execution, guided by expertise
               </h2>
             </div>
@@ -383,7 +383,7 @@ export default async function GrowthAssistantPage() {
                   href={calendlyUrl ?? "mailto:hello@appaso.io"}
                   target={calendlyUrl ? "_blank" : undefined}
                   rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="inline-flex items-center justify-center rounded-md bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
+                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
                 >
                   Talk to us
                 </a>

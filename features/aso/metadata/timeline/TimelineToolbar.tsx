@@ -36,7 +36,7 @@ export function TimelineToolbar({ selectedFields, onToggle, onClearAll }: Props)
       <div className="relative" ref={dropRef}>
         <button
           onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-1.5 text-xs text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-1.5 text-xs text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
         >
           Metadata
           <span className="rounded bg-indigo-500/20 text-indigo-400 light:text-indigo-700 px-1.5 py-0.5 text-[10px] font-semibold">{selectedFields.size}</span>
@@ -44,9 +44,9 @@ export function TimelineToolbar({ selectedFields, onToggle, onClearAll }: Props)
         </button>
 
         {open && (
-          <div className="absolute left-0 top-full mt-1.5 z-50 w-52 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+          <div className="absolute left-0 top-full mt-1.5 z-50 w-52 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
             <div className="p-2 border-b border-white/[0.07] light:border-black/[0.08]">
-              <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1.5">
+              <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-2.5 py-1.5">
                 <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
                 <input
                   autoFocus
@@ -86,7 +86,7 @@ export function TimelineToolbar({ selectedFields, onToggle, onClearAll }: Props)
         <span className="flex items-center gap-1.5 text-xs text-gray-500">
           <span className="h-px w-5 bg-orange-400 shrink-0" />Product Page Optimization
         </span>
-        <button className="flex items-center justify-center rounded-lg bg-[#1a1d24] light:bg-white p-2 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors">
+        <button className="flex items-center justify-center rounded-lg bg-[#141417] light:bg-white p-2 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors">
           <ArrowDownTrayIcon className="size-4" />
         </button>
       </div>

@@ -34,7 +34,7 @@ export function CountrySwitcher({ currentId, currentCountry, siblings, onSelect,
         onClick={() => setOpen((v) => !v)}
         className={
           variant === "pill"
-            ? "flex items-center gap-1.5 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-3.5 text-xs text-gray-300 light:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.04] transition-colors"
+            ? "flex items-center gap-1.5 rounded-lg bg-[#141417] light:bg-white px-3 py-3.5 text-xs text-gray-300 light:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.04] transition-colors"
             : "ml-1 flex items-center gap-0.5 rounded px-1 -mx-1 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         }
       >
@@ -47,7 +47,7 @@ export function CountrySwitcher({ currentId, currentCountry, siblings, onSelect,
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 rounded-xl bg-[#1a1d24] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
+        <div className="absolute left-0 top-full mt-1.5 z-50 w-44 rounded-xl bg-[#141417] light:bg-white shadow-xl shadow-black/30 light:shadow-black/10 overflow-hidden">
           <div className="max-h-64 overflow-y-auto py-1">
             {sorted.map((s) => (
               <button

@@ -39,14 +39,14 @@ export function ScreenshotComparison({ before, after }: { before: ScreenshotItem
   return (
     <div className="px-6 pb-6">
       <div className="grid grid-cols-2 divide-x divide-white/[0.06] light:divide-black/[0.06] rounded-xl overflow-hidden">
-        <div className="bg-[#0d0f14]/60 light:bg-black/[0.03] p-4">
+        <div className="bg-[#0a0a0c]/60 light:bg-black/[0.03] p-4">
           <div className="flex gap-2.5 overflow-x-auto pb-1">
             {before.map((ss, i) => (
               <ScreenshotCard key={i} gradientIdx={i} status={ss.status} url={ss.url} />
             ))}
           </div>
         </div>
-        <div className="bg-[#0d0f14]/60 light:bg-black/[0.03] p-4">
+        <div className="bg-[#0a0a0c]/60 light:bg-black/[0.03] p-4">
           <div className="flex gap-2.5 overflow-x-auto pb-1">
             {after.map((ss, i) => (
               <ScreenshotCard key={i} gradientIdx={before.length + i} status={ss.status} url={ss.url} />

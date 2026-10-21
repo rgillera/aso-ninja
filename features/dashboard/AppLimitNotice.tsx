@@ -114,7 +114,7 @@ export function AppLimitNotice({
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ring-1 transition-colors disabled:opacity-60 ${
                     isKept
                       ? "bg-indigo-500/15 text-indigo-300 light:text-indigo-700 ring-indigo-500/40"
-                      : "bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 ring-white/[0.08] light:ring-black/[0.08] hover:text-white light:hover:text-gray-900"
+                      : "bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 ring-white/[0.08] light:ring-black/[0.08] hover:text-white light:hover:text-gray-900"
                   }`}
                 >
                   {isKept && <CheckIcon className="size-3" />}

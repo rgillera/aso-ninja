@@ -21,7 +21,7 @@ function AppIcon({ app }: { app: App }) {
   return app.icon_url
     ? <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover" />
     : (
-      <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 flex items-center justify-center">
+      <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
         <DevicePhoneMobileIcon className="size-4 text-gray-500" />
       </div>
     );
@@ -57,7 +57,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
       <button
         onClick={() => onOffsetChange(Math.max(0, dateOffset - DAYS_SHOWN))}
         disabled={dateOffset === 0}
-        className="absolute left-[52px] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
+        className="absolute left-[52px] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronLeftIcon className="size-3" />
       </button>
@@ -65,7 +65,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
       <button
         onClick={() => onOffsetChange(Math.min(allDates.length - DAYS_SHOWN, dateOffset + DAYS_SHOWN))}
         disabled={dateOffset + DAYS_SHOWN >= allDates.length}
-        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#1a1d24] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
+        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronRightIcon className="size-3" />
       </button>

@@ -19,11 +19,11 @@ const testimonials = [
 
 export default function PortalTestimonials() {
   return (
-    <section id="testimonials" className="bg-[#f5f6f8] py-24 sm:py-28">
+    <section id="testimonials" className="bg-white py-24 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <PortalEyebrow>Testimonials</PortalEyebrow>
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
             Trusted by app teams worldwide
           </h2>
         </div>

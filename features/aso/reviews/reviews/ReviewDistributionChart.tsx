@@ -43,7 +43,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
       <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4 pb-2">
         <p className="text-sm font-semibold text-white light:text-gray-900">Review distribution per star</p>
 
-        <div className="flex items-center gap-2 rounded-lg bg-[#0d0f14] light:bg-gray-50 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-1.5">
           <CalendarDaysIcon className="size-3.5 text-gray-500" />
           <input
             type="date"
@@ -92,7 +92,7 @@ export function ReviewDistributionChart({ series, from, to, onFromChange, onToCh
             <YAxis yAxisId="right" orientation="right" domain={[0, 5]} tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
             <Tooltip
               formatter={(value, name) => [typeof value === "number" ? Math.round(value * 100) / 100 : value, name]}
-              contentStyle={{ background: "#1a1d24", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
               labelStyle={{ color: "#9ca3af" }}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: "#9ca3af" }} />

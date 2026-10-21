@@ -15,7 +15,7 @@ function DeltaChip({ pct }: { pct: number | null }) {
 
 function StatCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-[#1a1d24] light:bg-white p-5 flex flex-col">
+    <div className="rounded-xl bg-[#141417] light:bg-white p-5 flex flex-col">
       <p className="text-sm font-medium text-gray-300 light:text-gray-700 mb-3">{label}</p>
       {children}
     </div>
@@ -27,7 +27,7 @@ const STAR_ORDER = ["5", "4", "3", "2", "1"] as const;
 function StarDistributionBar({ histogram }: { histogram: ReviewStats["starDistribution"] }) {
   const total = STAR_ORDER.reduce((sum, star) => sum + histogram[star], 0);
   return (
-    <div className="flex-1 flex items-center h-8 rounded-lg overflow-hidden bg-[#0d0f14] light:bg-gray-50">
+    <div className="flex-1 flex items-center h-8 rounded-lg overflow-hidden bg-[#0a0a0c] light:bg-gray-50">
       {total === 0 ? (
         <span className="w-full text-center text-xs text-gray-600 light:text-gray-400">No data</span>
       ) : (

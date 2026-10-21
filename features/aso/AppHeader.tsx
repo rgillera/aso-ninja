@@ -33,7 +33,7 @@ function ConfirmUnfollowDialog({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-sm rounded-2xl bg-[#1a1d24] light:bg-white shadow-2xl light:shadow-black/10 p-6">
+      <div className="w-full max-w-sm rounded-2xl bg-[#141417] light:bg-white shadow-2xl light:shadow-black/10 p-6">
         <p className="text-sm text-gray-300 light:text-gray-700 mb-2">
           Unfollow <span className="font-semibold text-white light:text-gray-900">{name}</span>?
         </p>
@@ -304,7 +304,7 @@ export function AppHeader({ app, title }: Props) {
               {app.icon_url ? (
                 <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover shrink-0" />
               ) : (
-                <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
+                <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 shrink-0 flex items-center justify-center">
                   <DevicePhoneMobileIcon className="size-4 text-gray-500" />
                 </div>
               )}
@@ -345,7 +345,7 @@ export function AppHeader({ app, title }: Props) {
             </div>
           ) : (
             <>
-              <div className="size-8 rounded-xl bg-[#0d0f14] light:bg-gray-100 shrink-0 flex items-center justify-center">
+              <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 shrink-0 flex items-center justify-center">
                 <DevicePhoneMobileIcon className="size-4 text-gray-500" />
               </div>
               <div>

@@ -2,12 +2,14 @@
 
 import { useActionState } from "react";
 import { resendVerificationEmailAction } from "./actions";
+import AuthBackdrop from "./AuthBackdrop";
 
 export default function VerifyEmailPage({ email, next }: { email: string; next?: string }) {
   const [state, action, pending] = useActionState(resendVerificationEmailAction, null);
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] flex flex-col items-center justify-center px-4">
+    <div className="relative isolate min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      <AuthBackdrop />
       <div className="w-full max-w-md text-center">
         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-indigo-50 ring-1 ring-indigo-100">
           <svg
@@ -33,7 +35,7 @@ export default function VerifyEmailPage({ email, next }: { email: string; next?:
           link to activate your account.
         </p>
 
-        <div className="mt-8 bg-white rounded-2xl p-6 shadow-clay-lg ring-1 ring-black/5">
+        <div className="mt-8 bg-white rounded-2xl p-6 shadow-clay-lg ring-1 ring-gray-950/[0.07]">
           {state?.error && (
             <div className="mb-4 rounded-lg bg-red-50 ring-1 ring-red-100 px-4 py-3 text-sm text-red-600">
               {state.error}
@@ -52,7 +54,7 @@ export default function VerifyEmailPage({ email, next }: { email: string; next?:
             <button
               type="submit"
               disabled={pending}
-              className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-clay-btn hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white transition-colors"
+              className="w-full rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white transition-colors"
             >
               {pending ? "Sending…" : "Resend verification email"}
             </button>

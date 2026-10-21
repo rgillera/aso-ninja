@@ -225,7 +225,7 @@ function UncheckedList({ keywords, trackedSet, onAdd, onRemove, translationFor, 
             className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs ${
               tracked
                 ? "bg-indigo-500/20 ring-1 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
-                : "bg-[#0d0f14] light:bg-gray-50 text-gray-300 light:text-gray-700"
+                : "bg-[#0a0a0c] light:bg-gray-50 text-gray-300 light:text-gray-700"
             }`}
           >
             <TrackButton tracked={tracked} onAdd={() => onAdd(kw.term)} onRemove={onRemove ? () => onRemove(kw.term) : undefined} />

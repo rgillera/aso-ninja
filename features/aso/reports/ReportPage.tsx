@@ -234,7 +234,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
   const suggestions = [...deterministicSuggestions, ...aiSuggestions];
 
   return (
-    <main className="h-full overflow-y-auto bg-[#111318] light:bg-[#f5f6f8]">
+    <main className="h-full overflow-y-auto bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={app} title="ASO Report" />
 
       {saveError && (
@@ -253,7 +253,7 @@ export default function ReportPage({ app, storeData, benchmark = null, keywordMe
             <>
               <button
                 onClick={() => setShowCompetitorModal(true)}
-                className="flex w-full items-center gap-2 rounded-2xl bg-[#1a1d24] light:bg-white px-4 py-3 text-sm font-medium text-gray-300 light:text-gray-700 transition-colors hover:text-white light:hover:text-gray-900 hover:ring-white/[0.16] light:hover:ring-black/20"
+                className="flex w-full items-center gap-2 rounded-2xl bg-[#141417] light:bg-white px-4 py-3 text-sm font-medium text-gray-300 light:text-gray-700 transition-colors hover:text-white light:hover:text-gray-900 hover:ring-white/[0.16] light:hover:ring-black/20"
               >
                 <PlusIcon className="size-4" />
                 Add competitors to compare

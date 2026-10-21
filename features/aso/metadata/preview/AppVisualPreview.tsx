@@ -44,7 +44,7 @@ function UploadLabel({
 }) {
   return (
     <label
-      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/[0.12] light:border-black/[0.12] bg-[#0d0f14] light:bg-gray-50 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:border-white/20 light:hover:border-black/20 transition-colors ${className}`}
+      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-white/[0.12] light:border-black/[0.12] bg-[#0a0a0c] light:bg-gray-50 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:border-white/20 light:hover:border-black/20 transition-colors ${className}`}
     >
       <input
         type="file"
@@ -98,7 +98,7 @@ export default function AppVisualPreview({
   return (
     <>
       {/* App Icon */}
-      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
         <VisualCardHeader title="App Icon" />
         <p className="px-5 pb-4 text-xs text-gray-500 leading-relaxed">
           For iPhone 6.5&rdquo; display, Apple requires app icons to have 1024x1024 dimensions.
@@ -124,7 +124,7 @@ export default function AppVisualPreview({
                     Replace
                   </span>
                 </div>
-                <div className="absolute -bottom-1.5 -right-1.5 flex size-7 items-center justify-center rounded-full bg-indigo-500 text-white ring-2 ring-[#1a1d24] light:ring-white shadow-md transition-transform group-hover:scale-110">
+                <div className="absolute -bottom-1.5 -right-1.5 flex size-7 items-center justify-center rounded-full bg-indigo-500 text-white ring-2 ring-[#141417] light:ring-white shadow-md transition-transform group-hover:scale-110">
                   <ArrowUpTrayIcon className="size-3.5" />
                 </div>
               </>
@@ -139,7 +139,7 @@ export default function AppVisualPreview({
       </div>
 
       {/* Screenshots */}
-      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
         <VisualCardHeader
           title="Screenshots"
           badge={
@@ -164,7 +164,7 @@ export default function AppVisualPreview({
               onFiles={onScreenshotUpload}
             />
             {customScreenshotUrls.map((url, i) => (
-              <div key={`custom-${url}`} className="group relative w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0d0f14] light:bg-gray-100 ring-1 ring-emerald-500/40">
+              <div key={`custom-${url}`} className="group relative w-28 aspect-[9/19.5] shrink-0 overflow-hidden rounded-xl bg-[#0a0a0c] light:bg-gray-100 ring-1 ring-emerald-500/40">
                 <img src={url} alt={`Custom screenshot ${i + 1}`} className="size-full object-cover" />
                 <button
                   onClick={() => onRemoveScreenshot(url)}
@@ -176,13 +176,13 @@ export default function AppVisualPreview({
             ))}
             {storeScreenshots.map((url, i) => (
               // Fixed height, natural width: iPad-only apps ship 3:4 shots that a phone-shaped box would crop.
-              <img key={`store-${i}`} src={url} alt={`Screenshot ${i + 1}`} className="h-[243px] w-auto max-w-none shrink-0 rounded-xl bg-[#0d0f14] light:bg-gray-100" />
+              <img key={`store-${i}`} src={url} alt={`Screenshot ${i + 1}`} className="h-[243px] w-auto max-w-none shrink-0 rounded-xl bg-[#0a0a0c] light:bg-gray-100" />
             ))}
           </div>
           {canScrollRight && (
             <button
               onClick={() => screenshotsRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-              className="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-[#22252f] light:bg-white text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 shadow-lg shadow-black/30 light:shadow-black/10 transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex size-8 items-center justify-center rounded-full bg-[#1d1d21] light:bg-white text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 shadow-lg shadow-black/30 light:shadow-black/10 transition-colors"
             >
               <ChevronRightIcon className="size-4" />
             </button>
@@ -191,7 +191,7 @@ export default function AppVisualPreview({
       </div>
 
       {/* Video */}
-      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+      <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
         <VisualCardHeader title="Video" />
         <p className="px-5 pb-4 text-xs text-gray-500 leading-relaxed">
           Apple requires App previews to be in M4V, MP4, or MOV format and can&rsquo;t exceed 500 MB.

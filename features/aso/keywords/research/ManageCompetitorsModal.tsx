@@ -95,7 +95,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-10 px-4 pb-4">
-      <div className="bg-[#1a1d24] light:bg-white rounded-xl w-full max-w-4xl max-h-[88vh] flex flex-col shadow-2xl light:shadow-black/10">
+      <div className="bg-[#141417] light:bg-white rounded-xl w-full max-w-4xl max-h-[88vh] flex flex-col shadow-2xl light:shadow-black/10">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08] shrink-0">
           <h2 className="text-base font-semibold text-white light:text-gray-900">Manage competitors</h2>
@@ -180,7 +180,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
 
           {/* Search */}
           <div>
-            <div className="flex items-center gap-2 bg-[#0d0f14] light:bg-gray-50 rounded-lg px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all">
+            <div className="flex items-center gap-2 bg-[#0a0a0c] light:bg-gray-50 rounded-lg px-3 py-2.5 focus-within:ring-indigo-500/50 transition-all">
               <MagnifyingGlassIcon className="size-4 text-gray-500 shrink-0" />
               <input
                 autoFocus
@@ -202,7 +202,7 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
                   <button
                     key={chip}
                     onClick={() => setQuery(chip)}
-                    className="flex items-center gap-1 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 bg-[#0d0f14] light:bg-gray-50 rounded-md px-2 py-1 transition-colors"
+                    className="flex items-center gap-1 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 bg-[#0a0a0c] light:bg-gray-50 rounded-md px-2 py-1 transition-colors"
                   >
                     <MagnifyingGlassIcon className="size-3" />
                     {chip}
@@ -234,8 +234,8 @@ export function ManageCompetitorsModal({ activeApp, selected, onSave, onClose }:
                       added
                         ? "bg-indigo-500/10 ring-indigo-500/40"
                         : blocked
-                          ? "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.04] light:ring-black/[0.04] opacity-40 cursor-not-allowed"
-                          : "bg-[#0d0f14] light:bg-gray-50 ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/20 light:hover:ring-black/20"
+                          ? "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.04] light:ring-black/[0.04] opacity-40 cursor-not-allowed"
+                          : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.06] light:ring-black/[0.06] hover:ring-white/20 light:hover:ring-black/20"
                     }`}
                   >
                     {app.iconUrl && (

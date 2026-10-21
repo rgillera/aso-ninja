@@ -20,7 +20,7 @@ function NoAppSelected() {
   const resolving = useActiveAppResolving();
   if (resolving) return <ActiveAppLoading />;
   return (
-    <div className="h-full flex items-center justify-center bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex items-center justify-center bg-[#0e0e10] light:bg-[#f7f7f8]">
       <div className="text-center">
         <MagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No apps yet</p>
@@ -116,7 +116,7 @@ export default function AiVisibilityPage() {
 
   if (isLocked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         <AppHeader app={activeApp} title="AI Visibility" />
         <FeatureLocked
           minPlan="pro_plus"
@@ -133,7 +133,7 @@ export default function AiVisibilityPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#111318] light:bg-[#f5f6f8]">
+    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp} title="AI Visibility" />
 
       <div className="flex items-center gap-1.5 px-6 pt-3 text-xs text-gray-500 light:text-gray-500">
@@ -150,14 +150,14 @@ export default function AiVisibilityPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        <div className="rounded-xl bg-[#1a1d24] light:bg-white px-4 py-3">
+        <div className="rounded-xl bg-[#141417] light:bg-white px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-2">
             Track a discovery prompt
           </p>
           <AddPromptForm activeApp={activeApp} workspaceId={workspaceId} appId={appId} prompts={prompts} onAdded={handleAdded} />
         </div>
 
-        <div className="rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+        <div className="rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
           <VisibilityTrendChart history={history} loading={loading} />
         </div>
 
@@ -167,7 +167,7 @@ export default function AiVisibilityPage() {
               Loading tracked prompts…
             </div>
           ) : prompts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center px-6 rounded-xl bg-[#1a1d24] light:bg-white">
+            <div className="flex flex-col items-center justify-center py-12 text-center px-6 rounded-xl bg-[#141417] light:bg-white">
               <SparklesIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-400 light:text-gray-600">No prompts tracked yet</p>
               <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">

@@ -337,7 +337,7 @@ export function PerformanceTable({
   }, [filtered, snapshots]);
 
   return (
-    <div className="mx-6 mb-6 rounded-xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20 light:shadow-black/10">
+    <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
       {keywords.length > 0 && (
         <div className="grid grid-cols-2 divide-x divide-white/[0.07] light:divide-black/[0.08] border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="px-5 py-3.5">
@@ -366,7 +366,7 @@ export function PerformanceTable({
       />
 
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
-        <div className="flex-1 flex items-center rounded-lg bg-[#0d0f14] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all min-w-[200px]">
+        <div className="flex-1 flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus-within:ring-indigo-500/40 px-3 py-2 transition-all min-w-[200px]">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -391,7 +391,7 @@ export function PerformanceTable({
             onClick={onRefetchRanks}
             disabled={refetchingRanks}
             title="These keywords haven't had their first rank check yet. They're checked automatically in the background. Click to check them now."
-            className="flex items-center gap-1.5 rounded-lg bg-[#0d0f14] light:bg-gray-50 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0a0a0c] light:bg-gray-50 disabled:opacity-50 disabled:cursor-wait px-3 py-1.5 text-xs font-medium text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors shrink-0"
           >
             <ArrowPathIcon className="size-3.5 animate-spin" />
             {refetchingRanks ? "Checking now…" : `Checking ranks · ${stuckRankCount} left`}
@@ -436,20 +436,20 @@ export function PerformanceTable({
             </colgroup>
             <thead>
               <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
-                <th rowSpan={2} className="sticky left-0 z-20 bg-[#1a1d24] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] w-10 px-2 py-2 align-bottom text-center">
+                <th rowSpan={2} className="sticky left-0 z-20 bg-[#141417] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] w-10 px-2 py-2 align-bottom text-center">
                   <input
                     type="checkbox"
                     checked={allSelected}
                     onChange={() => setSelected(allSelected ? new Set() : new Set(filtered.map((k) => k.term)))}
-                    className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
+                    className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                   />
                 </th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#1a1d24] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W }} className="sticky z-20 bg-[#141417] light:bg-white border-r border-white/[0.07] light:border-black/[0.08] px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">
                   <button onClick={() => handleSort("keyword")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "keyword" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Keyword <SortIcon active={sortKey === "keyword"} dir={sortDir} />
                   </button>
                 </th>
-                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#1a1d24] light:bg-white px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
+                <th rowSpan={2} style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-20 bg-[#141417] light:bg-white px-4 py-2 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500 align-bottom border-l border-r border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
                   <button onClick={() => handleSort("volume")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "volume" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Volume <SortIcon active={sortKey === "volume"} dir={sortDir} />
                   </button>
@@ -475,7 +475,7 @@ export function PerformanceTable({
                     </div>
                   </th>
                 ))}
-                <th rowSpan={2} className="sticky right-0 z-20 bg-[#1a1d24] light:bg-white border-l border-white/[0.07] light:border-black/[0.08] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">Actions</th>
+                <th rowSpan={2} className="sticky right-0 z-20 bg-[#141417] light:bg-white border-l border-white/[0.07] light:border-black/[0.08] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">Actions</th>
               </tr>
               <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
@@ -513,15 +513,15 @@ export function PerformanceTable({
                 const s = snapshots[k.term];
                 return (
                   <tr key={k.term} className="hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group">
-                    <td className="sticky left-0 z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-2 py-3 text-center">
+                    <td className="sticky left-0 z-10 bg-[#141417] light:bg-white group-hover:bg-[#19191c] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-2 py-3 text-center">
                       <input
                         type="checkbox"
                         checked={selected.has(k.term)}
                         onChange={() => toggleSelect(k.term)}
-                        className="rounded border-gray-700 bg-[#0d0f14] light:bg-gray-50 text-indigo-500 accent-indigo-500"
+                        className="rounded border-gray-700 bg-[#0a0a0c] light:bg-gray-50 text-indigo-500 accent-indigo-500"
                       />
                     </td>
-                    <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-4 py-3">
+                    <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#141417] light:bg-white group-hover:bg-[#19191c] light:group-hover:bg-gray-50 border-r border-white/[0.04] light:border-black/[0.05] px-4 py-3">
                       <div className="flex items-center gap-1.5 min-w-0">
                         <button onClick={() => onToggleStar(k.term)} className="shrink-0 transition-colors">
                           <StarIcon className={`size-3.5 ${k.starred ? "fill-amber-400 text-amber-400 light:text-amber-700" : "text-gray-600 light:text-gray-400"}`} />
@@ -534,7 +534,7 @@ export function PerformanceTable({
                         </span>
                       </div>
                     </td>
-                    <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-l border-r border-white/[0.04] light:border-black/[0.05] px-3 py-3">
+                    <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#141417] light:bg-white group-hover:bg-[#19191c] light:group-hover:bg-gray-50 border-l border-r border-white/[0.04] light:border-black/[0.05] px-3 py-3">
                       {k.loading ? (
                         <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
                       ) : (
@@ -586,19 +586,19 @@ export function PerformanceTable({
                         })}
                       </>
                     )}
-                    <td className="sticky right-0 z-10 bg-[#1a1d24] light:bg-white group-hover:bg-[#1d2029] light:group-hover:bg-gray-50 border-l border-white/[0.04] light:border-black/[0.05] pr-4 py-3">
+                    <td className="sticky right-0 z-10 bg-[#141417] light:bg-white group-hover:bg-[#19191c] light:group-hover:bg-gray-50 border-l border-white/[0.04] light:border-black/[0.05] pr-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
                         <button
                           onClick={() => onLiveSearch(k.term)}
                           title="Live search"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
                         >
                           <MagnifyingGlassIcon className="size-3" />
                         </button>
                         <button
                           onClick={() => onRemoveKeyword(k.term)}
                           title="Remove keyword"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0d0f14] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
+                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
                         >
                           <XMarkIcon className="size-3" />
                         </button>
@@ -610,16 +610,16 @@ export function PerformanceTable({
             </tbody>
             <tfoot>
               <tr className="border-t border-white/[0.07] light:border-black/[0.08] bg-white/[0.015]">
-                <td className="sticky left-0 z-10 bg-[#1c1f27] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08]" />
-                <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#1c1f27] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
-                <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#1c1f27] light:bg-gray-50 border-l border-r border-white/[0.07] light:border-black/[0.08] px-3 py-3 text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.volumeLatest ?? "-"}</td>
+                <td className="sticky left-0 z-10 bg-[#18181b] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08]" />
+                <td style={{ left: CHECKBOX_COL_W }} className="sticky z-10 bg-[#18181b] light:bg-gray-50 border-r border-white/[0.07] light:border-black/[0.08] px-4 py-3 text-xs text-gray-500 whitespace-nowrap">Average / Total of {filtered.length} keyword{filtered.length === 1 ? "" : "s"}</td>
+                <td style={{ left: CHECKBOX_COL_W + keywordWidth }} className="sticky z-10 bg-[#18181b] light:bg-gray-50 border-l border-r border-white/[0.07] light:border-black/[0.08] px-3 py-3 text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.volumeLatest ?? "-"}</td>
                 <td className="px-4 py-3 text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.downloadsTotal != null ? `~${DOWNLOADS_FORMATTER.format(summary.downloadsTotal)}` : "-"}</td>
                 <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05] text-sm text-gray-300 light:text-gray-700 tabular-nums">{summary.rankLatest ?? "-"}</td>
                 <td className="px-3 py-3" />
                 {competitors.map((c) => (
                   <td key={c.storeId} colSpan={2} className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]" />
                 ))}
-                <td className="sticky right-0 z-10 bg-[#1c1f27] light:bg-gray-50 border-l border-white/[0.07] light:border-black/[0.08] pr-4 py-3" />
+                <td className="sticky right-0 z-10 bg-[#18181b] light:bg-gray-50 border-l border-white/[0.07] light:border-black/[0.08] pr-4 py-3" />
               </tr>
             </tfoot>
           </table>

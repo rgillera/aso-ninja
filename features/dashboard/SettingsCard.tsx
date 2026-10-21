@@ -29,7 +29,7 @@ export function SettingsCard({
   return (
     <section
       id={id}
-      className={`flex flex-col scroll-mt-4 rounded-2xl bg-[#1a1d24] light:bg-white ring-1 shadow-sm shadow-black/10 ${
+      className={`flex flex-col scroll-mt-4 rounded-2xl bg-[#141417] light:bg-white ring-1 shadow-sm shadow-black/10 ${
         danger ? "ring-red-500/20" : "ring-white/[0.06] light:ring-black/[0.06]"
       } ${className}`}
     >

@@ -40,7 +40,7 @@ export default function AdminKeywordsPage() {
                 : "Force-refresh every keyword an app tracks in one store and country"}
             </p>
           </div>
-          <div className="flex rounded-lg bg-[#1a1d24] light:bg-white p-1">
+          <div className="flex rounded-lg bg-[#141417] light:bg-white p-1">
             {(["keyword", "app"] as const).map((m) => (
               <button
                 key={m}
@@ -109,7 +109,7 @@ function KeywordSearch() {
 
   return (
     <>
-    <div className="flex items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 mb-5">
+    <div className="flex items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 mb-5">
       <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
       <input
         value={query}
@@ -120,7 +120,7 @@ function KeywordSearch() {
       />
     </div>
 
-    <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
+    <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20">
       {tooShort ? (
         <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">Type at least 2 characters to search.</div>
       ) : isStale || searchPending ? (
@@ -263,7 +263,7 @@ function AppSearch() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-2 mb-5">
-        <div className="flex flex-1 min-w-56 items-center gap-2 rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5">
+        <div className="flex flex-1 min-w-56 items-center gap-2 rounded-lg bg-[#141417] light:bg-white px-3 py-2.5">
           <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
           <input
             value={query}
@@ -277,7 +277,7 @@ function AppSearch() {
         <select
           value={store}
           onChange={(e) => setStore(e.target.value as "all" | "ios" | "android")}
-          className="rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none"
+          className="rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none"
         >
           <option value="all">All platforms</option>
           <option value="ios">App Store</option>
@@ -287,7 +287,7 @@ function AppSearch() {
         <select
           value={country}
           onChange={(e) => setCountry(e.target.value)}
-          className="rounded-lg bg-[#1a1d24] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none max-w-48"
+          className="rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-xs text-gray-300 light:text-gray-700 outline-none max-w-48"
         >
           <option value="all">All countries</option>
           {COUNTRIES.map((c) => (
@@ -296,7 +296,7 @@ function AppSearch() {
         </select>
       </div>
 
-      <div className="rounded-2xl bg-[#1a1d24] light:bg-white overflow-hidden shadow-lg shadow-black/20">
+      <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden shadow-lg shadow-black/20">
         {tooShort ? (
           <div className="px-5 py-10 text-center text-sm text-gray-600 light:text-gray-400">Type at least 2 characters to search.</div>
         ) : isStale || searchPending ? (

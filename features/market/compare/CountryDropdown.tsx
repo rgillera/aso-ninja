@@ -36,8 +36,8 @@ export function CountryDropdown({ country, defaultCountry, onChange }: Props) {
         {/* Sticky within Dropdown's own scrolling wrapper (max-h-80 overflow-y-auto) —
             the negative inset cancels that wrapper's p-1.5 so this sits flush at the
             top instead of leaving a gap the list could peek through while scrolling. */}
-        <div className="sticky -top-1.5 -mx-1.5 z-10 bg-[#1a1d24] light:bg-white px-1.5 pt-1.5 pb-1.5">
-          <div className="flex items-center gap-1.5 rounded-md bg-[#0d0f14] light:bg-gray-50 px-2.5 py-1.5">
+        <div className="sticky -top-1.5 -mx-1.5 z-10 bg-[#141417] light:bg-white px-1.5 pt-1.5 pb-1.5">
+          <div className="flex items-center gap-1.5 rounded-md bg-[#0a0a0c] light:bg-gray-50 px-2.5 py-1.5">
             <MagnifyingGlassIcon className="size-3.5 text-gray-500 shrink-0" />
             <input
               autoFocus
