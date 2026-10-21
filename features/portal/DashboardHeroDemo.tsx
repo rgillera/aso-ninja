@@ -55,18 +55,22 @@ import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 // inventing new tones, so this still reads as the actual product, just in
 // its light mode.
 
+// Tracked keywords in the order they were added (unsorted): the loop sorts
+// them by Opportunity on screen.
 const ROWS = [
-  { keyword: "instagram", volume: 82, diff: 100, chance: 95, relevancy: 100, opportunity: 88, estDownloads: 482_000, rank: 1 },
   { keyword: "instagram reels", volume: 55, diff: 100, chance: 95, relevancy: 75, opportunity: 41, estDownloads: 64_000, rank: 1 },
   { keyword: "social media", volume: 57, diff: 100, chance: 95, relevancy: 68, opportunity: 34, estDownloads: 51_000, rank: 1 },
+  { keyword: "instagram", volume: 82, diff: 100, chance: 95, relevancy: 100, opportunity: 88, estDownloads: 482_000, rank: 1 },
   { keyword: "instagram feed", volume: 5, diff: 70, chance: 94, relevancy: 64, opportunity: 9, estDownloads: 3_100, rank: 6 },
   { keyword: "instagram connect", volume: 5, diff: 72, chance: 52, relevancy: 69, opportunity: 8, estDownloads: 2_800, rank: 48 },
 ];
 
-// The keyword the loop adds. Its Opportunity (63) sorts it into the second
-// row, right where the real table would put it.
+// The keyword the loop adds. It lands at the bottom, then sorting by
+// Opportunity (63) lifts it to the second row.
 const NEW_ROW = { keyword: "photo sharing", volume: 61, diff: 88, chance: 71, relevancy: 82, opportunity: 63, estDownloads: 38_000, rank: 4 };
-const NEW_ROW_INDEX = 1;
+
+const ALL_ROWS = [...ROWS, { ...NEW_ROW, isNew: true as const }];
+const SORTED_ROWS = [...ALL_ROWS].sort((a, b) => b.opportunity - a.opportunity);
 
 // The Inspector's top results for NEW_ROW.keyword. Competitors are made up;
 // estimates use the real page's formatters (libs/store/estimateFormat).
@@ -160,7 +164,8 @@ function ChangeCell({ value }: { value: number }) {
 }
 
 type Step =
-  | "rest" | "toInput" | "typing" | "toAdd" | "pressAdd" | "loadingRow" | "added" | "reveal"
+  | "rest" | "toInput" | "typing" | "toAdd" | "pressAdd" | "loadingRow" | "added"
+  | "toSort" | "pressSort" | "sorting" | "sorted" | "reveal"
   | "toInspect" | "pressInspect" | "inspector"
   | "back" | "pressLongTail" | "longTailLoading" | "longTail" | "toAddChild" | "pressAddChild" | "childAdded"
   | "toPerfNav" | "pressPerfNav" | "performance" | "toExport" | "pressExport" | "exporting" | "exported" | "sheet"
@@ -178,12 +183,18 @@ const TIMELINE: [Step, number][] = [
   ["pressAdd", 220],
   ["loadingRow", 700],
   ["added", 700],
+  // Sort by Opportunity: rows slide into order and the new keyword rises
+  // from the bottom to #2, which is why it's the one worth inspecting.
+  ["toSort", 650],
+  ["pressSort", 220],
+  ["sorting", 750],
+  ["sorted", 450],
   // The table slides sideways to show the row's action buttons, the same as
   // scrolling the real table, instead of floating them over the metrics.
   ["reveal", 750],
   ["toInspect", 650],
   ["pressInspect", 220],
-  ["inspector", 4200],
+  ["inspector", 3800],
   ["back", 800],
   ["pressLongTail", 220],
   ["longTailLoading", 800],
@@ -202,7 +213,7 @@ const TIMELINE: [Step, number][] = [
   ["sheet", 3200],
   ["toChartTab", 600],
   ["pressChartTab", 220],
-  ["chart", 2800],
+  ["chart", 2600],
   ["reset", 800],
 ];
 
@@ -219,7 +230,7 @@ const TOTAL_MS = STEP_START[TIMELINE.length - 1] + TIMELINE[TIMELINE.length - 1]
 // The labelled chapters under the demo. Each runs from its first step up to
 // the next chapter's first step; clicking one jumps the loop there.
 const SCENES: { label: string; start: Step }[] = [
-  { label: "Add a keyword", start: "rest" },
+  { label: "Add & sort", start: "rest" },
   { label: "Inspect it", start: "toInspect" },
   { label: "Find long tail", start: "back" },
   { label: "Track performance", start: "toPerfNav" },
@@ -413,6 +424,10 @@ export function DashboardHeroDemo() {
   const chartTabRef = useRef<HTMLSpanElement>(null);
   const chartEndRef = useRef<HTMLSpanElement>(null);
   const tableWrapRef = useRef<HTMLDivElement>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const sortRef = useRef<HTMLSpanElement>(null);
+  // Row pitch of the tracked keywords table, for the sort slide.
+  const [rowPitch, setRowPitch] = useState(45);
   const exportRef = useRef<HTMLSpanElement>(null);
   const sheetCellRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -513,7 +528,8 @@ export function DashboardHeroDemo() {
     if (!stage) return;
     const target =
       step === "toInput" || step === "typing" ? inputRef.current :
-      step === "toAdd" || step === "pressAdd" || step === "loadingRow" || step === "added" || step === "reveal" ? addRef.current :
+      step === "toAdd" || step === "pressAdd" || step === "loadingRow" || step === "added" ? addRef.current :
+      step === "toSort" || step === "pressSort" || step === "sorting" || step === "sorted" || step === "reveal" ? sortRef.current :
       step === "toInspect" || step === "pressInspect" ? inspectRef.current :
       step === "inspector" ? searchesRef.current :
       step === "back" || step === "pressLongTail" || step === "longTailLoading" || step === "longTail" ? longTailRef.current :
@@ -536,9 +552,19 @@ export function DashboardHeroDemo() {
     setCursor({ x: (t.left - s.left) / k + offsetX, y: (t.top - s.top + t.height / 2) / k });
   }, [step, scale]);
 
+  // Measure the row pitch just before sorting (rows are all one height).
+  useLayoutEffect(() => {
+    if (step !== "toSort") return;
+    const trs = tbodyRef.current?.querySelectorAll("tr");
+    if (trs && trs.length > 1) setRowPitch((trs[1] as HTMLElement).offsetTop - (trs[0] as HTMLElement).offsetTop);
+  }, [step]);
+
   const hasNewRow = stepAtLeast(step, "loadingRow") && step !== "reset";
   const rowLoading = step === "loadingRow";
-  const rowHighlighted = step === "loadingRow" || step === "added";
+  const rowHighlighted = stepAtLeast(step, "loadingRow") && !stepAtLeast(step, "sorted");
+  const sortActive = stepAtLeast(step, "pressSort") && step !== "reset";
+  const sorting = step === "sorting";
+  const sorted = stepAtLeast(step, "sorted") && step !== "reset";
   const slid = stepAtLeast(step, "reveal") && step !== "reset";
   const rowHovered = stepAtLeast(step, "reveal") && step !== "reset";
   const inspectorOpen = step === "inspector";
@@ -549,7 +575,7 @@ export function DashboardHeroDemo() {
   const longTailLoading = step === "longTailLoading";
   const childAdded = step === "childAdded";
   const pressed =
-    step === "pressAdd" || step === "pressInspect" || step === "pressLongTail" || step === "pressAddChild" ||
+    step === "pressAdd" || step === "pressSort" || step === "pressInspect" || step === "pressLongTail" || step === "pressAddChild" ||
     step === "pressPerfNav" || step === "pressExport" || step === "pressChartTab";
   const exporting = step === "exporting";
   const exportToast = step === "exported" || step === "sheet";
@@ -566,11 +592,11 @@ export function DashboardHeroDemo() {
   }, [slid, reducedMotion]);
   const inputText = step === "typing" || step === "toAdd" || step === "pressAdd" ? NEW_ROW.keyword.slice(0, typed) : "";
 
-  // A constant five rows: the new keyword pushes the last one out, so the
-  // table (and the hero around it) never changes height mid-loop.
-  const rows = hasNewRow
-    ? [...ROWS.slice(0, NEW_ROW_INDEX), { ...NEW_ROW, isNew: true }, ...ROWS.slice(NEW_ROW_INDEX, ROWS.length - 1)]
-    : ROWS;
+  // DOM order: insertion order until the sort settles, then sorted. During
+  // the "sorting" beat each row is translated to its sorted slot (a FLIP
+  // without the measuring), then the DOM swaps to sorted order with no
+  // transforms, so the sticky keyword column keeps working afterwards.
+  const rows: (typeof ALL_ROWS)[number][] = sorted ? SORTED_ROWS : hasNewRow ? ALL_ROWS : ROWS;
 
   // Below DEMO_WIDTH the mockup is pinned to its designed width and scaled
   // down to fit; above it, it stays fluid (same as before this ever measured
@@ -800,22 +826,36 @@ export function DashboardHeroDemo() {
                     <ColHead>Diff.</ColHead>
                     <ColHead>Chance</ColHead>
                     <ColHead>Relevancy</ColHead>
-                    <ColHead active>Opportunity</ColHead>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">
+                      <span
+                        ref={sortRef}
+                        className={`inline-flex items-center gap-1 rounded px-1 -mx-1 transition-all ${
+                          sortActive ? "text-gray-800" : "text-gray-400"
+                        } ${step === "pressSort" ? "scale-95 bg-black/[0.05]" : ""}`}
+                      >
+                        Opportunity
+                        <ChevronDownIcon className={`size-3 text-indigo-600 transition-opacity ${sortActive ? "opacity-100" : "opacity-0"}`} />
+                      </span>
+                    </th>
                     <ColHead>Est. Daily Downloads</ColHead>
                     <ColHead>App Rank</ColHead>
                     <th />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-black/[0.06]">
-                  {rows.map((row) => {
+                <tbody ref={tbodyRef} className="divide-y divide-black/[0.06]">
+                  {rows.map((row, domIndex) => {
                     const isNew = "isNew" in row;
                     const loading = isNew && rowLoading;
+                    const shift = sorting ? (SORTED_ROWS.findIndex((r) => r.keyword === row.keyword) - domIndex) * rowPitch : 0;
                     return (
                       <tr
                         key={row.keyword}
-                        className={`transition-colors duration-700 ${
+                        className={`relative transition-[background-color,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                           isNew && rowHighlighted ? "bg-indigo-50" : isNew && rowHovered ? "bg-gray-50" : "bg-white"
-                        } ${isNew ? "animate-[hero-row-in_400ms_ease-out]" : ""}`}
+                        } ${isNew && (step === "loadingRow" || step === "added") ? "animate-[hero-row-in_400ms_ease-out]" : ""} ${
+                          isNew ? "z-[1]" : ""
+                        }`}
+                        style={sorting ? { transform: `translateY(${shift}px)` } : { transitionProperty: "background-color" }}
                       >
                         {/* Pinned: checkbox + keyword. bg-inherit takes the row's
                             (opaque) background so scrolled cells pass under it. */}
@@ -873,6 +913,13 @@ export function DashboardHeroDemo() {
                       </tr>
                     );
                   })}
+                  {/* Holds the sixth row's space until the new keyword fills it,
+                      so the hero never changes height mid-loop. */}
+                  {!hasNewRow && (
+                    <tr aria-hidden="true" className="invisible">
+                      <td className="px-3 py-2.5"><span className="block h-5" /></td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
