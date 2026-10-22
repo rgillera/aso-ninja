@@ -1,33 +1,10 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { SparklesIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { usePlanSlug } from "./PlanContext";
 
-function dismissKey(workspaceId: string) {
-  return `aso_upgrade_banner_dismissed_${workspaceId}`;
-}
-
-function readDismissed(workspaceId: string): boolean {
-  try { return localStorage.getItem(dismissKey(workspaceId)) === "1"; } catch { return false; }
-}
-
-const noopSubscribe = () => () => {};
-
-export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
-  const planSlug = usePlanSlug();
-  // Read during render, not in a useEffect: reading it afterward meant the
-  // banner always rendered first and was hidden a frame later, so a
-  // dismissed banner still flashed on every page load. The server snapshot
-  // says "dismissed" (the server can't see localStorage), so it's never in
-  // the server HTML either; same pattern as AppLimitNotice.
-  const storedDismissed = useSyncExternalStore(noopSubscribe, () => readDismissed(workspaceId), () => true);
-  // Hides it immediately on click, without waiting for a re-read.
-  const [justDismissed, setJustDismissed] = useState(false);
-
-  if (storedDismissed || justDismissed || planSlug !== "free") return null;
-
+// Pro upgrade offer for Free workspaces. When it shows is decided by PromoBanner.
+export function UpgradeBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
     <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 ring-1 ring-indigo-500/20 px-5 py-4">
       <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15">
@@ -48,10 +25,7 @@ export function UpgradeBanner({ workspaceId }: { workspaceId: string }) {
 
       <button
         type="button"
-        onClick={() => {
-          try { localStorage.setItem(dismissKey(workspaceId), "1"); } catch {}
-          setJustDismissed(true);
-        }}
+        onClick={onDismiss}
         className="shrink-0 rounded-lg p-1.5 text-gray-500 hover:text-gray-300 light:hover:text-gray-700 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
         title="Dismiss"
       >

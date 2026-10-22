@@ -58,6 +58,9 @@
    * "click here" nudge instead.
    */
   --animate-tour-pulse: tour-pulse 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  /* Gift icon on the sidebar's Free app audit link: a short wiggle, then a
+     long rest, so it catches the eye without nagging. */
+  --animate-gift-wiggle: gift-wiggle 4s ease-in-out infinite;
 
   /*
    * A step up from Tailwind's stock sizes on the tiers actual UI copy uses
@@ -95,6 +98,14 @@
 
 @keyframes tour-pulse {
   75%, 100% { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes gift-wiggle {
+  0%, 20%, 100% { transform: rotate(0deg) scale(1); }
+  4% { transform: rotate(-14deg) scale(1.1); }
+  8% { transform: rotate(12deg) scale(1.1); }
+  12% { transform: rotate(-8deg) scale(1.05); }
+  16% { transform: rotate(5deg) scale(1); }
 }
 
 /* The row the homepage hero demo (features/portal/DashboardHeroDemo.tsx)

@@ -14,7 +14,6 @@ import {
   ArrowTrendingUpIcon,
   ListBulletIcon,
   TagIcon,
-  EnvelopeIcon,
   UserCircleIcon,
   CreditCardIcon,
   LockClosedIcon,
@@ -31,6 +30,7 @@ import {
   ChevronDoubleLeftIcon,
   ChevronDoubleRightIcon,
 } from "@heroicons/react/24/outline";
+import { FreeAuditSidebarLink } from "./FreeAuditSidebarLink";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
@@ -586,14 +586,7 @@ export default function DashboardSidebar({
           <TrophyIcon className="size-5 shrink-0" />
           <span className={railHide}>Learn &amp; Get Certified</span>
         </a>
-        <a
-          href="mailto:hello@appaso.io"
-          title={rail ? "Email support" : undefined}
-          className={`flex items-center gap-3 w-full rounded-lg px-3 py-2 text-left text-sm font-medium ${railLink} text-gray-500 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900 transition-colors`}
-        >
-          <EnvelopeIcon className="size-5 shrink-0" />
-          <span className={railHide}>Email support</span>
-        </a>
+        <FreeAuditSidebarLink rail={rail} railHide={railHide} railLink={railLink} />
         {canManagePlan ? (
           <a
             href="/dashboard/subscription"

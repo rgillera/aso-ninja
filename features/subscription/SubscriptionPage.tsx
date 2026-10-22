@@ -7,6 +7,33 @@ import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
 import { PLANS, SELLABLE_PLANS, type PlanId } from "./plans";
 import { UpgradeButton, type CardTone } from "./UpgradeButton";
 import type { WorkspaceUsage } from "@/libs/contracts";
+import { freeAuditLink } from "./freeAudit";
+
+// Free audit offer below the self-serve plans.
+function FreeAuditCard() {
+  const call = freeAuditLink("subscription_card");
+  return (
+    <div className="mt-10 flex flex-col gap-5 rounded-2xl bg-white/[0.03] light:bg-white ring-1 ring-white/[0.08] light:ring-black/5 light:shadow-sm p-6 md:flex-row md:items-center">
+      <div className="min-w-0 flex-1">
+        <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[10px] font-medium text-emerald-400 light:text-emerald-700">
+          Free
+        </span>
+        <h2 className="mt-3 text-lg font-semibold text-white light:text-gray-900">Not sure where to start? Get a free ASO audit</h2>
+        <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
+          An ASO specialist reviews your listing, keywords, and competitors, then walks you through the biggest wins on a call. No cost, no obligation.
+        </p>
+      </div>
+      <a
+        href={call.href}
+        target={call.external ? "_blank" : undefined}
+        rel={call.external ? "noopener noreferrer" : undefined}
+        className="shrink-0 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-400"
+      >
+        Book my free audit
+      </a>
+    </div>
+  );
+}
 
 // Stripe redirects back here as soon as checkout completes, but the plan
 // upgrade itself lands a moment later via webhook. Poll a few times so the
@@ -308,6 +335,8 @@ export default function SubscriptionPage({
             );
           })}
         </div>
+
+        <FreeAuditCard />
       </div>
     </main>
   );

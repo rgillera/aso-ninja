@@ -5,7 +5,7 @@ import { usePathname, useParams, useSearchParams, useRouter } from "next/navigat
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
-import { UpgradeBanner } from "./UpgradeBanner";
+import { PromoBanner } from "./PromoBanner";
 import { AppLimitNotice } from "./AppLimitNotice";
 import { ReviewPromptBanner } from "@/features/review/ReviewPromptBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
@@ -521,7 +521,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
                     role={currentRole}
                   />
                 )
-                : <UpgradeBanner workspaceId={activeWorkspaceId} />)}
+                : <PromoBanner workspaceId={activeWorkspaceId} />)}
               <ReviewPromptBanner />
             </div>
           )}

@@ -12,6 +12,7 @@ import {
   UserCircleIcon,
   SwatchIcon,
   ArrowRightStartOnRectangleIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import { updateProfileAction, deleteAccountAction } from "./actions";
 import { signOutAction } from "@/features/auth/actions";
@@ -297,22 +298,38 @@ export default function AccountPage({ email, profile, certification }: Props) {
             )}
           </SettingsCard>
 
-          <SettingsCard
-            className="h-full"
-            icon={ArrowRightStartOnRectangleIcon}
-            title="Sign out"
-            description="Sign out of your account on this device."
-            action={
-              <form action={signOutAction} onSubmit={resetAnalytics}>
-                <button
-                  type="submit"
+          <div className="flex flex-col gap-6">
+            <SettingsCard
+              className="flex-1"
+              icon={EnvelopeIcon}
+              title="Support"
+              description="Questions, bugs, or feedback? Email us and we'll get back to you."
+              action={
+                <a
+                  href="mailto:hello@appaso.io"
                   className="rounded-lg bg-white/10 light:bg-gray-100 px-4 py-2 text-sm font-semibold text-white light:text-gray-900 hover:bg-white/15 light:hover:bg-gray-200 transition-colors"
                 >
-                  Sign out
-                </button>
-              </form>
-            }
-          />
+                  Email support
+                </a>
+              }
+            />
+            <SettingsCard
+              className="flex-1"
+              icon={ArrowRightStartOnRectangleIcon}
+              title="Sign out"
+              description="Sign out of your account on this device."
+              action={
+                <form action={signOutAction} onSubmit={resetAnalytics}>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-white/10 light:bg-gray-100 px-4 py-2 text-sm font-semibold text-white light:text-gray-900 hover:bg-white/15 light:hover:bg-gray-200 transition-colors"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              }
+            />
+          </div>
         </div>
       </div>
     </main>
