@@ -467,6 +467,8 @@ export default function KeywordCombinationPage() {
 
           onRemoveGroup={handleRemoveGroup}
           onLiveSearch={(term) => setLiveSearchTerm(term)}
+          store={activeApp?.store ?? "ios"}
+          country={activeApp?.country ?? "us"}
           translateToggle={translateToggle && !translateLocked}
           translateLocked={translateLocked}
           onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}

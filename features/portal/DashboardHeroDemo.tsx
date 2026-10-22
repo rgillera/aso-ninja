@@ -1153,7 +1153,7 @@ export function DashboardHeroDemo() {
                       </div>
                     </td>
                     <td className="px-2.5 py-3 text-sm text-gray-700">{longTailLoading ? <SkeletonCell width="w-6" /> : LONG_TAIL.length}</td>
-                    <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-12" /> : <VolumeBar value={LONG_TAIL_AVG.volume} />}</td>
+                    <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-12" /> : <VolumeBar value={LONG_TAIL_AVG.volume} hoverHint />}</td>
                     <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-8" /> : <span className={`text-sm ${diffColor(LONG_TAIL_AVG.difficulty)}`}>{LONG_TAIL_AVG.difficulty}</span>}</td>
                     <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-8" /> : <span className={`text-sm ${chanceColor(LONG_TAIL_AVG.chance)}`}>{LONG_TAIL_AVG.chance}</span>}</td>
                     <td className="pr-4 py-3">
@@ -1175,17 +1175,22 @@ export function DashboardHeroDemo() {
                           <span className="text-sm text-gray-700">{highlightTerm(kw.term)}</span>
                         </td>
                         <td className="px-2.5 py-2.5 text-sm text-gray-400">—</td>
-                        <td className="px-2.5 py-2.5"><VolumeBar value={kw.volume} /></td>
+                        <td className="px-2.5 py-2.5"><VolumeBar value={kw.volume} hoverHint /></td>
                         <td className="px-2.5 py-2.5"><span className={`text-sm ${diffColor(kw.difficulty)}`}>{kw.difficulty}</span></td>
                         <td className="px-2.5 py-2.5"><span className={`text-sm ${chanceColor(kw.chance)}`}>{kw.chance}</span></td>
                         <td className="pr-4 py-2.5">
                           <div className={`flex items-center gap-1.5 transition-opacity ${hovered ? "opacity-100" : "opacity-0"}`}>
-                            <span className="flex items-center rounded bg-gray-50 px-2 py-1 text-gray-600">
-                              <MagnifyingGlassIcon className="size-3" />
+                            <span className="flex items-center gap-1 rounded bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 whitespace-nowrap">
+                              <DocumentMagnifyingGlassIcon className="size-3.5" />
+                              Inspect
+                            </span>
+                            <span className="flex items-center gap-1 rounded bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 whitespace-nowrap">
+                              <MagnifyingGlassIcon className="size-3.5" />
+                              Results
                             </span>
                             <span
                               ref={isPick ? childAddRef : undefined}
-                              className={`flex items-center rounded px-2 py-1 ring-1 transition-all ${
+                              className={`flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium ring-1 whitespace-nowrap transition-all ${
                                 isPick && childAdded
                                   ? "bg-indigo-500/20 text-indigo-600 ring-indigo-500/40"
                                   : isPick && step === "pressAddChild"
@@ -1193,7 +1198,8 @@ export function DashboardHeroDemo() {
                                     : "bg-gray-50 text-gray-600 ring-black/[0.08]"
                               }`}
                             >
-                              {isPick && childAdded ? <CheckIcon className="size-3" /> : <PlusIcon className="size-3" />}
+                              {isPick && childAdded ? <CheckIcon className="size-3.5" /> : <PlusIcon className="size-3.5" />}
+                              {isPick && childAdded ? "Added" : "Add"}
                             </span>
                           </div>
                         </td>

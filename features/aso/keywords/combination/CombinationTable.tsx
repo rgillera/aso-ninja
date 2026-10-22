@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   PlusIcon,
   XMarkIcon,
@@ -10,6 +11,7 @@ import {
   ChevronUpIcon,
   ArrowsUpDownIcon,
   MagnifyingGlassIcon,
+  DocumentMagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
@@ -31,6 +33,8 @@ type Props = {
   onAddTerms: (terms: string[]) => void;
   onRemoveGroup: (seed: string) => void;
   onLiveSearch: (term: string) => void;
+  store: string;
+  country: string;
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
@@ -66,7 +70,7 @@ function groupAggregates(group: CombinationGroup) {
 }
 
 export function CombinationTable({
-  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch,
+  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch, store, country,
   translateToggle, translateLocked = false, onTranslateToggle, intentThemes, onAddTermsToIntent,
 }: Props) {
   const [seedInput, setSeedInput] = useState("");
@@ -352,16 +356,27 @@ export function CombinationTable({
                         </td>
                         <td className="pr-4 py-3">
                           <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link
+                              href={`/dashboard/keywords/inspector?${new URLSearchParams({ term: child.term, store, country: country.toLowerCase() })}`}
+                              title="Open in Keyword Inspector"
+                              className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                            >
+                              <DocumentMagnifyingGlassIcon className="size-3.5" />
+                              Inspect
+                            </Link>
                             <button
                               onClick={() => onLiveSearch(child.term)}
-                              className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-50 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
+                              title="Live App Store search"
+                              className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
                             >
-                              <MagnifyingGlassIcon className="size-3" />
+                              <MagnifyingGlassIcon className="size-3.5" />
+                              Results
                             </button>
                             <button
                               onClick={() => !tracked && !pending && onAddTerm(child.term)}
                               disabled={tracked || pending}
-                              className={`flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium ring-1 transition-colors ${
+                              title={tracked ? "Already in Keyword Research" : "Add to Keyword Research"}
+                              className={`flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium ring-1 transition-colors whitespace-nowrap ${
                                 tracked
                                   ? "bg-indigo-500/20 ring-indigo-500/40 text-indigo-300 light:text-indigo-600"
                                   : pending
@@ -370,10 +385,11 @@ export function CombinationTable({
                               }`}
                             >
                               {tracked
-                                ? <CheckIcon className="size-3" />
+                                ? <CheckIcon className="size-3.5" />
                                 : pending
-                                ? <div className="size-3 rounded-full border border-gray-500 border-t-transparent animate-spin" />
-                                : <PlusIcon className="size-3" />}
+                                ? <div className="size-3.5 rounded-full border border-gray-500 border-t-transparent animate-spin" />
+                                : <PlusIcon className="size-3.5" />}
+                              {tracked ? "Added" : "Add"}
                             </button>
                           </div>
                         </td>
