@@ -13,6 +13,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
+import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
+import { estimateDailySearches } from "@/libs/keyword-impressions";
 import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 import type { CombinationGroup } from "./types";
 
@@ -38,6 +40,14 @@ type Props = {
 
 function formatNum(n: number): string {
   return n.toLocaleString();
+}
+
+const SEARCHES_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
+
+// Hover text on a Volume cell: the 0-100 score translated into daily
+// searches, same as Keyword Research's Volume column.
+function searchesTitle(volume: number): string {
+  return `Est. searches: ~${SEARCHES_FORMATTER.format(Math.round(estimateDailySearches(volume)))}/day`;
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
@@ -274,7 +284,11 @@ export function CombinationTable({
                       {group.loading ? <div className="h-3 w-6 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : agg.combinations}
                     </td>
                     <td className="px-4 py-3.5">
-                      {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : <VolumeBar value={agg.avgVol} />}
+                      {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : (
+                        <HoverTooltip text={`${searchesTitle(agg.avgVol)} per combination on average`}>
+                          <VolumeBar value={agg.avgVol} hoverHint />
+                        </HoverTooltip>
+                      )}
                     </td>
                     <td className="px-4 py-3.5 tabular-nums">
                       {group.loading
@@ -320,7 +334,11 @@ export function CombinationTable({
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600 light:text-gray-400">—</td>
                         <td className="px-4 py-3">
-                          {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : <VolumeBar value={child.volume} />}
+                          {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : (
+                            <HoverTooltip text={searchesTitle(child.volume)}>
+                              <VolumeBar value={child.volume} hoverHint />
+                            </HoverTooltip>
+                          )}
                         </td>
                         <td className="px-4 py-3 tabular-nums">
                           {group.loading
