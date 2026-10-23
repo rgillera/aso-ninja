@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { ChartBarIcon, CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
-import type { DailyActiveUsers, PayingUserEngagement, RetentionCohort, UserMilestones } from "@/features/admin/types";
+import type { DailyActiveUsers, PayingUserEngagement, RecentActiveUser, RetentionCohort, UserMilestones } from "@/features/admin/types";
+import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/features/admin/format";
 
 type Props = {
   totals: { dau: number; wau: number; mau: number };
@@ -10,6 +11,8 @@ type Props = {
   retention: RetentionCohort[];
   users: UserMilestones[];
   payingUsers: PayingUserEngagement[];
+  recentActive: RecentActiveUser[];
+  recentDays: number;
 };
 
 // user_activity_days (and visit counting) started on this day; anything
@@ -42,6 +45,15 @@ function formatGap(ms: number): string {
   if (hours < 1) return "under 1h";
   if (hours < 48) return `${Math.round(hours)}h`;
   return `${Math.round(hours / 24)}d`;
+}
+
+function formatAgo(iso: string, now: number): string {
+  const minutes = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
+  if (minutes < 2) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 function pct(part: number, whole: number): string {
@@ -163,6 +175,20 @@ const MILESTONES: Milestone[] = [
   { key: "paidAt", label: "Paid", short: "Paid" },
 ];
 
+// Features beyond the activation steps, shown as chips in the New signups
+// table so the step columns stay readable.
+const OTHER_FEATURES: { key: keyof UserMilestones; label: string }[] = [
+  { key: "firstCombinationAt", label: "Combinations" },
+  { key: "firstAiPromptAt", label: "AI Visibility" },
+  { key: "firstStoreLinkAt", label: "Store data" },
+  { key: "firstAsaLinkAt", label: "Search Ads" },
+  { key: "firstInviteAt", label: "Invited teammate" },
+  { key: "firstPushAt", label: "Push alerts" },
+  { key: "firstCertificationAt", label: "Certification" },
+];
+
+const RECENT_PAGE = 20;
+
 const WINDOWS = [
   { days: 30, label: "30 days" },
   { days: 90, label: "90 days" },
@@ -204,8 +230,9 @@ function riskReasons(u: PayingUserEngagement, now: number): RiskReason[] {
   return reasons;
 }
 
-export default function AdminEngagementPage({ totals, dailyActive, retention, users, payingUsers }: Props) {
+export default function AdminEngagementPage({ totals, dailyActive, retention, users, payingUsers, recentActive, recentDays }: Props) {
   const [windowDays, setWindowDays] = useState<number | null>(30);
+  const [showAllRecent, setShowAllRecent] = useState(false);
   // Rendered fresh on each request; fixed for the life of the page so
   // memoized filters stay stable.
   const [now] = useState(() => Date.now());
@@ -287,6 +314,61 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
         </Section>
 
         <Section
+          title="Recently active"
+          note={`${recentActive.length.toLocaleString()} users active in the last ${recentDays} days, most recent first. Visits, days and time are for the last 7 days.`}
+        >
+          <div className={`${CARD} overflow-hidden`}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className={THEAD_ROW}>
+                    <th className={TH}>Email</th>
+                    <th className={TH}>Plan</th>
+                    <th className={TH}>Last active</th>
+                    <th className={`${TH} text-right`}>Visits</th>
+                    <th className={`${TH} text-right`}>Days</th>
+                    <th className={`${TH} text-right`}>Time</th>
+                    <th className={`${TH} text-right`}>All-time visits</th>
+                    <th className={TH}>Joined</th>
+                  </tr>
+                </thead>
+                <tbody className={TBODY}>
+                  {(showAllRecent ? recentActive : recentActive.slice(0, RECENT_PAGE)).map((u) => (
+                    <tr key={u.userId} className="hover:bg-white/[0.03] light:hover:bg-black/[0.02]">
+                      <td className="px-5 py-3 text-white light:text-gray-900 truncate max-w-xs">{u.email}</td>
+                      <td className="px-5 py-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_BADGE_CLASSES[u.planSlug] ?? PLAN_BADGE_FALLBACK}`}>
+                          {u.planName}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-gray-300 light:text-gray-700 whitespace-nowrap" title={new Date(u.lastActiveAt).toLocaleString()}>
+                        {formatAgo(u.lastActiveAt, now)}
+                      </td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.visits7d.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.activeDays7d.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700 whitespace-nowrap">{formatDuration(u.activeSeconds7d)}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.visitCount.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {recentActive.length === 0 && (
+              <div className="px-5 py-8 text-center text-sm text-gray-500">Nobody active in the last {recentDays} days.</div>
+            )}
+            {recentActive.length > RECENT_PAGE && (
+              <button
+                onClick={() => setShowAllRecent((v) => !v)}
+                className="w-full border-t border-white/[0.07] light:border-black/[0.08] px-5 py-3 text-xs text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors"
+              >
+                {showAllRecent ? "Show fewer" : `Show all ${recentActive.length.toLocaleString()}`}
+              </button>
+            )}
+          </div>
+        </Section>
+
+        <Section
           title="Retention by signup week"
           note="Share of each week's signups who came back on day 1, during days 1 to 7, and during days 22 to 28. A dash means not enough time has passed."
         >
@@ -351,7 +433,7 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
           </div>
         </Section>
 
-        <Section title="New signups, last 14 days" note="Which steps each new user has reached.">
+        <Section title="New signups, last 14 days" note="Which steps each new user has reached, and which other features they've tried.">
           <div className={`${CARD} overflow-hidden`}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -364,6 +446,7 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
                         {m.short}
                       </th>
                     ))}
+                    <th className={TH}>Also used</th>
                   </tr>
                 </thead>
                 <tbody className={TBODY}>
@@ -380,6 +463,19 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
                           )}
                         </td>
                       ))}
+                      <td className="px-5 py-3">
+                        <div className="flex flex-wrap gap-1 min-w-40">
+                          {OTHER_FEATURES.filter((f) => u[f.key]).map((f) => (
+                            <span
+                              key={f.key}
+                              className="rounded-full bg-white/[0.06] light:bg-black/[0.05] px-2 py-0.5 text-[11px] text-gray-300 light:text-gray-700 whitespace-nowrap"
+                            >
+                              {f.label}
+                            </span>
+                          ))}
+                          {!OTHER_FEATURES.some((f) => u[f.key]) && <span className="text-gray-700 light:text-gray-300">·</span>}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

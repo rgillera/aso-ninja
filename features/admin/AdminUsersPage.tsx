@@ -19,6 +19,7 @@ import {
 import type { AdminUserRow } from "@/features/admin/types";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { deleteUserAction, startImpersonationAction } from "@/features/admin/actions";
+import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/features/admin/format";
 
 type Props = {
   users: AdminUserRow[];
@@ -68,13 +69,6 @@ function isRecentlyActive(u: AdminUserRow): boolean {
   return seen > 0 && Date.now() - seen <= ACTIVE_WINDOW_MS;
 }
 
-const PLAN_BADGE_CLASSES: Record<string, string> = {
-  free: "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600",
-  basic: "bg-sky-500/10 text-sky-400 light:text-sky-700",
-  pro: "bg-indigo-500/10 text-indigo-400 light:text-indigo-700",
-  pro_plus: "bg-violet-500/10 text-violet-400 light:text-violet-700",
-  enterprise: "bg-amber-500/10 text-amber-400 light:text-amber-700",
-};
 
 function formatDate(iso: string | null): string {
   if (!iso) return "Never";
@@ -92,13 +86,6 @@ function formatDateTime(iso: string | null): string {
   });
 }
 
-function formatDuration(seconds: number): string {
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest ? `${hours}h ${rest}m` : `${hours}h`;
-}
 
 // What the admin has to type to confirm: the email, or the id for the rare
 // account with none (page.tsx renders those as "(no email)").
@@ -355,7 +342,7 @@ export default function AdminUsersPage({ users }: Props) {
                       <td className="px-5 py-3.5">
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${
-                            PLAN_BADGE_CLASSES[u.planSlug] ?? "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600"
+                            PLAN_BADGE_CLASSES[u.planSlug] ?? PLAN_BADGE_FALLBACK
                           }`}
                         >
                           {u.planName}

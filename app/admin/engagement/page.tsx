@@ -1,11 +1,12 @@
 import { createAdminClient } from "@/libs/supabase/admin";
 import AdminEngagementPage from "@/features/admin/AdminEngagementPage";
-import { shortPlanName, type DailyActiveUsers, type PayingUserEngagement, type RetentionCohort, type UserMilestones } from "@/features/admin/types";
+import { shortPlanName, type DailyActiveUsers, type PayingUserEngagement, type RecentActiveUser, type RetentionCohort, type UserMilestones } from "@/features/admin/types";
 import { isSuperAdminEmail, superAdminEmails } from "@/libs/admin/is-super-admin";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
 
 const DAILY_DAYS = 30;
 const COHORT_WEEKS = 8;
+const RECENT_DAYS = 7;
 
 type MilestoneRow = {
   user_id: string;
@@ -22,6 +23,27 @@ type MilestoneRow = {
   last_checkout_plan: string | null;
   paid_at: string | null;
   plan_slug: string;
+  first_combination_at: string | null;
+  first_ai_prompt_at: string | null;
+  first_store_link_at: string | null;
+  first_asa_link_at: string | null;
+  first_invite_at: string | null;
+  first_push_at: string | null;
+  first_certification_at: string | null;
+};
+
+type RecentRow = {
+  user_id: string;
+  email: string | null;
+  created_at: string;
+  plan_slug: string;
+  plan_name: string | null;
+  last_active_at: string;
+  visits_7d: number;
+  active_days_7d: number;
+  active_seconds_7d: number;
+  visit_count: number;
+  active_seconds: number;
 };
 
 type PayingRow = {
@@ -42,14 +64,17 @@ export default async function Page() {
   // Super admins' own use of the app shouldn't count as engagement.
   const exclude = superAdminEmails();
 
-  const [totals, daily, cohorts, milestones, paying] = await Promise.all([
+  const [totals, daily, cohorts, milestones, paying, recent] = await Promise.all([
     admin.rpc("admin_active_user_totals", { p_exclude_emails: exclude }).single<{ dau: number; wau: number; mau: number }>(),
     admin.rpc("admin_daily_active_users", { p_days: DAILY_DAYS, p_exclude_emails: exclude }),
     admin.rpc("admin_retention_cohorts", { p_weeks: COHORT_WEEKS, p_exclude_emails: exclude }),
     fetchAllRows<MilestoneRow>((from, to) => admin.rpc("admin_user_milestones").range(from, to)),
     admin.rpc("admin_paying_user_engagement"),
+    fetchAllRows<RecentRow>((from, to) =>
+      admin.rpc("admin_recent_active_users", { p_days: RECENT_DAYS, p_exclude_emails: exclude }).range(from, to)
+    ),
   ]);
-  for (const r of [totals, daily, cohorts, milestones, paying]) {
+  for (const r of [totals, daily, cohorts, milestones, paying, recent]) {
     if (r.error) throw r.error;
   }
 
@@ -91,7 +116,28 @@ export default async function Page() {
       lastCheckoutPlan: m.last_checkout_plan,
       paidAt: m.paid_at,
       planSlug: m.plan_slug,
+      firstCombinationAt: m.first_combination_at,
+      firstAiPromptAt: m.first_ai_prompt_at,
+      firstStoreLinkAt: m.first_store_link_at,
+      firstAsaLinkAt: m.first_asa_link_at,
+      firstInviteAt: m.first_invite_at,
+      firstPushAt: m.first_push_at,
+      firstCertificationAt: m.first_certification_at,
     }));
+
+  const recentActive: RecentActiveUser[] = recent.data.map((r) => ({
+    userId: r.user_id,
+    email: r.email ?? "(no email)",
+    createdAt: r.created_at,
+    planSlug: r.plan_slug,
+    planName: r.plan_name ? shortPlanName(r.plan_name) : "Free",
+    lastActiveAt: r.last_active_at,
+    visits7d: r.visits_7d,
+    activeDays7d: r.active_days_7d,
+    activeSeconds7d: r.active_seconds_7d,
+    visitCount: r.visit_count,
+    activeSeconds: r.active_seconds,
+  }));
 
   const payingUsers: PayingUserEngagement[] = (paying.data as PayingRow[])
     .filter((p) => !isSuperAdminEmail(p.email))
@@ -115,6 +161,8 @@ export default async function Page() {
       retention={retention}
       users={users}
       payingUsers={payingUsers}
+      recentActive={recentActive}
+      recentDays={RECENT_DAYS}
     />
   );
 }

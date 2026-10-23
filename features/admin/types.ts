@@ -80,6 +80,28 @@ export type UserMilestones = {
   lastCheckoutPlan: string | null;
   paidAt: string | null;
   planSlug: string;
+  // Other features, first use (see 20261023000005_engagement_recent_and_features.sql).
+  firstCombinationAt: string | null;
+  firstAiPromptAt: string | null;
+  firstStoreLinkAt: string | null;
+  firstAsaLinkAt: string | null;
+  firstInviteAt: string | null;
+  firstPushAt: string | null;
+  firstCertificationAt: string | null;
+};
+
+export type RecentActiveUser = {
+  userId: string;
+  email: string;
+  createdAt: string;
+  planSlug: string;
+  planName: string;
+  lastActiveAt: string;
+  visits7d: number;
+  activeDays7d: number;
+  activeSeconds7d: number;
+  visitCount: number;
+  activeSeconds: number;
 };
 
 export type PayingUserEngagement = {
