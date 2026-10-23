@@ -15,7 +15,7 @@ export function ImpersonationBanner({ email, expiresAt }: { email: string; expir
       await stopImpersonationAction();
       // Full reload, not router.push: drops every client-side cache that was
       // filled with this user's data.
-      window.location.assign("/admin");
+      window.location.assign("/admin/users");
     });
   }
 

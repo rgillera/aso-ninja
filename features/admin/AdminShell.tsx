@@ -15,8 +15,8 @@ import {
 } from "@heroicons/react/24/outline";
 
 const adminLinks: { label: string; href: string; icon: typeof UsersIcon }[] = [
-  { label: "Engagement", href: "/admin/engagement", icon: ChartBarIcon },
-  { label: "Users", href: "/admin", icon: UsersIcon },
+  { label: "Engagement", href: "/admin", icon: ChartBarIcon },
+  { label: "Users", href: "/admin/users", icon: UsersIcon },
   { label: "Keywords", href: "/admin/keywords", icon: MagnifyingGlassIcon },
   { label: "Cancellations", href: "/admin/cancellations", icon: ChatBubbleLeftRightIcon },
   { label: "Certifications", href: "/admin/certifications", icon: AcademicCapIcon },
@@ -61,7 +61,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {adminLinks.map((link) => {
-            // "/admin" is every page's prefix, so Users only matches exactly.
+            // "/admin" is every page's prefix, so Engagement only matches exactly.
             const isActive = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href + "/"));
             return (
               <a

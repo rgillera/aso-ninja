@@ -52,7 +52,7 @@ export type AdminCertificationAttemptRow = {
   timedOut: boolean;
 };
 
-// Admin Engagement page (app/admin/engagement). Shapes mirror the RPCs in
+// Admin Engagement page (app/admin/page.tsx). Shapes mirror the RPCs in
 // supabase/migrations/20261023000004_engagement_insights.sql.
 export type DailyActiveUsers = { day: string; users: number };
 

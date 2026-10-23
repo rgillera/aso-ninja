@@ -1,185 +1,172 @@
 import { createAdminClient } from "@/libs/supabase/admin";
-import AdminUsersPage from "@/features/admin/AdminUsersPage";
-import type { AdminUserRow } from "@/features/admin/types";
-import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
+import AdminEngagementPage from "@/features/admin/AdminEngagementPage";
+import { shortPlanName, type DailyActiveUsers, type PayingUserEngagement, type RecentActiveUser, type RetentionCohort, type UserMilestones } from "@/features/admin/types";
+import { isSuperAdminEmail, superAdminEmails } from "@/libs/admin/is-super-admin";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
-import { shortPlanName } from "@/features/admin/types";
 
-type AuthUserSummary = {
-  id: string;
-  email: string;
-  createdAt: string;
-  lastSignInAt: string | null;
+const DAILY_DAYS = 30;
+const COHORT_WEEKS = 8;
+const RECENT_DAYS = 7;
+
+type MilestoneRow = {
+  user_id: string;
+  email: string | null;
+  created_at: string;
+  first_app_at: string | null;
+  first_keyword_at: string | null;
+  first_competitor_at: string | null;
+  first_inspect_at: string | null;
+  tour_completed_at: string | null;
+  pricing_views: number;
+  first_checkout_at: string | null;
+  last_checkout_at: string | null;
+  last_checkout_plan: string | null;
+  paid_at: string | null;
+  plan_slug: string;
+  first_combination_at: string | null;
+  first_ai_prompt_at: string | null;
+  first_store_link_at: string | null;
+  first_asa_link_at: string | null;
+  first_invite_at: string | null;
+  first_push_at: string | null;
+  first_certification_at: string | null;
 };
 
-// auth.admin.listUsers() is paginated — walk every page rather than
-// assuming the user base fits in one response.
-async function listAllAuthUsers(admin: ReturnType<typeof createAdminClient>): Promise<AuthUserSummary[]> {
-  const perPage = 1000;
-  const all: AuthUserSummary[] = [];
-  let page = 1;
+type RecentRow = {
+  user_id: string;
+  email: string | null;
+  created_at: string;
+  plan_slug: string;
+  plan_name: string | null;
+  last_active_at: string;
+  visits_7d: number;
+  active_days_7d: number;
+  active_seconds_7d: number;
+  visit_count: number;
+  active_seconds: number;
+};
 
-  while (true) {
-    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-    if (error) throw error;
-
-    for (const u of data.users) {
-      all.push({
-        id: u.id,
-        email: u.email ?? "(no email)",
-        createdAt: u.created_at,
-        lastSignInAt: u.last_sign_in_at ?? null,
-      });
-    }
-
-    if (data.users.length < perPage) break;
-    page += 1;
-  }
-
-  return all;
-}
-
-// PostgREST caps any single response at `max_rows` (1000 — see
-// supabase/config.toml), silently truncating rather than erroring. `apps`
-// stays well under that, but `keywords` passed it as usage grew, which
-// quietly zeroed out the Keywords column for whichever workspaces didn't
-// make it into the first 1000 rows returned — no error, just a partial
-// result. Page through with `.range()` (mirrors listAllAuthUsers above)
-// so this can never silently truncate again as either table keeps growing.
-async function fetchAllWorkspaceIds(
-  admin: ReturnType<typeof createAdminClient>,
-  table: "apps" | "keywords",
-  workspaceIds: string[]
-): Promise<string[]> {
-  if (workspaceIds.length === 0) return [];
-
-  const pageSize = 1000;
-  const all: string[] = [];
-  let from = 0;
-
-  while (true) {
-    const { data, error } = await admin
-      .from(table)
-      .select("workspace_id")
-      .in("workspace_id", workspaceIds)
-      .range(from, from + pageSize - 1);
-    if (error) throw error;
-
-    for (const row of data ?? []) all.push(row.workspace_id);
-
-    if (!data || data.length < pageSize) break;
-    from += pageSize;
-  }
-
-  return all;
-}
+type PayingRow = {
+  user_id: string;
+  email: string | null;
+  plan_name: string;
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  last_active_at: string | null;
+  visits_last_14: number;
+  visits_prev_14: number;
+  active_days_last_14: number;
+};
 
 export default async function Page() {
   const admin = createAdminClient();
+  // Super admins' own use of the app shouldn't count as engagement.
+  const exclude = superAdminEmails();
 
-  const [authUsers, { data: owners, error: ownersErr }] = await Promise.all([
-    listAllAuthUsers(admin),
-    admin.from("workspace_members").select("user_id, workspace_id").eq("role", "owner"),
-  ]);
-  if (ownersErr) throw ownersErr;
-
-  // Apps/keywords are workspace-scoped; roll them up per user via the
-  // workspace(s) they own (mirrors get_workspace_usage's ownership model).
-  const ownedWorkspacesByUser = new Map<string, string[]>();
-  for (const row of owners ?? []) {
-    const list = ownedWorkspacesByUser.get(row.user_id) ?? [];
-    list.push(row.workspace_id);
-    ownedWorkspacesByUser.set(row.user_id, list);
-  }
-  const ownedWorkspaceIds = [...new Set((owners ?? []).map((row) => row.workspace_id))];
-
-  // Apps/keywords scoped to owned workspaces and paginated (see
-  // fetchAllWorkspaceIds) rather than a bare `select("workspace_id")`,
-  // which silently truncated at PostgREST's 1000-row cap once `keywords`
-  // grew past it.
-  const [
-    appWorkspaceIds,
-    keywordWorkspaceIds,
-    { data: subscriptions, error: subsErr },
-    { data: plans, error: plansErr },
-    { data: activity, error: activityErr },
-  ] = await Promise.all([
-    fetchAllWorkspaceIds(admin, "apps", ownedWorkspaceIds),
-    fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
-    admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
-    admin.from("plans").select("id, slug, name"),
-    fetchAllRows<{
-      user_id: string;
-      active_seconds: number;
-      last_active_at: string;
-      subscription_page_views: number;
-      visit_count: number;
-      active_days: number;
-    }>((from, to) =>
-      admin
-        .from("user_activity")
-        .select("user_id, active_seconds, last_active_at, subscription_page_views, visit_count, active_days")
-        .range(from, to)
+  const [totals, daily, cohorts, milestones, paying, recent, revenue] = await Promise.all([
+    admin.rpc("admin_active_user_totals", { p_exclude_emails: exclude }).single<{ dau: number; wau: number; mau: number }>(),
+    admin.rpc("admin_daily_active_users", { p_days: DAILY_DAYS, p_exclude_emails: exclude }),
+    admin.rpc("admin_retention_cohorts", { p_weeks: COHORT_WEEKS, p_exclude_emails: exclude }),
+    fetchAllRows<MilestoneRow>((from, to) => admin.rpc("admin_user_milestones").range(from, to)),
+    admin.rpc("admin_paying_user_engagement"),
+    fetchAllRows<RecentRow>((from, to) =>
+      admin.rpc("admin_recent_active_users", { p_days: RECENT_DAYS, p_exclude_emails: exclude }).range(from, to)
     ),
+    admin
+      .rpc("admin_revenue_summary", { p_exclude_emails: exclude })
+      .single<{ mrr_cents: number; paying: number; trialing: number }>(),
   ]);
-  if (subsErr) throw subsErr;
-  if (plansErr) throw plansErr;
-  if (activityErr) throw activityErr;
-
-  const activityByUser = new Map(activity.map((a) => [a.user_id, a]));
-
-  const appCountByWorkspace = new Map<string, number>();
-  for (const workspaceId of appWorkspaceIds) {
-    appCountByWorkspace.set(workspaceId, (appCountByWorkspace.get(workspaceId) ?? 0) + 1);
+  for (const r of [totals, daily, cohorts, milestones, paying, recent, revenue]) {
+    if (r.error) throw r.error;
   }
 
-  const keywordCountByWorkspace = new Map<string, number>();
-  for (const workspaceId of keywordWorkspaceIds) {
-    keywordCountByWorkspace.set(workspaceId, (keywordCountByWorkspace.get(workspaceId) ?? 0) + 1);
-  }
+  const dailyActive: DailyActiveUsers[] = (daily.data as { day: string; users: number }[]).map((d) => ({ day: d.day, users: d.users }));
 
-  // plans.name carries a " Plan" suffix ("Free Plan") meant for pricing copy;
-  // the admin badges just need the tier.
-  const planById = new Map((plans ?? []).map((p) => [p.id, { ...p, name: shortPlanName(p.name) }]));
-  const freePlan = [...planById.values()].find((p) => p.slug === "free");
+  const retention: RetentionCohort[] = (
+    cohorts.data as {
+      cohort_week: string;
+      users: number;
+      d1_eligible: number;
+      d1: number;
+      w1_eligible: number;
+      w1: number;
+      w4_eligible: number;
+      w4: number;
+    }[]
+  ).map((c) => ({
+    cohortWeek: c.cohort_week,
+    users: c.users,
+    d1: { hit: c.d1, eligible: c.d1_eligible },
+    w1: { hit: c.w1, eligible: c.w1_eligible },
+    w4: { hit: c.w4, eligible: c.w4_eligible },
+  }));
 
-  // No active/trialing subscription row falls back to the free plan —
-  // matches get_effective_plan's fallback in the DB.
-  const activePlanByUser = new Map<string, { slug: string; name: string }>();
-  for (const s of subscriptions ?? []) {
-    const plan = planById.get(s.plan_id);
-    if (plan) activePlanByUser.set(s.user_id, { slug: plan.slug, name: plan.name });
-  }
+  const users: UserMilestones[] = milestones.data
+    .filter((m) => !isSuperAdminEmail(m.email))
+    .map((m) => ({
+      userId: m.user_id,
+      email: m.email ?? "(no email)",
+      createdAt: m.created_at,
+      firstAppAt: m.first_app_at,
+      firstKeywordAt: m.first_keyword_at,
+      firstCompetitorAt: m.first_competitor_at,
+      firstInspectAt: m.first_inspect_at,
+      tourCompletedAt: m.tour_completed_at,
+      pricingViews: m.pricing_views,
+      firstCheckoutAt: m.first_checkout_at,
+      lastCheckoutAt: m.last_checkout_at,
+      lastCheckoutPlan: m.last_checkout_plan,
+      paidAt: m.paid_at,
+      planSlug: m.plan_slug,
+      firstCombinationAt: m.first_combination_at,
+      firstAiPromptAt: m.first_ai_prompt_at,
+      firstStoreLinkAt: m.first_store_link_at,
+      firstAsaLinkAt: m.first_asa_link_at,
+      firstInviteAt: m.first_invite_at,
+      firstPushAt: m.first_push_at,
+      firstCertificationAt: m.first_certification_at,
+    }));
 
-  const rows: AdminUserRow[] = authUsers.map((u) => {
-    const workspaceIds = ownedWorkspacesByUser.get(u.id) ?? [];
-    const appCount = workspaceIds.reduce((sum, id) => sum + (appCountByWorkspace.get(id) ?? 0), 0);
-    const keywordCount = workspaceIds.reduce((sum, id) => sum + (keywordCountByWorkspace.get(id) ?? 0), 0);
-    const plan = activePlanByUser.get(u.id) ?? (freePlan ? { slug: freePlan.slug, name: freePlan.name } : { slug: "free", name: "Free" });
+  const recentActive: RecentActiveUser[] = recent.data.map((r) => ({
+    userId: r.user_id,
+    email: r.email ?? "(no email)",
+    createdAt: r.created_at,
+    planSlug: r.plan_slug,
+    planName: r.plan_name ? shortPlanName(r.plan_name) : "Free",
+    lastActiveAt: r.last_active_at,
+    visits7d: r.visits_7d,
+    activeDays7d: r.active_days_7d,
+    activeSeconds7d: r.active_seconds_7d,
+    visitCount: r.visit_count,
+    activeSeconds: r.active_seconds,
+  }));
 
-    const usage = activityByUser.get(u.id);
+  const payingUsers: PayingUserEngagement[] = (paying.data as PayingRow[])
+    .filter((p) => !isSuperAdminEmail(p.email))
+    .map((p) => ({
+      userId: p.user_id,
+      email: p.email ?? "(no email)",
+      planName: shortPlanName(p.plan_name),
+      status: p.status,
+      currentPeriodEnd: p.current_period_end,
+      cancelAtPeriodEnd: p.cancel_at_period_end,
+      lastActiveAt: p.last_active_at,
+      visitsLast14: p.visits_last_14,
+      visitsPrev14: p.visits_prev_14,
+      activeDaysLast14: p.active_days_last_14,
+    }));
 
-    return {
-      id: u.id,
-      email: u.email,
-      createdAt: u.createdAt,
-      lastSignInAt: u.lastSignInAt,
-      activeSeconds: usage?.active_seconds ?? 0,
-      lastActiveAt: usage?.last_active_at ?? null,
-      subscriptionPageViews: usage?.subscription_page_views ?? 0,
-      visitCount: usage?.visit_count ?? 0,
-      activeDays: usage?.active_days ?? 0,
-      isSuperAdmin: isSuperAdminEmail(u.email),
-      workspaceCount: workspaceIds.length,
-      appCount,
-      keywordCount,
-      planSlug: plan.slug,
-      planName: plan.name,
-    };
-  });
-
-  // Newest accounts first, matching AdminUsersPage's default sort.
-  rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-  return <AdminUsersPage users={rows} />;
+  return (
+    <AdminEngagementPage
+      totals={totals.data!}
+      revenue={{ mrrCents: Number(revenue.data!.mrr_cents), paying: revenue.data!.paying, trialing: revenue.data!.trialing }}
+      dailyActive={dailyActive}
+      retention={retention}
+      users={users}
+      payingUsers={payingUsers}
+      recentActive={recentActive}
+      recentDays={RECENT_DAYS}
+    />
+  );
 }

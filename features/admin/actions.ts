@@ -380,6 +380,8 @@ export async function deleteUserAction(userId: string, confirmation: string): Pr
   const result = await deleteUserAndData(userId);
   if (result.error) return { ok: false, error: result.error };
 
+  // Users list and the Engagement page both show every user.
+  revalidatePath("/admin/users");
   revalidatePath("/admin");
   return { ok: true };
 }

@@ -1,4 +1,4 @@
--- Super admin Engagement page (app/admin/engagement): active users, signup
+-- Super admin Engagement page (app/admin/page.tsx): active users, signup
 -- retention, activation milestones, the upgrade funnel and paying users at
 -- risk of churning.
 --

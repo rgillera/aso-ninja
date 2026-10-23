@@ -7,6 +7,7 @@ import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/featu
 
 type Props = {
   totals: { dau: number; wau: number; mau: number };
+  revenue: { mrrCents: number; paying: number; trialing: number };
   dailyActive: DailyActiveUsers[];
   retention: RetentionCohort[];
   users: UserMilestones[];
@@ -230,7 +231,7 @@ function riskReasons(u: PayingUserEngagement, now: number): RiskReason[] {
   return reasons;
 }
 
-export default function AdminEngagementPage({ totals, dailyActive, retention, users, payingUsers, recentActive, recentDays }: Props) {
+export default function AdminEngagementPage({ totals, revenue, dailyActive, retention, users, payingUsers, recentActive, recentDays }: Props) {
   const [windowDays, setWindowDays] = useState<number | null>(30);
   const [showAllRecent, setShowAllRecent] = useState(false);
   // Rendered fresh on each request; fixed for the life of the page so
@@ -287,6 +288,15 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
 
   const stickiness = totals.mau ? Math.round((totals.dau / totals.mau) * 100) : 0;
 
+  const signups = useMemo(() => {
+    const age = (u: UserMilestones) => now - new Date(u.createdAt).getTime();
+    return {
+      thisWeek: users.filter((u) => age(u) <= 7 * DAY_MS).length,
+      lastWeek: users.filter((u) => age(u) > 7 * DAY_MS && age(u) <= 14 * DAY_MS).length,
+      paid: users.filter((u) => u.paidAt).length,
+    };
+  }, [users, now]);
+
   return (
     <div className="p-6">
       <div className="mx-auto max-w-6xl">
@@ -303,6 +313,21 @@ export default function AdminEngagementPage({ totals, dailyActive, retention, us
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile
+            label="Est. MRR"
+            value={`$${Math.round(revenue.mrrCents / 100).toLocaleString()}`}
+            hint="List price, Stripe plans only"
+          />
+          <StatTile
+            label="Paying users"
+            value={revenue.paying.toLocaleString()}
+            hint={revenue.trialing ? `Plus ${revenue.trialing.toLocaleString()} on trial` : "No one on trial"}
+          />
+          <StatTile label="Signups, 7 days" value={signups.thisWeek.toLocaleString()} hint={`${signups.lastWeek.toLocaleString()} the week before`} />
+          <StatTile label="Signup to paid" value={pct(signups.paid, users.length)} hint={`${signups.paid.toLocaleString()} of ${users.length.toLocaleString()} users, all time`} />
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatTile label="Today" value={totals.dau.toLocaleString()} hint="Active users today" />
           <StatTile label="7 days" value={totals.wau.toLocaleString()} hint="Active in the last 7 days" />
           <StatTile label="30 days" value={totals.mau.toLocaleString()} hint="Active in the last 30 days" />

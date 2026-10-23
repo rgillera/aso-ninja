@@ -183,7 +183,7 @@ export async function signOutAction() {
   // never sign out the admin, let alone revoke the target user's sessions.
   if (await isImpersonating()) {
     (await cookies()).delete(IMPERSONATION_COOKIE);
-    redirect("/admin");
+    redirect("/admin/users");
   }
   const supabase = await createClient();
   await supabase.auth.signOut();
