@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChartBarIcon, CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import { ChartBarIcon, CheckIcon, ExclamationTriangleIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import type { StripeMrr } from "@/libs/stripe/mrr";
 import type { DailyActiveUsers, PayingUserEngagement, RecentActiveUser, RetentionCohort, UserMilestones } from "@/features/admin/types";
 import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/features/admin/format";
 
 type Props = {
   totals: { dau: number; wau: number; mau: number };
-  revenue: { mrrCents: number; paying: number; trialing: number };
+  revenue: { paying: number; trialing: number };
+  mrr: StripeMrr | null;
   dailyActive: DailyActiveUsers[];
   retention: RetentionCohort[];
   users: UserMilestones[];
@@ -57,6 +59,52 @@ function formatAgo(iso: string, now: number): string {
   return `${Math.round(hours / 24)}d ago`;
 }
 
+// Whether MRR is hidden, remembered per browser. The server snapshot is
+// "hidden" so a hidden MRR never flashes on screen before hydration.
+const HIDE_MRR_KEY = "admin_hide_mrr";
+const hideMrrListeners = new Set<() => void>();
+// Fallback for when localStorage is blocked, so the toggle still works for
+// this page view.
+let hideMrrMemory = false;
+
+function readHideMrr(): boolean {
+  try {
+    const stored = localStorage.getItem(HIDE_MRR_KEY);
+    return stored === null ? hideMrrMemory : stored === "1";
+  } catch {
+    return hideMrrMemory;
+  }
+}
+
+function writeHideMrr(hidden: boolean) {
+  hideMrrMemory = hidden;
+  try {
+    localStorage.setItem(HIDE_MRR_KEY, hidden ? "1" : "0");
+  } catch {
+    // Blocked storage: hideMrrMemory covers this page view.
+  }
+  hideMrrListeners.forEach((l) => l());
+}
+
+function subscribeHideMrr(listener: () => void) {
+  hideMrrListeners.add(listener);
+  return () => {
+    hideMrrListeners.delete(listener);
+  };
+}
+
+function formatMoney(cents: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency: currency.toUpperCase(), maximumFractionDigits: 0 }).format(cents / 100);
+}
+
+function mrrHint(mrr: StripeMrr | null): string {
+  if (!mrr) return "Couldn't reach Stripe";
+  const parts = [`${mrr.subscriptions.toLocaleString()} ${mrr.subscriptions === 1 ? "subscription" : "subscriptions"}`];
+  if (mrr.otherCurrencies.length) parts.push(`plus ${mrr.otherCurrencies.map((c) => c.toUpperCase()).join(", ")}`);
+  if (mrr.testMode) parts.push("test mode");
+  return parts.join(" · ");
+}
+
 function pct(part: number, whole: number): string {
   if (whole === 0) return "0%";
   return `${Math.round((part / whole) * 100)}%`;
@@ -79,10 +127,13 @@ function Section({ title, note, children }: { title: string; note?: React.ReactN
   );
 }
 
-function StatTile({ label, value, hint }: { label: string; value: string; hint: string }) {
+function StatTile({ label, value, hint, action }: { label: string; value: string; hint: string; action?: React.ReactNode }) {
   return (
     <div className={`${CARD} px-5 py-4`}>
-      <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-500">{label}</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[10px] font-semibold tracking-widest uppercase text-gray-500">{label}</div>
+        {action}
+      </div>
       <div className="mt-1 text-2xl font-semibold tabular-nums text-white light:text-gray-900">{value}</div>
       <div className="mt-0.5 text-xs text-gray-500">{hint}</div>
     </div>
@@ -231,9 +282,10 @@ function riskReasons(u: PayingUserEngagement, now: number): RiskReason[] {
   return reasons;
 }
 
-export default function AdminEngagementPage({ totals, revenue, dailyActive, retention, users, payingUsers, recentActive, recentDays }: Props) {
+export default function AdminEngagementPage({ totals, revenue, mrr, dailyActive, retention, users, payingUsers, recentActive, recentDays }: Props) {
   const [windowDays, setWindowDays] = useState<number | null>(30);
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const mrrHidden = useSyncExternalStore(subscribeHideMrr, readHideMrr, () => true);
   // Rendered fresh on each request; fixed for the life of the page so
   // memoized filters stay stable.
   const [now] = useState(() => Date.now());
@@ -314,9 +366,20 @@ export default function AdminEngagementPage({ totals, revenue, dailyActive, rete
 
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatTile
-            label="Est. MRR"
-            value={`$${Math.round(revenue.mrrCents / 100).toLocaleString()}`}
-            hint="List price, Stripe plans only"
+            label="MRR"
+            value={mrrHidden ? "••••" : mrr ? formatMoney(mrr.cents, mrr.currency) : "–"}
+            hint={mrrHint(mrr)}
+            action={
+              <button
+                type="button"
+                onClick={() => writeHideMrr(!mrrHidden)}
+                title={mrrHidden ? "Show MRR" : "Hide MRR"}
+                aria-label={mrrHidden ? "Show MRR" : "Hide MRR"}
+                className="-m-1 rounded p-1 text-gray-500 hover:text-white light:hover:text-gray-900 hover:bg-white/[0.06] light:hover:bg-black/[0.05] transition-colors"
+              >
+                {mrrHidden ? <EyeSlashIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
+              </button>
+            }
           />
           <StatTile
             label="Paying users"

@@ -3,6 +3,7 @@ import AdminEngagementPage from "@/features/admin/AdminEngagementPage";
 import { shortPlanName, type DailyActiveUsers, type PayingUserEngagement, type RecentActiveUser, type RetentionCohort, type UserMilestones } from "@/features/admin/types";
 import { isSuperAdminEmail, superAdminEmails } from "@/libs/admin/is-super-admin";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
+import { fetchStripeMrr, type StripeMrr } from "@/libs/stripe/mrr";
 
 const DAILY_DAYS = 30;
 const COHORT_WEEKS = 8;
@@ -64,7 +65,7 @@ export default async function Page() {
   // Super admins' own use of the app shouldn't count as engagement.
   const exclude = superAdminEmails();
 
-  const [totals, daily, cohorts, milestones, paying, recent, revenue] = await Promise.all([
+  const [totals, daily, cohorts, milestones, paying, recent, revenue, mrr] = await Promise.all([
     admin.rpc("admin_active_user_totals", { p_exclude_emails: exclude }).single<{ dau: number; wau: number; mau: number }>(),
     admin.rpc("admin_daily_active_users", { p_days: DAILY_DAYS, p_exclude_emails: exclude }),
     admin.rpc("admin_retention_cohorts", { p_weeks: COHORT_WEEKS, p_exclude_emails: exclude }),
@@ -75,7 +76,12 @@ export default async function Page() {
     ),
     admin
       .rpc("admin_revenue_summary", { p_exclude_emails: exclude })
-      .single<{ mrr_cents: number; paying: number; trialing: number }>(),
+      .single<{ paying: number; trialing: number }>(),
+    // A Stripe outage shouldn't take the whole page down; the tile says so.
+    fetchStripeMrr().catch((err): StripeMrr | null => {
+      console.error("Stripe MRR failed", err);
+      return null;
+    }),
   ]);
   for (const r of [totals, daily, cohorts, milestones, paying, recent, revenue]) {
     if (r.error) throw r.error;
@@ -160,7 +166,8 @@ export default async function Page() {
   return (
     <AdminEngagementPage
       totals={totals.data!}
-      revenue={{ mrrCents: Number(revenue.data!.mrr_cents), paying: revenue.data!.paying, trialing: revenue.data!.trialing }}
+      revenue={{ paying: revenue.data!.paying, trialing: revenue.data!.trialing }}
+      mrr={mrr}
       dailyActive={dailyActive}
       retention={retention}
       users={users}
