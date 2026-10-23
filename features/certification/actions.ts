@@ -91,3 +91,51 @@ export async function getMyLatestCertificationAction(): Promise<CertificationRec
     issuedAt: data.issued_at,
   };
 }
+
+/**
+ * Logs the start of an exam attempt for the admin panel's Certifications
+ * view. Returns null when nothing was logged (signed out, impersonating, or
+ * the insert failed) — the exam itself never depends on this.
+ */
+export async function startCertificationAttemptAction(total: number): Promise<string | null> {
+  if (await isImpersonating()) return null;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("certification_attempts")
+    .insert({ user_id: user.id, total })
+    .select("id")
+    .single();
+
+  return data?.id ?? null;
+}
+
+/** Records the outcome of an attempt started with startCertificationAttemptAction. */
+export async function finishCertificationAttemptAction(
+  attemptId: string,
+  input: { score: number; total: number; passed: boolean; timedOut: boolean }
+): Promise<void> {
+  if (await isImpersonating()) return;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  // RLS limits this to the caller's own unfinished attempt.
+  await supabase
+    .from("certification_attempts")
+    .update({
+      finished_at: new Date().toISOString(),
+      score: input.score,
+      total: input.total,
+      passed: input.passed,
+      timed_out: input.timedOut,
+    })
+    .eq("id", attemptId)
+    .eq("user_id", user.id);
+}

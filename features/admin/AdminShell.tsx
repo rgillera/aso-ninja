@@ -8,12 +8,16 @@ import {
   ShieldCheckIcon,
   UsersIcon,
   MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon,
+  AcademicCapIcon,
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 
 const adminLinks: { label: string; href: string; icon: typeof UsersIcon }[] = [
   { label: "Users", href: "/admin", icon: UsersIcon },
   { label: "Keywords", href: "/admin/keywords", icon: MagnifyingGlassIcon },
+  { label: "Cancellations", href: "/admin/cancellations", icon: ChatBubbleLeftRightIcon },
+  { label: "Certifications", href: "/admin/certifications", icon: AcademicCapIcon },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

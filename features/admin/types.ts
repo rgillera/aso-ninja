@@ -16,3 +16,32 @@ export type AdminUserRow = {
   planSlug: string;
   planName: string;
 };
+
+export type AdminCancellationRow = {
+  id: string;
+  userId: string;
+  email: string;
+  // Plan they were on when they canceled; null if the plan row is gone.
+  planName: string | null;
+  reason: string;
+  recommendation: string | null;
+  createdAt: string;
+};
+
+// "Free Plan" -> "Free", "Pro+ Plan" -> "Pro+"; names without the suffix
+// (e.g. "Enterprise") pass through unchanged.
+export function shortPlanName(name: string): string {
+  return name.replace(/\s+Plan$/i, "");
+}
+
+export type AdminCertificationAttemptRow = {
+  id: string;
+  userId: string;
+  email: string;
+  startedAt: string;
+  finishedAt: string | null;
+  score: number | null;
+  total: number;
+  passed: boolean | null;
+  timedOut: boolean;
+};

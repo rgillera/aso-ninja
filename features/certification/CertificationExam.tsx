@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ClockIcon, LockClosedIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import { CERTIFICATION_QUESTIONS, CERTIFICATION_PASS_THRESHOLD, MAX_EXAM_QUESTIONS, type CertificationQuestion } from "./questions";
 import { LEVEL_LABEL, CERTIFICATION_LEVEL_ORDER } from "./content";
 import { buildExamAttempt } from "./examEngine";
-import { recordCertificationAction, type CertificationRecord } from "./actions";
+import {
+  recordCertificationAction,
+  startCertificationAttemptAction,
+  finishCertificationAttemptAction,
+  type CertificationRecord,
+} from "./actions";
 import { CertificateDownload } from "./CertificateDownload";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
@@ -38,6 +43,9 @@ export default function CertificationExam({ holderName = "" }: Props) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [secondsLeft, setSecondsLeft] = useState(EXAM_DURATION_SECONDS);
   const [certRecord, setCertRecord] = useState<CertificationRecord | null>(null);
+  // Id of the certification_attempts row for the current attempt. Cleared
+  // once the result is sent so it's only recorded once.
+  const attemptIdRef = useRef<string | null>(null);
 
   // Single countdown for the whole attempt. Auto-submits at zero.
   useEffect(() => {
@@ -85,7 +93,12 @@ export default function CertificationExam({ holderName = "" }: Props) {
   }
 
   function startExam() {
-    setExamSet(buildExamAttempt(CERTIFICATION_QUESTIONS, MAX_EXAM_QUESTIONS));
+    const set = buildExamAttempt(CERTIFICATION_QUESTIONS, MAX_EXAM_QUESTIONS);
+    attemptIdRef.current = null;
+    startCertificationAttemptAction(set.length).then((id) => {
+      attemptIdRef.current = id;
+    });
+    setExamSet(set);
     setAnswers({});
     setIndex(0);
     setSecondsLeft(EXAM_DURATION_SECONDS);
@@ -96,6 +109,14 @@ export default function CertificationExam({ holderName = "" }: Props) {
   const percent = total > 0 ? Math.round((score / total) * 100) : 0;
   const passed = total > 0 && score / total >= CERTIFICATION_PASS_THRESHOLD;
   const timeRunningLow = secondsLeft <= 60;
+
+  // Log every attempt's outcome (pass or fail) for the admin panel.
+  useEffect(() => {
+    if (stage !== "results" || !attemptIdRef.current) return;
+    const id = attemptIdRef.current;
+    attemptIdRef.current = null;
+    finishCertificationAttemptAction(id, { score, total, passed, timedOut: secondsLeft === 0 });
+  }, [stage, score, total, passed, secondsLeft]);
 
   // Persist a pass so the certification page can show "you're certified"
   // and the PDF can be redownloaded later without retaking the exam.

@@ -3,6 +3,7 @@ import AdminUsersPage from "@/features/admin/AdminUsersPage";
 import type { AdminUserRow } from "@/features/admin/types";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
+import { shortPlanName } from "@/features/admin/types";
 
 type AuthUserSummary = {
   id: string;
@@ -127,8 +128,10 @@ export default async function Page() {
     keywordCountByWorkspace.set(workspaceId, (keywordCountByWorkspace.get(workspaceId) ?? 0) + 1);
   }
 
-  const planById = new Map((plans ?? []).map((p) => [p.id, p]));
-  const freePlan = (plans ?? []).find((p) => p.slug === "free");
+  // plans.name carries a " Plan" suffix ("Free Plan") meant for pricing copy;
+  // the admin badges just need the tier.
+  const planById = new Map((plans ?? []).map((p) => [p.id, { ...p, name: shortPlanName(p.name) }]));
+  const freePlan = [...planById.values()].find((p) => p.slug === "free");
 
   // No active/trialing subscription row falls back to the free plan —
   // matches get_effective_plan's fallback in the DB.
