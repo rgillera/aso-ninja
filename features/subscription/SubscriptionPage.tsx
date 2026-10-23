@@ -312,8 +312,13 @@ export default function SubscriptionPage({
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}
-                    <UsageBar onColor={tone !== "default"} label="Members" used={usage.member_count} limit={usage.member_limit} frozen={usage.member_frozen_count} />
-                    <UsageBar onColor={tone !== "default"} label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
+                    {(usage.member_limit !== 0 || usage.member_frozen_count > 0) && (
+                      <UsageBar onColor={tone !== "default"} label="Members" used={usage.member_count} limit={usage.member_limit} frozen={usage.member_frozen_count} />
+                    )}
+                    {/* A 1-workspace plan always reads "1 / 1", which looks maxed out rather than informative. */}
+                    {(usage.workspace_limit !== 1 || usage.workspace_count > 1) && (
+                      <UsageBar onColor={tone !== "default"} label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
+                    )}
                   </div>
                 )}
 
