@@ -15,5 +15,9 @@ export function downloadCsv(filename: string, headers: string[], rows: (string |
   URL.revokeObjectURL(url);
   // Filenames carry a timestamp in places (keywords-<ms>.csv); strip it so
   // exports group by which table they came from.
-  trackEvent("CSV Exported", { file: filename.replace(/-\d+(?=\.csv$)/, ""), rows: rows.length });
+  try {
+    trackEvent("CSV Exported", { file: filename.replace(/-\d+(?=\.csv$)/, ""), rows: rows.length });
+  } catch {
+    // Analytics must never break the export.
+  }
 }

@@ -21,6 +21,8 @@ export async function trackServerEvent(userId: string, name: string, props?: Rec
     await fetch("https://api.mixpanel.com/track", {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/plain" },
+      // A slow Mixpanel shouldn't keep the serverless function alive.
+      signal: AbortSignal.timeout(3000),
       body: JSON.stringify([
         {
           event: name,
