@@ -608,9 +608,7 @@ export default function KeywordResearchPage() {
               </a>
             ) : (
               <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
-                {planSlug === "free" ? "Upgrade to Basic for a bigger pool"
-                  : planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool"
-                  : "Upgrade to Pro for a bigger pool"}
+                {planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool" : "Upgrade to Pro for a bigger pool"}
               </Link>
             )}
           </span>

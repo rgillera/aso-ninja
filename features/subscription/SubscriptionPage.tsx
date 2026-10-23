@@ -304,8 +304,14 @@ export default function SubscriptionPage({
 
                 {isCurrent && usage && (
                   <div className={`mt-5 space-y-3 border-t pt-5 ${c.divider}`}>
-                    <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
-                    <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
+                    {/* Unlimited keyword/app counts have nothing to fill a bar against, so only capped plans show them. */}
+                    {usage.keyword_limit !== null && (
+                      <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
+                    )}
+                    <UsageBar onColor={tone !== "default"} label="Relevancy & opportunity scoring" used={usage.relevancy_scored_count} limit={usage.relevancy_limit} />
+                    {usage.app_limit !== null && (
+                      <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
+                    )}
                     <UsageBar onColor={tone !== "default"} label="Members" used={usage.member_count} limit={usage.member_limit} frozen={usage.member_frozen_count} />
                     <UsageBar onColor={tone !== "default"} label="Workspaces" used={usage.workspace_count} limit={usage.workspace_limit} />
                   </div>
