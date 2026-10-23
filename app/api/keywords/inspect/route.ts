@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { trackServerEvent } from "@/libs/analytics/events";
 import type { InspectorUsage } from "@/features/aso/keywords/inspector/limits";
 import { inspectorLimitFor } from "@/features/aso/keywords/inspector/serverLimit";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
@@ -120,6 +121,8 @@ export async function GET(request: NextRequest) {
     await refund();
     return NextResponse.json({ error: "Couldn't check this keyword right now. Try again shortly.", usage }, { status: 502 });
   }
+
+  if (!impersonating) after(() => trackServerEvent(user.id, "Keyword Inspected", { store, country }));
 
   return NextResponse.json({
     term,

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/libs/supabase/server";
+import { trackCurrentUserEvent } from "@/libs/analytics/events";
 import { fetchStoreData } from "@/libs/store/load-benchmark";
 import { daysSince } from "@/libs/store/benchmark-utils";
 import { computeAsoScoreSummary } from "@/features/aso/reports/asoScore";
@@ -164,6 +165,8 @@ export async function POST(request: NextRequest) {
     // rather than surfacing a spurious error for a no-op re-add.
     return NextResponse.json({ error: error.message }, { status: 403 });
   }
+
+  if (!error) after(() => trackCurrentUserEvent("Competitor Added", { store: store ?? null }));
 
   return NextResponse.json({ appId });
 }

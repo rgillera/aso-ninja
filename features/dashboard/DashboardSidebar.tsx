@@ -36,6 +36,7 @@ import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
+import { recordTourCompletedAction } from "@/features/activity/actions";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
@@ -397,7 +398,12 @@ export default function DashboardSidebar({
             </>
           }
           buttonLabel="Done"
-          onAdvance={onAdvanceTour}
+          onAdvance={() => {
+            // Last step, so closing it any way (Done, X, outside click)
+            // means they reached the end of the tour.
+            recordTourCompletedAction().catch(() => {});
+            onAdvanceTour();
+          }}
           anchor="right"
         />
         <a

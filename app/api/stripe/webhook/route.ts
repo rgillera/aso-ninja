@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import Stripe from "stripe";
 import { createStripeClient } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
+import { recordUserEvent } from "@/libs/analytics/events";
 
 const RELEVANT_EVENTS = new Set([
   "checkout.session.completed",
@@ -106,6 +107,12 @@ export async function POST(request: NextRequest) {
             : session.subscription.id
         );
         await upsertFromStripeSubscription(admin, subscription, userId);
+        after(() =>
+          recordUserEvent(userId, "checkout_completed", {
+            props: { plan_id: session.metadata?.plan_id ?? null, billing: session.metadata?.billing ?? null },
+            ref: session.id,
+          })
+        );
       }
       break;
     }

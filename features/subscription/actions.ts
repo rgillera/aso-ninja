@@ -1,8 +1,10 @@
 "use server";
 
+import { after } from "next/server";
 import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createStripeClient } from "@/libs/stripe/server";
+import { recordUserEvent } from "@/libs/analytics/events";
 import type { Plan, WorkspaceUsage, PlanSlug } from "@/libs/contracts";
 
 export type PendingCancellation = { currentPeriodEnd: string | null } | null;
@@ -144,5 +146,6 @@ export async function createCheckoutSessionAction(
   });
 
   if (!session.url) return { error: "Failed to create checkout session." };
+  after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: planSlug, billing }, ref: session.id }));
   return { url: session.url };
 }

@@ -1,10 +1,12 @@
 "use server";
 
+import { after } from "next/server";
 import { revalidatePath, refresh } from "next/cache";
 import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { syncAppDownloads } from "@/libs/store-connections/sync";
+import { trackCurrentUserEvent } from "@/libs/analytics/events";
 import type { AppStore } from "@/libs/contracts";
 
 export type AppState = { error?: string; field?: string } | null;
@@ -40,6 +42,7 @@ export async function createAppAction(
     return { error: "This app is already added to the workspace.", field: "bundle_id" };
   if (error) return { error: error.message };
 
+  after(() => trackCurrentUserEvent("App Added", { store }));
   revalidatePath("/dashboard");
   refresh();
   return null;

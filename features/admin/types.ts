@@ -9,6 +9,10 @@ export type AdminUserRow = {
   lastActiveAt: string | null;
   // Times they opened /dashboard/subscription (SubscriptionPageViewTracker).
   subscriptionPageViews: number;
+  // Return visits (heartbeat after a 30+ min gap) and distinct UTC days with
+  // use; see supabase/migrations/20261023000003_user_activity_visits.sql.
+  visitCount: number;
+  activeDays: number;
   isSuperAdmin: boolean;
   workspaceCount: number;
   appCount: number;
@@ -46,4 +50,47 @@ export type AdminCertificationAttemptRow = {
   total: number;
   passed: boolean | null;
   timedOut: boolean;
+};
+
+// Admin Engagement page (app/admin/engagement). Shapes mirror the RPCs in
+// supabase/migrations/20261023000004_engagement_insights.sql.
+export type DailyActiveUsers = { day: string; users: number };
+
+export type RetentionCohort = {
+  cohortWeek: string;
+  users: number;
+  // Each rate counts only users whose window has passed; null when none have.
+  d1: { hit: number; eligible: number };
+  w1: { hit: number; eligible: number };
+  w4: { hit: number; eligible: number };
+};
+
+export type UserMilestones = {
+  userId: string;
+  email: string;
+  createdAt: string;
+  firstAppAt: string | null;
+  firstKeywordAt: string | null;
+  firstCompetitorAt: string | null;
+  firstInspectAt: string | null;
+  tourCompletedAt: string | null;
+  pricingViews: number;
+  firstCheckoutAt: string | null;
+  lastCheckoutAt: string | null;
+  lastCheckoutPlan: string | null;
+  paidAt: string | null;
+  planSlug: string;
+};
+
+export type PayingUserEngagement = {
+  userId: string;
+  email: string;
+  planName: string;
+  status: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  lastActiveAt: string | null;
+  visitsLast14: number;
+  visitsPrev14: number;
+  activeDaysLast14: number;
 };

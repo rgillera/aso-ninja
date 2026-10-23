@@ -29,6 +29,8 @@ type SortKey =
   | "planName"
   | "keywordCount"
   | "activeSeconds"
+  | "visitCount"
+  | "activeDays"
   | "subscriptionPageViews"
   | "createdAt"
   | "lastActiveAt";
@@ -39,6 +41,8 @@ const SORT_COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "planName", label: "Plan" },
   { key: "keywordCount", label: "Keywords", align: "right" },
   { key: "activeSeconds", label: "Time used", align: "right" },
+  { key: "visitCount", label: "Visits", align: "right" },
+  { key: "activeDays", label: "Days active", align: "right" },
   { key: "subscriptionPageViews", label: "Pricing views", align: "right" },
   { key: "createdAt", label: "Joined" },
   { key: "lastActiveAt", label: "Last active" },
@@ -191,6 +195,10 @@ function compareValues(a: AdminUserRow, b: AdminUserRow, key: SortKey): number {
       return a.keywordCount - b.keywordCount;
     case "activeSeconds":
       return a.activeSeconds - b.activeSeconds;
+    case "visitCount":
+      return a.visitCount - b.visitCount;
+    case "activeDays":
+      return a.activeDays - b.activeDays;
     case "subscriptionPageViews":
       return a.subscriptionPageViews - b.subscriptionPageViews;
     case "createdAt":
@@ -355,6 +363,8 @@ export default function AdminUsersPage({ users }: Props) {
                       </td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.keywordCount.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700 whitespace-nowrap">{formatDuration(u.activeSeconds)}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.visitCount.toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.activeDays.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-right text-gray-300 light:text-gray-700">{u.subscriptionPageViews.toLocaleString()}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.createdAt)}</td>
                       <td className="px-5 py-3.5 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDateTime(u.lastActiveAt)}</td>

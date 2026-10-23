@@ -1,3 +1,5 @@
+import { trackEvent } from "@/libs/mixpanel";
+
 export function downloadCsv(filename: string, headers: string[], rows: (string | number)[][]) {
   const escape = (v: string | number) => {
     const s = String(v);
@@ -11,4 +13,7 @@ export function downloadCsv(filename: string, headers: string[], rows: (string |
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+  // Filenames carry a timestamp in places (keywords-<ms>.csv); strip it so
+  // exports group by which table they came from.
+  trackEvent("CSV Exported", { file: filename.replace(/-\d+(?=\.csv$)/, ""), rows: rows.length });
 }

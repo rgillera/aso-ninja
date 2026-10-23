@@ -108,8 +108,18 @@ export default async function Page() {
     fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
     admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
     admin.from("plans").select("id, slug, name"),
-    fetchAllRows<{ user_id: string; active_seconds: number; last_active_at: string; subscription_page_views: number }>((from, to) =>
-      admin.from("user_activity").select("user_id, active_seconds, last_active_at, subscription_page_views").range(from, to)
+    fetchAllRows<{
+      user_id: string;
+      active_seconds: number;
+      last_active_at: string;
+      subscription_page_views: number;
+      visit_count: number;
+      active_days: number;
+    }>((from, to) =>
+      admin
+        .from("user_activity")
+        .select("user_id, active_seconds, last_active_at, subscription_page_views, visit_count, active_days")
+        .range(from, to)
     ),
   ]);
   if (subsErr) throw subsErr;
@@ -157,6 +167,8 @@ export default async function Page() {
       activeSeconds: usage?.active_seconds ?? 0,
       lastActiveAt: usage?.last_active_at ?? null,
       subscriptionPageViews: usage?.subscription_page_views ?? 0,
+      visitCount: usage?.visit_count ?? 0,
+      activeDays: usage?.active_days ?? 0,
       isSuperAdmin: isSuperAdminEmail(u.email),
       workspaceCount: workspaceIds.length,
       appCount,

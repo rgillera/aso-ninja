@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/libs/supabase/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { syncAppDownloads } from "@/libs/store-connections/sync";
+import { trackCurrentUserEvent } from "@/libs/analytics/events";
 
 type MetricsMap = Record<string, {
   volume: number; diff: number; chance: number;
@@ -113,12 +114,19 @@ export async function POST(request: NextRequest) {
 
   // 3. Link all keywords to the app
   if (appId) {
-    await supabase
+    // With ignoreDuplicates only newly linked rows come back, so the
+    // reserve-then-save pair of calls per add counts each keyword once.
+    const { data: linked } = await supabase
       .from("app_keywords")
       .upsert(
         keywordRows.map((kw) => ({ app_id: appId!, keyword_id: kw.id })),
         { onConflict: "app_id,keyword_id", ignoreDuplicates: true }
-      );
+      )
+      .select("keyword_id");
+    if (linked?.length) {
+      const count = linked.length;
+      after(() => trackCurrentUserEvent("Keywords Added", { count, store: store ?? null }));
+    }
 
     // 4. Persist metrics so initial page load skips recomputing
     if (metrics) {
