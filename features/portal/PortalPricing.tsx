@@ -39,6 +39,7 @@ const plans = SELLABLE_PLANS.map((plan) => {
       price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
       signupHref: `/signup?plan=${plan.id}&next=${encodeURIComponent("/dashboard/subscription?billing=yearly")}`,
     },
+    yearlyTotal: isFree ? null : formatPrice(plan.priceYearlyCents),
     yearlySavings: isFree ? null : formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents),
     description: plan.description,
     badge: plan.badge,
@@ -97,7 +98,8 @@ const cardStyles: Record<Variant, {
 };
 
 export default function PortalPricing({ isAuthenticated }: { isAuthenticated: boolean }) {
-  const [yearly, setYearly] = useState(false);
+  // Yearly first: the per-month price is the lower anchor visitors see.
+  const [yearly, setYearly] = useState(true);
 
   return (
     <section id="pricing" className="bg-gray-50 py-24 sm:py-28">
@@ -129,7 +131,7 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             >
               Yearly
               <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"}`}>
-                -20%
+                2 months free
               </span>
             </button>
           </div>
@@ -191,14 +193,16 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                       </span>
                       {!isFree && (
                         <span className={`text-xs ${s.subtitle}`}>
-                          / mo{yearly && " · billed yearly"}
+                          / mo
                         </span>
                       )}
                     </>
                   )}
                 </div>
-                {yearly && plan.yearlySavings && !plan.contactSales && (
-                  <p className={`mt-1 text-xs font-semibold ${s.subtitle}`}>Save {plan.yearlySavings} a year</p>
+                {yearly && plan.yearlyTotal && !plan.contactSales && (
+                  <p className={`mt-1 text-xs font-semibold ${s.subtitle}`}>
+                    {plan.yearlyTotal} billed yearly · save {plan.yearlySavings}
+                  </p>
                 )}
 
                 <p className={`mt-4 text-sm leading-relaxed ${s.desc}`}>{plan.description}</p>

@@ -174,9 +174,10 @@ export default function SubscriptionPage({
     : 0;
   const searchParams = useSearchParams();
   // Carry over the toggle the visitor picked on the public pricing grid
-  // (PortalPricing links through signup with ?billing=yearly|monthly).
+  // (PortalPricing links through signup with ?billing=yearly|monthly), and
+  // otherwise open on yearly like the public grid does.
   const [billing, setBilling] = useState<Billing>(
-    searchParams.get("billing") === "yearly" ? "yearly" : "monthly"
+    searchParams.get("billing") === "monthly" ? "monthly" : "yearly"
   );
   useRefreshUntilUpgraded(searchParams.get("success") === "1");
 
@@ -232,7 +233,7 @@ export default function SubscriptionPage({
                   : "bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-600"
               }`}
             >
-              -20%
+              2 months free
             </span>
           </button>
         </div>
@@ -282,12 +283,12 @@ export default function SubscriptionPage({
                     {plan.contactSales ? "Custom" : isFree ? "Free" : formatPrice(displayCents)}
                   </span>
                   {!isFree && !plan.contactSales && (
-                    <span className={`text-xs ${c.subtitle}`}>/ mo{billing === "yearly" && " · billed yearly"}</span>
+                    <span className={`text-xs ${c.subtitle}`}>/ mo</span>
                   )}
                 </div>
                 {!isFree && !plan.contactSales && billing === "yearly" && (
                   <p className={`mt-1 text-xs font-semibold ${c.subtitle}`}>
-                    Save {formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents)} a year
+                    {formatPrice(plan.priceYearlyCents)} billed yearly · save {formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents)}
                   </p>
                 )}
 
