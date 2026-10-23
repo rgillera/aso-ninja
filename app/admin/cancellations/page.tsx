@@ -7,11 +7,11 @@ export default async function Page() {
   const admin = createAdminClient();
 
   const [{ data: feedback, error: feedbackErr }, { data: plans, error: plansErr }] = await Promise.all([
-    fetchAllRows<{ id: string; user_id: string; plan_id: string | null; reason: string; recommendation: string | null; created_at: string }>(
+    fetchAllRows<{ id: string; user_id: string; plan_id: string | null; reason: string; reason_detail: string | null; recommendation: string | null; created_at: string }>(
       (from, to) =>
         admin
           .from("cancellation_feedback")
-          .select("id, user_id, plan_id, reason, recommendation, created_at")
+          .select("id, user_id, plan_id, reason, reason_detail, recommendation, created_at")
           .order("created_at", { ascending: false })
           .range(from, to)
     ),
@@ -39,6 +39,7 @@ export default async function Page() {
     email: emailByUser.get(f.user_id) ?? "(no email)",
     planName: f.plan_id ? planNameById.get(f.plan_id) ?? null : null,
     reason: f.reason,
+    reasonDetail: f.reason_detail,
     recommendation: f.recommendation,
     createdAt: f.created_at,
   }));

@@ -24,6 +24,8 @@ export type AdminCancellationRow = {
   // Plan they were on when they canceled; null if the plan row is gone.
   planName: string | null;
   reason: string;
+  // Answer to the reason's follow-up question ("What do you need?" etc.).
+  reasonDetail: string | null;
   recommendation: string | null;
   createdAt: string;
 };

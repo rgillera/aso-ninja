@@ -3,25 +3,48 @@
 import { useEffect, useState } from "react";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 
-const REASONS = [
-  "Too expensive",
-  "Missing features I need",
-  "Not using it enough",
-  "Switching to another tool",
-  "Technical issues or bugs",
-  "Other",
+// `followUp` reasons open a required text field under the radio so we learn
+// the specifics (which feature, which tool, which bug) instead of a category.
+const REASONS: { label: string; followUp?: { question: string; placeholder: string } }[] = [
+  {
+    label: "Too expensive",
+    followUp: { question: "What price would work for you?", placeholder: "e.g. $20/month" },
+  },
+  {
+    label: "Missing features I need",
+    followUp: { question: "What do you need?", placeholder: "e.g. Android support, competitor alerts" },
+  },
+  { label: "Not using it enough" },
+  {
+    label: "Switching to another tool",
+    followUp: { question: "Which tool are you switching to?", placeholder: "e.g. AppTweak, Sensor Tower" },
+  },
+  {
+    label: "Technical issues or bugs",
+    followUp: { question: "What went wrong?", placeholder: "Tell us which page and what happened" },
+  },
+  {
+    label: "Other",
+    followUp: { question: "Tell us more", placeholder: "What made you decide to leave?" },
+  },
 ];
 
 type Props = {
   onCancel: () => void;
-  onConfirm: (reason: string, recommendation: string) => void;
+  onConfirm: (reason: string, recommendation: string, reasonDetail: string) => void;
 };
 
 export function DowngradeConfirmDialog({ onCancel, onConfirm }: Props) {
   const [step, setStep] = useState<"ask" | "survey">("ask");
   const [confirming, setConfirming] = useState(false);
   const [reason, setReason] = useState("");
+  // Keyed by reason so switching radios back and forth keeps what was typed.
+  const [details, setDetails] = useState<Record<string, string>>({});
   const [recommendation, setRecommendation] = useState("");
+
+  const followUp = REASONS.find((r) => r.label === reason)?.followUp;
+  const reasonDetail = followUp ? (details[reason] ?? "").trim() : "";
+  const canConfirm = !!reason && (!followUp || !!reasonDetail);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -86,18 +109,37 @@ export function DowngradeConfirmDialog({ onCancel, onConfirm }: Props) {
                 <legend className="text-sm font-medium text-gray-300 light:text-gray-700 mb-2">Why are you leaving?</legend>
                 <div className="space-y-1.5">
                   {REASONS.map((r) => (
-                    <label key={r} className="flex items-center gap-2.5 text-sm text-gray-300 light:text-gray-700 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="cancel-reason"
-                        value={r}
-                        checked={reason === r}
-                        onChange={() => setReason(r)}
-                        disabled={confirming}
-                        className="size-3.5 border-white/20 bg-white/5 light:bg-black/[0.04] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                      />
-                      {r}
-                    </label>
+                    <div key={r.label}>
+                      <label className="flex items-center gap-2.5 text-sm text-gray-300 light:text-gray-700 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="cancel-reason"
+                          value={r.label}
+                          checked={reason === r.label}
+                          onChange={() => setReason(r.label)}
+                          disabled={confirming}
+                          className="size-3.5 border-white/20 bg-white/5 light:bg-black/[0.04] text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                        />
+                        {r.label}
+                      </label>
+                      {r.followUp && reason === r.label && (
+                        <div className="mt-2 mb-1 ml-6">
+                          <label htmlFor="cancel-reason-detail" className="text-xs font-medium text-gray-400 light:text-gray-600">
+                            {r.followUp.question}
+                          </label>
+                          <textarea
+                            id="cancel-reason-detail"
+                            rows={2}
+                            autoFocus
+                            value={details[r.label] ?? ""}
+                            onChange={(e) => setDetails((d) => ({ ...d, [r.label]: e.target.value }))}
+                            disabled={confirming}
+                            placeholder={r.followUp.placeholder}
+                            className="mt-1.5 w-full resize-none rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-3 py-2 text-sm text-white light:text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-60"
+                          />
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </fieldset>
@@ -131,15 +173,15 @@ export function DowngradeConfirmDialog({ onCancel, onConfirm }: Props) {
                 type="button"
                 onClick={() => {
                   setConfirming(true);
-                  onConfirm(reason, recommendation.trim());
+                  onConfirm(reason, recommendation.trim(), reasonDetail);
                 }}
-                disabled={confirming || !reason}
+                disabled={confirming || !canConfirm}
                 className="flex items-center gap-2 rounded-lg bg-red-500/90 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-70 disabled:cursor-wait disabled:hover:bg-red-500/90 transition-colors"
               >
                 {confirming && (
                   <span className="size-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
                 )}
-                {confirming ? "Canceling…" : "Yes, I'm sure — downgrade"}
+                {confirming ? "Canceling…" : "Yes, downgrade"}
               </button>
             </div>
           </>

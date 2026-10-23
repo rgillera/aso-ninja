@@ -24,6 +24,7 @@ export default function AdminCancellationsPage({ rows }: { rows: AdminCancellati
       (r) =>
         r.email.toLowerCase().includes(q) ||
         r.reason.toLowerCase().includes(q) ||
+        (r.reasonDetail ?? "").toLowerCase().includes(q) ||
         (r.recommendation ?? "").toLowerCase().includes(q)
     );
   }, [rows, query]);
@@ -74,6 +75,11 @@ export default function AdminCancellationsPage({ rows }: { rows: AdminCancellati
                     <span className="ml-auto text-xs text-gray-500">{formatDateTime(r.createdAt)}</span>
                   </div>
                   <p className="mt-2 text-sm text-gray-300 light:text-gray-700 whitespace-pre-wrap">{r.reason}</p>
+                  {r.reasonDetail && (
+                    <p className="mt-1 border-l-2 border-white/10 light:border-black/10 pl-2.5 text-sm text-gray-400 light:text-gray-600 whitespace-pre-wrap">
+                      {r.reasonDetail}
+                    </p>
+                  )}
                   {r.recommendation && (
                     <p className="mt-2 text-xs text-gray-400 light:text-gray-600 whitespace-pre-wrap">
                       <span className="font-medium text-gray-500">Recommendation: </span>

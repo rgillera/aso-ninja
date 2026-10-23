@@ -96,11 +96,11 @@ export function UpgradeButton({
     );
   }
 
-  function submit(reason?: string, recommendation?: string) {
+  function submit(reason?: string, recommendation?: string, reasonDetail?: string) {
     setError(null);
     startTransition(async () => {
       const result = isCancelToFree
-        ? await cancelSubscriptionAction(reason ?? "", recommendation)
+        ? await cancelSubscriptionAction(reason ?? "", recommendation, reasonDetail)
         : await createCheckoutSessionAction(planSlug, workspaceId, billing);
 
       if ("error" in result) {
@@ -140,9 +140,9 @@ export function UpgradeButton({
       {showConfirm && (
         <DowngradeConfirmDialog
           onCancel={() => setShowConfirm(false)}
-          onConfirm={(reason, recommendation) => {
+          onConfirm={(reason, recommendation, reasonDetail) => {
             setShowConfirm(false);
-            submit(reason, recommendation);
+            submit(reason, recommendation, reasonDetail);
           }}
         />
       )}

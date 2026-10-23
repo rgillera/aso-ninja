@@ -48,7 +48,8 @@ export async function getWorkspacePlanState(
 // The subscriptions row itself is updated by the Stripe webhook, not here.
 export async function cancelSubscriptionAction(
   reason: string,
-  recommendation?: string
+  recommendation?: string,
+  reasonDetail?: string
 ): Promise<{ currentPeriodEnd: string | null } | { error: string }> {
   if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
@@ -74,6 +75,7 @@ export async function cancelSubscriptionAction(
     user_id: user.id,
     plan_id: subscription.plan_id,
     reason,
+    reason_detail: reasonDetail?.trim() || null,
     recommendation: recommendation?.trim() || null,
   });
 
