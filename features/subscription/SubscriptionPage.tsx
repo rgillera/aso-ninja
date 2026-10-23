@@ -308,7 +308,7 @@ export default function SubscriptionPage({
                     {usage.keyword_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
                     )}
-                    <UsageBar onColor={tone !== "default"} label="Relevancy & opportunity scoring" used={usage.relevancy_scored_count} limit={usage.relevancy_limit} />
+                    <UsageBar onColor={tone !== "default"} label="Keywords scored" used={usage.relevancy_scored_count} limit={usage.relevancy_limit} />
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}
