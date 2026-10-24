@@ -1,7 +1,7 @@
-// In-app entry points to the free ASO audit (booked as a call, where the
+// Entry points to the free ASO audit (booked as a call, where the
 // Growth Sprint is pitched). Each placement tags its link with utm_medium so
 // booked calls can be traced back to where they came from.
-export type AuditPlacement = "subscription_card" | "dashboard_banner" | "sidebar";
+export type AuditPlacement = "subscription_card" | "dashboard_banner" | "sidebar" | "welcome_email";
 
 const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
