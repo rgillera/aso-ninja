@@ -17,6 +17,11 @@ import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
+import PortalEyebrow from "@/features/portal/PortalEyebrow";
+import PortalButton from "@/features/portal/PortalButton";
+import PortalCtaCard from "@/features/portal/PortalCtaCard";
+import PortalGridBackdrop from "@/features/portal/PortalGridBackdrop";
+import PortalSectionHeading from "@/features/portal/PortalSectionHeading";
 
 export const metadata: Metadata = {
   title: "App Growth Assistant",
@@ -47,6 +52,24 @@ const stats = [
   { label: "Investment", value: "From $1,200/mo" },
   { label: "Guided by", value: "App Growth Specialist" },
   { label: "Bonus", value: "AppASO Pro included" },
+];
+
+const workspacePerks = [
+  {
+    name: "A private workspace",
+    description: "Your own workspace with your assistant and specialist. No shared pools, no visibility into other clients.",
+    icon: LockClosedIcon,
+  },
+  {
+    name: "Direct communication",
+    description: "Talk to your assistant directly, on the hours you set. No account manager standing between you and the work.",
+    icon: ChatBubbleLeftRightIcon,
+  },
+  {
+    name: "Backed by our team",
+    description: "Recruitment, training, supervision, QA, and replacement, all handled for you.",
+    icon: ShieldCheckIcon,
+  },
 ];
 
 const genericVaCons = [
@@ -103,89 +126,74 @@ export default async function GrowthAssistantPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
+  const bookHref = calendlyUrl ?? "mailto:hello@appaso.io";
 
   return (
     <div className="bg-white min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
-        <section className="relative overflow-hidden pt-40 pb-16 sm:pt-48 sm:pb-24">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 flex justify-center blur-3xl">
-            <div className="h-72 w-72 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-300 opacity-30 sm:h-96 sm:w-96" />
-          </div>
+        <section className="relative isolate overflow-hidden pt-36 pb-24 sm:pt-44 sm:pb-28">
+          <PortalGridBackdrop />
 
-          <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-            <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">App Growth Assistant</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-              Not a generic VA. <span className="text-indigo-600">Expert-guided help for your app.</span>
+          <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
+            <PortalEyebrow>App Growth Assistant</PortalEyebrow>
+            <h1 className="mt-8 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:mt-10 sm:text-6xl sm:leading-[1.05]">
+              Not a generic VA.{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">Expert-guided help for your app.</span>
             </h1>
-            <p className="mt-6 text-lg text-gray-600">
+            <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               Get a dedicated app growth assistant without hiring, training, or managing one
               yourself. Your assistant is trained in mobile app growth fundamentals, and
               guided day to day by a Senior App Growth Specialist who sets the strategy.
             </p>
-            <div className="mt-8">
-              <a
-                href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                target={calendlyUrl ? "_blank" : undefined}
-                rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Get your dedicated assistant
-              </a>
-            </div>
+            <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-9">
+              Get your dedicated assistant
+            </PortalButton>
 
-            <dl className="mx-auto mt-12 grid max-w-4xl grid-cols-2 gap-6 rounded-2xl bg-white p-6 shadow-clay ring-1 ring-black/5 sm:grid-cols-4 sm:gap-4">
+            <dl className="mx-auto mt-16 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:grid-cols-4">
               {stats.map((stat) => (
-                <div key={stat.label}>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{stat.label}</dt>
-                  <dd className="mt-1 text-base font-semibold text-gray-900 sm:text-lg">{stat.value}</dd>
+                <div key={stat.label} className="bg-white px-4 py-5">
+                  <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">{stat.label}</dt>
+                  <dd className="mt-1.5 text-base font-semibold text-gray-950 sm:text-lg">{stat.value}</dd>
                 </div>
               ))}
             </dl>
           </div>
         </section>
 
-        <section className="bg-gray-50 pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Why it&apos;s different</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                Not just another VA
-              </h2>
-              <p className="mt-6 text-lg text-gray-600">
-                A generic virtual assistant learns your app from scratch, on your time. Ours
-                already speaks the language of app stores, keywords, and growth.
-              </p>
-            </div>
+            <PortalSectionHeading
+              eyebrow="Why it's different"
+              title="Not just"
+              highlight="another VA"
+              description="A generic virtual assistant learns your app from scratch, on your time. Ours already speaks the language of app stores, keywords, and growth."
+            />
 
-            <div className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 items-stretch" style={{ paddingTop: "1rem" }}>
-              <div className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5">
-                <h3 className="text-lg font-semibold text-gray-900">A generic VA</h3>
-                <p className="mt-2 text-xs text-gray-500">Hired off a general marketplace</p>
+            <div className="mt-16 grid grid-cols-1 gap-6 sm:mt-20 sm:grid-cols-2">
+              <div className="flex flex-col rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:p-10">
+                <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">A generic VA</p>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-gray-950">Hired off a general marketplace</h3>
                 <ul className="mt-8 flex-1 space-y-3">
                   {genericVaCons.map((f) => (
                     <li key={f} className="flex items-start gap-3">
-                      <XMarkIcon className="size-5 shrink-0 mt-0.5 text-gray-400" aria-hidden="true" />
+                      <XMarkIcon className="mt-0.5 size-5 shrink-0 text-gray-400" aria-hidden="true" />
                       <span className="text-sm text-gray-600">{f}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="relative flex flex-col rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-clay-lg p-8">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                  <span className="rounded-full bg-white px-4 py-1.5 text-xs font-bold text-indigo-600 shadow-clay-sm">
-                    App Growth Assistant
-                  </span>
-                </div>
-                <h3 className="text-lg font-semibold text-white">Your dedicated assistant</h3>
-                <p className="mt-2 text-xs text-indigo-200">Trained, guided, and managed for you</p>
+              {/* Tinted panel, same backdrop as the homepage How it works demos. */}
+              <div className="flex flex-col rounded-3xl bg-gradient-to-br from-indigo-50 via-gray-50 to-violet-50 p-8 ring-1 ring-indigo-200 sm:p-10">
+                <p className="font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">App Growth Assistant</p>
+                <h3 className="mt-3 text-xl font-semibold tracking-tight text-gray-950">Trained, guided, and managed for you</h3>
                 <ul className="mt-8 flex-1 space-y-3">
                   {assistantPros.map((f) => (
                     <li key={f} className="flex items-start gap-3">
-                      <CheckIcon className="size-5 shrink-0 mt-0.5 text-white" aria-hidden="true" />
-                      <span className="text-sm text-indigo-50">{f}</span>
+                      <CheckIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
+                      <span className="text-sm text-gray-700">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -194,52 +202,42 @@ export default async function GrowthAssistantPage() {
           </div>
         </section>
 
-        <section className="pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">The offer</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                One dedicated assistant, 40 hours a week
-              </h2>
-            </div>
+            <PortalSectionHeading eyebrow="The offer" title="One dedicated assistant," highlight="40 hours a week" />
 
-            <div className="mx-auto mt-16 flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-clay ring-1 ring-black/5 sm:p-10">
-              <p className="text-sm font-semibold text-gray-500">App Growth Assistant</p>
-              <div className="mt-4 flex items-baseline gap-x-2">
-                <span className="text-5xl font-semibold tracking-tight text-gray-900">$1,200</span>
-                <span className="text-sm text-gray-500">/ month, to start</span>
-              </div>
-              <ul className="mx-auto mt-8 grid max-w-xl grid-cols-1 gap-x-8 gap-y-3 text-left sm:grid-cols-2">
+            <div className="mt-16 flex flex-col items-center rounded-3xl bg-white p-8 text-center ring-1 ring-gray-950/10 sm:mt-20 sm:p-12">
+              <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">App Growth Assistant</p>
+              <p className="mt-4 flex items-baseline gap-x-1.5">
+                <span className="text-5xl font-semibold tracking-tight text-gray-950">$1,200</span>
+                <span className="text-sm font-medium text-gray-500">/mo, to start</span>
+              </p>
+              <ul className="mx-auto mt-10 grid max-w-2xl grid-cols-1 gap-x-10 gap-y-3 border-t border-gray-950/10 pt-10 text-left sm:grid-cols-2">
                 {offerFeatures.map((f) => (
                   <li key={f} className="flex items-start gap-3">
-                    <CheckIcon className="size-5 shrink-0 mt-0.5 text-indigo-600" aria-hidden="true" />
+                    <CheckIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
                     <span className="text-sm text-gray-600">{f}</span>
                   </li>
                 ))}
               </ul>
-              <p className="mt-6 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-semibold text-indigo-600 ring-1 ring-indigo-100">
+              <p className="mt-8 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-1.5 text-sm font-medium text-indigo-700 ring-1 ring-indigo-100">
                 <SparklesIcon className="size-4" aria-hidden="true" />
                 AppASO Pro included, for as long as you have an active assistant
               </p>
-              <a
-                href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                target={calendlyUrl ? "_blank" : undefined}
-                rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="mt-8 inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
+              <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-8">
                 Get your dedicated assistant
-              </a>
+              </PortalButton>
               <p className="mt-4 text-xs text-gray-500">
                 Month to month, cancel anytime.{" "}
-                <Link href="/growth-assistant/terms" className="text-indigo-600 hover:underline">
+                <Link href="/growth-assistant/terms" className="font-medium text-indigo-600 hover:underline">
                   See the terms
                 </Link>
               </p>
             </div>
 
-            <div className="mx-auto mt-8 flex max-w-5xl flex-col gap-6 rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+            <div className="mt-6 flex flex-col gap-6 rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:flex-row sm:items-center sm:justify-between sm:p-10">
               <div className="max-w-2xl">
-                <h2 className="text-xl font-semibold text-gray-900">Not sure where to start?</h2>
+                <h3 className="text-lg font-semibold text-gray-950">Not sure where to start?</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   An assistant does the work best when there&apos;s a clear plan to follow. Most clients start
                   with a 90-day Growth Sprint to build the strategy and find what works, then bring on an
@@ -248,41 +246,36 @@ export default async function GrowthAssistantPage() {
               </div>
               <Link
                 href="/growth-sprint"
-                className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+                className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
               >
                 See the Growth Sprint
-                <ArrowRightIcon className="size-4" aria-hidden="true" />
+                <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="bg-gray-50 pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">What they can handle</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                Skills built for app teams
-              </h2>
-              <p className="mt-6 text-lg text-gray-600">
-                Your assistant executes across four areas. The Senior App Growth Specialist
-                guides, reviews, and prioritizes the work.
-              </p>
-            </div>
+            <PortalSectionHeading
+              eyebrow="What they can handle"
+              title="Skills built for"
+              highlight="app teams"
+              description="Your assistant executes across four areas. The Senior App Growth Specialist guides, reviews, and prioritizes the work."
+            />
 
-            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-2 lg:max-w-none lg:grid-cols-4">
+            {/* Hairline grid, same as the homepage features section. */}
+            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:mt-20 sm:grid-cols-2 lg:max-w-none lg:grid-cols-4">
               {skillGroups.map((group) => (
-                <div
-                  key={group.name}
-                  className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+                <div key={group.name} className="flex flex-col bg-white p-8">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
                     <group.icon className="size-5 text-indigo-600" aria-hidden="true" />
                   </div>
-                  <h3 className="mt-6 text-lg font-semibold text-gray-900">{group.name}</h3>
-                  <ul className="mt-3 space-y-2">
+                  <h3 className="mt-6 text-lg font-semibold tracking-tight text-gray-950">{group.name}</h3>
+                  <ul className="mt-4 space-y-2.5">
                     {group.items.map((item) => (
-                      <li key={item} className="text-sm leading-6 text-gray-600">
+                      <li key={item} className="flex items-start gap-2.5 text-sm leading-5 text-gray-600">
+                        <span aria-hidden="true" className="mt-2 size-1 shrink-0 rounded-full bg-indigo-400" />
                         {item}
                       </li>
                     ))}
@@ -293,109 +286,76 @@ export default async function GrowthAssistantPage() {
           </div>
         </section>
 
-        <section className="pt-24 pb-24 sm:pt-32 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">How it works</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                Execution, guided by expertise
-              </h2>
-            </div>
+            <PortalSectionHeading eyebrow="How it works" title="Execution," highlight="guided by expertise" />
 
-            <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 items-stretch gap-6 sm:grid-cols-[1fr_auto_1fr]">
-              <div className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+            <div className="mt-16 grid grid-cols-1 items-stretch gap-6 sm:mt-20 sm:grid-cols-[1fr_auto_1fr]">
+              <div className="flex flex-col rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:p-10">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
                   <UserGroupIcon className="size-5 text-indigo-600" aria-hidden="true" />
                 </div>
-                <h3 className="mt-6 text-lg font-semibold text-gray-900">Your assistant executes</h3>
+                <p className="mt-6 font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">01 / Execute</p>
+                <h3 className="mt-2 text-lg font-semibold text-gray-950">Your assistant executes</h3>
                 <p className="mt-3 text-sm leading-6 text-gray-600">
                   Research, monitoring, testing, reporting, and outreach, done consistently,
                   40 hours a week, on your schedule.
                 </p>
               </div>
 
-              <div aria-hidden="true" className="mx-auto hidden size-10 items-center justify-center self-center rounded-full bg-indigo-600 shadow-clay-sm sm:flex">
+              <div aria-hidden="true" className="mx-auto hidden size-10 items-center justify-center self-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm sm:flex">
                 <ArrowRightIcon className="size-5 text-white" />
               </div>
 
-              <div className="flex flex-col rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-clay-lg ring-1 ring-indigo-400/40">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 ring-1 ring-white/30">
+              <div className="flex flex-col rounded-3xl bg-gradient-to-br from-indigo-50 via-gray-50 to-violet-50 p-8 ring-1 ring-indigo-200 sm:p-10">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm">
                   <AcademicCapIcon className="size-5 text-white" aria-hidden="true" />
                 </div>
-                <h3 className="mt-6 text-lg font-semibold text-white">The specialist guides</h3>
-                <p className="mt-3 text-sm leading-6 text-indigo-100">
+                <p className="mt-6 font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">02 / Guide</p>
+                <h3 className="mt-2 text-lg font-semibold text-gray-950">The specialist guides</h3>
+                <p className="mt-3 text-sm leading-6 text-gray-600">
                   A Senior App Growth Specialist reviews the work and prioritizes what to focus
                   on next, so effort goes toward what actually moves your app forward.
                 </p>
               </div>
             </div>
 
-            <div className="mx-auto mt-12 grid max-w-6xl grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="flex items-start gap-4 rounded-2xl bg-white p-6 shadow-clay ring-1 ring-black/5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-                  <LockClosedIcon className="size-4 text-indigo-600" aria-hidden="true" />
+            <div className="mt-6 grid grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:grid-cols-3">
+              {workspacePerks.map((perk) => (
+                <div key={perk.name} className="bg-white p-6 sm:p-8">
+                  <perk.icon className="size-5 text-indigo-600" aria-hidden="true" />
+                  <h4 className="mt-4 text-sm font-semibold text-gray-950">{perk.name}</h4>
+                  <p className="mt-1.5 text-sm leading-6 text-gray-600">{perk.description}</p>
                 </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">A private workspace</h4>
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    Your own workspace with your assistant and specialist. No shared pools, no
-                    visibility into other clients.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-2xl bg-white p-6 shadow-clay ring-1 ring-black/5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-                  <ChatBubbleLeftRightIcon className="size-4 text-indigo-600" aria-hidden="true" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">Direct communication</h4>
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    Talk to your assistant directly, on the hours you set. No account manager
-                    standing between you and the work.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4 rounded-2xl bg-white p-6 shadow-clay ring-1 ring-black/5">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
-                  <ShieldCheckIcon className="size-4 text-indigo-600" aria-hidden="true" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-900">Backed by our team</h4>
-                  <p className="mt-1 text-sm leading-6 text-gray-600">
-                    Recruitment, training, supervision, QA, and replacement, all handled for you.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
 
-        <section className="pt-24 pb-24 sm:pt-32 sm:pb-32">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl rounded-2xl bg-gradient-to-br from-gray-900 to-indigo-950 px-6 py-12 text-center shadow-clay-lg sm:px-10">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready for a dedicated assistant?</h2>
-              <p className="mt-3 text-sm text-indigo-200">
-                Tell us about your app and the work you need covered, and we&apos;ll match you
-                with the right person.
-              </p>
-              <div className="mt-6">
-                <a
-                  href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                  target={calendlyUrl ? "_blank" : undefined}
-                  rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
-                >
-                  Talk to us
-                </a>
-              </div>
-              <p className="mt-4 text-xs text-indigo-300">
+        <section className="pt-8 pb-24 sm:pb-32">
+          <div className="mx-auto max-w-5xl px-6 lg:px-8">
+            <PortalCtaCard
+              eyebrow="Get started"
+              title="Ready for a"
+              highlight="dedicated assistant?"
+              description={
+                <>
+                  Tell us about your app and the work you need covered, and we&apos;ll match you
+                  with the right person.
+                </>
+              }
+            >
+              <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-8">
+                Talk to us
+              </PortalButton>
+              <p className="mt-6 text-sm text-gray-500">
                 Prefer to DIY?{" "}
-                <Link href="/#pricing" className="text-white hover:underline">
+                <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">
                   Check our self-serve plans
                 </Link>{" "}
                 instead.
               </p>
-            </div>
+            </PortalCtaCard>
           </div>
         </section>
       </main>

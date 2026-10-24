@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   MagnifyingGlassIcon,
-  ClipboardDocumentCheckIcon,
   BeakerIcon,
   ChartBarIcon,
   DocumentCheckIcon,
@@ -21,6 +20,11 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
+import PortalEyebrow from "@/features/portal/PortalEyebrow";
+import PortalButton from "@/features/portal/PortalButton";
+import PortalCtaCard from "@/features/portal/PortalCtaCard";
+import PortalGridBackdrop from "@/features/portal/PortalGridBackdrop";
+import PortalSectionHeading from "@/features/portal/PortalSectionHeading";
 
 export const metadata: Metadata = {
   title: "90-Day ASO Growth Sprint",
@@ -65,7 +69,6 @@ const phases = [
       "FREE 1 year of AppASO Pro, yours to keep even if you cancel after month one",
     ],
     milestone: "Day 30: audit and roadmap delivered",
-    icon: ClipboardDocumentCheckIcon,
   },
   {
     n: "Days 31–60",
@@ -78,7 +81,6 @@ const phases = [
       "Deeper funnel fixes, guided by test results",
     ],
     milestone: "Day 60: test results and next priorities reviewed",
-    icon: BeakerIcon,
   },
   {
     n: "Days 61–90",
@@ -91,7 +93,6 @@ const phases = [
       "A handoff playbook your team keeps, with or without us",
     ],
     milestone: "Day 90: playbook delivered",
-    icon: ArrowTrendingUpIcon,
   },
 ];
 
@@ -132,8 +133,8 @@ const deliverables = [
     icon: ChartBarIcon,
   },
   {
-    name: "Hands-on collaboration",
-    description: "We work closely with your team throughout the sprint, not from a distance, so decisions and changes move fast.",
+    name: "Hands-on collaboration in Slack",
+    description: "Our team and yours work together in a shared Slack channel throughout the sprint, not from a distance, so decisions and changes move fast.",
     icon: UserGroupIcon,
   },
   {
@@ -172,6 +173,7 @@ const sprintIncludes = [
   "Meta & Apple Search Ads tests, managed by us (ad spend billed separately)",
   "A growth plan across organic and paid, reviewed every 30 days",
   "Regular reports on rankings, conversion, and campaigns",
+  "Hands-on collaboration with our team in a shared Slack channel",
   "A handoff playbook you keep after day 90",
   "1 year of AppASO Pro included ($348 value), yours to keep even if you cancel",
 ];
@@ -180,200 +182,180 @@ export default async function GrowthSprintPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
+  const bookHref = calendlyUrl ?? "mailto:hello@appaso.io";
 
   return (
     <div className="bg-white min-h-screen">
       <PortalNav isAuthenticated={isAuthenticated} />
 
       <main>
-        <section className="relative overflow-hidden pt-40 pb-16 sm:pt-48 sm:pb-24">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 flex justify-center blur-3xl">
-            <div className="h-72 w-72 rounded-full bg-gradient-to-tr from-indigo-400 to-purple-300 opacity-30 sm:h-96 sm:w-96" />
-          </div>
+        <section className="relative isolate overflow-hidden pt-36 pb-24 sm:pt-44 sm:pb-28">
+          <PortalGridBackdrop />
 
-          <div className="mx-auto max-w-3xl px-6 text-center lg:px-8">
-            <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">90-Day ASO Growth Sprint</p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-              A focused 90 days to <span className="text-indigo-600">fix what&apos;s holding your app&apos;s growth back</span>
+          <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
+            <PortalEyebrow>90-Day ASO Growth Sprint</PortalEyebrow>
+            <h1 className="mt-8 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:mt-10 sm:text-6xl sm:leading-[1.05]">
+              A focused 90 days to{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">fix what&apos;s holding your app&apos;s growth back</span>
             </h1>
-            <p className="mt-6 text-lg text-gray-600">
+            <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               No long-term contract. Just a fixed-price, three-phase engagement where we audit your app,
               fix the leaks in your funnel, and test our way to more visibility, higher conversion,
               and more revenue. It&apos;s run by the same team that built AppASO.
             </p>
-            <div className="mt-8">
-              <a
-                href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                target={calendlyUrl ? "_blank" : undefined}
-                rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-              >
-                Book your free audit call
-              </a>
-            </div>
+            <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-9">
+              Book your free audit call
+            </PortalButton>
 
-            <dl className="mx-auto mt-12 grid max-w-xl grid-cols-3 gap-4 rounded-2xl bg-white p-6 shadow-clay ring-1 ring-black/5">
+            <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10">
               {stats.map((stat) => (
-                <div key={stat.label}>
-                  <dt className="text-xs font-medium uppercase tracking-wide text-gray-500">{stat.label}</dt>
-                  <dd className="mt-1 whitespace-nowrap text-sm font-semibold text-gray-900 sm:text-lg">{stat.value}</dd>
+                <div key={stat.label} className="bg-white px-3 py-5">
+                  <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">{stat.label}</dt>
+                  <dd className="mt-1.5 whitespace-nowrap text-sm font-semibold text-gray-950 sm:text-lg">{stat.value}</dd>
                 </div>
               ))}
             </dl>
           </div>
         </section>
 
-        <section className="pb-24 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">The three phases</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                Your 90 days, step by step
-              </h2>
-              <p className="mt-6 text-lg text-gray-600">
-                Every phase has clear work, a clear milestone, and a review with your team, so you
-                always know what&apos;s done, what it changed, and what comes next.
-              </p>
-            </div>
+            <PortalSectionHeading
+              eyebrow="The three phases"
+              title="Your 90 days,"
+              highlight="step by step"
+              description={
+                <>
+                  Every phase has clear work, a clear milestone, and a review with your team, so you
+                  always know what&apos;s done, what it changed, and what comes next.
+                </>
+              }
+            />
 
-            <div className="relative mx-auto mt-20 max-w-5xl">
-              <div aria-hidden="true" className="absolute left-0 right-0 top-6 hidden h-px bg-indigo-200 sm:block" />
-              <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
-                {phases.map((phase) => (
-                  <div key={phase.title} className="relative flex flex-col items-start text-left">
-                    <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-indigo-600 shadow-clay-sm ring-8 ring-white">
-                      <phase.icon className="size-5 text-white" aria-hidden="true" />
+            {/* Numbered rail, same nodes as the homepage How it works
+                section, running across instead of down. */}
+            <div className="relative mx-auto mt-16 max-w-5xl sm:mt-20">
+              <div
+                aria-hidden="true"
+                className="absolute left-5 right-0 top-5 hidden h-px bg-gradient-to-r from-indigo-300 via-violet-200 to-transparent sm:block"
+              />
+              <ol className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
+                {phases.map((phase, i) => (
+                  <li key={phase.title} className="relative flex flex-col">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm ring-4 ring-white">
+                      <span className="text-sm font-bold text-white">{i + 1}</span>
                     </div>
-                    <p className="mt-5 text-xs font-semibold text-indigo-600 uppercase tracking-widest">{phase.n}</p>
-                    <h3 className="mt-1 text-lg font-semibold text-gray-900">{phase.title}</h3>
+                    <p className="mt-6 font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">{phase.n}</p>
+                    <h3 className="mt-2 text-xl font-semibold tracking-tight text-gray-950">{phase.title}</h3>
                     <p className="mt-3 text-sm leading-6 text-gray-600">{phase.description}</p>
                     <ul className="mt-5 flex-1 space-y-2.5">
                       {phase.items.map((item) => (
                         <li key={item} className="flex items-start gap-2.5">
-                          <CheckIcon className="size-4 shrink-0 mt-0.5 text-indigo-600" aria-hidden="true" />
+                          <CheckIcon className="mt-0.5 size-4 shrink-0 text-indigo-600" aria-hidden="true" />
                           <span className="text-sm leading-5 text-gray-600">{item}</span>
                         </li>
                       ))}
                     </ul>
-                    <p className="mt-6 rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-100">
+                    <p className="mt-6 border-t border-gray-950/10 pt-4 text-xs font-semibold text-gray-950">
                       {phase.milestone}
                     </p>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ol>
             </div>
           </div>
         </section>
 
-        <section className="pb-24 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">What you get</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                Deliverables, not just hours
-              </h2>
-              <p className="mt-6 text-lg text-gray-600">
-                Every sprint ends with concrete artifacts you keep, whether or not you continue
-                working with us after day 90.
-              </p>
-            </div>
+            <PortalSectionHeading
+              eyebrow="What you get"
+              title="Deliverables,"
+              highlight="not just hours"
+              description="Every sprint ends with concrete artifacts you keep, whether or not you continue working with us after day 90."
+            />
 
-            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-2 lg:max-w-none lg:grid-cols-3">
+            {/* Hairline grid, same as the homepage features section. */}
+            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:mt-20 md:grid-cols-2 lg:max-w-none lg:grid-cols-3">
               {deliverables.map((d) => (
-                <div
-                  key={d.name}
-                  className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 transition-all hover:-translate-y-0.5 hover:shadow-clay-lg"
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 ring-1 ring-indigo-100">
+                <div key={d.name} className="flex flex-col bg-white p-8 sm:p-10">
+                  <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
                     <d.icon className="size-5 text-indigo-600" aria-hidden="true" />
                   </div>
-                  <h3 className="mt-6 text-lg font-semibold text-gray-900">{d.name}</h3>
-                  <p className="mt-3 text-sm leading-6 text-gray-600 flex-1">{d.description}</p>
+                  <h3 className="mt-6 text-balance text-lg font-semibold tracking-tight text-gray-950">{d.name}</h3>
+                  <p className="mt-3 flex-1 text-sm leading-6 text-gray-600">{d.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="pb-24 sm:pb-32">
+        <section className="py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <p className="text-sm font-semibold text-indigo-600 uppercase tracking-widest">Getting started</p>
-              <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-                One sprint. Clear price. Real deliverables.
-              </h2>
-            </div>
+            <PortalSectionHeading eyebrow="Getting started" title="One sprint. Clear price." highlight="Real deliverables." />
 
-            <div className="mx-auto mt-16 grid grid-cols-1 gap-6 lg:grid-cols-5 lg:items-stretch">
-              <div className="flex flex-col rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:p-10 lg:col-span-3">
-                <p className="text-sm font-semibold text-gray-500">90-Day ASO Growth Sprint</p>
-                <p className="mt-4 flex items-baseline gap-x-2">
-                  <span className="text-4xl font-semibold tracking-tight text-gray-900">$1,500</span>
-                  <span className="text-sm font-semibold text-gray-500">/month for 3 months</span>
+            <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-6 sm:mt-20 lg:grid-cols-5 lg:items-stretch">
+              <div className="flex flex-col rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:p-10 lg:col-span-3">
+                <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">90-Day ASO Growth Sprint</p>
+                <p className="mt-4 flex items-baseline gap-x-1.5">
+                  <span className="text-5xl font-semibold tracking-tight text-gray-950">$1,500</span>
+                  <span className="text-sm font-medium text-gray-500">/mo for 3 months</span>
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Or <span className="font-semibold text-gray-900">$4,000 paid upfront</span>{" "}and save $500.
+                  Or <span className="font-semibold text-gray-950">$4,000 paid upfront</span>{" "}and save $500.
                 </p>
-                <ul className="mt-8 flex-1 space-y-3">
+                <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {sprintIncludes.map((item) => (
                     <li key={item} className="flex items-start gap-3">
-                      <CheckIcon className="size-5 shrink-0 mt-0.5 text-indigo-600" aria-hidden="true" />
+                      <CheckIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
                       <span className="text-sm text-gray-600">{item}</span>
                     </li>
                   ))}
                 </ul>
-                <a
-                  href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                  target={calendlyUrl ? "_blank" : undefined}
-                  rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="mt-8 inline-flex w-fit items-center justify-center rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                >
+                <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-8 w-fit">
                   Book your free audit call
-                </a>
+                </PortalButton>
                 <p className="mt-4 text-xs text-gray-500">
                   Fixed 90 days, paid monthly or upfront.{" "}
-                  <Link href="/growth-sprint/terms" className="text-indigo-600 hover:underline">
+                  <Link href="/growth-sprint/terms" className="font-medium text-indigo-600 hover:underline">
                     See the terms
                   </Link>
                 </p>
               </div>
 
-              <div className="flex flex-col rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-8 shadow-clay-lg ring-1 ring-indigo-400/40 sm:p-10 lg:col-span-2">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30">
-                  <ShieldCheckIcon className="size-6 text-white" aria-hidden="true" />
+              {/* Tinted panel, same backdrop as the homepage How it works demos. */}
+              <div className="flex flex-col rounded-3xl bg-gradient-to-br from-indigo-50 via-gray-50 to-violet-50 p-8 ring-1 ring-indigo-200 sm:p-10 lg:col-span-2">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm">
+                  <ShieldCheckIcon className="size-5 text-white" aria-hidden="true" />
                 </div>
-                <p className="mt-5 text-xs font-semibold text-indigo-100 uppercase tracking-widest">Our guarantees</p>
-                <h3 className="mt-2 text-xl font-semibold text-white">We put our work on the line</h3>
-                <p className="mt-2 text-sm leading-6 text-indigo-100">
+                <p className="mt-6 font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">Our guarantees</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight text-gray-950">We put our work on the line</h3>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
                   Nobody can promise rankings or revenue, but we can promise our own work.
                 </p>
-                <ul className="mt-6 flex-1 space-y-6">
+                <ul className="mt-8 flex-1 space-y-6">
                   {guarantees.map((g) => (
                     <li key={g.name} className="flex items-start gap-3">
-                      <g.icon className="size-5 shrink-0 mt-0.5 text-white" aria-hidden="true" />
+                      <g.icon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
                       <div>
-                        <p className="text-sm font-semibold text-white">{g.name}</p>
-                        <p className="mt-1 text-sm leading-6 text-indigo-50">{g.description}</p>
+                        <p className="text-sm font-semibold text-gray-950">{g.name}</p>
+                        <p className="mt-1 text-sm leading-6 text-gray-600">{g.description}</p>
                       </div>
                     </li>
                   ))}
                 </ul>
-                <p className="mt-8 text-xs text-indigo-200">
+                <p className="mt-8 text-xs text-gray-500">
                   Guarantees depend on your team giving us access and approvals on time.{" "}
-                  <Link href="/growth-sprint/terms#guarantees" className="text-white hover:underline">
+                  <Link href="/growth-sprint/terms#guarantees" className="font-medium text-indigo-600 hover:underline">
                     See the full terms
                   </Link>
                 </p>
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="pb-24 sm:pb-32">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto flex max-w-5xl flex-col gap-6 rounded-2xl bg-white p-8 shadow-clay ring-1 ring-black/5 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+            <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:flex-row sm:items-center sm:justify-between sm:p-10">
               <div className="max-w-2xl">
-                <h2 className="text-xl font-semibold text-gray-900">After the sprint, keep the momentum going</h2>
+                <h3 className="text-lg font-semibold text-gray-950">After the sprint, keep the momentum going</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   Your playbook shows what to run next. A dedicated Growth Assistant can carry it out every
                   week, guided by the same Senior App Growth Specialist.
@@ -381,40 +363,34 @@ export default async function GrowthSprintPage() {
               </div>
               <Link
                 href="/growth-assistant"
-                className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
+                className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
               >
                 See the Growth Assistant
-                <ArrowRightIcon className="size-4" aria-hidden="true" />
+                <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="pb-24 sm:pb-32">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-3xl rounded-2xl bg-gradient-to-br from-gray-900 to-indigo-950 px-6 py-12 text-center shadow-clay-lg sm:px-10">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">Ready to start the sprint?</h2>
-              <p className="mt-3 text-sm text-indigo-200">
-                Tell us about your app and we&apos;ll show you where it&apos;s losing installs.
-              </p>
-              <div className="mt-6">
-                <a
-                  href={calendlyUrl ?? "mailto:hello@appaso.io"}
-                  target={calendlyUrl ? "_blank" : undefined}
-                  rel={calendlyUrl ? "noopener noreferrer" : undefined}
-                  className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-indigo-600 shadow-clay-sm hover:bg-indigo-50 transition-colors"
-                >
-                  Talk to us
-                </a>
-              </div>
-              <p className="mt-4 text-xs text-indigo-300">
+        <section className="pt-8 pb-24 sm:pb-32">
+          <div className="mx-auto max-w-5xl px-6 lg:px-8">
+            <PortalCtaCard
+              eyebrow="Get started"
+              title="Ready to start"
+              highlight="the sprint?"
+              description={<>Tell us about your app and we&apos;ll show you where it&apos;s losing installs.</>}
+            >
+              <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-8">
+                Talk to us
+              </PortalButton>
+              <p className="mt-6 text-sm text-gray-500">
                 Prefer to DIY?{" "}
-                <Link href="/#pricing" className="text-white hover:underline">
+                <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">
                   Check our self-serve plans
                 </Link>{" "}
                 instead.
               </p>
-            </div>
+            </PortalCtaCard>
           </div>
         </section>
       </main>
