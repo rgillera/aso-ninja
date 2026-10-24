@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
       { source: "/contact", destination: "/", permanent: true },
       // Paid Growth Audit page removed; the 90-day Sprint now opens with a full audit.
       { source: "/growth-audit", destination: "/growth-sprint", permanent: true },
+      // Growth Assistant replaced by the Growth Retainer as the post-Sprint offer.
+      { source: "/growth-assistant/:path*", destination: "/growth-retainer", permanent: true },
     ];
   },
   async headers() {

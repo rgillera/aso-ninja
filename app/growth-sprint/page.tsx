@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-sprint",
     title: "90-Day ASO Growth Sprint | AppASO",
-    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,500/mo or $4,000 upfront, backed by three guarantees.",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,500 upfront, backed by three guarantees.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "90-Day ASO Growth Sprint | AppASO",
-    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,500/mo or $4,000 upfront, backed by three guarantees.",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,500 upfront, backed by three guarantees.",
     images: ["/opengraph-image"],
   },
 };
@@ -52,7 +52,7 @@ const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
 const stats = [
   { label: "Duration", value: "90 days" },
-  { label: "Pricing", value: "$1,500/mo" },
+  { label: "Pricing", value: "$1,700/mo" },
   { label: "Bonus", value: "1 yr Pro ($348)" },
 ];
 
@@ -298,11 +298,11 @@ export default async function GrowthSprintPage() {
               <div className="flex flex-col rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:p-10 lg:col-span-3">
                 <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">90-Day ASO Growth Sprint</p>
                 <p className="mt-4 flex items-baseline gap-x-1.5">
-                  <span className="text-5xl font-semibold tracking-tight text-gray-950">$1,500</span>
+                  <span className="text-5xl font-semibold tracking-tight text-gray-950">$1,700</span>
                   <span className="text-sm font-medium text-gray-500">/mo for 3 months</span>
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Or <span className="font-semibold text-gray-950">$4,000 paid upfront</span>{" "}and save $500.
+                  Or <span className="font-semibold text-gray-950">$4,500 paid upfront</span>{" "}and save $600.
                 </p>
                 <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {sprintIncludes.map((item) => (
@@ -357,15 +357,15 @@ export default async function GrowthSprintPage() {
               <div className="max-w-2xl">
                 <h3 className="text-lg font-semibold text-gray-950">After the sprint, keep the momentum going</h3>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
-                  Your playbook shows what to run next. A dedicated Growth Assistant can carry it out every
-                  week, guided by the same Senior App Growth Specialist.
+                  Your playbook shows what to run next. With the Growth Retainer, the same team keeps your
+                  keywords current, your ads running, and new creatives tested, month to month.
                 </p>
               </div>
               <Link
-                href="/growth-assistant"
+                href="/growth-retainer"
                 className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
               >
-                See the Growth Assistant
+                See the Growth Retainer
                 <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </Link>
             </div>

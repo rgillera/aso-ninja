@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = "October 12, 2026";
+const LAST_UPDATED = "October 24, 2026";
 
 export default function GrowthSprintTermsPage() {
   return (
@@ -31,7 +31,7 @@ export default function GrowthSprintTermsPage() {
         <p>
           These Growth Sprint Terms (&quot;Sprint Terms&quot;) govern your purchase of the 90-Day ASO
           Growth Sprint (the &quot;Sprint&quot;) from AppASO (&quot;AppASO&quot;, &quot;we&quot;,
-          &quot;us&quot;, or &quot;our&quot;). By paying for the Sprint, signing an order form, or
+          &quot;us&quot;, or &quot;our&quot;). By paying for the Sprint, accepting a proposal, or
           otherwise starting the Sprint, you (&quot;you&quot; or the &quot;Client&quot;) agree to these
           Sprint Terms.
         </p>
@@ -46,8 +46,8 @@ export default function GrowthSprintTermsPage() {
         <h2>Engagement Overview</h2>
         <p>
           You engage AppASO for a fixed 90-day Sprint focused on identifying and executing growth
-          opportunities for your mobile app. Your quote or order form (&quot;Order&quot;) sets out the app
-          and store(s) covered and your payment option (see Fees and Payment). The Sprint includes:
+          opportunities for your mobile app. Your proposal sets out the app and store(s) covered, your
+          payment option, and your rate (see Fees and Payment). The Sprint includes:
         </p>
         <ul>
           <li>
@@ -76,8 +76,8 @@ export default function GrowthSprintTermsPage() {
             clear, actionable insights to guide ongoing optimization.
           </li>
           <li>
-            <strong>Paid user acquisition:</strong> manage and optimize Meta Ads and Apple Search Ads to
-            acquire high-quality users efficiently.
+            <strong>Paid user acquisition:</strong> run controlled tests on Meta Ads and Apple Search Ads,
+            then manage and optimize the campaigns that convert. We manage these two channels only.
           </li>
           <li>
             <strong>Ad creative development:</strong> create performance-focused ad creatives designed to
@@ -88,8 +88,12 @@ export default function GrowthSprintTermsPage() {
             winning channels, campaigns, and experiments.
           </li>
           <li>
-            <strong>Hands-on collaboration:</strong> work closely with your team throughout execution,
-            optimization, testing, and strategic decision-making.
+            <strong>Hands-on collaboration:</strong> work closely with your team in a shared Slack channel
+            throughout execution, optimization, testing, and strategic decision-making.
+          </li>
+          <li>
+            <strong>Handoff playbook:</strong> a written summary of what worked and what to run next,
+            delivered by Day 90.
           </li>
           <li>
             <strong>Dedicated AppASO workspace:</strong> your own AppASO workspace with the Pro plan
@@ -124,17 +128,21 @@ export default function GrowthSprintTermsPage() {
         <p>You can pay for the Sprint in one of two ways:</p>
         <ul>
           <li>
-            <strong>Monthly:</strong> $1,500 per month for 3 months ($4,500 in total). The first payment
+            <strong>Monthly:</strong> $1,700 per month for 3 months ($5,100 in total). The first payment
             is due before kickoff, the second on Day 31, and the third on Day 61.
           </li>
           <li>
-            <strong>Upfront:</strong> $4,000, paid in full before kickoff.
+            <strong>Upfront:</strong> $4,500, paid in full before kickoff.
           </li>
         </ul>
         <p>
-          The &quot;Sprint fee&quot; means the total for your payment option: $4,500 on the monthly
-          option, or $4,000 on the upfront option. Either way, the Sprint is a fixed 3-month commitment,
-          and on the monthly option you agree to make all three payments. We schedule your kickoff call
+          If your proposal or invoice states a different rate, that rate applies. A rate offered in a
+          proposal is valid until the expiry date stated in it. After that date, the standard rates above
+          apply.
+        </p>
+        <p>
+          The &quot;Sprint fee&quot; means the total for your payment option, as stated in your proposal
+          or invoice. Either way, the Sprint is a fixed 3-month commitment, and on the monthly option you agree to make all three payments. We schedule your kickoff call
           once the first payment is received. If a monthly payment is more than 7 days late, we may pause
           work until it is paid, and the pause does not extend the Sprint.
         </p>
@@ -147,8 +155,8 @@ export default function GrowthSprintTermsPage() {
       <section>
         <h2>Advertising Spend and Third-Party Costs</h2>
         <p>
-          The Sprint fee covers our work only. Advertising spend on Meta, Apple Search Ads, or any other
-          platform is billed separately and paid by you directly to the platform, through ad accounts you
+          The Sprint fee covers our work only. Advertising spend on Meta Ads and Apple Search Ads is billed
+          separately and paid by you directly to the platform, through ad accounts you
           own. We will agree test budgets with you before spending, and we will not exceed an agreed budget
           without your approval. Any paid tools or other third-party costs are also yours.
         </p>
@@ -185,11 +193,11 @@ export default function GrowthSprintTermsPage() {
         </p>
         <ul>
           <li>
-            <strong>Monthly option:</strong> we waive your third payment ($1,500), due on Day 61.
+            <strong>Monthly option:</strong> we waive your third payment, due on Day 61.
           </li>
           <li>
-            <strong>Upfront option:</strong> we refund one month ($1,333.33, one third of the upfront
-            fee) within 14 days of Day 45.
+            <strong>Upfront option:</strong> we refund one month (one third of the upfront fee you
+            paid) within 14 days of Day 45.
           </li>
         </ul>
         <p>The Sprint continues as planned, and you still receive the full 90 days of work.</p>
@@ -206,14 +214,13 @@ export default function GrowthSprintTermsPage() {
             payments are due.
           </li>
           <li>
-            <strong>Upfront option:</strong> we refund two months ($2,666.67, two thirds of the upfront
-            fee) within 14 days of your notice.
+            <strong>Upfront option:</strong> we refund two months (two thirds of the upfront fee you
+            paid) within 14 days of your notice.
           </li>
         </ul>
         <p>
-          You keep the audit, roadmap, and any other deliverables created up to that point. The included
-          AppASO Pro plan ends when the Sprint ends under this guarantee, and your workspace moves to the
-          Free plan unless you subscribe to a paid plan.
+          You keep the audit, roadmap, and any other deliverables created up to that point, and your
+          included year of AppASO Pro keeps running until the year is up.
         </p>
 
         <h3>Work-Until-Done Guarantee</h3>
@@ -322,8 +329,8 @@ export default function GrowthSprintTermsPage() {
         <h2>Included AppASO Pro Plan</h2>
         <p>
           Your Sprint includes one year of AppASO Pro at no extra cost, starting on Day 1. It keeps running
-          after the Sprint ends until the year is up, unless it ends early under the First-Month
-          Guarantee. Your use of AppASO is governed by our{" "}
+          after the Sprint ends until the year is up, including if you end the Sprint early under the
+          First-Month Guarantee. Your use of AppASO is governed by our{" "}
           <Link href="/terms">Terms of Service</Link>, and when the included plan ends, your workspace moves
           to the Free plan unless you subscribe to a paid plan.
         </p>
@@ -376,9 +383,9 @@ export default function GrowthSprintTermsPage() {
         <p>After the 90 days, you may choose to:</p>
         <ul>
           <li>
-            <strong>Continue with a Growth Assistant:</strong> keep working with a dedicated{" "}
-            <Link href="/growth-assistant">App Growth Assistant</Link> for up to 40 hours per week, on your
-            preferred working hours, guided directly by our Senior App Growth Specialist.
+            <strong>Continue with the Growth Retainer:</strong> keep working with the same team on a{" "}
+            <Link href="/growth-retainer">month-to-month Growth Retainer</Link>, covering ongoing ASO, creative
+            production, and Meta and Apple Search Ads management.
           </li>
           <li>
             <strong>Customize the engagement:</strong> move into a custom engagement tailored to your
@@ -393,9 +400,7 @@ export default function GrowthSprintTermsPage() {
           </li>
         </ul>
         <p>
-          Any continued engagement is governed by its own terms, such as our{" "}
-          <Link href="/growth-assistant/terms">App Growth Assistant Terms</Link>, or a separate written
-          agreement.
+          Any continued engagement is governed by its own terms or a separate written agreement.
         </p>
       </section>
 

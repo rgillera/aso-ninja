@@ -24,13 +24,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
     {
-      url: `${siteUrl}/growth-assistant`,
+      url: `${siteUrl}/growth-sprint`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${siteUrl}/growth-sprint`,
+      url: `${siteUrl}/growth-retainer`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
@@ -41,7 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.5,
     },
-    ...["/privacy", "/terms", "/growth-assistant/terms", "/growth-sprint/terms"].map((path) => ({
+    ...["/privacy", "/terms", "/growth-sprint/terms"].map((path) => ({
       url: `${siteUrl}${path}`,
       lastModified: new Date(),
       changeFrequency: "yearly" as const,

@@ -11,8 +11,8 @@ const links = {
     ...(calendlyUrl ? [{ label: "Book a Demo", href: calendlyUrl }] : []),
   ],
   Services: [
-    { label: "Growth Assistant", href: "/growth-assistant" },
     { label: "Growth Sprint", href: "/growth-sprint" },
+    { label: "Growth Retainer", href: "/growth-retainer" },
   ],
   Company: [
     { label: "Our Story", href: "/our-story" },
