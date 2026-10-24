@@ -55,4 +55,7 @@ export type WorkspaceUsage = {
   workspace_limit: number | null;
   relevancy_scored_count: number;
   relevancy_limit: number | null;
+  // Scored, but locked beyond relevancy_limit (e.g. after a downgrade) —
+  // still counted in relevancy_scored_count.
+  relevancy_frozen_count: number;
 };
