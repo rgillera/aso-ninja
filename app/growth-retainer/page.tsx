@@ -72,7 +72,7 @@ const cadence = [
     items: [
       "Keyword review, with metadata updates shipped",
       "New store screenshots designed and delivered",
-      "One creative or listing experiment planned, run, or read out",
+      "A new listing experiment planned, run, or read out",
       "Promotional text and in-app event copy refreshed",
     ],
     milestone: "Monthly report and a 30-minute review call",
@@ -306,7 +306,10 @@ export default async function GrowthRetainerPage() {
                   Book a call
                 </PortalButton>
                 <p className="mt-4 text-xs text-gray-500">
-                  Ad management covers Meta Ads and Apple Search Ads only. Ad spend is billed separately, paid directly to Meta and Apple.
+                  Ad management covers Meta Ads and Apple Search Ads only. Ad spend is billed separately, paid directly to Meta and Apple.{" "}
+                  <Link href="/growth-retainer/terms" className="font-medium text-indigo-600 hover:underline">
+                    See the terms
+                  </Link>
                 </p>
               </div>
 

@@ -41,7 +41,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.5,
     },
-    ...["/privacy", "/terms", "/growth-sprint/terms"].map((path) => ({
+    ...["/privacy", "/terms", "/growth-sprint/terms", "/growth-retainer/terms"].map((path) => ({
       url: `${siteUrl}${path}`,
       lastModified: new Date(),
       changeFrequency: "yearly" as const,
