@@ -173,17 +173,24 @@ export async function GET(request: NextRequest) {
 
   // DB cache hit — avoids LLM for keywords computed in the last 7 days
   const dbCache: Record<string, Metrics> = {};
+  // Scored rows past CACHE_TTL_MS: refetched below for fresh volume/rank, but
+  // if they don't get re-scored this time, their old score is kept (the DB
+  // does the same on save — see trg_keep_relevancy_score).
+  const staleScored: Record<string, { relevancy: number; frozen: boolean; intentThemeId: string | null }> = {};
   if (appId && !forceIntent) {
     const { data: rows } = await supabase
       .from("keyword_metrics")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select("volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, results, updated_at, keywords(term)" as any)
+      .select("volume, diff, chance, opportunity, relevancy, relevancy_scored, relevancy_frozen, rank, intent_theme_id, results, updated_at, keywords(term)" as any)
       .eq("app_id", appId);
 
     for (const row of (rows ?? []) as any[]) { // eslint-disable-line @typescript-eslint/no-explicit-any
       const term = row.keywords?.term as string | undefined;
       if (!term || !terms.includes(term)) continue;
-      if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) continue;
+      if (Date.now() - new Date(row.updated_at as string).getTime() > CACHE_TTL_MS) {
+        if (row.relevancy_scored) staleScored[term] = { relevancy: row.relevancy, frozen: row.relevancy_frozen, intentThemeId: row.intent_theme_id ?? null };
+        continue;
+      }
       const isBrand  = appName ? isBrandKeyword(term, appName) : false;
       // A row saved before this workspace had any relevancy pool at all (or
       // from a fast-mode add) never actually got scored — `relevancy_scored` is the
@@ -194,9 +201,12 @@ export async function GET(request: NextRequest) {
       // let it fall through to `uncached` below, where the pool-budget check
       // decides whether it actually gets (re)scored right now.
       if (!fast && hasRelevancyAccess && !row.relevancy_scored && !isBrand) continue;
-      const relevancy = isBrand ? 100 : (row.relevancy ?? null);
+      // Scored, but beyond the owner's current pool (e.g. after a downgrade)
+      // — see reconcile_relevancy_limits. Shown as "Limit", not re-scored.
+      const frozen    = !isBrand && row.relevancy_frozen;
+      const relevancy = isBrand ? 100 : frozen ? null : (row.relevancy ?? null);
       const rawBase   = Math.sqrt((row.volume ?? 0) * (row.chance ?? 0));
-      const opportunity = isBrand ? Math.round(rawBase) : row.opportunity;
+      const opportunity = isBrand ? Math.round(rawBase) : frozen ? null : row.opportunity;
       dbCache[term] = {
         volume: row.volume, diff: row.diff, chance: row.chance,
         opportunity, results: row.results ?? null,
@@ -232,7 +242,11 @@ export async function GET(request: NextRequest) {
   if (uncached.length) {
     const withRelevancy = !fast && canUseRelevancy;
     const relevancyBudget = relevancyLimit === null ? Infinity : Math.max(0, relevancyLimit - relevancyScoredCount);
-    if (withRelevancy && uncached.length > relevancyBudget) relevancyBudgetExceeded = true;
+    // Re-scoring an already-scored row doesn't draw from the pool (see
+    // enforce_relevancy_limit), so only never-scored terms spend the budget.
+    const budgetIdx = new Map(uncached.filter((t) => !staleScored[t]).map((t, i) => [t, i]));
+    const fitsBudget = (term: string) => !budgetIdx.has(term) || budgetIdx.get(term)! < relevancyBudget;
+    if (withRelevancy && budgetIdx.size > relevancyBudget) relevancyBudgetExceeded = true;
 
     // Gemini down → skip the LLM/embedding pass entirely and leave
     // relevancy/opportunity null instead of silently falling back to guessed
@@ -279,16 +293,16 @@ export async function GET(request: NextRequest) {
       // Budget is spent in order, so a batch that only partly fits still
       // scores as many of its terms as the pool has room for.
       entries = await Promise.all(
-        baseEntries.map(async ([term, base], idx) => {
-          const scoreThisTerm = withRelevancy && idx < relevancyBudget;
+        baseEntries.map(async ([term, base]) => {
+          const scoreThisTerm = withRelevancy && fitsBudget(term);
           const metrics = await scoreMetrics(term, appName, base, appMeta, scoreThisTerm, aiReachable, themes);
           return [term, metrics] as const;
         })
       );
     } else {
       entries = await Promise.all(
-        uncached.map(async (term, idx) => {
-          const scoreThisTerm = withRelevancy && idx < relevancyBudget;
+        uncached.map(async (term) => {
+          const scoreThisTerm = withRelevancy && fitsBudget(term);
           const metrics = await fetchAndroidMetrics(term, country, appName, storeId, appMeta, scoreThisTerm, aiReachable, supabase, themes);
           return [term, metrics] as const;
         })
@@ -296,6 +310,15 @@ export async function GET(request: NextRequest) {
     }
 
     freshMetrics = Object.fromEntries(entries.filter((e): e is [string, Metrics] => e[1] !== null));
+
+    for (const [term, m] of Object.entries(freshMetrics)) {
+      const prior = staleScored[term];
+      if (!prior || m.relevancy !== null || (appName && isBrandKeyword(term, appName))) continue;
+      if (prior.frozen) continue; // still scored in the DB, just shown as "Limit"
+      m.relevancy = prior.relevancy;
+      m.opportunity = Math.round(Math.sqrt(m.volume * m.chance) * Math.pow(prior.relevancy / 100, 2));
+      m.intentThemeId = m.intentThemeId ?? prior.intentThemeId;
+    }
 
     // Both stores already wrote their popularity snapshot (and rankings
     // history) inside fetchIosCoreMetrics / fetchAndroidCoreMetrics, scoped

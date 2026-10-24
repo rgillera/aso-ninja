@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       .order("added_at", { ascending: true }),
     supabase
       .from("keyword_metrics")
-      .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, rank, intent_theme_id, results")
+      .select("keyword_id, volume, diff, chance, opportunity, relevancy, relevancy_scored, relevancy_frozen, rank, intent_theme_id, results")
       .eq("app_id", appId),
     supabase
       .from("app_store_connections")
@@ -132,8 +132,10 @@ export async function GET(request: NextRequest) {
       // relevancy pool was exhausted) still holds 0/0, indistinguishable
       // from a genuine score of 0. `relevancy_scored` is the authoritative
       // marker — same rule app/api/keywords/metrics/route.ts already uses.
-      opportunity: m.relevancy_scored ? m.opportunity : null,
-      relevancy:   m.relevancy_scored ? m.relevancy   : null,
+      // relevancy_frozen: scored, but beyond the owner's current pool (e.g.
+      // after a downgrade) — see reconcile_relevancy_limits.
+      opportunity: m.relevancy_scored && !m.relevancy_frozen ? m.opportunity : null,
+      relevancy:   m.relevancy_scored && !m.relevancy_frozen ? m.relevancy   : null,
       rank:        m.rank ?? null,
       intentThemeId: m.intent_theme_id ?? null,
       results:     m.results ?? null,
