@@ -44,11 +44,13 @@ export default function PortalFooter() {
               App Store Optimization intelligence for modern app teams.
             </p>
             <p className="mt-4 text-sm text-gray-400">
-              AppASO.io, a product of Fitlefy LLC
+              AppASO.io
               <br />
               1309 Coffeen Avenue STE 1200
               <br />
               Sheridan, Wyoming 82801
+              <br />
+              United States
             </p>
             <p className="mt-3 text-sm text-gray-400">
               Support:{" "}
