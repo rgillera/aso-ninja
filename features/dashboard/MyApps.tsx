@@ -265,7 +265,7 @@ function AppRow({
                     href={`/dashboard/apps/${app.id}/report`}
                     onClick={(e) => e.stopPropagation()}
                     title={app.status === "frozen" ? "Paused: over your plan's app limit. Upgrade to resume tracking." : undefined}
-                    className={`inline-flex items-center gap-1.5 rounded-full bg-[#0a0a0c] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors ${app.status === "frozen" ? "opacity-50 line-through" : ""}`}
+                    className={`inline-flex items-center gap-1.5 rounded-full bg-[#0a0a0c] light:bg-gray-100 px-3 py-1 text-xs font-medium text-gray-300 light:text-gray-700 ring-1 ring-inset ring-white/[0.08] light:ring-black/[0.08] hover:bg-white/[0.08] light:hover:bg-black/[0.08] hover:text-white light:hover:text-gray-900 transition-colors ${app.status === "frozen" ? "opacity-50" : ""}`}
                   >
                     <span className="text-base leading-none">{countryFlag(app.country)}</span>
                     {app.country}
