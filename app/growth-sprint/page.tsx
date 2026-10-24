@@ -63,8 +63,8 @@ const phases = [
     description: "We find what's holding your app back and fix the biggest problems first.",
     items: [
       "Full audit of your metadata, keywords, creatives, and competitors",
-      "Title, subtitle, and keyword rewrite, shipped",
-      "Funnel mapped from impression to sale, with the biggest leaks fixed",
+      "Funnel reviewed from impression to sale, with the biggest leaks found and fixed",
+      "Collaborate and strategize on how to scale your app",
       "Growth strategy and a prioritized 60-day roadmap, agreed with your team",
       "FREE 1 year of AppASO Pro, yours to keep even if you cancel after month one",
     ],
