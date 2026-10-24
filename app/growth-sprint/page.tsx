@@ -37,13 +37,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-sprint",
     title: "90-Day ASO Growth Sprint | AppASO",
-    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,500 upfront, backed by three guarantees.",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,800 upfront, backed by three guarantees.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "90-Day ASO Growth Sprint | AppASO",
-    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,500 upfront, backed by three guarantees.",
+    description: "Audit your app, fix your funnel, and grow visibility, conversion, and revenue in 90 days. $1,700/mo or $4,800 upfront, backed by three guarantees.",
     images: ["/opengraph-image"],
   },
 };
@@ -302,7 +302,7 @@ export default async function GrowthSprintPage() {
                   <span className="text-sm font-medium text-gray-500">/mo for 3 months</span>
                 </p>
                 <p className="mt-2 text-sm text-gray-500">
-                  Or <span className="font-semibold text-gray-950">$4,500 paid upfront</span>{" "}and save $600.
+                  Or <span className="font-semibold text-gray-950">$4,800 paid upfront</span>{" "}and save $300.
                 </p>
                 <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {sprintIncludes.map((item) => (

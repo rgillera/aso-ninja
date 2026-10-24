@@ -125,26 +125,29 @@ export default function GrowthSprintTermsPage() {
 
       <section>
         <h2>Fees and Payment</h2>
-        <p>You can pay for the Sprint in one of two ways:</p>
+        <p>
+          Your fee is the rate stated in your proposal. You can pay for the Sprint in one of two ways,
+          as set out in your proposal:
+        </p>
         <ul>
           <li>
-            <strong>Monthly:</strong> $1,700 per month for 3 months ($5,100 in total). The first payment
-            is due before kickoff, the second on Day 31, and the third on Day 61.
+            <strong>Monthly:</strong> three equal monthly payments. The first payment is due before
+            kickoff, the second on Day 31, and the third on Day 61.
           </li>
           <li>
-            <strong>Upfront:</strong> $4,500, paid in full before kickoff.
+            <strong>Upfront:</strong> one payment in full before kickoff.
           </li>
         </ul>
         <p>
-          If your proposal or invoice states a different rate, that rate applies. A rate offered in a
-          proposal is valid until the expiry date stated in it. After that date, the standard rates above
-          apply.
+          A proposal is valid until the expiry date stated in it. If you want to start after that date,
+          we will send you an updated proposal.
         </p>
         <p>
           The &quot;Sprint fee&quot; means the total for your payment option, as stated in your proposal
-          or invoice. Either way, the Sprint is a fixed 3-month commitment, and on the monthly option you agree to make all three payments. We schedule your kickoff call
-          once the first payment is received. If a monthly payment is more than 7 days late, we may pause
-          work until it is paid, and the pause does not extend the Sprint.
+          or invoice. Either way, the Sprint is a fixed 3-month commitment, and on the monthly option you
+          agree to make all three payments. We schedule your kickoff call once the first payment is
+          received. If a monthly payment is more than 7 days late, we may pause work until it is paid, and
+          the pause does not extend the Sprint.
         </p>
         <p>
           Fees exclude taxes, which you are responsible for where applicable. Fees are non-refundable once
