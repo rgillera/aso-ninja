@@ -25,8 +25,8 @@ const links = {
 };
 
 const addresses = [
-  ["1309 Coffeen Avenue STE 1200", "Sheridan, Wyoming 82801", "United States"],
-  ["812 Cebu North Road, Pitogo", "Consolacion, Cebu 6001", "Philippines"],
+  { country: "United States", lines: ["1309 Coffeen Avenue STE 1200", "Sheridan, Wyoming 82801"] },
+  { country: "Philippines", lines: ["812 Cebu North Road, Pitogo", "Consolacion, Cebu 6001"] },
 ];
 
 export default function PortalFooter() {
@@ -108,17 +108,27 @@ export default function PortalFooter() {
           </div>
         </div>
 
-        <ul className="mt-12 grid gap-6 border-t border-black/[0.06] pt-8 sm:grid-cols-2 lg:w-fit lg:gap-x-16">
-          {addresses.map((lines) => (
-            <li key={lines[0]} className="flex gap-2 text-sm text-gray-400">
-              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path
-                  fillRule="evenodd"
-                  d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <address className="not-italic">
+        <div className="mt-12 flex flex-wrap items-start gap-x-10 gap-y-4 border-t border-black/[0.06] pt-8">
+          {addresses.map(({ country, lines }) => (
+            <details key={country} className="group text-sm text-gray-400">
+              <summary className="flex cursor-pointer list-none items-center gap-2 transition-colors hover:text-gray-900 [&::-webkit-details-marker]:hidden">
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                {country}
+                <svg className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                  <path
+                    fillRule="evenodd"
+                    d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </summary>
+              <address className="mt-2 pl-6 not-italic">
                 {lines.map((line, i) => (
                   <span key={line}>
                     {i > 0 && <br />}
@@ -126,9 +136,9 @@ export default function PortalFooter() {
                   </span>
                 ))}
               </address>
-            </li>
+            </details>
           ))}
-        </ul>
+        </div>
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-400">
