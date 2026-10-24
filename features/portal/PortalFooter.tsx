@@ -24,19 +24,24 @@ const links = {
   ],
 };
 
+const addresses = [
+  ["1309 Coffeen Avenue STE 1200", "Sheridan, Wyoming 82801", "United States"],
+  ["812 Cebu North Road, Pitogo", "Consolacion, Cebu 6001", "Philippines"],
+];
+
 export default function PortalFooter() {
   return (
     <footer className="bg-gray-50 border-t border-black/[0.06]">
       <div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="flex flex-col gap-12 lg:flex-row lg:justify-between">
           <div className="max-w-xs">
-            <span className="flex items-center gap-2">
-              <span className="flex items-end gap-0.5 rounded-md bg-gray-950 p-1.5">
-                <span className="h-2.5 w-1 rounded-sm bg-indigo-500" />
-                <span className="h-4 w-1 rounded-sm bg-indigo-400" />
-                <span className="h-5 w-1 rounded-sm bg-indigo-300" />
+            <span className="flex items-center gap-3">
+              <span className="flex items-end gap-1 rounded-xl bg-gray-950 p-2.5 pb-3.5">
+                <span className="h-4 w-1.5 rounded-sm bg-indigo-500" />
+                <span className="h-6 w-1.5 rounded-sm bg-indigo-400" />
+                <span className="h-8 w-1.5 rounded-sm bg-indigo-300" />
               </span>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
+              <span className="text-3xl font-bold text-gray-900 tracking-tight">
                 App<span className="text-indigo-600">ASO</span>
               </span>
             </span>
@@ -44,15 +49,6 @@ export default function PortalFooter() {
               App Store Optimization intelligence for modern app teams.
             </p>
             <p className="mt-4 text-sm text-gray-400">
-              AppASO.io
-              <br />
-              1309 Coffeen Avenue STE 1200
-              <br />
-              Sheridan, Wyoming 82801
-              <br />
-              United States
-            </p>
-            <p className="mt-3 text-sm text-gray-400">
               Support:{" "}
               <a
                 href="mailto:hello@appaso.io"
@@ -112,9 +108,31 @@ export default function PortalFooter() {
           </div>
         </div>
 
-        <div className="mt-16 border-t border-black/[0.06] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <ul className="mt-12 grid gap-6 border-t border-black/[0.06] pt-8 sm:grid-cols-2 lg:w-fit lg:gap-x-16">
+          {addresses.map((lines) => (
+            <li key={lines[0]} className="flex gap-2 text-sm text-gray-400">
+              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="m11.54 22.351.07.04.028.016a.76.76 0 0 0 .723 0l.028-.015.071-.041a16.975 16.975 0 0 0 1.144-.742 19.58 19.58 0 0 0 2.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 0 0-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 0 0 2.682 2.282 16.975 16.975 0 0 0 1.145.742ZM12 13.5a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <address className="not-italic">
+                {lines.map((line, i) => (
+                  <span key={line}>
+                    {i > 0 && <br />}
+                    {line}
+                  </span>
+                ))}
+              </address>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} AppASO. All rights reserved.
+            &copy; {new Date().getFullYear()} AppASO.io - Free ASO tool. All rights reserved.
           </p>
           <p className="text-sm text-gray-400">
             Built for iOS &amp; Android
