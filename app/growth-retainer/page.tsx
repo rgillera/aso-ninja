@@ -143,6 +143,7 @@ const retainerIncludes = [
   "Meta Ads and Apple Search Ads managed by us (ad spend billed separately)",
   "Weekly Meta ad creative refresh, plus new store screenshots every month",
   "A new listing experiment every month",
+  "Review replies drafted for your approval",
   "Competitor and ranking alerts",
   "Promotional text and in-app event copy",
   "Monthly report and a 30-minute review call",
