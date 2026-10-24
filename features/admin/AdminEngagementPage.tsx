@@ -417,6 +417,8 @@ export default function AdminEngagementPage({ totals, revenue, mrr, dailyActive,
                     <th className={`${TH} text-right`}>Days</th>
                     <th className={`${TH} text-right`}>Time</th>
                     <th className={`${TH} text-right`}>All-time visits</th>
+                    <th className={`${TH} text-right`}>Pricing views</th>
+                    <th className={TH}>Last pricing view</th>
                     <th className={TH}>Joined</th>
                   </tr>
                 </thead>
@@ -436,6 +438,13 @@ export default function AdminEngagementPage({ totals, revenue, mrr, dailyActive,
                       <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.activeDays7d.toLocaleString()}</td>
                       <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700 whitespace-nowrap">{formatDuration(u.activeSeconds7d)}</td>
                       <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.visitCount.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-right tabular-nums text-gray-300 light:text-gray-700">{u.pricingViews.toLocaleString()}</td>
+                      <td
+                        className="px-5 py-3 text-gray-300 light:text-gray-700 whitespace-nowrap"
+                        title={u.lastPricingViewAt ? new Date(u.lastPricingViewAt).toLocaleString() : u.pricingViews > 0 ? "Viewed before view times were recorded" : undefined}
+                      >
+                        {u.lastPricingViewAt ? formatAgo(u.lastPricingViewAt, now) : u.pricingViews > 0 ? "Earlier" : "Never"}
+                      </td>
                       <td className="px-5 py-3 text-gray-400 light:text-gray-600 whitespace-nowrap">{formatDate(u.createdAt)}</td>
                     </tr>
                   ))}
@@ -591,6 +600,7 @@ export default function AdminEngagementPage({ totals, revenue, mrr, dailyActive,
                     <th className={TH}>Plan picked</th>
                     <th className={TH}>Last checkout</th>
                     <th className={`${TH} text-right`}>Pricing views</th>
+                    <th className={TH}>Last pricing view</th>
                   </tr>
                 </thead>
                 <tbody className={TBODY}>

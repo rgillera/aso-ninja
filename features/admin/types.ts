@@ -102,6 +102,10 @@ export type RecentActiveUser = {
   activeSeconds7d: number;
   visitCount: number;
   activeSeconds: number;
+  // All-time opens of /dashboard/subscription. The last-open time is null
+  // for views from before 20261024000005_subscription_page_view_at.sql.
+  pricingViews: number;
+  lastPricingViewAt: string | null;
 };
 
 export type PayingUserEngagement = {

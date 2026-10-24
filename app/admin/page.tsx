@@ -47,6 +47,12 @@ type RecentRow = {
   active_seconds: number;
 };
 
+type PricingViewRow = {
+  user_id: string;
+  subscription_page_views: number;
+  last_subscription_page_view_at: string | null;
+};
+
 type PayingRow = {
   user_id: string;
   email: string | null;
@@ -65,7 +71,7 @@ export default async function Page() {
   // Super admins' own use of the app shouldn't count as engagement.
   const exclude = superAdminEmails();
 
-  const [totals, daily, cohorts, milestones, paying, recent, revenue, mrr] = await Promise.all([
+  const [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue, mrr] = await Promise.all([
     admin.rpc("admin_active_user_totals", { p_exclude_emails: exclude }).single<{ dau: number; wau: number; mau: number }>(),
     admin.rpc("admin_daily_active_users", { p_days: DAILY_DAYS, p_exclude_emails: exclude }),
     admin.rpc("admin_retention_cohorts", { p_weeks: COHORT_WEEKS, p_exclude_emails: exclude }),
@@ -73,6 +79,13 @@ export default async function Page() {
     admin.rpc("admin_paying_user_engagement"),
     fetchAllRows<RecentRow>((from, to) =>
       admin.rpc("admin_recent_active_users", { p_days: RECENT_DAYS, p_exclude_emails: exclude }).range(from, to)
+    ),
+    fetchAllRows<PricingViewRow>((from, to) =>
+      admin
+        .from("user_activity")
+        .select("user_id, subscription_page_views, last_subscription_page_view_at")
+        .gt("subscription_page_views", 0)
+        .range(from, to)
     ),
     admin
       .rpc("admin_revenue_summary", { p_exclude_emails: exclude })
@@ -83,7 +96,7 @@ export default async function Page() {
       return null;
     }),
   ]);
-  for (const r of [totals, daily, cohorts, milestones, paying, recent, revenue]) {
+  for (const r of [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue]) {
     if (r.error) throw r.error;
   }
 
@@ -134,6 +147,8 @@ export default async function Page() {
       firstCertificationAt: m.first_certification_at,
     }));
 
+  const pricingViewsByUser = new Map(pricingViews.data.map((v) => [v.user_id, v]));
+
   const recentActive: RecentActiveUser[] = recent.data.map((r) => ({
     userId: r.user_id,
     email: r.email ?? "(no email)",
@@ -146,6 +161,8 @@ export default async function Page() {
     activeSeconds7d: r.active_seconds_7d,
     visitCount: r.visit_count,
     activeSeconds: r.active_seconds,
+    pricingViews: pricingViewsByUser.get(r.user_id)?.subscription_page_views ?? 0,
+    lastPricingViewAt: pricingViewsByUser.get(r.user_id)?.last_subscription_page_view_at ?? null,
   }));
 
   const payingUsers: PayingUserEngagement[] = (paying.data as PayingRow[])
