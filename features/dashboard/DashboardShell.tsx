@@ -6,7 +6,6 @@ import { Bars3Icon } from "@heroicons/react/24/outline";
 import DashboardSidebar from "./DashboardSidebar";
 import { DashboardSearch } from "./DashboardSearch";
 import { PromoBanner } from "./PromoBanner";
-import { AppLimitNotice } from "./AppLimitNotice";
 import { ReviewPromptBanner } from "@/features/review/ReviewPromptBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
 import { PlanProvider, CompetitorLimitProvider } from "./PlanContext";
@@ -314,7 +313,6 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
   const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
   const [competitorLimit, setCompetitorLimit] = useState<number | null>(initialCompetitorLimit === undefined ? 1 : initialCompetitorLimit);
-  const [appLimit, setAppLimit] = useState<number | null>(null);
   useEffect(() => {
     if (!activeWorkspaceId) return;
     let cancelled = false;
@@ -323,25 +321,12 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         setPlanSlug(result.plan.slug);
         setWorkspaceLimit(result.plan.workspace_limit);
         setCompetitorLimit(result.plan.competitor_limit);
-        setAppLimit(result.plan.app_limit);
       }
     });
     return () => {
       cancelled = true;
     };
   }, [activeWorkspaceId]);
-
-  // Free workspaces still inside the grace period from the Free plan's app
-  // limit dropping to 2, that track more than that: show the "choose which
-  // apps keep updating" notice in place of the generic upgrade banner.
-  const [mountedAt] = useState(() => Date.now());
-  const appLimitGraceUntil = activeWorkspace?.app_limit_grace_until;
-  const showAppLimitNotice =
-    planSlug === "free" &&
-    appLimit !== null &&
-    !!appLimitGraceUntil &&
-    new Date(appLimitGraceUntil).getTime() > mountedAt &&
-    activeWorkspaceApps.length > appLimit;
 
   // Bounce away from a product area the current member's access doesn't cover
   // for the active workspace — mirrors the sections hidden in DashboardSidebar,
@@ -511,17 +496,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           {!hideSearchAndBanner && (
             // empty:hidden drops the wrapper's margins when neither banner renders.
             <div className="mx-6 mt-6 mb-4 flex flex-col gap-3 empty:hidden">
-              {activeWorkspaceId && (showAppLimitNotice && appLimitGraceUntil && appLimit !== null
-                ? (
-                  <AppLimitNotice
-                    workspaceId={activeWorkspaceId}
-                    graceUntil={appLimitGraceUntil}
-                    apps={activeWorkspaceApps}
-                    limit={appLimit}
-                    role={currentRole}
-                  />
-                )
-                : <PromoBanner workspaceId={activeWorkspaceId} />)}
+              {activeWorkspaceId && <PromoBanner workspaceId={activeWorkspaceId} />}
               <ReviewPromptBanner />
             </div>
           )}
