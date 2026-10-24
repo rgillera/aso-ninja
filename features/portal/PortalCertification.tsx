@@ -1,6 +1,6 @@
-import { AcademicCapIcon, ClipboardDocumentCheckIcon, TrophyIcon } from "@heroicons/react/24/outline";
 import { CERTIFICATION_MODULES } from "@/features/certification/content";
 import { CERTIFICATION_QUESTIONS, MAX_EXAM_QUESTIONS, CERTIFICATION_PASS_THRESHOLD } from "@/features/certification/questions";
+import { ArrowRightIcon } from "@heroicons/react/20/solid";
 import PortalEyebrow from "./PortalEyebrow";
 
 // Numbers come from the certification feature itself so this section can't
@@ -9,17 +9,17 @@ const facts = [
   {
     name: `${CERTIFICATION_MODULES.length} overview lessons`,
     description: "A quick tour of the key topics: ranking factors, keyword research, metadata, visuals, localization, A/B testing and more.",
-    icon: AcademicCapIcon,
+    label: "Learn",
   },
   {
     name: `${MAX_EXAM_QUESTIONS}-question exam`,
     description: `Timed and drawn at random from a ${CERTIFICATION_QUESTIONS.length}-question bank, from fundamentals to advanced strategy. Score ${Math.round(CERTIFICATION_PASS_THRESHOLD * 100)}% or more to pass. Included with Pro.`,
-    icon: ClipboardDocumentCheckIcon,
+    label: "Test",
   },
   {
     name: "Your certificate",
     description: "Download a certificate with your name and a unique certificate ID, ready to share.",
-    icon: TrophyIcon,
+    label: "Share",
   },
 ];
 
@@ -27,39 +27,52 @@ export default function PortalCertification({ isAuthenticated }: { isAuthenticat
   const href = isAuthenticated ? "/dashboard/certification/learn" : "/signup?next=/dashboard/certification/learn";
 
   return (
-    <section id="certification" className="bg-white py-24 sm:py-28">
+    <section id="certification" className="bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div>
             <PortalEyebrow>ASO certification</PortalEyebrow>
-            <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-              Learn ASO. <span className="text-indigo-600">Prove it.</span>
+            <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:text-5xl">
+              Learn ASO.{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">Prove it.</span>
             </h2>
             <p className="mt-6 text-lg text-gray-600">
               Start with a free overview course. On Pro, take the exam that tests real ASO knowledge in depth, and pass it to get a
               certificate you can add to your LinkedIn or portfolio.
             </p>
 
-            <dl className="mt-10 space-y-6">
-              {facts.map((f) => (
-                <div key={f.name} className="flex gap-4">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
-                    <f.icon className="size-5 text-indigo-600" aria-hidden="true" />
+            {/* Lessons, exam and certificate are done in that order, so they
+                use the same numbered rail as the How it works section. */}
+            <ol className="mt-10">
+              {facts.map((f, i) => (
+                <li key={f.name} className="relative flex gap-5 pb-8 last:pb-0">
+                  {i < facts.length - 1 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-5 top-12 bottom-2 w-px -translate-x-1/2 bg-gradient-to-b from-indigo-300 via-violet-200 to-transparent"
+                    />
+                  )}
+                  <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm ring-4 ring-white">
+                    <span className="text-sm font-bold text-white">{i + 1}</span>
                   </div>
-                  <div>
-                    <dt className="text-base font-semibold text-gray-900">{f.name}</dt>
-                    <dd className="mt-1 text-sm leading-relaxed text-gray-600">{f.description}</dd>
+                  <div className="pt-0.5">
+                    <p className="font-mono text-xs font-medium uppercase tracking-widest text-indigo-600">
+                      {String(i + 1).padStart(2, "0")} / {f.label}
+                    </p>
+                    <h3 className="mt-1.5 text-base font-semibold text-gray-950">{f.name}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-gray-600">{f.description}</p>
                   </div>
-                </div>
+                </li>
               ))}
-            </dl>
+            </ol>
 
             <div className="mt-10">
               <a
                 href={href}
-                className="inline-flex rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                className="group inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
               >
                 {isAuthenticated ? "Start the course" : "Start the free course"}
+                <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </a>
             </div>
           </div>
@@ -67,15 +80,11 @@ export default function PortalCertification({ isAuthenticated }: { isAuthenticat
           {/* Mirrors the real PDF (features/certification/certificate.ts):
               dark background, double border, AppASO mark, name, ID and date.
               Hidden on phones, where its small print can't be read anyway. */}
-          <div className="relative hidden sm:block">
-            <div
-              aria-hidden="true"
-              className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-indigo-200/60 via-violet-200/40 to-transparent blur-2xl"
-            />
+          <div className="hidden rounded-3xl bg-gradient-to-br from-indigo-50 via-gray-50 to-violet-50 p-6 sm:block lg:p-10">
             <div
               role="img"
               aria-label="Example AppASO ASO Certification certificate"
-              className="aspect-[297/210] rotate-1 rounded-xl bg-[#0e0e10] p-3 shadow-clay-lg sm:p-4"
+              className="aspect-[297/210] rounded-xl bg-[#0e0e10] p-3 shadow-clay-lg sm:p-4"
             >
               <div className="flex h-full flex-col items-center justify-between rounded-md border-2 border-indigo-500 p-1.5">
                 <div className="flex h-full w-full flex-col items-center justify-between rounded-sm border border-white/60 px-4 py-5 text-center sm:px-8 sm:py-7">

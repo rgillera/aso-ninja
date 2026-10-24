@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
+import { ArrowRightIcon, CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
 import { SELLABLE_PLANS, type PlanId } from "@/features/subscription/plans";
 import PortalEyebrow from "./PortalEyebrow";
 
@@ -43,7 +43,10 @@ const plans = SELLABLE_PLANS.map((plan) => {
     yearlySavings: isFree ? null : formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents),
     description: plan.description,
     badge: plan.badge,
-    features: plan.features,
+    // The "Includes all in X plan, plus:" line is a heading for the list,
+    // not a feature of its own, so it's pulled out and shown without a check.
+    includes: plan.features.find((f) => f.startsWith("Includes all")) ?? null,
+    features: plan.features.filter((f) => !f.startsWith("Includes all")),
     trialDays: plan.trialDays,
     signupCta: isFree ? "Create free account" : plan.trialDays ? `Try free for ${plan.trialDays} days` : "Upgrade now",
     variant: variantByPlan[plan.id],
@@ -61,9 +64,11 @@ const cardStyles: Record<Variant, {
   feature: string;
   cta: string;
   badge: string;
+  divider: string;
+  muted: string;
 }> = {
   default: {
-    card: "bg-white shadow-clay ring-1 ring-black/5",
+    card: "bg-white shadow-clay ring-1 ring-black/5 transition-shadow hover:shadow-clay-lg",
     title: "text-gray-900",
     subtitle: "text-gray-500",
     price: "text-gray-900",
@@ -72,9 +77,11 @@ const cardStyles: Record<Variant, {
     feature: "text-gray-700",
     cta: "bg-indigo-600 text-white hover:bg-indigo-500",
     badge: "bg-indigo-50 text-indigo-700",
+    divider: "border-gray-950/10",
+    muted: "text-gray-500",
   },
   featured: {
-    card: "bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-clay-lg",
+    card: "bg-gradient-to-br from-indigo-600 to-violet-600 ring-1 ring-indigo-400/40 shadow-2xl shadow-indigo-500/30 lg:-my-4 lg:py-10",
     title: "text-white",
     subtitle: "text-indigo-200",
     price: "text-white",
@@ -83,6 +90,8 @@ const cardStyles: Record<Variant, {
     feature: "text-indigo-50",
     cta: "bg-white text-indigo-600 hover:bg-indigo-50",
     badge: "bg-white/20 text-white",
+    divider: "border-white/20",
+    muted: "text-indigo-200",
   },
   premium: {
     card: "bg-gradient-to-br from-gray-900 to-indigo-950 shadow-clay-lg",
@@ -92,8 +101,10 @@ const cardStyles: Record<Variant, {
     desc: "text-gray-400",
     check: "text-emerald-400",
     feature: "text-gray-300",
-    cta: "bg-white/[0.08] text-white hover:bg-white/[0.13]",
+    cta: "bg-white/[0.08] text-white ring-1 ring-white/15 hover:bg-white/[0.13]",
     badge: "bg-white/10 text-gray-300",
+    divider: "border-white/10",
+    muted: "text-gray-400",
   },
 };
 
@@ -102,42 +113,60 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
   const [yearly, setYearly] = useState(true);
 
   return (
-    <section id="pricing" className="bg-gray-50 py-24 sm:py-28">
+    <section id="pricing" className="relative isolate overflow-hidden bg-gray-50 py-24 sm:py-32">
+      {/* Soft glow behind the featured card, same treatment as the hero. */}
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 -z-10 h-[32rem] w-[56rem] max-w-full -translate-x-1/2 -translate-y-1/4 rounded-full bg-indigo-400/15 blur-3xl"
+      />
+
       <div className="mx-auto max-w-[90rem] px-4 lg:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <PortalEyebrow>Pricing</PortalEyebrow>
-          <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">
-            Simple, transparent pricing
+          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:text-5xl">
+            Simple,{" "}
+            <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">transparent pricing</span>
           </h2>
-          <p className="mt-6 text-lg text-gray-600">
+          <p className="mt-6 text-balance text-lg text-gray-600">
             Start free. Scale as you grow, from solo indie devs to global publishing teams.
           </p>
 
-          {/* Billing toggle */}
-          <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-white p-1 shadow-clay-inset ring-1 ring-black/5">
+          {/* Billing toggle: two equal-width segments with one pill that
+              slides between them. */}
+          <div className="relative mt-10 inline-grid grid-cols-2 rounded-full bg-white p-1 shadow-clay-inset ring-1 ring-black/5">
+            <span
+              aria-hidden="true"
+              className={`absolute inset-y-1 left-1 w-[calc(50%-0.25rem)] rounded-full bg-indigo-600 shadow-clay-sm transition-transform duration-300 ease-out ${
+                yearly ? "translate-x-full" : "translate-x-0"
+              }`}
+            />
             <button
+              type="button"
+              aria-pressed={!yearly}
               onClick={() => setYearly(false)}
-              className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                !yearly ? "bg-indigo-600 text-white shadow-clay-sm" : "text-gray-500 hover:text-gray-900"
+              className={`relative rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                !yearly ? "text-white" : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Monthly
             </button>
             <button
+              type="button"
+              aria-pressed={yearly}
               onClick={() => setYearly(true)}
-              className={`flex items-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                yearly ? "bg-indigo-600 text-white shadow-clay-sm" : "text-gray-500 hover:text-gray-900"
+              className={`relative flex items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-medium transition-colors ${
+                yearly ? "text-white" : "text-gray-500 hover:text-gray-900"
               }`}
             >
               Yearly
-              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${yearly ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-600"}`}>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold transition-colors ${yearly ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700"}`}>
                 2 months free
               </span>
             </button>
           </div>
         </div>
 
-        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-6 lg:max-w-7xl lg:grid-cols-4 lg:items-stretch" style={{ paddingTop: "1rem" }}>
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-6 pt-4 lg:mt-20 lg:max-w-7xl lg:grid-cols-4 lg:items-stretch">
           {plans.map((plan) => {
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
@@ -160,10 +189,19 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                   ? `Try free for ${plan.trialDays} days`
                   : "Upgrade now"
               : plan.signupCta;
+            // One line under the price on every card, so the cards stay the
+            // same height when the billing toggle flips.
+            const priceNote = plan.contactSales
+              ? "Tailored to your portfolio"
+              : isFree
+              ? "No credit card required"
+              : yearly
+              ? `${plan.yearlyTotal} billed yearly · save ${plan.yearlySavings}`
+              : `or ${plan.yearly.price}/mo billed yearly`;
             return (
               <div
                 key={plan.name}
-                className={`relative flex flex-col rounded-2xl p-6 ${s.card}`}
+                className={`relative flex flex-col rounded-3xl p-8 ${s.card}`}
               >
                 {plan.variant === "featured" && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2 whitespace-nowrap">
@@ -182,48 +220,41 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                     </span>
                   )}
                 </div>
+                <p className={`mt-2 min-h-12 text-sm leading-6 ${s.desc}`}>{plan.description}</p>
 
-                <div className="mt-4 flex items-baseline gap-x-2">
-                  {plan.contactSales ? (
-                    <span className={`text-4xl font-semibold tracking-tight ${s.price}`}>Custom</span>
-                  ) : (
-                    <>
-                      <span className={`text-4xl font-semibold tracking-tight ${s.price}`}>
-                        {billing.price}
-                      </span>
-                      {!isFree && (
-                        <span className={`text-xs ${s.subtitle}`}>
-                          / mo
-                        </span>
-                      )}
-                    </>
+                <div className="mt-6 flex items-baseline gap-x-1.5">
+                  <span className={`text-5xl font-semibold tracking-tight tabular-nums ${s.price}`}>
+                    {plan.contactSales ? "Custom" : billing.price}
+                  </span>
+                  {!isFree && !plan.contactSales && (
+                    <span className={`text-sm font-medium ${s.subtitle}`}>/mo</span>
                   )}
                 </div>
-                {yearly && plan.yearlyTotal && !plan.contactSales && (
-                  <p className={`mt-1 text-xs font-semibold ${s.subtitle}`}>
-                    {plan.yearlyTotal} billed yearly · save {plan.yearlySavings}
-                  </p>
-                )}
-
-                <p className={`mt-4 text-sm leading-relaxed ${s.desc}`}>{plan.description}</p>
-
-                <ul className="mt-8 flex-1 space-y-3">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-3">
-                      <CheckIcon className={`size-5 shrink-0 mt-0.5 ${s.check}`} aria-hidden="true" />
-                      <span className={`text-sm ${s.feature}`}>{f}</span>
-                    </li>
-                  ))}
-                </ul>
+                <p className={`mt-2 text-xs font-medium ${s.subtitle}`}>{priceNote}</p>
 
                 <a
                   href={href}
                   target={plan.contactSales && salesUrl ? "_blank" : undefined}
                   rel={plan.contactSales && salesUrl ? "noopener noreferrer" : undefined}
-                  className={`mt-8 inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${s.cta}`}
+                  className={`group mt-8 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-3 text-sm font-semibold transition-colors ${s.cta}`}
                 >
                   {cta}
+                  <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
                 </a>
+
+                <div className={`mt-8 flex-1 border-t pt-8 ${s.divider}`}>
+                  {plan.includes && (
+                    <p className={`mb-4 text-xs font-semibold uppercase tracking-wider ${s.muted}`}>{plan.includes}</p>
+                  )}
+                  <ul className="space-y-3">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-3">
+                        <CheckIcon className={`mt-0.5 size-5 shrink-0 ${s.check}`} aria-hidden="true" />
+                        <span className={`text-sm ${s.feature}`}>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             );
           })}
