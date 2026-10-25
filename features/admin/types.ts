@@ -19,6 +19,8 @@ export type AdminUserRow = {
   keywordCount: number;
   planSlug: string;
   planName: string;
+  // Signup Pro trial end while it's still running (planSlug stays "free").
+  proTrialEndsAt: string | null;
 };
 
 export type AdminCancellationRow = {
@@ -96,6 +98,8 @@ export type RecentActiveUser = {
   createdAt: string;
   planSlug: string;
   planName: string;
+  // Signup Pro trial end while it's still running (planSlug stays "free").
+  proTrialEndsAt: string | null;
   lastActiveAt: string;
   visits7d: number;
   activeDays7d: number;

@@ -71,7 +71,7 @@ export default async function Page() {
   // Super admins' own use of the app shouldn't count as engagement.
   const exclude = superAdminEmails();
 
-  const [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue, mrr] = await Promise.all([
+  const [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue, mrr, proTrials] = await Promise.all([
     admin.rpc("admin_active_user_totals", { p_exclude_emails: exclude }).single<{ dau: number; wau: number; mau: number }>(),
     admin.rpc("admin_daily_active_users", { p_days: DAILY_DAYS, p_exclude_emails: exclude }),
     admin.rpc("admin_retention_cohorts", { p_weeks: COHORT_WEEKS, p_exclude_emails: exclude }),
@@ -95,8 +95,17 @@ export default async function Page() {
       console.error("Stripe MRR failed", err);
       return null;
     }),
+    // Live signup Pro trials; only applied below to rows still on free
+    // (mirrors get_effective_plan).
+    fetchAllRows<{ user_id: string; pro_trial_ends_at: string }>((from, to) =>
+      admin
+        .from("subscriptions")
+        .select("user_id, pro_trial_ends_at")
+        .gt("pro_trial_ends_at", new Date().toISOString())
+        .range(from, to)
+    ),
   ]);
-  for (const r of [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue]) {
+  for (const r of [totals, daily, cohorts, milestones, paying, recent, pricingViews, revenue, proTrials]) {
     if (r.error) throw r.error;
   }
 
@@ -149,21 +158,27 @@ export default async function Page() {
 
   const pricingViewsByUser = new Map(pricingViews.data.map((v) => [v.user_id, v]));
 
-  const recentActive: RecentActiveUser[] = recent.data.map((r) => ({
-    userId: r.user_id,
-    email: r.email ?? "(no email)",
-    createdAt: r.created_at,
-    planSlug: r.plan_slug,
-    planName: r.plan_name ? shortPlanName(r.plan_name) : "Free",
-    lastActiveAt: r.last_active_at,
-    visits7d: r.visits_7d,
-    activeDays7d: r.active_days_7d,
-    activeSeconds7d: r.active_seconds_7d,
-    visitCount: r.visit_count,
-    activeSeconds: r.active_seconds,
-    pricingViews: pricingViewsByUser.get(r.user_id)?.subscription_page_views ?? 0,
-    lastPricingViewAt: pricingViewsByUser.get(r.user_id)?.last_subscription_page_view_at ?? null,
-  }));
+  const proTrialEndByUser = new Map(proTrials.data.map((t) => [t.user_id, t.pro_trial_ends_at]));
+
+  const recentActive: RecentActiveUser[] = recent.data.map((r) => {
+    const proTrialEndsAt = r.plan_slug === "free" ? (proTrialEndByUser.get(r.user_id) ?? null) : null;
+    return {
+      userId: r.user_id,
+      email: r.email ?? "(no email)",
+      createdAt: r.created_at,
+      planSlug: r.plan_slug,
+      planName: proTrialEndsAt ? "Pro trial" : r.plan_name ? shortPlanName(r.plan_name) : "Free",
+      proTrialEndsAt,
+      lastActiveAt: r.last_active_at,
+      visits7d: r.visits_7d,
+      activeDays7d: r.active_days_7d,
+      activeSeconds7d: r.active_seconds_7d,
+      visitCount: r.visit_count,
+      activeSeconds: r.active_seconds,
+      pricingViews: pricingViewsByUser.get(r.user_id)?.subscription_page_views ?? 0,
+      lastPricingViewAt: pricingViewsByUser.get(r.user_id)?.last_subscription_page_view_at ?? null,
+    };
+  });
 
   const payingUsers: PayingUserEngagement[] = (paying.data as PayingRow[])
     .filter((p) => !isSuperAdminEmail(p.email))

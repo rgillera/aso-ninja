@@ -4,7 +4,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { ChartBarIcon, CheckIcon, ExclamationTriangleIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import type { StripeMrr } from "@/libs/stripe/mrr";
 import type { DailyActiveUsers, PayingUserEngagement, RecentActiveUser, RetentionCohort, UserMilestones } from "@/features/admin/types";
-import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/features/admin/format";
+import { formatDuration, planBadgeClass, proTrialTitle } from "@/features/admin/format";
 
 type Props = {
   totals: { dau: number; wau: number; mau: number };
@@ -427,7 +427,10 @@ export default function AdminEngagementPage({ totals, revenue, mrr, dailyActive,
                     <tr key={u.userId} className="hover:bg-white/[0.03] light:hover:bg-black/[0.02]">
                       <td className="px-5 py-3 text-white light:text-gray-900 truncate max-w-xs">{u.email}</td>
                       <td className="px-5 py-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${PLAN_BADGE_CLASSES[u.planSlug] ?? PLAN_BADGE_FALLBACK}`}>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${planBadgeClass(u)}`}
+                          title={proTrialTitle(u.proTrialEndsAt)}
+                        >
                           {u.planName}
                         </span>
                       </td>

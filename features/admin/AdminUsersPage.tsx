@@ -19,7 +19,7 @@ import {
 import type { AdminUserRow } from "@/features/admin/types";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { deleteUserAction, startImpersonationAction } from "@/features/admin/actions";
-import { PLAN_BADGE_CLASSES, PLAN_BADGE_FALLBACK, formatDuration } from "@/features/admin/format";
+import { formatDuration, planBadgeClass, proTrialTitle } from "@/features/admin/format";
 
 type Props = {
   users: AdminUserRow[];
@@ -341,9 +341,8 @@ export default function AdminUsersPage({ users }: Props) {
                       <td className="px-5 py-3.5 text-white light:text-gray-900 truncate max-w-xs">{u.email}</td>
                       <td className="px-5 py-3.5">
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${
-                            PLAN_BADGE_CLASSES[u.planSlug] ?? PLAN_BADGE_FALLBACK
-                          }`}
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${planBadgeClass(u)}`}
+                          title={proTrialTitle(u.proTrialEndsAt)}
                         >
                           {u.planName}
                         </span>

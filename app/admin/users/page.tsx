@@ -106,7 +106,7 @@ export default async function Page() {
   ] = await Promise.all([
     fetchAllWorkspaceIds(admin, "apps", ownedWorkspaceIds),
     fetchAllWorkspaceIds(admin, "keywords", ownedWorkspaceIds),
-    admin.from("subscriptions").select("user_id, plan_id, status").in("status", ["active", "trialing"]),
+    admin.from("subscriptions").select("user_id, plan_id, status, pro_trial_ends_at").in("status", ["active", "trialing"]),
     admin.from("plans").select("id, slug, name"),
     fetchAllRows<{
       user_id: string;
@@ -145,17 +145,30 @@ export default async function Page() {
 
   // No active/trialing subscription row falls back to the free plan —
   // matches get_effective_plan's fallback in the DB.
-  const activePlanByUser = new Map<string, { slug: string; name: string }>();
+  // A signup Pro trial only counts while they're still on free (mirrors
+  // get_effective_plan).
+  const activePlanByUser = new Map<string, { slug: string; name: string; proTrialEndsAt: string | null }>();
+  const nowMs = Date.now();
   for (const s of subscriptions ?? []) {
     const plan = planById.get(s.plan_id);
-    if (plan) activePlanByUser.set(s.user_id, { slug: plan.slug, name: plan.name });
+    if (!plan) continue;
+    const onTrial = plan.slug === "free" && !!s.pro_trial_ends_at && new Date(s.pro_trial_ends_at).getTime() > nowMs;
+    activePlanByUser.set(s.user_id, {
+      slug: plan.slug,
+      name: onTrial ? "Pro trial" : plan.name,
+      proTrialEndsAt: onTrial ? s.pro_trial_ends_at : null,
+    });
   }
 
   const rows: AdminUserRow[] = authUsers.map((u) => {
     const workspaceIds = ownedWorkspacesByUser.get(u.id) ?? [];
     const appCount = workspaceIds.reduce((sum, id) => sum + (appCountByWorkspace.get(id) ?? 0), 0);
     const keywordCount = workspaceIds.reduce((sum, id) => sum + (keywordCountByWorkspace.get(id) ?? 0), 0);
-    const plan = activePlanByUser.get(u.id) ?? (freePlan ? { slug: freePlan.slug, name: freePlan.name } : { slug: "free", name: "Free" });
+    const plan = activePlanByUser.get(u.id) ?? {
+      slug: freePlan?.slug ?? "free",
+      name: freePlan?.name ?? "Free",
+      proTrialEndsAt: null,
+    };
 
     const usage = activityByUser.get(u.id);
 
@@ -175,6 +188,7 @@ export default async function Page() {
       keywordCount,
       planSlug: plan.slug,
       planName: plan.name,
+      proTrialEndsAt: plan.proTrialEndsAt,
     };
   });
 
