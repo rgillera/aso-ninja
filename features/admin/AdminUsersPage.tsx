@@ -198,7 +198,7 @@ function compareValues(a: AdminUserRow, b: AdminUserRow, key: SortKey): number {
 export default function AdminUsersPage({ users }: Props) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortKey, setSortKey] = useState<SortKey>("lastActiveAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [deleting, setDeleting] = useState<AdminUserRow | null>(null);
   // Hides a deleted row immediately; revalidatePath in deleteUserAction

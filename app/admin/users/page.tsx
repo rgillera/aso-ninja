@@ -178,8 +178,9 @@ export default async function Page() {
     };
   });
 
-  // Newest accounts first, matching AdminUsersPage's default sort.
-  rows.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Most recently active first, matching AdminUsersPage's default sort.
+  const activeMs = (r: AdminUserRow) => (r.lastActiveAt ? new Date(r.lastActiveAt).getTime() : 0);
+  rows.sort((a, b) => activeMs(b) - activeMs(a));
 
   return <AdminUsersPage users={rows} />;
 }
