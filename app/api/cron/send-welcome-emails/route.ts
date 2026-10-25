@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { getResendClient } from "@/libs/resend";
 import {
-  WELCOME_EMAIL_SUBJECT,
+  welcomeEmailSubject,
   renderWelcomeEmailHtml,
   renderWelcomeEmailText,
 } from "@/libs/email/welcome";
@@ -43,12 +43,20 @@ export async function GET(req: Request) {
       continue;
     }
 
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("pro_trial_ends_at")
+      .eq("user_id", id)
+      .maybeSingle();
+    const trialEnd = subscription?.pro_trial_ends_at;
+    const hasTrial = !!trialEnd && new Date(trialEnd).getTime() > Date.now();
+
     const { error: sendError } = await resend.emails.send({
       from: FROM,
       to: email,
-      subject: WELCOME_EMAIL_SUBJECT,
-      html: renderWelcomeEmailHtml(),
-      text: renderWelcomeEmailText(),
+      subject: welcomeEmailSubject(hasTrial),
+      html: renderWelcomeEmailHtml(hasTrial),
+      text: renderWelcomeEmailText(hasTrial),
     });
 
     if (sendError) {
