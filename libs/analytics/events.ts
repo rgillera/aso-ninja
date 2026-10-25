@@ -60,6 +60,7 @@ const STORED_EVENTS = {
   tour_completed: "Tour Completed",
   checkout_started: "Checkout Started",
   checkout_completed: "Checkout Completed",
+  pro_trial_started: "Pro Trial Started",
 } as const;
 
 export type StoredEventName = keyof typeof STORED_EVENTS;

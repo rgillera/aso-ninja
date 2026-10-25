@@ -65,6 +65,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.plan.workspace_limit : 1;
   const initialTrialEndsAt: string | null =
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.trialEndsAt : null;
+  const initialCanStartTrial =
+    initialPlanState && !("error" in initialPlanState) ? initialPlanState.canStartTrial : false;
 
   return (
     <>
@@ -98,6 +100,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           initialWorkspaceLimit={initialWorkspaceLimit}
           initialCompetitorLimit={initialCompetitorLimit}
           initialTrialEndsAt={initialTrialEndsAt}
+          initialCanStartTrial={initialCanStartTrial}
           initialTheme={initialTheme}
           initialSidebarCollapsed={initialSidebarCollapsed}
         >

@@ -87,6 +87,9 @@ export async function proxy(request: NextRequest) {
   if (!user && matchesRoute(pathname, PROTECTED)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    // Links that act on arrival (e.g. /dashboard/start-trial from the trial
+    // offer email) need the user brought back once they've signed in.
+    if (pathname === "/dashboard/start-trial") url.search = `?next=${pathname}`;
     return NextResponse.redirect(url);
   }
 

@@ -98,6 +98,7 @@ type Props = {
   initialWorkspaceLimit?: number | null;
   initialCompetitorLimit?: number | null;
   initialTrialEndsAt?: string | null;
+  initialCanStartTrial?: boolean;
   initialTheme: Theme;
   initialSidebarCollapsed: boolean;
   children: React.ReactNode;
@@ -105,7 +106,7 @@ type Props = {
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTrialEndsAt, initialTheme, initialSidebarCollapsed, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTrialEndsAt, initialCanStartTrial, initialTheme, initialSidebarCollapsed, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -315,6 +316,9 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
   const [competitorLimit, setCompetitorLimit] = useState<number | null>(initialCompetitorLimit === undefined ? 1 : initialCompetitorLimit);
   const [trialEndsAt, setTrialEndsAt] = useState<string | null>(initialTrialEndsAt ?? null);
+  const [canStartTrial, setCanStartTrial] = useState(initialCanStartTrial ?? false);
+  // Bumped after the opt-in trial starts, to reload the plan it unlocked.
+  const [planVersion, setPlanVersion] = useState(0);
   useEffect(() => {
     if (!activeWorkspaceId) return;
     let cancelled = false;
@@ -324,12 +328,13 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         setWorkspaceLimit(result.plan.workspace_limit);
         setCompetitorLimit(result.plan.competitor_limit);
         setTrialEndsAt(result.trialEndsAt);
+        setCanStartTrial(result.canStartTrial);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [activeWorkspaceId]);
+  }, [activeWorkspaceId, planVersion]);
 
   // Bounce away from a product area the current member's access doesn't cover
   // for the active workspace — mirrors the sections hidden in DashboardSidebar,
@@ -500,7 +505,15 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
           {!hideSearchAndBanner && (
             // empty:hidden drops the wrapper's margins when neither banner renders.
             <div className="mx-6 mt-6 mb-4 flex flex-col gap-3 empty:hidden">
-              {activeWorkspaceId && <PromoBanner workspaceId={activeWorkspaceId} />}
+              {activeWorkspaceId && (
+                <PromoBanner
+                  workspaceId={activeWorkspaceId}
+                  // The trial goes on the user's own plan, so it's only offered
+                  // in workspaces they own (a member sees the owner's plan).
+                  canStartTrial={canStartTrial && currentRole === "owner"}
+                  onTrialStarted={() => { setPlanVersion((v) => v + 1); router.refresh(); }}
+                />
+              )}
               <ReviewPromptBanner />
             </div>
           )}

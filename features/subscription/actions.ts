@@ -13,10 +13,20 @@ export type PendingCancellation = { currentPeriodEnd: string | null } | null;
 // otherwise. plan already reads as Pro during it (get_effective_plan).
 export type TrialEndsAt = string | null;
 
+// Whether the current user can still opt into the Pro trial: never had one,
+// no paid plan running (see 20261026000003_start_pro_trial.sql).
+export type CanStartTrial = boolean;
+
 export async function getWorkspacePlanState(
   workspaceId: string
 ): Promise<
-  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation; trialEndsAt: TrialEndsAt }
+  {
+    plan: Plan;
+    usage: WorkspaceUsage;
+    pendingCancellation: PendingCancellation;
+    trialEndsAt: TrialEndsAt;
+    canStartTrial: CanStartTrial;
+  }
   | { error: string }
 > {
   const supabase = await createClient();
@@ -24,7 +34,13 @@ export async function getWorkspacePlanState(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: plan, error: planError }, { data: usage, error: usageError }, { data: subscription }, { data: trialEndsAt }] =
+  const [
+    { data: plan, error: planError },
+    { data: usage, error: usageError },
+    { data: subscription },
+    { data: trialEndsAt },
+    { data: canStartTrial },
+  ] =
     await Promise.all([
       supabase.rpc("get_workspace_plan", { p_workspace_id: workspaceId }).single(),
       supabase.rpc("get_workspace_usage", { p_workspace_id: workspaceId }).single(),
@@ -36,6 +52,7 @@ export async function getWorkspacePlanState(
             .maybeSingle()
         : Promise.resolve({ data: null }),
       supabase.rpc("get_workspace_trial_end", { p_workspace_id: workspaceId }),
+      user ? supabase.rpc("can_start_pro_trial") : Promise.resolve({ data: false }),
     ]);
 
   if (planError || !plan) return { error: planError?.message ?? "Failed to load plan." };
@@ -48,7 +65,27 @@ export async function getWorkspacePlanState(
       ? { currentPeriodEnd: subscription.current_period_end }
       : null,
     trialEndsAt: (trialEndsAt as string | null) ?? null,
+    canStartTrial: canStartTrial === true,
   };
+}
+
+// Opt-in 7-day Pro trial for users who never had the signup one. No Stripe:
+// it's the same pro_trial_ends_at the signup trial uses.
+export async function startProTrialAction(): Promise<{ trialEndsAt: string } | { error: string }> {
+  if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { error: "You must be signed in to start a trial." };
+
+  const { data: trialEndsAt, error } = await supabase.rpc("start_pro_trial");
+  if (error) return { error: error.message };
+  if (!trialEndsAt) return { error: "Your account has already used its free Pro trial." };
+
+  after(() => recordUserEvent(user.id, "pro_trial_started"));
+  return { trialEndsAt: trialEndsAt as string };
 }
 
 // Downgrading to Free doesn't cancel immediately — it schedules the existing
