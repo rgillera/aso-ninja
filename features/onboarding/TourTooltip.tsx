@@ -107,8 +107,13 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
     if (clampedTop !== pos.top) setPos({ top: clampedTop, left: pos.left });
   }, [active, pos]);
 
+  // Only once the bubble is actually on screen: a step whose target hasn't
+  // mounted yet (e.g. "inspect" while the top row is still loading) renders
+  // nothing, and a click made while waiting for it shouldn't silently skip a
+  // step the user never saw.
+  const shown = active && !!pos;
   useEffect(() => {
-    if (!active) return;
+    if (!shown) return;
     function onMouseDown(e: MouseEvent) {
       const target = e.target as Node;
       // Clicking the bubble itself, the thing it's pointing at, or one of
@@ -122,7 +127,7 @@ export function TourTooltip({ targetRef, active, step, total, icon, message, but
     document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [shown]);
 
   if (!active || !pos) return null;
 
