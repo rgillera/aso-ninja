@@ -21,3 +21,19 @@ export const CompetitorLimitProvider = CompetitorLimitContext.Provider;
 export function useCompetitorLimit() {
   return useContext(CompetitorLimitContext);
 }
+
+// When the active workspace owner's signup Pro trial ends (ISO), while it's
+// still running; null otherwise. The plan slug above already reads "pro"
+// during it, so this is only for trial-specific copy and the countdown.
+const TrialEndsAtContext = createContext<string | null>(null);
+
+export const TrialEndsAtProvider = TrialEndsAtContext.Provider;
+
+export function useTrialEndsAt() {
+  return useContext(TrialEndsAtContext);
+}
+
+// Whole days left, rounded up, so the last day reads "1 day left".
+export function trialDaysLeft(trialEndsAt: string) {
+  return Math.max(1, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000));
+}

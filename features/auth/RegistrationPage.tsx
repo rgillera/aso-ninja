@@ -14,7 +14,10 @@ export default function RegistrationPage({ next }: RegistrationPageProps) {
       <AuthBackdrop />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="mt-6 text-2xl font-semibold text-gray-900">Create your account</h1>
+          <span className="mt-6 inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/10">
+            7 days of Pro free · No card needed
+          </span>
+          <h1 className="mt-4 text-2xl font-semibold text-gray-900">Create your account</h1>
           <p className="mt-2 text-sm text-gray-600">
             Already have an account?{" "}
             <a

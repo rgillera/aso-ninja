@@ -14,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { searchStoreApps } from "@/features/dashboard/searchAction";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { useTrialEndsAt, trialDaysLeft } from "@/features/dashboard/PlanContext";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { ADS_CONVERSIONS, trackAdsConversion } from "@/libs/google-ads";
 import type { AppSearchResult } from "@/libs/contracts";
@@ -105,6 +106,7 @@ function flattenSuggestions(data: AISuggestionsResult): string[] {
 // tooltip. Whether to show it at all is the Onboarding coordinator's call.
 export function OnboardingWizard({ workspaceId, onDone }: Props) {
   const [step, setStep] = useState<Step>("search");
+  const trialEndsAt = useTrialEndsAt();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<AppSearchResult[]>([]);
@@ -348,6 +350,11 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
 
         {step === "search" ? (
           <div className="p-6">
+            {trialEndsAt && (
+              <span className="mb-3 inline-flex items-center rounded-full bg-indigo-500/10 px-2.5 py-1 text-xs font-medium text-indigo-300 ring-1 ring-inset ring-indigo-400/20 light:bg-indigo-50 light:text-indigo-700 light:ring-indigo-600/10">
+                Pro unlocked · {trialDaysLeft(trialEndsAt)} days free
+              </span>
+            )}
             <h2 className="text-lg font-semibold text-white light:text-gray-900">Welcome to AppASO</h2>
             <p className="mt-1.5 text-sm text-gray-400 light:text-gray-600">
               Let&apos;s find the app you want to track. Search by name, bundle ID, or store URL.

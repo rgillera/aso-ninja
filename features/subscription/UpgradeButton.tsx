@@ -33,6 +33,8 @@ type Props = {
   billing: "monthly" | "yearly";
   initialScheduledFor?: string | null;
   trialDays?: number;
+  // Overrides the idle button text, e.g. "Keep Pro" during the signup trial.
+  label?: string;
 };
 
 function formatDate(iso: string) {
@@ -48,6 +50,7 @@ export function UpgradeButton({
   initialScheduledFor,
   trialDays,
   tone = "default",
+  label,
 }: Props) {
   const t = TONE[tone];
   const [isPending, startTransition] = useTransition();
@@ -62,7 +65,7 @@ export function UpgradeButton({
         disabled
         className={`mt-6 rounded-lg px-4 py-2.5 text-sm font-semibold cursor-default ${t.muted}`}
       >
-        Current plan
+        {label ?? "Current plan"}
       </button>
     );
   }
@@ -129,7 +132,9 @@ export function UpgradeButton({
           ? isCancelToFree
             ? "Canceling…"
             : "Redirecting…"
-          : isDowngrade
+          : label
+            ? label
+            : isDowngrade
             ? "Downgrade"
             : trialDays
               ? `Try free for ${trialDays} days`

@@ -34,6 +34,7 @@ import { FreeAuditSidebarLink } from "./FreeAuditSidebarLink";
 import CreateWorkspace from "@/features/workspace/CreateWorkspace";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
+import { useTrialEndsAt, trialDaysLeft } from "@/features/dashboard/PlanContext";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
 import { recordTourCompletedAction } from "@/features/activity/actions";
@@ -112,10 +113,12 @@ function SectionHeading({ label, rail }: { label: string; rail: boolean }) {
   );
 }
 
+const LONG_TAIL_HREF = "/dashboard/keywords/combination";
+
 const keywordLinks: { label: string; href: string; icon: typeof MagnifyingGlassIcon; minPlan?: PlanSlug; newBadge?: NewBadge }[] = [
   { label: "Keyword Research", href: "/dashboard/keywords/research", icon: MagnifyingGlassIcon },
-  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
-  { label: "Long Tail Keywords", href: "/dashboard/keywords/combination", icon: PuzzlePieceIcon, minPlan: "pro" },
+  { label: "Keyword Inspector", href: "/dashboard/keywords/inspector", icon: DocumentMagnifyingGlassIcon, minPlan: "pro", newBadge: { launchedOn: "2026-10-19", showUntil: "2026-11-18" } },
+  { label: "Long Tail Keywords", href: LONG_TAIL_HREF, icon: PuzzlePieceIcon, minPlan: "pro" },
   { label: "Keyword Performance", href: "/dashboard/keywords/performance", icon: ArrowTrendingUpIcon },
   { label: "Group by Intent", href: "/dashboard/keywords/intent", icon: TagIcon, minPlan: "pro" },
   { label: "Ranked Keywords", href: "/dashboard/keywords/ranked", icon: ListBulletIcon, minPlan: "pro_plus" },
@@ -181,7 +184,13 @@ export default function DashboardSidebar({
   isMobileOpen = false,
   onMobileClose,
 }: Props) {
-  const planBadge = PLAN_BADGE[planSlug];
+  // During the signup Pro trial the footer pill reads "Pro trial" instead of
+  // just "Pro", kept short so it fits beside "Manage Plan".
+  const trialEndsAt = useTrialEndsAt();
+  const trialDays = trialEndsAt ? trialDaysLeft(trialEndsAt) : null;
+  const planBadge = trialDays === null
+    ? PLAN_BADGE[planSlug]
+    : { label: "Pro trial", className: PLAN_BADGE.pro.className };
   const canManagePlan = role === "owner";
   const canCreateWorkspace = workspaceLimit == null || workspaces.length < workspaceLimit;
   const hasAsoIntelligence = access.includes("aso_intelligence");
@@ -225,6 +234,11 @@ export default function DashboardSidebar({
   const railHide = rail ? "lg:hidden" : "";
   const railLink = rail ? "lg:justify-center lg:px-0" : "";
   const navRef = useRef<HTMLElement>(null);
+  // The tour ends on Long Tail Keywords: it answers "what if I can't rank
+  // for this?", the question the Inspector step just raised, and it works on
+  // day one. Pro, so anyone without it (e.g. an invitee to a Free workspace)
+  // ends on Keyword Performance instead.
+  const tourLink = isPlanAtLeast(planSlug, "pro") ? LONG_TAIL_HREF : "/dashboard/keywords/performance";
 
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
@@ -393,9 +407,15 @@ export default function DashboardSidebar({
           total={TOUR_STEPS.length}
           icon={<MapIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
           message={
-            <>
-              That&apos;s the tour. Check <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> anytime to see how your keywords rank day by day, and export a full report.
-            </>
+            tourLink === LONG_TAIL_HREF ? (
+              <>
+                That&apos;s the tour. If a keyword is hard to rank for, open <span className="font-semibold text-white light:text-gray-900">Long Tail Keywords</span> to find easier variants of it. Then track and export their rankings in <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span>.
+              </>
+            ) : (
+              <>
+                That&apos;s the tour. Check <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> anytime to see how your keywords rank day by day, and export a full report.
+              </>
+            )
           }
           buttonLabel="Done"
           onAdvance={() => {
@@ -459,9 +479,9 @@ export default function DashboardSidebar({
                   currentPath.startsWith(link.href)
                     ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
                     : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
-                } ${tourActive && link.href === "/dashboard/keywords/performance" ? "ring-1 ring-indigo-400/70" : ""}`}
+                } ${tourActive && link.href === tourLink ? "ring-1 ring-indigo-400/70" : ""}`}
               >
-                {tourActive && link.href === "/dashboard/keywords/performance" && <TourPulse />}
+                {tourActive && link.href === tourLink && <TourPulse />}
                 <link.icon className="size-5 shrink-0" />
                 <span className={`flex-1 whitespace-nowrap ${railHide}`}>{link.label}</span>
                 {link.newBadge && !rail && (

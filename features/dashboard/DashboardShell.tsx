@@ -8,7 +8,7 @@ import { DashboardSearch } from "./DashboardSearch";
 import { PromoBanner } from "./PromoBanner";
 import { ReviewPromptBanner } from "@/features/review/ReviewPromptBanner";
 import { WorkspaceProvider, WorkspaceNameProvider } from "./WorkspaceContext";
-import { PlanProvider, CompetitorLimitProvider } from "./PlanContext";
+import { PlanProvider, CompetitorLimitProvider, TrialEndsAtProvider } from "./PlanContext";
 import { ThemeProvider, type Theme } from "./ThemeContext";
 import { ActiveAppProvider, ActiveAppResolvingProvider } from "./ActiveAppContext";
 import type { ActiveApp } from "./ActiveAppContext";
@@ -97,6 +97,7 @@ type Props = {
   initialPlanSlug?: PlanSlug;
   initialWorkspaceLimit?: number | null;
   initialCompetitorLimit?: number | null;
+  initialTrialEndsAt?: string | null;
   initialTheme: Theme;
   initialSidebarCollapsed: boolean;
   children: React.ReactNode;
@@ -104,7 +105,7 @@ type Props = {
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTheme, initialSidebarCollapsed, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTrialEndsAt, initialTheme, initialSidebarCollapsed, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -313,6 +314,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const [planSlug, setPlanSlug] = useState<PlanSlug>(initialPlanSlug ?? "free");
   const [workspaceLimit, setWorkspaceLimit] = useState<number | null>(initialWorkspaceLimit ?? 1);
   const [competitorLimit, setCompetitorLimit] = useState<number | null>(initialCompetitorLimit === undefined ? 1 : initialCompetitorLimit);
+  const [trialEndsAt, setTrialEndsAt] = useState<string | null>(initialTrialEndsAt ?? null);
   useEffect(() => {
     if (!activeWorkspaceId) return;
     let cancelled = false;
@@ -321,6 +323,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
         setPlanSlug(result.plan.slug);
         setWorkspaceLimit(result.plan.workspace_limit);
         setCompetitorLimit(result.plan.competitor_limit);
+        setTrialEndsAt(result.trialEndsAt);
       }
     });
     return () => {
@@ -457,6 +460,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     <WorkspaceNameProvider value={activeWorkspace?.name ?? ""}>
     <PlanProvider value={planSlug}>
     <CompetitorLimitProvider value={competitorLimit}>
+    <TrialEndsAtProvider value={trialEndsAt}>
     <ActiveAppProvider value={displayApp}>
     <ActiveAppResolvingProvider value={!appResolved && !displayApp}>
     <SelectAppProvider value={selectApp}>
@@ -533,6 +537,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
     </SelectAppProvider>
     </ActiveAppResolvingProvider>
     </ActiveAppProvider>
+    </TrialEndsAtProvider>
     </CompetitorLimitProvider>
     </PlanProvider>
     </WorkspaceNameProvider>

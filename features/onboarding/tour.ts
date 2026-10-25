@@ -24,15 +24,18 @@
 // has no Next button, because the click is the step: it carries `tip=tour`
 // to the Keyword Inspector, which picks the tour back up on its own state
 // for "inspectorSearches" (the stat cards) and "inspectorRank" (your app's
-// rank + beatable spots). That lookup counts toward a free user's daily
-// limit like any other. The Inspector is the payoff: how many people search
+// rank + beatable spots). The Inspector is Pro, which new accounts have
+// during the signup trial; if it's locked anyway (e.g. an invitee to a
+// Free workspace) it skips straight to "sidebar". The Inspector is the payoff: how many people search
 // the keyword and whether this app can rank for it, which is the question
 // a first-timer came with.
 //
-// "sidebar" is last and lights up the Keyword Performance link in
+// "sidebar" is last and lights up the Long Tail Keywords link in
 // DashboardSidebar (a sibling of the page, reached via SidebarTourContext)
-// with a Done button, not a forced click: on day one a new app has no rank
-// history yet, so Performance is mostly empty and a weak place to end.
+// with a Done button, not a forced click. It follows from the Inspector: if
+// the keyword looks hard to rank for, long-tail variants are the next move.
+// It used to point at Keyword Performance, which is mostly empty on day one
+// (no rank history yet); that's still the fallback when Long Tail is locked.
 // Whichever page is showing when the tour reaches it drives it: the
 // Inspector normally, or Keywords Research if "inspect" was dismissed.
 //

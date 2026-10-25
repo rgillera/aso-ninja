@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient, isImpersonating } from "@/libs/supabase/server";
-import { createAdminClient } from "@/libs/supabase/admin";
 import { trackServerEvent } from "@/libs/analytics/events";
-import type { InspectorUsage } from "@/features/aso/keywords/inspector/limits";
-import { inspectorLimitFor } from "@/features/aso/keywords/inspector/serverLimit";
+import { inspectorAllowedFor } from "@/features/aso/keywords/inspector/serverAccess";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
@@ -24,12 +22,10 @@ export type KeywordInspection = {
   // the shared search cache stores (name, icon, rating count) — no star
   // rating, developer or price — so the live search stays the primary source.
   topApps: AppSearchResult[];
-  // Today's allowance after this lookup, for the page's "lookups left" badge.
-  usage: InspectorUsage;
 };
 
-// Body of the 403 a capped user gets once today's lookups are used up.
-export type InspectorLimitReached = { error: string; code: "daily_limit"; usage: InspectorUsage };
+// Body of the 403 a below-Pro user gets.
+export type InspectorLocked = { error: string; code: "plan_required" };
 
 // GET /api/keywords/inspect?term=calorie+counter&store=ios&country=us&workspaceId=<uuid>
 // Keyword Inspector: popularity and difficulty for any keyword in any
@@ -39,10 +35,8 @@ export type InspectorLimitReached = { error: string; code: "daily_limit"; usage:
 // search results themselves come from the client's live search
 // (fetchLiveSearchResults), which has the richer per-app fields.
 //
-// Open to every signed-in user; below Pro it's capped per day (see
-// features/aso/keywords/inspector/limits.ts). Every request is one lookup,
-// including the same keyword again. It's used before the store is hit and
-// handed back if the inspection then fails.
+// Pro and above, signup Pro trial included (see
+// features/aso/keywords/inspector/limits.ts).
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const term        = (searchParams.get("term") ?? "").trim();
@@ -57,39 +51,13 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const limit = await inspectorLimitFor(supabase, user.id, workspaceId);
-  const impersonating = await isImpersonating();
-
-  // Capped plans use one of today's lookups first. Skipped while an admin
-  // views as this user, so checking their account doesn't spend their
-  // allowance. Service role: users can read their lookups but not write them.
-  let usage: InspectorUsage = { used: 0, limit };
-  let lookupId: number | null = null;
-  if (limit !== null && !impersonating) {
-    const admin = createAdminClient();
-    const { data, error } = await admin
-      .rpc("consume_keyword_inspector_lookup", {
-        p_user_id: user.id, p_term: term.toLowerCase(), p_store: store, p_country: country, p_limit: limit,
-      })
-      .single<{ allowed: boolean; lookup_id: number | null; used: number }>();
-    if (error || !data) {
-      return NextResponse.json({ error: "Couldn't check this keyword right now. Try again shortly." }, { status: 500 });
-    }
-    usage = { used: data.used, limit };
-    if (!data.allowed) {
-      return NextResponse.json({
-        error: `You've used your ${limit} free lookups for today. Upgrade to Pro for unlimited lookups.`,
-        code: "daily_limit",
-        usage,
-      } satisfies InspectorLimitReached, { status: 403 });
-    }
-    lookupId = data.lookup_id;
+  if (!(await inspectorAllowedFor(supabase, user.id, workspaceId))) {
+    return NextResponse.json({
+      error: "Keyword Inspector is a Pro feature. Upgrade to Pro to inspect any keyword.",
+      code: "plan_required",
+    } satisfies InspectorLocked, { status: 403 });
   }
-  const refund = async () => {
-    if (lookupId === null) return;
-    await createAdminClient().rpc("refund_keyword_inspector_lookup", { p_lookup_id: lookupId }).then(() => {}, () => {});
-    usage = { used: Math.max(0, usage.used - 1), limit };
-  };
+  const impersonating = await isImpersonating();
 
   // Logged up front, so a search the store then rate-limits still shows in
   // Recent (the user can retry it from there). Skipped while an admin views
@@ -114,12 +82,10 @@ export async function GET(request: NextRequest) {
   ]);
 
   if (core === "rate_limited") {
-    await refund();
-    return NextResponse.json({ error: "The App Store is busy right now. Try again in a minute.", usage }, { status: 429 });
+    return NextResponse.json({ error: "The App Store is busy right now. Try again in a minute." }, { status: 429 });
   }
   if (!core) {
-    await refund();
-    return NextResponse.json({ error: "Couldn't check this keyword right now. Try again shortly.", usage }, { status: 502 });
+    return NextResponse.json({ error: "Couldn't check this keyword right now. Try again shortly." }, { status: 502 });
   }
 
   if (!impersonating) after(() => trackServerEvent(user.id, "Keyword Inspected", { store, country }));
@@ -150,6 +116,5 @@ export async function GET(request: NextRequest) {
           price: a.free ? "Free" : typeof a.price === "number" ? `$${a.price.toFixed(2)}` : "",
           inAppPurchases: false, screenshotUrls: [],
         })),
-    usage,
   } satisfies KeywordInspection);
 }

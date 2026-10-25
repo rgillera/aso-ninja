@@ -8,6 +8,7 @@ import { PLANS, SELLABLE_PLANS, type PlanId } from "./plans";
 import { UpgradeButton, type CardTone } from "./UpgradeButton";
 import type { WorkspaceUsage } from "@/libs/contracts";
 import { freeAuditLink } from "./freeAudit";
+import { trialDaysLeft } from "@/features/dashboard/PlanContext";
 
 // Free audit offer below the self-serve plans.
 function FreeAuditCard() {
@@ -64,6 +65,7 @@ type Props = {
   workspaceId: string;
   usage?: WorkspaceUsage;
   pendingCancellation?: { currentPeriodEnd: string | null } | null;
+  trialEndsAt?: string | null;
 };
 
 type Billing = "monthly" | "yearly";
@@ -130,13 +132,13 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function UsageBar({ label, used, limit, frozen, onColor }: { label: string; used: number; limit: number | null; frozen?: number; onColor?: boolean }) {
+function UsageBar({ label, used, limit, frozen, onColor, hint }: { label: string; used: number; limit: number | null; frozen?: number; onColor?: boolean; hint?: string }) {
   const pct = limit === null ? 0 : Math.min(100, (used / Math.max(limit, 1)) * 100);
   return (
     <div>
-      <div className={`flex items-center justify-between text-xs ${onColor ? "text-indigo-100" : "text-gray-400 light:text-gray-600"}`}>
-        <span>{label}</span>
-        <span>
+      <div className={`flex items-center justify-between gap-3 text-xs ${onColor ? "text-indigo-100" : "text-gray-400 light:text-gray-600"}`}>
+        <span className="truncate">{label}</span>
+        <span className="shrink-0 whitespace-nowrap tabular-nums">
           {limit === null ? used.toLocaleString() : `${used.toLocaleString()} / ${limit.toLocaleString()}`}
           {!!frozen && <span className="ml-1.5 text-amber-500 light:text-amber-700">({frozen.toLocaleString()} paused)</span>}
         </span>
@@ -149,6 +151,7 @@ function UsageBar({ label, used, limit, frozen, onColor }: { label: string; used
           />
         )}
       </div>
+      {hint && <p className={`mt-1.5 text-[11px] ${onColor ? "text-indigo-200/80" : "text-gray-500"}`}>{hint}</p>}
     </div>
   );
 }
@@ -162,6 +165,7 @@ export default function SubscriptionPage({
   workspaceId,
   usage,
   pendingCancellation,
+  trialEndsAt,
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
@@ -193,7 +197,15 @@ export default function SubscriptionPage({
           </Link>
           <h1 className="mt-4 text-2xl font-semibold text-white light:text-gray-900">Subscription</h1>
           <p className="mt-1 text-sm text-gray-400 light:text-gray-600">
-            You&apos;re currently on the <span className="text-gray-200 light:text-gray-800 font-medium">{currentPlan?.name}</span>.
+            {trialEndsAt ? (
+              <>
+                You&apos;re on a free <span className="text-gray-200 light:text-gray-800 font-medium">Pro trial</span> with <span className="text-gray-200 light:text-gray-800 font-medium">{trialDaysLeft(trialEndsAt)} {trialDaysLeft(trialEndsAt) === 1 ? "day" : "days"} left</span>, until {formatDate(trialEndsAt)}. Upgrade to keep Pro, or you&apos;ll move to the Free Plan.
+              </>
+            ) : (
+              <>
+                You&apos;re currently on the <span className="text-gray-200 light:text-gray-800 font-medium">{currentPlan?.name}</span>.
+              </>
+            )}
           </p>
         </div>
 
@@ -241,6 +253,11 @@ export default function SubscriptionPage({
         <div className={`grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 ${sellablePlans.length > 4 ? "xl:grid-cols-5" : ""}`} style={{ paddingTop: "1rem" }}>
           {sellablePlans.map((plan) => {
             const isCurrent = plan.id === currentPlanId;
+            // During the signup trial billing still says Free, but the user is
+            // using Pro, so Pro's card carries the trial pill and usage while
+            // Free's card shows what they'll drop to.
+            const isTrialPlan = !!trialEndsAt && plan.id === "pro";
+            const showsUsage = trialEndsAt ? isTrialPlan : isCurrent;
             const isPopular = plan.id === "pro";
             const isDowngrade = PLANS.indexOf(plan) < currentPlanIndex;
             const isFree = plan.priceMonthlyCents === 0;
@@ -257,7 +274,7 @@ export default function SubscriptionPage({
               <div
                 key={plan.id}
                 className={`relative flex flex-col rounded-2xl p-6 ${c.card} ${
-                  isCurrent && tone === "default" ? "!ring-indigo-500/60" : ""
+                  isCurrent && !trialEndsAt && tone === "default" ? "!ring-indigo-500/60" : ""
                 }`}
               >
                 {isPopular && (
@@ -271,7 +288,11 @@ export default function SubscriptionPage({
 
                 <div className="flex items-center justify-between gap-2">
                   <h2 className={`text-base font-semibold ${c.title}`}>{plan.name.replace(/ Plan$/, "")}</h2>
-                  {plan.badge && (
+                  {isTrialPlan ? (
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
+                      Pro trial · {trialDaysLeft(trialEndsAt)}d left
+                    </span>
+                  ) : plan.badge && (
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
                       {plan.badge}
                     </span>
@@ -303,13 +324,13 @@ export default function SubscriptionPage({
                   ))}
                 </ul>
 
-                {isCurrent && usage && (
+                {showsUsage && usage && (
                   <div className={`mt-5 space-y-3 border-t pt-5 ${c.divider}`}>
                     {/* Unlimited keyword/app counts have nothing to fill a bar against, so only capped plans show them. */}
                     {usage.keyword_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
                     )}
-                    <UsageBar onColor={tone !== "default"} label="Keywords scored" used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
+                    <UsageBar onColor={tone !== "default"} label="Keywords scored" hint={isTrialPlan ? "Goes up to 1,000 when you upgrade" : undefined} used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}
@@ -339,6 +360,7 @@ export default function SubscriptionPage({
                   billing={billing}
                   trialDays={plan.trialDays}
                   tone={tone}
+                  label={trialEndsAt ? (isTrialPlan ? "Keep Pro" : isCurrent ? "After your trial" : undefined) : undefined}
                   initialScheduledFor={
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }

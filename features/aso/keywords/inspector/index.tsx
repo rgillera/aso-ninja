@@ -13,7 +13,6 @@ import {
   XMarkIcon,
   PlusIcon,
   CheckIcon,
-  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -28,10 +27,11 @@ import { Toggle } from "@/features/aso/keywords/research/ui";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { CountryPicker } from "./CountryPicker";
-import type { InspectorUsage } from "./limits";
+import { canUseInspector } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
-import type { KeywordInspection, InspectorLimitReached } from "@/app/api/keywords/inspect/route";
+import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
 import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
 import type { AppEstimate } from "@/libs/contracts";
 import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
@@ -299,47 +299,51 @@ function ResultRow({
   );
 }
 
-// "2 of 3 free lookups left today" under the form, for capped plans only.
-function UsageBadge({ usage }: { usage: InspectorUsage }) {
-  if (usage.limit === null) return null;
-  const left = Math.max(0, usage.limit - usage.used);
+// Below Pro: the lock card over a blurred, made-up result, so it's clear
+// what the page does before upgrading. The numbers are decoration only.
+function InspectorLockedPreview() {
   return (
-    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
-      <span className={left === 0 ? "text-amber-400 light:text-amber-700" : ""}>
-        {left === 0
-          ? "No free lookups left today"
-          : `${left} of ${usage.limit} free ${usage.limit === 1 ? "lookup" : "lookups"} left today`}
-      </span>
-      <span aria-hidden="true">·</span>
-      <Link href="/dashboard/subscription" className="font-medium text-violet-400 light:text-violet-700 hover:underline">
-        Upgrade to Pro for unlimited
-      </Link>
-    </p>
-  );
-}
-
-// Shown in place of the results once today's free lookups are used up.
-function DailyLimitCard({ term, limit }: { term: string; limit: number | null }) {
-  return (
-    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm flex flex-col items-center py-12 px-6 text-center">
-      <div className="relative flex size-14 items-center justify-center rounded-2xl bg-violet-500/10">
-        <DocumentMagnifyingGlassIcon className="size-7 text-violet-400 light:text-violet-700" />
-        <span className="absolute -bottom-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full bg-[#141417] light:bg-white">
-          <LockClosedIcon className="size-3 text-violet-400 light:text-violet-700" />
-        </span>
+    <div className="relative flex-1 overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none select-none px-4 sm:px-6 py-6 space-y-6 blur-[6px] opacity-60">
+        <div className="h-[60px] rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07]" />
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCard label="Volume" hint="">
+            <span className="text-2xl font-semibold text-white light:text-gray-900">58</span>
+            <ScoreBar value={58} className="bg-indigo-500/70" />
+          </StatCard>
+          <StatCard label="Difficulty" hint="">
+            <span className="text-2xl font-semibold text-white light:text-gray-900">34</span>
+            <ScoreBar value={34} className="bg-emerald-500/70" />
+          </StatCard>
+          <StatCard label="Est. daily searches" hint="">
+            <span className="text-2xl font-semibold text-white light:text-gray-900">~3.1K</span>
+          </StatCard>
+          <StatCard label="Results" hint="">
+            <span className="text-2xl font-semibold text-white light:text-gray-900">186</span>
+          </StatCard>
+        </div>
+        <div className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] p-3">
+              <div className="size-10 rounded-xl bg-white/[0.08] light:bg-black/[0.06]" />
+              <div className="h-3 w-40 rounded bg-white/[0.08] light:bg-black/[0.08]" />
+            </div>
+          ))}
+        </div>
       </div>
-      <p className="mt-4 text-base font-semibold text-white light:text-gray-900">
-        Upgrade to see &ldquo;{term}&rdquo;
-      </p>
-      <p className="mt-1 max-w-sm text-sm text-gray-500">
-        You&apos;ve used your {limit ?? ""} free lookups for today. Pro gets unlimited lookups in every country, or come back tomorrow for {limit === 1 ? "another" : `${limit} more`}.
-      </p>
-      <Link
-        href="/dashboard/subscription"
-        className="mt-5 rounded-xl bg-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-400 light:text-violet-700 hover:bg-violet-500/20 transition-colors"
-      >
-        Upgrade to Pro
-      </Link>
+      <div className="absolute inset-x-0 top-0">
+        <FeatureLocked
+          minPlan="pro"
+          icon={DocumentMagnifyingGlassIcon}
+          title="Keyword Inspector is a Pro feature"
+          description="Upgrade to Pro to check any keyword before you commit to it."
+          benefits={[
+            "Volume, difficulty and daily searches for any keyword, in any country",
+            "The apps ranking for it right now, and the weakest spots to take",
+            "Where your app ranks for it today",
+          ]}
+        />
+      </div>
     </div>
   );
 }
@@ -394,12 +398,7 @@ function TrackKeywordButton({
 export default function KeywordInspectorPage() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const planSlug = usePlanSlug();
-
-  // Today's allowance (null until loaded). Capped below Pro, see ./limits.
-  const [usage, setUsage] = useState<InspectorUsage | null>(null);
-  // The shown query hit the daily limit: the upgrade card replaces results.
-  const [limitReached, setLimitReached] = useState(false);
+  const locked = !canUseInspector(usePlanSlug());
 
   // The onboarding coach mark's Inspector steps (TOUR_STEPS in
   // @/features/onboarding/tour). Keywords Research's "inspect" step links
@@ -506,9 +505,14 @@ export default function KeywordInspectorPage() {
     setCountry(nextCountry);
     if (linkTerm) {
       const tour = url.get("tip") === "tour";
-      setTerm(linkTerm);
-      if (tour) setTourStep("inspectorSearches");
-      inspect({ term: linkTerm, store: nextStore, country: nextCountry });
+      // Locked: nothing to inspect, so the tour skips to its last step.
+      if (locked) {
+        if (tour) setTourStep("sidebar");
+      } else {
+        setTerm(linkTerm);
+        if (tour) setTourStep("inspectorSearches");
+        inspect({ term: linkTerm, store: nextStore, country: nextCountry });
+      }
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // Drop the params so a refresh doesn't re-run it over a newer search.
@@ -532,16 +536,6 @@ export default function KeywordInspectorPage() {
 
   useEffect(loadRecent, []);
 
-  // Reloaded on a workspace or plan change, since the limit follows the plan.
-  useEffect(() => {
-    let cancelled = false;
-    fetch(`/api/keywords/inspect/usage?${new URLSearchParams({ workspaceId: workspaceId ?? "" })}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: InspectorUsage | null) => { if (data && !cancelled) setUsage(data); })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [workspaceId, planSlug]);
-
   function rememberPrefs(next: { store: Store; country: string }) {
     writeJson(PREFS_KEY, next);
   }
@@ -553,7 +547,6 @@ export default function KeywordInspectorPage() {
     const id = ++requestId.current;
 
     setQuery(current);
-    setLimitReached(false);
     setTrackError(null);
     setMetrics(null);
     setMetricsError(null);
@@ -576,11 +569,8 @@ export default function KeywordInspectorPage() {
       try {
         const res = await fetch(`/api/keywords/inspect?${params}`);
         const data = await res.json();
-        if (data?.usage) setUsage(data.usage as InspectorUsage);
         if (!res.ok) {
-          if (id !== requestId.current) return null;
-          if ((data as InspectorLimitReached).code === "daily_limit") setLimitReached(true);
-          else setMetricsError(data.error ?? "Couldn't check this keyword right now.");
+          if (id === requestId.current) setMetricsError(data.error ?? "Couldn't check this keyword right now.");
           return null;
         }
         if (id === requestId.current) setMetrics(data as KeywordInspection);
@@ -796,11 +786,11 @@ export default function KeywordInspectorPage() {
   const pop = metrics ? popularityLabel(metrics.popularity) : null;
   const diff = metrics ? difficultyLabel(metrics.difficulty) : null;
 
-  // A tour step whose section isn't going to show (lookup failed, or the
-  // daily limit card took over) moves on instead of waiting forever.
+  // A tour step whose section isn't going to show (lookup failed) moves on
+  // instead of waiting forever.
   const tourTargetMissing = !!query && (
-    (tourStep === "inspectorSearches" && !metricsLoading && (!metrics || limitReached)) ||
-    (tourStep === "inspectorRank" && !appsLoading && (!apps?.length || limitReached))
+    (tourStep === "inspectorSearches" && !metricsLoading && !metrics) ||
+    (tourStep === "inspectorRank" && !appsLoading && !apps?.length)
   );
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -821,6 +811,15 @@ export default function KeywordInspectorPage() {
           : <>Every app in the top {WEAK_SPOT_RANGE} is well established, so a keyword with lower Difficulty may be a better first target.</>}
     </>
   );
+
+  if (locked) {
+    return (
+      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
+        {header}
+        <InspectorLockedPreview />
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
@@ -879,8 +878,6 @@ export default function KeywordInspectorPage() {
               </button>
             </div>
 
-            {usage && <UsageBadge usage={usage} />}
-
             {recent.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-xs text-gray-600 light:text-gray-400 mr-1">Recent</span>
@@ -928,9 +925,7 @@ export default function KeywordInspectorPage() {
             </div>
           )}
 
-          {query && limitReached && <DailyLimitCard term={query.term} limit={usage?.limit ?? null} />}
-
-          {query && !limitReached && (
+          {query && (
             <>
               {/* ── Scores ── */}
               <section>

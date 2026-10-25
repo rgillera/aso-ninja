@@ -41,12 +41,16 @@ export default async function Page({ searchParams }: PageProps) {
   if (membership?.role !== "owner") redirect("/dashboard");
 
   const state = await getWorkspacePlanState(activeWorkspaceId);
+  const trialEndsAt = "error" in state ? null : state.trialEndsAt;
 
   return (
     <>
       <SubscriptionPageViewTracker />
       <SubscriptionPage
-        currentPlanId={"error" in state ? "free" : state.plan.slug}
+        // The trial reads as Pro everywhere else, but billing-wise they're
+        // still on Free, so Pro's card has to offer the upgrade.
+        currentPlanId={"error" in state || trialEndsAt ? "free" : state.plan.slug}
+        trialEndsAt={trialEndsAt}
         workspaceId={activeWorkspaceId}
         usage={"error" in state ? undefined : state.usage}
         pendingCancellation={"error" in state ? null : state.pendingCancellation}

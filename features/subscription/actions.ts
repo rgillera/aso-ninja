@@ -9,10 +9,14 @@ import type { Plan, WorkspaceUsage, PlanSlug } from "@/libs/contracts";
 
 export type PendingCancellation = { currentPeriodEnd: string | null } | null;
 
+// When the owner's signup Pro trial ends, while it's still running; null
+// otherwise. plan already reads as Pro during it (get_effective_plan).
+export type TrialEndsAt = string | null;
+
 export async function getWorkspacePlanState(
   workspaceId: string
 ): Promise<
-  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation }
+  { plan: Plan; usage: WorkspaceUsage; pendingCancellation: PendingCancellation; trialEndsAt: TrialEndsAt }
   | { error: string }
 > {
   const supabase = await createClient();
@@ -20,7 +24,7 @@ export async function getWorkspacePlanState(
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: plan, error: planError }, { data: usage, error: usageError }, { data: subscription }] =
+  const [{ data: plan, error: planError }, { data: usage, error: usageError }, { data: subscription }, { data: trialEndsAt }] =
     await Promise.all([
       supabase.rpc("get_workspace_plan", { p_workspace_id: workspaceId }).single(),
       supabase.rpc("get_workspace_usage", { p_workspace_id: workspaceId }).single(),
@@ -31,6 +35,7 @@ export async function getWorkspacePlanState(
             .eq("user_id", user.id)
             .maybeSingle()
         : Promise.resolve({ data: null }),
+      supabase.rpc("get_workspace_trial_end", { p_workspace_id: workspaceId }),
     ]);
 
   if (planError || !plan) return { error: planError?.message ?? "Failed to load plan." };
@@ -42,6 +47,7 @@ export async function getWorkspacePlanState(
     pendingCancellation: subscription?.cancel_at_period_end
       ? { currentPeriodEnd: subscription.current_period_end }
       : null,
+    trialEndsAt: (trialEndsAt as string | null) ?? null,
   };
 }
 

@@ -1,6 +1,8 @@
 "use server";
 
 import { createRealUserClient, isImpersonating } from "@/libs/supabase/server";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import type { PlanSlug } from "@/libs/contracts";
 
 const MIN_TRACKED_KEYWORDS = 10;
 const SNOOZE_DAYS = 30;
@@ -31,6 +33,11 @@ export async function getReviewPromptStateAction(): Promise<ReviewPromptState> {
   ) {
     return { eligible: false };
   }
+
+  // Only users who've seen the full product: Pro and up, signup trial
+  // included (get_effective_plan reads as Pro during it). Not Free.
+  const { data: plan } = await supabase.rpc("get_effective_plan", { p_user_id: user.id }).single<{ slug: PlanSlug }>();
+  if (!plan || !isPlanAtLeast(plan.slug, "pro")) return { eligible: false };
 
   // RLS scopes this to apps in every workspace the user belongs to.
   const { count } = await supabase.from("app_keywords").select("id", { count: "exact", head: true });
