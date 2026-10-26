@@ -429,7 +429,14 @@ export function KeywordTable({
     });
   }
 
+  // Sorting a Pro-locked column would still reveal its values through the
+  // row order, so those headers aren't sortable below Pro.
+  function isSortLocked(key: string) {
+    return downloadsLocked && (key === "potentialImpressions" || key === "estimatedDownloads");
+  }
+
   function handleSort(key: string) {
+    if (isSortLocked(key)) return;
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
@@ -986,17 +993,18 @@ export function KeywordTable({
                 >
                   <div className="flex items-center gap-1.5">
                     <button
+                      disabled={isSortLocked(col.key)}
                       onClick={() => {
                         handleSort(col.key);
                         // Sorting by Opportunity is that step's instruction
                         // itself — treat it as "got it" and advance the tour.
                         if (col.key === "opportunity" && tourStep === "opportunity") onAdvanceTour();
                       }}
-                      className={`relative flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
+                      className={`relative flex items-center gap-1 transition-colors ${isSortLocked(col.key) ? "cursor-default" : "hover:text-gray-400 light:hover:text-gray-600"} ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
                     >
                       {col.key === "opportunity" && tourStep === "opportunity" && <TourPulse />}
                       {col.tableLabel ?? col.label}
-                      <SortIcon colKey={col.key} />
+                      {!isSortLocked(col.key) && <SortIcon colKey={col.key} />}
                     </button>
                     <ColumnTooltip text={col.tooltip} />
                   </div>
