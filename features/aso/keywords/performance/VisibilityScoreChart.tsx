@@ -110,7 +110,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
           />
           <Tooltip
             labelFormatter={(d) => formatDate(String(d))}
-            formatter={(value) => [value, "Visibility score"]}
+            formatter={(value, name) => [value, name]}
             contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
