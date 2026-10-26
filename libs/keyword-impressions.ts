@@ -23,12 +23,12 @@ export function estimateDailySearches(volume: number): number {
 // rough fit and Apple's score is noisy, so a single "~63/day" reads as more
 // precise than it is. The range is half to double the estimate. Below 5/day
 // (volume at or near Apple's floor of 5) a range means nothing, so it's just
-// "under 5".
+// "<5".
 const ESTIMATE_FLOOR = 5;
 const RANGE_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumSignificantDigits: 2 });
 
 export function formatEstimateRange(estimate: number): string {
-  if (estimate < ESTIMATE_FLOOR) return `under ${ESTIMATE_FLOOR}`;
+  if (estimate < ESTIMATE_FLOOR) return `<${ESTIMATE_FLOOR}`;
   return `${RANGE_FORMATTER.format(estimate / 2)}-${RANGE_FORMATTER.format(estimate * 2)}`;
 }
 
