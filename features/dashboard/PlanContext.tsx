@@ -33,7 +33,12 @@ export function useTrialEndsAt() {
   return useContext(TrialEndsAtContext);
 }
 
-// Whole days left, rounded up, so the last day reads "1 day left".
+const TRIAL_DAYS = 7;
+
+// Whole days left, rounded up, so the last day reads "1 day left". Capped at
+// the trial length: the end is now() + 7 days on the DB clock, so a browser
+// clock even a second behind would otherwise round a fresh trial up to 8.
 export function trialDaysLeft(trialEndsAt: string) {
-  return Math.max(1, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000));
+  const days = Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / 86_400_000);
+  return Math.min(TRIAL_DAYS, Math.max(1, days));
 }
