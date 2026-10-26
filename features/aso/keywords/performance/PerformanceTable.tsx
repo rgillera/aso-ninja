@@ -27,7 +27,7 @@ import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompe
 import type { DownloadsConnection } from "@/features/aso/keywords/research/types";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { CompetitorsBar } from "./CompetitorsBar";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
@@ -40,7 +40,6 @@ type Props = {
   appIcon: string;
   activeApp: ActiveApp;
   competitors: CompetitorApp[];
-  onCompetitorsChange: (competitors: CompetitorApp[]) => void;
   filters: Filters;
   onFiltersChange: (patch: Partial<Filters>) => void;
   snapshots: Record<string, TermSnapshot>;
@@ -195,7 +194,7 @@ function DownloadsCell({ value, connected, pending, locked, bundleHasCredential,
 }
 
 export function PerformanceTable({
-  keywords, filtered, appName, appIcon, activeApp, competitors, onCompetitorsChange,
+  keywords, filtered, appName, appIcon, activeApp, competitors,
   filters, onFiltersChange, snapshots, snapshotsLoading, adding = false,
   onAddKeywords, onToggleStar, onStarSelected, onRemoveKeyword, onRemoveSelected,
   onLiveSearch, onViewVolumeHistory, onViewRankHistory, onViewDownloadsHistory, downloadsConnection,
@@ -338,6 +337,7 @@ export function PerformanceTable({
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Keyword Performance" count={keywords.length} />
       {keywords.length > 0 && (
         <div className="grid grid-cols-2 divide-x divide-white/[0.07] light:divide-black/[0.08] border-b border-white/[0.07] light:border-black/[0.08]">
           <div className="px-5 py-3.5">
@@ -357,12 +357,6 @@ export function PerformanceTable({
         onExportReport={onExportReport}
         exportingReport={exportingReport}
         monthCoverage={monthCoverage}
-      />
-
-      <CompetitorsBar
-        activeApp={activeApp}
-        competitors={competitors}
-        onCompetitorsChange={onCompetitorsChange}
       />
 
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08]">

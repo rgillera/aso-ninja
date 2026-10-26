@@ -8,6 +8,7 @@ import {
   InformationCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  PencilSquareIcon,
   CheckIcon,
   PlusIcon,
   StarIcon,
@@ -141,7 +142,7 @@ const REPORT_ROWS = PERFORMANCE.map((row) => ({
   downloads: row.downloads,
 }));
 
-// Visibility Score over the last 12 weeks (0 to 100), you vs the competitor.
+// Visibility Score over the last 30 days (0 to 100), you vs the competitor.
 const VISIBILITY = {
   you: [41, 43, 42, 46, 48, 51, 50, 55, 58, 60, 63, 67],
   them: [57, 58, 56, 58, 59, 58, 60, 59, 60, 61, 60, 62],
@@ -169,7 +170,7 @@ type Step =
   | "toInspect" | "pressInspect" | "inspector"
   | "back" | "pressLongTail" | "longTailLoading" | "longTail" | "toAddChild" | "pressAddChild" | "childAdded"
   | "toPerfNav" | "pressPerfNav" | "performance" | "toExport" | "pressExport" | "exporting" | "exported" | "sheet"
-  | "toChartTab" | "pressChartTab" | "chart"
+  | "chart"
   | "reset";
 
 const TYPE_MS = 85;
@@ -211,9 +212,9 @@ const TIMELINE: [Step, number][] = [
   ["exported", 900],
   // The downloaded report opens, so the viewer sees what they'd send a client.
   ["sheet", 3200],
-  ["toChartTab", 600],
-  ["pressChartTab", 220],
-  ["chart", 2600],
+  // Back on the page, the cursor moves up to the Visibility Score chart,
+  // which shares the page with the table (no tab to switch to).
+  ["chart", 2400],
   ["reset", 800],
 ];
 
@@ -421,7 +422,6 @@ export function DashboardHeroDemo() {
   const childAddRef = useRef<HTMLSpanElement>(null);
   const perfNavRef = useRef<HTMLDivElement>(null);
   const perfChangeRef = useRef<HTMLSpanElement>(null);
-  const chartTabRef = useRef<HTMLSpanElement>(null);
   const chartEndRef = useRef<HTMLSpanElement>(null);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
@@ -538,7 +538,6 @@ export function DashboardHeroDemo() {
       step === "performance" ? perfChangeRef.current :
       step === "toExport" || step === "pressExport" || step === "exporting" || step === "exported" ? exportRef.current :
       step === "sheet" ? sheetCellRef.current :
-      step === "toChartTab" || step === "pressChartTab" ? chartTabRef.current :
       step === "chart" ? chartEndRef.current :
       null;
     if (!target) {
@@ -570,13 +569,12 @@ export function DashboardHeroDemo() {
   const inspectorOpen = step === "inspector";
   const longTailOpen = stepAtLeast(step, "longTailLoading") && !stepAtLeast(step, "performance");
   const perfOpen = stepAtLeast(step, "performance") && step !== "reset";
-  // Held through "reset" so the panel fades out on the chart, not the table.
-  const chartTab = step === "chart" || step === "reset";
+  const chartFocused = step === "chart";
   const longTailLoading = step === "longTailLoading";
   const childAdded = step === "childAdded";
   const pressed =
     step === "pressAdd" || step === "pressSort" || step === "pressInspect" || step === "pressLongTail" || step === "pressAddChild" ||
-    step === "pressPerfNav" || step === "pressExport" || step === "pressChartTab";
+    step === "pressPerfNav" || step === "pressExport";
   const exporting = step === "exporting";
   const exportToast = step === "exported" || step === "sheet";
   const sheetOpen = step === "sheet";
@@ -1212,9 +1210,9 @@ export function DashboardHeroDemo() {
           </div>
 
           {/* Keyword Performance — a trimmed copy of features/aso/keywords/
-              performance, opened from the sidebar. Starts on its table tab
-              (rank and weekly change for you and a competitor), then the
-              cursor switches to the Visibility Score chart. */}
+              performance, opened from the sidebar: competitor chips, the
+              Visibility Score chart and the keyword table on one page. The
+              cursor works the table (export) first, then the chart. */}
           <div
             aria-hidden={!perfOpen}
             className={`absolute inset-0 z-20 overflow-hidden bg-[#f7f7f8] transition-all duration-500 ${
@@ -1245,174 +1243,176 @@ export function DashboardHeroDemo() {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 px-5 pt-3">
-              <span
-                ref={chartTabRef}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
-                  chartTab ? "bg-indigo-50 text-indigo-700" : step === "pressChartTab" ? "scale-95 bg-black/[0.04] text-gray-700" : "text-gray-500"
-                }`}
-              >
-                Visibility Score
+            {/* Competitor chips, like CompetitorsStrip: dots match the chart lines */}
+            <div className="mx-5 mt-3 flex items-center gap-2">
+              <span className="mr-1 text-xs text-gray-500">Comparing</span>
+              <span className="flex items-center gap-1.5 rounded-lg bg-white py-1 pl-1 pr-2.5 text-xs font-medium text-gray-700 ring-1 ring-black/[0.08]">
+                <span className="size-5 rounded-md bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600" />
+                Instagram
+                <span className="size-2 rounded-full bg-indigo-500" />
               </span>
-              <span className={`rounded-lg px-3 py-1.5 text-xs font-medium ${chartTab ? "text-gray-500" : "bg-indigo-50 text-indigo-700"}`}>
-                Keyword Performance
+              <span className="flex items-center gap-1.5 rounded-lg bg-white py-1 pl-1 pr-2.5 text-xs font-medium text-gray-700 ring-1 ring-black/[0.08]">
+                <span className="size-5 rounded-md bg-gradient-to-br from-sky-400 to-indigo-500" />
+                Snapgram
+                <span className="size-2 rounded-full bg-teal-400" />
+              </span>
+              <span className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-2.5 py-1.5 text-xs font-medium text-gray-600">
+                <PencilSquareIcon className="size-3.5" />
+                Edit competitors
               </span>
             </div>
 
-            {chartTab ? (
-              <div className="mx-5 mt-4 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08]">
-                <div className="flex items-center justify-between border-b border-black/[0.08] px-4 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">Visibility Score</p>
-                    <p className="mt-0.5 text-xs text-gray-500">Last 12 weeks</p>
-                  </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-600">
-                    <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-indigo-500" />Instagram</span>
-                    <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-gray-300" />Snapgram</span>
-                  </div>
+            <div
+              className={`mx-5 mt-3 overflow-hidden rounded-xl bg-white shadow-sm transition-shadow duration-300 ${
+                chartFocused ? "ring-2 ring-indigo-400/60" : "ring-1 ring-black/[0.08]"
+              }`}
+            >
+              <div className="flex items-center justify-between border-b border-black/[0.08] px-4 py-2.5">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-sm font-semibold text-gray-900">Visibility Score</p>
+                  <InformationCircleIcon className="size-3.5 text-gray-400" />
                 </div>
-                <div className="flex items-end gap-6 px-4 pt-4">
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500">Your visibility</p>
-                    <p className="text-2xl font-semibold tabular-nums text-gray-900">
-                      {VISIBILITY.you[VISIBILITY.you.length - 1]}
-                      <span className="ml-2 text-sm font-medium text-emerald-700">↑{VISIBILITY.you[VISIBILITY.you.length - 1] - VISIBILITY.you[0]}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-medium text-gray-500">Snapgram</p>
-                    <p className="text-2xl font-semibold tabular-nums text-gray-400">{VISIBILITY.them[VISIBILITY.them.length - 1]}</p>
-                  </div>
-                </div>
-                <div className="relative px-4 pt-2 pb-4">
-                  <svg viewBox="0 0 600 180" className="h-56 w-full animate-[hero-wipe_1400ms_ease-out_both]" preserveAspectRatio="none">
-                    {[0, 45, 90, 135, 180].map((y) => (
-                      <line key={y} x1="0" x2="600" y1={y} y2={y} stroke="rgba(0,0,0,0.06)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-                    ))}
-                    <path
-                      d={chartPath(VISIBILITY.them, 600, 180)}
-                      fill="none"
-                      stroke="#d1d5db"
-                      strokeWidth="2"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                    <path
-                      d={`${chartPath(VISIBILITY.you, 600, 180)} L600,180 L0,180 Z`}
-                      fill="rgba(99,102,241,0.08)"
-                    />
-                    <path
-                      d={chartPath(VISIBILITY.you, 600, 180)}
-                      fill="none"
-                      stroke="#6366f1"
-                      strokeWidth="2.5"
-                      strokeLinejoin="round"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  </svg>
-                  {/* End-of-line marker the cursor points at */}
-                  <span
-                    ref={chartEndRef}
-                    className="absolute right-4 size-2.5 -translate-y-1/2 translate-x-1/2 rounded-full bg-indigo-500 ring-4 ring-indigo-500/20 animate-[hero-fade-in_400ms_ease-out_1200ms_both]"
-                    style={{ top: `calc(0.5rem + ${(1 - VISIBILITY.you[VISIBILITY.you.length - 1] / 100) * 14}rem)` }}
-                  />
-                  <div className="mt-2 flex justify-between text-[10px] text-gray-400">
-                    <span>12 weeks ago</span>
-                    <span>Today</span>
-                  </div>
-                </div>
+                <ChevronUpIcon className="size-4 text-gray-500" />
               </div>
-            ) : (
-              <div className="mx-5 mt-4 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08]">
-                <div className="grid grid-cols-2 divide-x divide-black/[0.08] border-b border-black/[0.08]">
-                  <div className="px-5 py-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Avg Ranking</p>
-                    <p className="mt-0.5 text-lg font-semibold text-gray-900">3</p>
-                  </div>
-                  <div className="px-5 py-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ranked Keywords</p>
-                    <p className="mt-0.5 text-lg font-semibold text-gray-900">{PERFORMANCE.length} <span className="text-sm text-gray-500">/ {PERFORMANCE.length}</span></p>
-                  </div>
-                </div>
-                {/* Filters + Export Keyword Report, like PerformanceFilters */}
-                <div className="flex items-center gap-1.5 border-b border-black/[0.08] px-3 py-2">
-                  {["Keyword", "Volume", "Rank"].map((label) => (
-                    <span key={label} className="flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1 text-xs text-gray-600">
-                      {label}
-                      <ChevronDownIcon className="size-3 text-gray-400" />
-                    </span>
+              <div className="relative px-4 pt-2 pb-2.5">
+                <svg viewBox="0 0 600 180" className={`h-28 w-full ${perfOpen ? "animate-[hero-wipe_1400ms_ease-out_both]" : ""}`} preserveAspectRatio="none">
+                  {[0, 60, 120, 180].map((y) => (
+                    <line key={y} x1="0" x2="600" y1={y} y2={y} stroke="rgba(0,0,0,0.06)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
                   ))}
-                  <span className="rounded-lg bg-gray-50 p-0.5">
-                    <span className="block rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">All</span>
-                  </span>
-                  <span
-                    ref={exportRef}
-                    className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all ${
-                      step === "pressExport" ? "scale-95 bg-indigo-700" : exporting ? "bg-indigo-600 opacity-70" : "bg-indigo-600"
-                    }`}
-                  >
-                    {exporting
-                      ? <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      : <ArrowDownTrayIcon className="size-3.5" />}
-                    {exporting ? "Exporting…" : "Export Keyword Report"}
-                  </span>
+                  <path
+                    d={`${chartPath(VISIBILITY.them, 600, 180)} L600,180 L0,180 Z`}
+                    fill="rgba(45,212,191,0.08)"
+                  />
+                  <path
+                    d={chartPath(VISIBILITY.them, 600, 180)}
+                    fill="none"
+                    stroke="#2dd4bf"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  <path
+                    d={`${chartPath(VISIBILITY.you, 600, 180)} L600,180 L0,180 Z`}
+                    fill="rgba(99,102,241,0.1)"
+                  />
+                  <path
+                    d={chartPath(VISIBILITY.you, 600, 180)}
+                    fill="none"
+                    stroke="#6366f1"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </svg>
+                {/* End-of-line marker the cursor points at */}
+                <span
+                  ref={chartEndRef}
+                  className={`absolute right-4 size-2.5 -translate-y-1/2 translate-x-1/2 rounded-full bg-indigo-500 ring-4 ring-indigo-500/20 ${
+                    perfOpen ? "animate-[hero-fade-in_400ms_ease-out_1200ms_both]" : "opacity-0"
+                  }`}
+                  style={{ top: `calc(0.5rem + ${(1 - VISIBILITY.you[VISIBILITY.you.length - 1] / 100) * 7}rem)` }}
+                />
+                <div className="mt-1 flex justify-between text-[10px] text-gray-400">
+                  <span>30 days ago</span>
+                  <span>Today</span>
                 </div>
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-black/[0.08]">
-                      <th rowSpan={2} className="px-4 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">Keyword</th>
-                      <th rowSpan={2} className="px-3 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">Volume</th>
-                      <th rowSpan={2} className="px-3 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">Est. Daily Downloads</th>
-                      <th colSpan={2} className="border-l border-black/[0.08] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="size-3.5 rounded bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600" />
-                          Instagram
-                        </span>
-                      </th>
-                      <th colSpan={2} className="border-l border-black/[0.08] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="size-3.5 rounded bg-gradient-to-br from-sky-400 to-indigo-500" />
-                          Snapgram
-                        </span>
-                      </th>
-                    </tr>
-                    <tr className="border-b border-black/[0.08]">
-                      <th className="border-l border-black/[0.08] px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Rank</th>
-                      <th className="px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Change</th>
-                      <th className="border-l border-black/[0.08] px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Rank</th>
-                      <th className="px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Change</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-black/[0.06]">
-                    {PERFORMANCE.map((row, i) => (
-                      <tr
-                        key={row.keyword}
-                        className={`${"isNew" in row ? "bg-indigo-50/50" : ""} ${perfOpen ? "animate-[hero-row-in_400ms_ease-out_both]" : ""}`}
-                        style={{ animationDelay: `${i * 70}ms` }}
-                      >
-                        <td className="px-4 py-2.5">
-                          <span className="flex items-center gap-1.5 text-sm text-gray-800 whitespace-nowrap">
-                            {row.keyword}
-                            {"isNew" in row && <span className="rounded bg-indigo-100 px-1.5 py-px text-[9px] font-semibold text-indigo-700">New</span>}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2.5"><VolumeBar value={row.volume} /></td>
-                        <td className="px-3 py-2.5 text-sm text-gray-700">~{DOWNLOADS_FORMATTER.format(row.downloads)}</td>
-                        <td className="border-l border-black/[0.06] px-3 py-2.5">
-                          <span className={`text-sm font-medium tabular-nums ${rankColor(row.rank)}`}>#{row.rank}</span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <span ref={i === 1 ? perfChangeRef : undefined}><ChangeCell value={row.change} /></span>
-                        </td>
-                        <td className="border-l border-black/[0.06] px-3 py-2.5">
-                          <span className={`text-sm tabular-nums ${rankColor(row.theirRank)}`}>#{row.theirRank}</span>
-                        </td>
-                        <td className="px-3 py-2.5"><ChangeCell value={row.theirChange} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            )}
+            </div>
+
+            <div className="mx-5 mt-3 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08]">
+              <div className="flex items-center gap-1.5 border-b border-black/[0.08] px-4 py-2.5">
+                <p className="text-sm font-semibold text-gray-900">Keyword Performance</p>
+                <span className="text-xs tabular-nums text-gray-500">· {PERFORMANCE.length}</span>
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-black/[0.08] border-b border-black/[0.08]">
+                <div className="px-5 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Avg Ranking</p>
+                  <p className="mt-0.5 text-lg font-semibold text-gray-900">3</p>
+                </div>
+                <div className="px-5 py-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Ranked Keywords</p>
+                  <p className="mt-0.5 text-lg font-semibold text-gray-900">{PERFORMANCE.length} <span className="text-sm text-gray-500">/ {PERFORMANCE.length}</span></p>
+                </div>
+              </div>
+              {/* Filters + Export Keyword Report, like PerformanceFilters */}
+              <div className="flex items-center gap-1.5 border-b border-black/[0.08] px-3 py-2">
+                {["Keyword", "Volume", "Rank"].map((label) => (
+                  <span key={label} className="flex items-center gap-1 rounded-lg bg-gray-50 px-2.5 py-1 text-xs text-gray-600">
+                    {label}
+                    <ChevronDownIcon className="size-3 text-gray-400" />
+                  </span>
+                ))}
+                <span className="rounded-lg bg-gray-50 p-0.5">
+                  <span className="block rounded-md bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">All</span>
+                </span>
+                <span
+                  ref={exportRef}
+                  className={`ml-auto flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition-all ${
+                    step === "pressExport" ? "scale-95 bg-indigo-700" : exporting ? "bg-indigo-600 opacity-70" : "bg-indigo-600"
+                  }`}
+                >
+                  {exporting
+                    ? <span className="size-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    : <ArrowDownTrayIcon className="size-3.5" />}
+                  {exporting ? "Exporting…" : "Export Keyword Report"}
+                </span>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-black/[0.08]">
+                    <th rowSpan={2} className="px-4 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">Keyword</th>
+                    <th rowSpan={2} className="px-3 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400">Volume</th>
+                    <th rowSpan={2} className="px-3 py-2 text-left align-bottom text-[10px] font-semibold uppercase tracking-wider text-gray-400 whitespace-nowrap">Est. Daily Downloads</th>
+                    <th colSpan={2} className="border-l border-black/[0.08] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-3.5 rounded bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600" />
+                        Instagram
+                      </span>
+                    </th>
+                    <th colSpan={2} className="border-l border-black/[0.08] px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-3.5 rounded bg-gradient-to-br from-sky-400 to-indigo-500" />
+                        Snapgram
+                      </span>
+                    </th>
+                  </tr>
+                  <tr className="border-b border-black/[0.08]">
+                    <th className="border-l border-black/[0.08] px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Rank</th>
+                    <th className="px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Change</th>
+                    <th className="border-l border-black/[0.08] px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Rank</th>
+                    <th className="px-3 py-1.5 text-left text-[10px] font-semibold text-gray-400">Change</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/[0.06]">
+                  {PERFORMANCE.map((row, i) => (
+                    <tr
+                      key={row.keyword}
+                      className={`${"isNew" in row ? "bg-indigo-50/50" : ""} ${perfOpen ? "animate-[hero-row-in_400ms_ease-out_both]" : ""}`}
+                      style={{ animationDelay: `${i * 70}ms` }}
+                    >
+                      <td className="px-4 py-2.5">
+                        <span className="flex items-center gap-1.5 text-sm text-gray-800 whitespace-nowrap">
+                          {row.keyword}
+                          {"isNew" in row && <span className="rounded bg-indigo-100 px-1.5 py-px text-[9px] font-semibold text-indigo-700">New</span>}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5"><VolumeBar value={row.volume} /></td>
+                      <td className="px-3 py-2.5 text-sm text-gray-700">~{DOWNLOADS_FORMATTER.format(row.downloads)}</td>
+                      <td className="border-l border-black/[0.06] px-3 py-2.5">
+                        <span className={`text-sm font-medium tabular-nums ${rankColor(row.rank)}`}>#{row.rank}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span ref={i === 1 ? perfChangeRef : undefined}><ChangeCell value={row.change} /></span>
+                      </td>
+                      <td className="border-l border-black/[0.06] px-3 py-2.5">
+                        <span className={`text-sm tabular-nums ${rankColor(row.theirRank)}`}>#{row.theirRank}</span>
+                      </td>
+                      <td className="px-3 py-2.5"><ChangeCell value={row.theirChange} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
             {/* The export's "downloaded" notice */}
             <div

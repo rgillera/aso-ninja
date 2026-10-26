@@ -109,7 +109,7 @@ type ReportAsoScoreSingleProps = {
 // (see ReportPage), since that's the point where a table actually earns its
 // keep. The "add competitor" affordance lives above this card, not inside it
 // (see AddCompetitorRow in ReportPage) — same full-row pattern as Keywords'
-// CompetitorsBar, not a corner button.
+// CompetitorsStrip, not a corner button.
 export function ReportAsoScoreSingle({ score, summaryItems }: ReportAsoScoreSingleProps) {
   return (
     <div className="rounded-3xl bg-[#141417] light:bg-white p-5 ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">

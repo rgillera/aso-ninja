@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, ArrowTrendingUpIcon, ChevronDownIcon, ChevronUpIcon, ExclamationTriangleIcon, InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -12,7 +12,10 @@ import { LiveSearchPanel } from "@/features/aso/keywords/research/LiveSearchPane
 import { fetchLiveSearchResults, resolveIpadOnlyClient } from "@/features/aso/keywords/research/liveSearch";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { CardHeader } from "@/features/dashboard/CardHeader";
+import { usePersistedOpen } from "@/features/dashboard/usePersistedOpen";
 import { PerformanceTable } from "./PerformanceTable";
+import { CompetitorsStrip } from "./CompetitorsStrip";
 import { exportPerformanceReport } from "./exportReport";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
@@ -80,7 +83,8 @@ export default function KeywordPerformancePage() {
     const t = setTimeout(() => setShowSnapshotsLoading(true), 300);
     return () => clearTimeout(t);
   }, [snapshotsLoading]);
-  const [tab, setTab] = useState<"chart" | "table">("table");
+  // People who live in the table can close the chart once and keep it closed.
+  const [chartOpen, toggleChart] = usePersistedOpen("performance:visibility-chart-open");
   const [visibility, setVisibility] = useState<VisibilityHistoryResult>({});
   const [visibilityLoading, setVisibilityLoading] = useState(false);
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
@@ -688,7 +692,7 @@ export default function KeywordPerformancePage() {
         .finally(() => setVisibilityLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [activeApp, trackedTerms, chartApps, isLocked]);
+  }, [activeApp, trackedTerms, chartApps, snapshotsRefreshKey, isLocked]);
 
   const filtered = useMemo(() => {
     if (!activeApp) return [];
@@ -752,61 +756,61 @@ export default function KeywordPerformancePage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        <div className="flex items-center gap-1 px-6 pt-3">
-          {([["chart", "Visibility Score"], ["table", "Keyword Performance"]] as const).map(([id, label]) => (
+        <CompetitorsStrip
+          activeApp={activeApp}
+          competitors={competitors}
+          onCompetitorsChange={handleCompetitorsChange}
+        />
+
+        <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+          <CardHeader
+            title="Visibility Score"
+            info="Based on all tracked keywords. Table filters don't change this chart."
+            divider={chartOpen}
+          >
             <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                tab === id ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
-              }`}
+              onClick={toggleChart}
+              title={chartOpen ? "Collapse chart" : "Expand chart"}
+              className="p-1 rounded text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
             >
-              {label}
+              {chartOpen ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
             </button>
-          ))}
+          </CardHeader>
+          {chartOpen && <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />}
         </div>
 
-        {tab === "chart" ? (
-          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-            <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />
-          </div>
-        ) : (
-          <div className="pt-4">
-            <PerformanceTable
-              keywords={keywords}
-              filtered={filtered}
-              appName={activeApp.name}
-              appIcon={activeApp.icon_url ?? ""}
-              activeApp={activeApp}
-              competitors={competitors}
-              onCompetitorsChange={handleCompetitorsChange}
-              filters={filters}
-              onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
-              snapshots={snapshots}
-              snapshotsLoading={showSnapshotsLoading}
-              adding={pendingAdds > 0}
-              onAddKeywords={handleAddKeywords}
-              onToggleStar={handleToggleStar}
-              onStarSelected={handleStarSelected}
-              onRemoveKeyword={handleRemoveKeyword}
-              onRemoveSelected={handleRemoveSelected}
-              onLiveSearch={setLiveSearchTerm}
-              onViewVolumeHistory={setVolumeHistoryTerm}
-              onViewRankHistory={(term, storeId) => setRankHistory({ term, storeId })}
-              onViewDownloadsHistory={setDownloadsHistoryTerm}
-              downloadsConnection={downloadsConnection}
-              onRefetchRanks={handleRefetchRanks}
-              refetchingRanks={refetchingRanks}
-              stuckRankCount={stuckTerms.length}
-              translateToggle={translateToggle && !translateLocked}
-              translateLocked={translateLocked}
-              onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-              onExportReport={handleExportReport}
-              exportingReport={exportingReport}
-              monthCoverage={coverageIncomplete ? monthCoverage : null}
-            />
-          </div>
-        )}
+        <PerformanceTable
+          keywords={keywords}
+          filtered={filtered}
+          appName={activeApp.name}
+          appIcon={activeApp.icon_url ?? ""}
+          activeApp={activeApp}
+          competitors={competitors}
+          filters={filters}
+          onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+          snapshots={snapshots}
+          snapshotsLoading={showSnapshotsLoading}
+          adding={pendingAdds > 0}
+          onAddKeywords={handleAddKeywords}
+          onToggleStar={handleToggleStar}
+          onStarSelected={handleStarSelected}
+          onRemoveKeyword={handleRemoveKeyword}
+          onRemoveSelected={handleRemoveSelected}
+          onLiveSearch={setLiveSearchTerm}
+          onViewVolumeHistory={setVolumeHistoryTerm}
+          onViewRankHistory={(term, storeId) => setRankHistory({ term, storeId })}
+          onViewDownloadsHistory={setDownloadsHistoryTerm}
+          downloadsConnection={downloadsConnection}
+          onRefetchRanks={handleRefetchRanks}
+          refetchingRanks={refetchingRanks}
+          stuckRankCount={stuckTerms.length}
+          translateToggle={translateToggle && !translateLocked}
+          translateLocked={translateLocked}
+          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+          onExportReport={handleExportReport}
+          exportingReport={exportingReport}
+          monthCoverage={coverageIncomplete ? monthCoverage : null}
+        />
       </div>
 
       {liveSearchTerm && (

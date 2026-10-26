@@ -52,7 +52,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-xs text-gray-500">
+      <div className="flex h-56 items-center justify-center text-xs text-gray-500">
         Loading visibility score…
       </div>
     );
@@ -60,7 +60,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
 
   if (!rows.length) {
     return (
-      <div className="flex h-72 flex-col items-center justify-center text-center px-6">
+      <div className="flex h-56 flex-col items-center justify-center text-center px-6">
         <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No visibility data yet</p>
         <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
@@ -81,7 +81,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
           <defs>
             {apps.map((app, i) => {

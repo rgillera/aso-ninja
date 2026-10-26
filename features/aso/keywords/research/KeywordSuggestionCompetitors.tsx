@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { PlusIcon, CheckIcon, MinusIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { PlusIcon, CheckIcon, MinusIcon, ArrowPathIcon, UsersIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { CompetitorKeywordsResult, CompetitorKeyword, GapBucket } from "@/app/api/keywords/competitor-keywords/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { ManageCompetitorsModal } from "./ManageCompetitorsModal";
 import { AnalyzeAllButton } from "./ui";
+import { CompetitorsStrip } from "@/features/aso/keywords/performance/CompetitorsStrip";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast, PLAN_BADGE } from "@/features/subscription/planTiers";
 
@@ -351,28 +353,39 @@ export function KeywordSuggestionCompetitors({
 
   if (!competitors.length) {
     const canManage = Boolean(activeApp && onCompetitorsChange);
-    const addLink = (label: string) => canManage ? (
-      <button
-        type="button"
-        onClick={() => setShowCompetitorModal(true)}
-        className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline"
-      >
-        {label}
-      </button>
-    ) : label;
+    const multiCompetitor = isPlanAtLeast(planSlug, "pro");
 
     return (
-      <>
-        <p className="px-4 py-4 text-xs text-gray-600 light:text-gray-400 text-center">
-          {/* Free and Basic allow a single competitor (plans.competitor_limit),
-              too few for the 5 to 8 the gap matrix is built around. */}
-          {!isPlanAtLeast(planSlug, "pro") ? (
-            <>
-              The {PLAN_BADGE[planSlug].label} plan includes 1 competitor. {addLink("Add one")} to start your keyword gap matrix, or upgrade to compare 5 to 8 competitors.
-            </>
+      <div className="flex flex-col items-center px-6 py-8 text-center">
+        <div className="mb-3 flex size-10 items-center justify-center rounded-xl bg-indigo-500/10">
+          <UsersIcon className="size-5 text-indigo-400 light:text-indigo-600" />
+        </div>
+        <p className="text-sm font-semibold text-white light:text-gray-900">See the keywords your competitors rank for</p>
+        <p className="mt-1 max-w-sm text-xs text-gray-500 light:text-gray-500">
+          Add the apps you compete with in search. We compare their ranks with yours and show the keywords you&apos;re missing.
+        </p>
+        {canManage && (
+          <button
+            type="button"
+            onClick={() => setShowCompetitorModal(true)}
+            className="mt-4 flex items-center gap-1.5 rounded-lg bg-indigo-500 hover:bg-indigo-400 px-4 py-2 text-xs font-semibold text-white transition-colors"
+          >
+            <PlusIcon className="size-3.5" />
+            {multiCompetitor ? "Add competitors" : "Add a competitor"}
+          </button>
+        )}
+        {/* Free and Basic allow a single competitor (plans.competitor_limit),
+            too few for the 5 to 8 the gap matrix is built around. */}
+        <p className="mt-3 text-[11px] text-gray-600 light:text-gray-400">
+          {multiCompetitor ? (
+            <>Works best with {isPlanAtLeast(planSlug, "pro_plus") ? "5 to 8" : "up to 5"} competitors.</>
           ) : (
             <>
-              {addLink(`Add ${isPlanAtLeast(planSlug, "pro_plus") ? "5 to 8" : "up to 5"} search competitors`)} to build your keyword gap matrix.
+              Your {PLAN_BADGE[planSlug].label} plan includes 1 competitor.{" "}
+              <Link href="/dashboard/subscription" className="text-indigo-400 light:text-indigo-600 underline underline-offset-2 hover:no-underline">
+                Upgrade
+              </Link>{" "}
+              to compare 5 to 8.
             </>
           )}
         </p>
@@ -384,7 +397,7 @@ export function KeywordSuggestionCompetitors({
             onClose={() => setShowCompetitorModal(false)}
           />
         )}
-      </>
+      </div>
     );
   }
 
@@ -411,6 +424,16 @@ export function KeywordSuggestionCompetitors({
 
   return (
     <div className="px-4 py-3">
+      {onCompetitorsChange && (
+        <CompetitorsStrip
+          activeApp={activeApp}
+          competitors={competitors}
+          onCompetitorsChange={onCompetitorsChange}
+          className="mb-3.5"
+          showColors={false}
+        />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Keyword gap matrix</span>

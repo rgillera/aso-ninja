@@ -14,9 +14,9 @@ import { KeywordSuggestionMetadata } from "./KeywordSuggestionMetadata";
 import { KeywordSuggestionAi } from "./KeywordSuggestionAi";
 import { KeywordSuggestionCompetitors } from "./KeywordSuggestionCompetitors";
 import { KeywordSuggestionCombinations } from "./KeywordSuggestionCombinations";
-import { CompetitorsBar } from "@/features/aso/keywords/performance/CompetitorsBar";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { CardHeader } from "@/features/dashboard/CardHeader";
+import { usePersistedOpen } from "@/features/dashboard/usePersistedOpen";
 
 type Props = {
   onAddKeyword: (keyword: string) => void;
@@ -50,7 +50,10 @@ export function KeywordSuggestionsPanel({
 }: Props) {
   const planSlug = usePlanSlug();
   const aiLocked = !isPlanAtLeast(planSlug, "pro");
-  const [open, setOpen] = useState(true);
+  const [savedOpen, toggleOpen] = usePersistedOpen("research:keyword-suggestions-open");
+  // The tour's suggestions step points at the tabs, so a remembered
+  // "collapsed" can't hide them mid-tour.
+  const open = savedOpen || tourStep === "suggestions";
   const [activeTab, setActiveTab] = useState<string>(SUGGESTION_TABS[0].label);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -78,7 +81,7 @@ export function KeywordSuggestionsPanel({
       />
       <CardHeader title="Keyword Suggestions" divider={open}>
         <button
-          onClick={() => setOpen((v) => !v)}
+          onClick={toggleOpen}
           className="p-1 rounded text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
         >
           {open ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
@@ -87,14 +90,6 @@ export function KeywordSuggestionsPanel({
 
       {open && (
         <>
-          {activeApp && (
-            <CompetitorsBar
-              activeApp={activeApp}
-              competitors={competitors}
-              onCompetitorsChange={onCompetitorsChange}
-            />
-          )}
-
           {/* Tab bar */}
           <div className="flex overflow-x-auto border-b border-white/[0.07] light:border-black/[0.08] scrollbar-none">
             {SUGGESTION_TABS.map((tab) => (
