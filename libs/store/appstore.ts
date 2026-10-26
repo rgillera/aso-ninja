@@ -96,8 +96,11 @@ export async function lookupAppStore(storeId: string): Promise<AppSearchResult |
 export function extractIosSubtitle(html: string, trackName: string, storeId?: string): string {
   // Apple doesn't guarantee key order in the embedded JSON, so allow sibling
   // scalar keys between the anchor and "subtitle" rather than hard-coding the
-  // exact key sequence (which has changed before).
-  const SIBLINGS = `(?:"[^"]+":(?:"(?:[^"\\\\]|\\\\.)*"|true|false|null|-?\\d+(?:\\.\\d+)?),){0,15}?`;
+  // exact key sequence (which has changed before). Siblings can also be nested
+  // objects (e.g. "impressionMetrics":{"fields":{...}} sits between "adamId"
+  // and "subtitle"), so balanced objects up to 3 levels deep are skipped too.
+  const OBJECT = `\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\}`;
+  const SIBLINGS = `(?:"[^"]+":(?:"(?:[^"\\\\]|\\\\.)*"|true|false|null|-?\\d+(?:\\.\\d+)?|${OBJECT}),){0,15}?`;
   const SUBTITLE = `"subtitle":"((?:[^"\\\\]|\\\\.)*)"`;
   const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const anchors = [trackName && `"title":"${escape(trackName)}",`, storeId && `"adamId":"${escape(storeId)}",`].filter(Boolean);
