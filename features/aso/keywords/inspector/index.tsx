@@ -27,6 +27,7 @@ import { Toggle } from "@/features/aso/keywords/research/ui";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
+import { formatEstimateRange } from "@/libs/keyword-impressions";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { CountryPicker } from "./CountryPicker";
 import { canUseInspector } from "./limits";
@@ -1001,7 +1002,7 @@ export default function KeywordInspectorPage() {
                       <ScoreBar value={metrics.difficulty} className={diff.bar} />
                     </StatCard>
                     <StatCard label="Est. daily searches" hint="A ballpark modeled from Volume, for comparing keywords. Not a store-reported count.">
-                      <span className="text-2xl font-semibold text-white light:text-gray-900">~{NUMBER_FORMATTER.format(metrics.estDailySearches)}</span>
+                      <span className="text-2xl font-semibold text-white light:text-gray-900">{formatEstimateRange(metrics.estDailySearches)}</span>
                       <p className="mt-2 text-[11px] text-gray-500">searches per day</p>
                     </StatCard>
                     {showResultsCard && (
@@ -1168,7 +1169,7 @@ export default function KeywordInspectorPage() {
         total={TOUR_STEPS.length}
         icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={metrics && query && (
-          <>About <span className="font-semibold text-white light:text-gray-900">{NUMBER_FORMATTER.format(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Volume is the demand, and Difficulty is how hard the top spots are to take.</>
+          <>{metrics.estDailySearches < 5 ? "Fewer than" : "Roughly"} <span className="font-semibold text-white light:text-gray-900">{metrics.estDailySearches < 5 ? "5" : formatEstimateRange(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Volume is the demand, and Difficulty is how hard the top spots are to take.</>
         )}
         buttonLabel="Next"
         onAdvance={advanceTour}

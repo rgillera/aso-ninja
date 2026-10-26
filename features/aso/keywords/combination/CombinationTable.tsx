@@ -17,7 +17,7 @@ import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui"
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
-import { estimateDailySearches } from "@/libs/keyword-impressions";
+import { estimateDailySearches, formatEstimateRange } from "@/libs/keyword-impressions";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { IntentTheme } from "@/features/aso/keywords/intent/types";
@@ -49,13 +49,11 @@ function formatNum(n: number): string {
   return n.toLocaleString();
 }
 
-const SEARCHES_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
-
-// Hover text on a Volume cell: the 0-100 score translated into daily
-// searches, same as Keyword Research's Volume column. Pro-only, like the
+// Hover text on a Volume cell: the 0-100 score translated into a daily
+// searches range, same as Keyword Research's Volume column. Pro-only, like the
 // Keyword Inspector.
 function searchesTitle(volume: number): string {
-  return `Est. searches: ~${SEARCHES_FORMATTER.format(Math.round(estimateDailySearches(volume)))}/day`;
+  return `Est. searches: ${formatEstimateRange(estimateDailySearches(volume))}/day`;
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {

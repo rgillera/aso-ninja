@@ -32,7 +32,7 @@ import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnToolt
 import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
+import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, formatEstimateRange, POTENTIAL_RANK } from "@/libs/keyword-impressions";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
@@ -191,19 +191,19 @@ const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", m
 // app's estimated daily search impressions at its current rank. See
 // libs/keyword-impressions.ts for how these are modeled.
 function impressionsTitle(row: Keyword): string {
-  if (row.rank === null) return "Est. impressions: none (not ranking)";
-  return `Est. impressions: ~${DOWNLOADS_FORMATTER.format(estimateDailyImpressions(row.volume, row.rank))}/day`;
+  if (row.rank === null) return "Est. times shown in search: none (not ranking)";
+  return `Est. times shown in search: ${formatEstimateRange(estimateDailyImpressions(row.volume, row.rank))}/day`;
 }
 
 // Hover text on the Volume cell: the 0-100 score translated into daily
-// counts, which are easier to picture than a log-scaled score. Pro-only,
+// count ranges, which are easier to picture than a log-scaled score. Pro-only,
 // same as the Keyword Inspector that shows the same estimate.
 function volumeTitle(row: Keyword, searchesLocked: boolean): ReactNode {
   if (searchesLocked) return <ProLockedHint label="Est. searches per day" footer="Click to view volume history" />;
-  const searches = DOWNLOADS_FORMATTER.format(Math.round(estimateDailySearches(row.volume)));
-  const impressions = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
+  const searches = formatEstimateRange(estimateDailySearches(row.volume));
+  const impressions = formatEstimateRange(estimatePotentialImpressions(row.volume, row.rank));
   const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
-  return `Est. searches: ~${searches}/day\nEst. impressions at #${target}: ~${impressions}/day\nClick to view volume history`;
+  return `Est. searches: ${searches}/day\nEst. times shown at #${target}: ${impressions}/day\nClick to view volume history`;
 }
 
 function PendingSyncCell() {
@@ -597,7 +597,7 @@ export function KeywordTable({
         // Impressions are Pro-only (same as Potential Impressions), so Free
         // gets the locked hint in their place.
         return downloadsLocked
-          ? <HoverTooltip text={<ProLockedHint label="Est. impressions per day" footer={playNote} />}>{label}</HoverTooltip>
+          ? <HoverTooltip text={<ProLockedHint label="Est. times shown in search per day" footer={playNote} />}>{label}</HoverTooltip>
           : <span title={playNote ? `${playNote}\n${impressionsTitle(row)}` : impressionsTitle(row)}>{label}</span>;
       }
       case "results": return (

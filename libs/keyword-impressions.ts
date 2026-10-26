@@ -19,6 +19,19 @@ export function estimateDailySearches(volume: number): number {
   return Math.pow(10, Math.max(0, Math.min(volume, 100)) / 20);
 }
 
+// Daily estimates are shown as a range, not a point: the volume curve is a
+// rough fit and Apple's score is noisy, so a single "~63/day" reads as more
+// precise than it is. The range is half to double the estimate. Below 5/day
+// (volume at or near Apple's floor of 5) a range means nothing, so it's just
+// "under 5".
+const ESTIMATE_FLOOR = 5;
+const RANGE_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumSignificantDigits: 2 });
+
+export function formatEstimateRange(estimate: number): string {
+  if (estimate < ESTIMATE_FLOOR) return `under ${ESTIMATE_FLOOR}`;
+  return `${RANGE_FORMATTER.format(estimate / 2)}-${RANGE_FORMATTER.format(estimate * 2)}`;
+}
+
 // Share of searchers who scroll far enough to see the result at each
 // position (index 0 = rank 1). Past rank 10, keeps decaying as ~1/rank.
 const VIEW_RATE_TOP10 = [1, 0.85, 0.7, 0.55, 0.45, 0.38, 0.32, 0.27, 0.23, 0.2];
