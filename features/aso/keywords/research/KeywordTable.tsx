@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import {
@@ -29,6 +29,7 @@ import { CardHeader } from "@/features/dashboard/CardHeader";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
+import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, POTENTIAL_RANK } from "@/libs/keyword-impressions";
@@ -39,8 +40,8 @@ import type { Keyword, DownloadsConnection } from "./types";
 import { unrankedLabel } from "@/features/aso/keywords/performance/types";
 
 // Every plan (Free included) now gets some relevancy/opportunity pool, so
-// the only thing left gated behind a hard plan-tier lock is Est. Downloads
-// (Pro and up) — same emerald/violet tier coloring as nameColor() in
+// the only things left gated behind a hard plan-tier lock are Est. Downloads
+// and Potential Impressions (Pro and up) — same emerald/violet tier coloring as nameColor() in
 // features/subscription/SubscriptionPage.tsx, just down to the one variant
 // still in use.
 function LockedCell({ plan, title }: { plan: "Pro"; title: string }) {
@@ -195,8 +196,10 @@ function impressionsTitle(row: Keyword): string {
 }
 
 // Hover text on the Volume cell: the 0-100 score translated into daily
-// counts, which are easier to picture than a log-scaled score.
-function volumeTitle(row: Keyword): string {
+// counts, which are easier to picture than a log-scaled score. Pro-only,
+// same as the Keyword Inspector that shows the same estimate.
+function volumeTitle(row: Keyword, searchesLocked: boolean): ReactNode {
+  if (searchesLocked) return <ProLockedHint label="Est. searches per day" footer="Click to view volume history" />;
   const searches = DOWNLOADS_FORMATTER.format(Math.round(estimateDailySearches(row.volume)));
   const impressions = DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank));
   const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
@@ -530,7 +533,7 @@ export function KeywordTable({
       case "rank": return row.rank ?? unrankedLabel(store, row.results);
       case "relevancy": return row.relevancy ?? "";
       case "opportunity": return row.opportunity ?? "";
-      case "potentialImpressions": return estimatePotentialImpressions(row.volume, row.rank);
+      case "potentialImpressions": return downloadsLocked ? "" : estimatePotentialImpressions(row.volume, row.rank);
       case "results": return row.results ?? "";
       default: return (row as unknown as Record<string, number>)[colKey] ?? "";
     }
@@ -546,7 +549,7 @@ export function KeywordTable({
   function renderCell(colKey: string, row: Keyword) {
     switch (colKey) {
       case "volume": return (
-        <HoverTooltip text={volumeTitle(row)}>
+        <HoverTooltip text={volumeTitle(row, downloadsLocked)}>
           <button
             onClick={() => setVolumeHistoryKeyword(row.keyword)}
             aria-label="View volume history"
@@ -584,25 +587,30 @@ export function KeywordTable({
           )
           : <ClockIcon className="size-4 text-gray-600 light:text-gray-400 animate-pulse" />
       );
-      case "rank": return row.rank !== null
-        ? <span title={impressionsTitle(row)} className={`text-sm font-medium tabular-nums cursor-help ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
-        : <span
-            title={store === "android" && row.results
-              ? `Google Play showed ${row.results} apps for this keyword and yours wasn't among them.\n${impressionsTitle(row)}`
-              : impressionsTitle(row)}
-            className="text-xs text-gray-600 light:text-gray-400 italic cursor-help"
-          >
-            {unrankedLabel(store)}
-          </span>;
+      case "rank": {
+        const playNote = row.rank === null && store === "android" && row.results
+          ? `Google Play showed ${row.results} apps for this keyword and yours wasn't among them.`
+          : undefined;
+        const label = row.rank !== null
+          ? <span className={`text-sm font-medium tabular-nums cursor-help ${row.rank <= 3 ? "text-emerald-400 light:text-emerald-700" : row.rank <= 10 ? "text-yellow-400" : "text-gray-300 light:text-gray-700"}`}>#{row.rank}</span>
+          : <span className="text-xs text-gray-600 light:text-gray-400 italic cursor-help">{unrankedLabel(store)}</span>;
+        // Impressions are Pro-only (same as Potential Impressions), so Free
+        // gets the locked hint in their place.
+        return downloadsLocked
+          ? <HoverTooltip text={<ProLockedHint label="Est. impressions per day" footer={playNote} />}>{label}</HoverTooltip>
+          : <span title={playNote ? `${playNote}\n${impressionsTitle(row)}` : impressionsTitle(row)}>{label}</span>;
+      }
       case "results": return (
         row.results != null
           ? <span className="text-sm text-gray-300 light:text-gray-700">{row.results.toLocaleString()}</span>
           : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
       );
       case "potentialImpressions": return (
-        <span className="text-sm text-gray-300 light:text-gray-700 tabular-nums" title={impressionsTitle(row)}>
-          ~{DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank))}
-        </span>
+        downloadsLocked
+          ? <LockedCell plan="Pro" title="Potential Impressions requires the Pro plan" />
+          : <span className="text-sm text-gray-300 light:text-gray-700 tabular-nums" title={impressionsTitle(row)}>
+              ~{DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank))}
+            </span>
       );
       case "estimatedDownloads": return (
         downloadsLocked

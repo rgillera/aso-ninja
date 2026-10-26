@@ -16,7 +16,10 @@ import {
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
+import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { IntentTheme } from "@/features/aso/keywords/intent/types";
 import type { CombinationGroup } from "./types";
 
@@ -49,7 +52,8 @@ function formatNum(n: number): string {
 const SEARCHES_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
 // Hover text on a Volume cell: the 0-100 score translated into daily
-// searches, same as Keyword Research's Volume column.
+// searches, same as Keyword Research's Volume column. Pro-only, like the
+// Keyword Inspector.
 function searchesTitle(volume: number): string {
   return `Est. searches: ~${SEARCHES_FORMATTER.format(Math.round(estimateDailySearches(volume)))}/day`;
 }
@@ -73,6 +77,7 @@ export function CombinationTable({
   groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch, store, country,
   translateToggle, translateLocked = false, onTranslateToggle, intentThemes, onAddTermsToIntent,
 }: Props) {
+  const searchesLocked = !isPlanAtLeast(usePlanSlug(), "pro");
   const [seedInput, setSeedInput] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -289,7 +294,7 @@ export function CombinationTable({
                     </td>
                     <td className="px-4 py-3.5">
                       {group.loading ? <div className="h-3 w-12 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : (
-                        <HoverTooltip text={`${searchesTitle(agg.avgVol)} per combination on average`}>
+                        <HoverTooltip text={searchesLocked ? <ProLockedHint label="Est. searches per day" /> : `${searchesTitle(agg.avgVol)} per combination on average`}>
                           <VolumeBar value={agg.avgVol} hoverHint />
                         </HoverTooltip>
                       )}
@@ -339,7 +344,7 @@ export function CombinationTable({
                         <td className="px-4 py-3 text-sm text-gray-600 light:text-gray-400">—</td>
                         <td className="px-4 py-3">
                           {group.loading ? <div className="h-3 w-16 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" /> : (
-                            <HoverTooltip text={searchesTitle(child.volume)}>
+                            <HoverTooltip text={searchesLocked ? <ProLockedHint label="Est. searches per day" /> : searchesTitle(child.volume)}>
                               <VolumeBar value={child.volume} hoverHint />
                             </HoverTooltip>
                           )}
