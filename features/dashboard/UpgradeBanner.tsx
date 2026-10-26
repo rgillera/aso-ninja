@@ -12,7 +12,7 @@ export function UpgradeBanner({ onDismiss }: { onDismiss: () => void }) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-white light:text-gray-900">Upgrade to Pro from $29/mo</p>
+        <p className="text-sm font-semibold text-white light:text-gray-900">Upgrade to Pro from $24/mo</p>
         <p className="text-xs text-gray-400 light:text-gray-600">Stop leaving downloads on the table. See exactly what&apos;s holding your rankings back before competitors pull further ahead.</p>
       </div>
 
