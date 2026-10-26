@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChartBarIcon, ListBulletIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon, ChevronDownIcon, ChevronUpIcon, ListBulletIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { CardHeader } from "@/features/dashboard/CardHeader";
+import { usePersistedOpen } from "@/features/dashboard/usePersistedOpen";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { RankHistoryPanel } from "@/features/aso/keywords/performance/RankHistoryPanel";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
@@ -41,14 +43,14 @@ function NoAppSelected() {
 function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; loading: boolean }) {
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-xs text-gray-500">
+      <div className="flex h-56 items-center justify-center text-xs text-gray-500">
         Loading history…
       </div>
     );
   }
   if (history.length === 0) {
     return (
-      <div className="flex h-72 flex-col items-center justify-center text-center px-6">
+      <div className="flex h-56 flex-col items-center justify-center text-center px-6">
         <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No ranking history yet</p>
         <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
@@ -59,7 +61,7 @@ function RankedChart({ history, loading }: { history: RankedHistoryPoint[]; load
   }
   return (
     <div className="px-2 pt-4">
-      <ResponsiveContainer width="100%" height={280}>
+      <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={history} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
           <defs>
             <linearGradient id="rk-grad" x1="0" y1="0" x2="0" y2="1">
@@ -110,7 +112,8 @@ export default function RankedKeywordsPage() {
   const [keywords, setKeywords] = useState<RankedKeyword[]>([]);
   const [history, setHistory] = useState<RankedHistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"chart" | "table">("table");
+  // People who live in the table can close the chart once and keep it closed.
+  const [chartOpen, toggleChart] = usePersistedOpen("ranked:history-chart-open");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [volumeHistoryTerm, setVolumeHistoryTerm] = useState<string | null>(null);
   const [rankHistoryTerm, setRankHistoryTerm] = useState<string | null>(null);
@@ -173,39 +176,27 @@ export default function RankedKeywordsPage() {
       <AppHeader app={activeApp} title="All Ranked Keywords" />
 
       <div className="flex-1 overflow-y-auto">
-        {/* Tabs + count */}
-        <div className="flex items-center justify-between gap-2 px-6 pt-3 pb-1">
-          <div className="flex items-center gap-1">
-            {([["chart", "Ranked Over Time"], ["table", "Keyword Table"]] as const).map(([id, label]) => (
-              <button
-                key={id}
-                onClick={() => setTab(id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === id ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700" : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <span className="text-xs text-gray-600 light:text-gray-400">
-            {loading
-              ? "Loading…"
-              : `${keywords.length.toLocaleString()} keyword${keywords.length !== 1 ? "s" : ""} ranked`}
-          </span>
+        <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+          <CardHeader title="Ranked Over Time" divider={chartOpen}>
+            <button
+              onClick={toggleChart}
+              title={chartOpen ? "Collapse chart" : "Expand chart"}
+              className="p-1 rounded text-gray-500 hover:text-white light:hover:text-gray-900 transition-colors"
+            >
+              {chartOpen ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+            </button>
+          </CardHeader>
+          {chartOpen && <RankedChart history={history} loading={loading} />}
         </div>
 
-        {tab === "chart" ? (
-          <div className="mx-6 mt-4 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-            <RankedChart history={history} loading={loading} />
-          </div>
-        ) : (
-          <div className="pt-4">
+        {loading || keywords.length === 0 ? (
+          <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+            <CardHeader title="Ranked Keywords" />
             {loading ? (
               <div className="flex items-center justify-center py-16 text-xs text-gray-500">
                 Loading ranked keywords…
               </div>
-            ) : keywords.length === 0 ? (
+            ) : (
               <div className="flex flex-col items-center justify-center py-16 text-center px-6">
                 <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
                 <p className="text-sm font-medium text-gray-400 light:text-gray-600">No ranked keywords found</p>
@@ -213,20 +204,20 @@ export default function RankedKeywordsPage() {
                   Use Live Search on tracked keywords to record which positions your app holds.
                 </p>
               </div>
-            ) : (
-              <RankedTable
-                keywords={keywords}
-                filtered={filtered}
-                filters={filters}
-                onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
-                onViewVolumeHistory={setVolumeHistoryTerm}
-                onViewRankHistory={setRankHistoryTerm}
-                translateToggle={translateToggle && !translateLocked}
-                translateLocked={translateLocked}
-                onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-              />
             )}
           </div>
+        ) : (
+          <RankedTable
+            keywords={keywords}
+            filtered={filtered}
+            filters={filters}
+            onFiltersChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+            onViewVolumeHistory={setVolumeHistoryTerm}
+            onViewRankHistory={setRankHistoryTerm}
+            translateToggle={translateToggle && !translateLocked}
+            translateLocked={translateLocked}
+            onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+          />
         )}
       </div>
 

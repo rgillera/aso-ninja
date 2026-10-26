@@ -10,6 +10,7 @@ import {
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
+import { CardHeader } from "@/features/dashboard/CardHeader";
 import {
   DEFAULT_FILTERS, isFiltersDefault, wordCount, rankDelta, formatDate,
   type RankedKeyword, type Filters,
@@ -212,6 +213,7 @@ export function RankedTable({
 
   return (
     <div className="mx-6 mb-6 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+      <CardHeader title="Ranked Keywords" count={keywords.length} />
       {/* Filters */}
       <div className="px-4 py-3 border-b border-white/[0.07] light:border-black/[0.08] flex flex-wrap items-center gap-2">
         <Dropdown label={filters.query ? `Keyword: ${filters.query}` : "Keyword"} active={!!filters.query}>

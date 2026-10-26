@@ -669,10 +669,23 @@ export default function KeywordPerformancePage() {
     ];
   }, [activeApp, competitors]);
 
+  // What the chart last loaded for, minus snapshotsRefreshKey. A change here
+  // (another app, keyword list or competitor set) is a fresh load; a change
+  // in snapshotsRefreshKey alone is a rank check landing, which during a
+  // Refetch or auto-retry batch fires once per term.
+  const visibilityScopeRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!activeApp || !trackedTerms || !chartApps.length || isLocked) return;
+    const scope = [activeApp.store_id ?? activeApp.id, activeApp.store, activeApp.country, trackedTerms, chartApps.map((a) => a.id).join(",")].join("|");
+    // Rank-check refreshes keep the current chart on screen and wait for the
+    // batch to go quiet, so a batch reloads once at the end instead of
+    // flashing "Loading" once per keyword.
+    const quiet = visibilityScopeRef.current === scope;
+    let cancelled = false;
     const t = setTimeout(() => {
-      setVisibilityLoading(true);
+      visibilityScopeRef.current = scope;
+      if (!quiet) setVisibilityLoading(true);
       const today = new Date();
       const from30 = new Date(today); from30.setDate(today.getDate() - 29);
       const toIso = today.toISOString().split("T")[0];
@@ -687,11 +700,15 @@ export default function KeywordPerformancePage() {
       });
       fetch(`/api/keywords/visibility-history?${params}`)
         .then((r) => r.json())
-        .then((data: VisibilityHistoryResult) => setVisibility(data))
-        .catch(() => setVisibility({}))
-        .finally(() => setVisibilityLoading(false));
-    }, 300);
-    return () => clearTimeout(t);
+        .then((data: VisibilityHistoryResult) => { if (!cancelled) setVisibility(data); })
+        // A failed quiet refresh keeps the chart it already has.
+        .catch(() => { if (!cancelled && !quiet) setVisibility({}); })
+        .finally(() => { if (!cancelled) setVisibilityLoading(false); });
+    }, quiet ? 2000 : 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [activeApp, trackedTerms, chartApps, snapshotsRefreshKey, isLocked]);
 
   const filtered = useMemo(() => {
@@ -765,7 +782,7 @@ export default function KeywordPerformancePage() {
         <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
           <CardHeader
             title="Visibility Score"
-            info="Based on all tracked keywords. Table filters don't change this chart."
+            info="How easy your app is to find in search. It goes up when you rank higher, and for keywords more people search for."
             divider={chartOpen}
           >
             <button
