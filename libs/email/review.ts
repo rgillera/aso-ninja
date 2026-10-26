@@ -1,11 +1,12 @@
 import { TRUSTPILOT_REVIEW_URL } from "@/features/review/constants";
+import { greetingHtml, greetingText } from "./greeting";
 
 export const REVIEW_EMAIL_SUBJECT = "Quick favor? Tell others what you think of AppASO";
 
-export function renderReviewEmailHtml() {
+export function renderReviewEmailHtml(fullName?: string | null) {
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
-  <p>Hi there,</p>
+  <p>${greetingHtml(fullName)}</p>
   <p>Thanks for tracking your keywords with AppASO. We hope it's helping you understand where your app ranks and where to grow.</p>
   <p>Could you take a minute to share your experience on Trustpilot? Honest reviews, good or bad, help other app developers decide if AppASO is right for them, and they help us know what to improve.</p>
   <p>
@@ -18,8 +19,8 @@ export function renderReviewEmailHtml() {
 </div>`.trim();
 }
 
-export function renderReviewEmailText() {
-  return `Hi there,
+export function renderReviewEmailText(fullName?: string | null) {
+  return `${greetingText(fullName)}
 
 Thanks for tracking your keywords with AppASO. We hope it's helping you understand where your app ranks and where to grow.
 

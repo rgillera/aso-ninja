@@ -1,5 +1,6 @@
 import { freeAuditLink } from "@/features/subscription/freeAudit";
 import { TRUSTPILOT_REVIEW_URL } from "@/features/review/constants";
+import { greetingHtml, greetingText } from "./greeting";
 
 const auditUrl = freeAuditLink("welcome_email").href;
 
@@ -10,10 +11,10 @@ export function welcomeEmailSubject(hasTrial: boolean) {
   return hasTrial ? "Welcome to AppASO! Your 7-day Pro trial is on" : "Welcome to AppASO!";
 }
 
-export function renderWelcomeEmailHtml(hasTrial: boolean) {
+export function renderWelcomeEmailHtml(hasTrial: boolean, fullName?: string | null) {
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
-  <p>Hi there,</p>
+  <p>${greetingHtml(fullName)}</p>
   <p>Welcome to AppASO! &#127881; We're excited to have you on board.</p>
   ${hasTrial ? `<p>Your account is on a <strong>free 7-day Pro trial</strong>, no card needed. You have full access to every Pro feature, including the Keyword Inspector, Long Tail Keywords and AI keyword suggestions.</p>` : ""}
   <p>Want some help getting started? One of our ASO specialists will audit your app for free and show you where the quick wins are.</p>
@@ -28,7 +29,7 @@ export function renderWelcomeEmailHtml(hasTrial: boolean) {
 </div>`.trim();
 }
 
-export function renderWelcomeEmailText(hasTrial: boolean) {
+export function renderWelcomeEmailText(hasTrial: boolean, fullName?: string | null) {
   const trial = hasTrial
     ? `Your account is on a free 7-day Pro trial, no card needed. You have full access to every Pro feature, including the Keyword Inspector, Long Tail Keywords and AI keyword suggestions.
 
@@ -40,7 +41,7 @@ export function renderWelcomeEmailText(hasTrial: boolean) {
 `
     : "";
 
-  return `Hi there,
+  return `${greetingText(fullName)}
 
 Welcome to AppASO! We're excited to have you on board.
 

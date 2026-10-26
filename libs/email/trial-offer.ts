@@ -1,3 +1,4 @@
+import { greetingHtml, greetingText } from "./greeting";
 // One-time "try Pro free" email for users who can still start the opt-in
 // trial, sent by /api/cron/send-trial-offer-emails. The button lands on
 // /dashboard/start-trial, which starts the trial in one click (after login).
@@ -16,10 +17,10 @@ const PRO_FEATURES = [
 const INTRO = "You can now try every Pro feature free for 7 days. No credit card, nothing to cancel: your account moves back to the Free Plan on its own when the week is up.";
 const OUTRO = "Your keywords and rankings stay either way. Start whenever you're ready, the 7 days begin when you click.";
 
-export function renderTrialOfferEmailHtml() {
+export function renderTrialOfferEmailHtml(fullName?: string | null) {
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
-  <p>Hi there,</p>
+  <p>${greetingHtml(fullName)}</p>
   <p>${INTRO}</p>
   <p>Here's what Pro unlocks:</p>
   <ul>
@@ -35,8 +36,8 @@ export function renderTrialOfferEmailHtml() {
 </div>`.trim();
 }
 
-export function renderTrialOfferEmailText() {
-  return `Hi there,
+export function renderTrialOfferEmailText(fullName?: string | null) {
+  return `${greetingText(fullName)}
 
 ${INTRO}
 

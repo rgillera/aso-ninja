@@ -32,6 +32,7 @@ export async function GET(req: Request) {
   for (const { user_id } of pending as { user_id: string }[]) {
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(user_id);
     const email = userData?.user?.email;
+    const fullName = userData?.user?.user_metadata?.full_name;
     if (userError || !email) {
       failed++;
       continue;
@@ -41,8 +42,8 @@ export async function GET(req: Request) {
       from: FROM,
       to: email,
       subject: TRIAL_OFFER_EMAIL_SUBJECT,
-      html: renderTrialOfferEmailHtml(),
-      text: renderTrialOfferEmailText(),
+      html: renderTrialOfferEmailHtml(fullName),
+      text: renderTrialOfferEmailText(fullName),
     });
 
     if (sendError) {

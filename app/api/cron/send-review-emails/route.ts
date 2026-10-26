@@ -61,6 +61,7 @@ export async function GET(req: Request) {
 
       const { data: userData, error: userError } = await supabase.auth.admin.getUserById(id);
       const email = userData?.user?.email;
+      const fullName = userData?.user?.user_metadata?.full_name;
       if (userError || !email) {
         failed++;
         continue;
@@ -70,8 +71,8 @@ export async function GET(req: Request) {
         from: FROM,
         to: email,
         subject: REVIEW_EMAIL_SUBJECT,
-        html: renderReviewEmailHtml(),
-        text: renderReviewEmailText(),
+        html: renderReviewEmailHtml(fullName),
+        text: renderReviewEmailText(fullName),
       });
 
       if (sendError) {

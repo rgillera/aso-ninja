@@ -1,3 +1,4 @@
+import { greetingHtml, greetingText } from "./greeting";
 // Signup Pro trial emails, sent by /api/cron/pro-trial: one with 2 days
 // left, one on the last day.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://appaso.io";
@@ -27,10 +28,10 @@ const OUTRO: Record<TrialEmail, string> = {
   last_day: "Your keywords and rankings stay. Anything over the Free Plan's limits is paused, not deleted, and comes back as soon as you upgrade.",
 };
 
-export function renderTrialEmailHtml(kind: TrialEmail) {
+export function renderTrialEmailHtml(kind: TrialEmail, fullName?: string | null) {
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
-  <p>Hi there,</p>
+  <p>${greetingHtml(fullName)}</p>
   <p>${INTRO[kind]}</p>
   <ul>
     ${PRO_FEATURES.map((f) => `<li>${f}</li>`).join("\n    ")}
@@ -45,8 +46,8 @@ export function renderTrialEmailHtml(kind: TrialEmail) {
 </div>`.trim();
 }
 
-export function renderTrialEmailText(kind: TrialEmail) {
-  return `Hi there,
+export function renderTrialEmailText(kind: TrialEmail, fullName?: string | null) {
+  return `${greetingText(fullName)}
 
 ${INTRO[kind]}
 
