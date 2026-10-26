@@ -4,7 +4,7 @@ import type { VisibilityPoint, VisibilityHistoryResult } from "@/app/api/keyword
 export type { RankValue, TermSnapshot, PerformanceSnapshotResult, VisibilityPoint, VisibilityHistoryResult };
 
 // Cycled across our app + competitors in the Visibility Score chart.
-export const SERIES_COLORS = ["#2dd4bf", "#a78bfa", "#fb923c", "#60a5fa", "#f472b6", "#facc15"];
+export const SERIES_COLORS = ["#6366f1", "#2dd4bf", "#fb923c", "#f472b6", "#facc15", "#60a5fa"];
 
 export type PerformanceKeyword = {
   term: string;

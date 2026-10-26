@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { ChartBarIcon } from "@heroicons/react/24/outline";
 import { SERIES_COLORS, type VisibilityHistoryResult } from "./types";
@@ -18,8 +18,8 @@ type Props = {
 type MergedRow = { date: string; [appId: string]: number | string | null };
 
 // Each app's series only has points for dates we actually observed a rank.
-// Between two observed points the line is held flat (step-after) at the
-// last known score — an honest "nothing changed since" read, not a guess.
+// Dates an app wasn't observed carry its last known score forward, so every
+// series has a value on every merged date — "nothing changed since", not a guess.
 function mergeSeries(apps: ChartApp[], data: VisibilityHistoryResult): MergedRow[] {
   const allDates = [...new Set(apps.flatMap((a) => (data[a.id] ?? []).map((p) => p.date)))].sort();
   if (!allDates.length) return [];
@@ -52,7 +52,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="flex h-80 items-center justify-center text-xs text-gray-500">
+      <div className="flex h-72 items-center justify-center text-xs text-gray-500">
         Loading visibility score…
       </div>
     );
@@ -60,7 +60,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
 
   if (!rows.length) {
     return (
-      <div className="flex h-80 flex-col items-center justify-center text-center px-6">
+      <div className="flex h-72 flex-col items-center justify-center text-center px-6">
         <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No visibility data yet</p>
         <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
@@ -71,8 +71,8 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
   }
 
   return (
-    <div className="px-2">
-      <div className="flex flex-wrap items-center gap-4 px-4 pt-4 pb-1">
+    <div className="px-2 pt-4">
+      <div className="flex flex-wrap items-center gap-4 px-4 pb-1">
         {apps.map((app, i) => (
           <div key={app.id} className="flex items-center gap-1.5 text-xs text-gray-400 light:text-gray-600">
             <span className="size-2 rounded-full" style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }} />
@@ -81,8 +81,19 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
         ))}
       </div>
 
-      <ResponsiveContainer width="100%" height={320}>
-        <LineChart data={rows} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+      <ResponsiveContainer width="100%" height={280}>
+        <AreaChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+          <defs>
+            {apps.map((app, i) => {
+              const color = SERIES_COLORS[i % SERIES_COLORS.length];
+              return (
+                <linearGradient key={app.id} id={`vs-grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.25} />
+                  <stop offset="95%" stopColor={color} stopOpacity={0.02} />
+                </linearGradient>
+              );
+            })}
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
           <XAxis
             dataKey="date"
@@ -104,18 +115,19 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
             labelStyle={{ color: "#9ca3af" }}
           />
           {apps.map((app, i) => (
-            <Line
+            <Area
               key={app.id}
-              type="stepAfter"
+              type="monotone"
               dataKey={app.id}
               name={app.name}
               stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
               strokeWidth={2}
+              fill={`url(#vs-grad-${i})`}
               dot={false}
               connectNulls={false}
             />
           ))}
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );
