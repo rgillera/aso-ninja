@@ -233,7 +233,9 @@ export default function KeywordResearchPage() {
         // the one that actually knows whether the pool is exhausted.
         const needsRelevancy = withMetrics.filter((s) => s.relevancy === null).map((s) => s.term);
 
-        // Set cached keywords immediately — these are complete, no loading state
+        // Set cached keywords immediately — these are complete, no loading state.
+        // Rows about to be backfilled get undefined (pending clock) rather
+        // than null, which KeywordTable renders as the pool "Limit" badge.
         const starred = getStarred(activeApp?.id ?? activeApp?.store_id ?? "");
         setKeywords(
           withMetrics.map((s) => ({
@@ -241,8 +243,8 @@ export default function KeywordResearchPage() {
             volume: s.volume,
             diff: s.diff,
             chance: s.chance,
-            opportunity: s.opportunity,
-            relevancy: s.relevancy,
+            opportunity: s.relevancy === null ? undefined : s.opportunity,
+            relevancy: s.relevancy ?? undefined,
             rank: s.rank,
             results: s.results,
             starred: starred.has(s.term.toLowerCase()),
