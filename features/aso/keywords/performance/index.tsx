@@ -64,8 +64,8 @@ export default function KeywordPerformancePage() {
   const planSlug = usePlanSlug();
   const isLocked = !isPlanAtLeast(planSlug, "free");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
-  // Free sees its own Search Visibility line; competitor lines need Basic+.
-  const competitorLinesLocked = !isPlanAtLeast(planSlug, "basic");
+  // Below Pro sees its own Search Visibility line; competitor lines need Pro.
+  const competitorLinesLocked = !isPlanAtLeast(planSlug, "pro");
   const [keywords, setKeywords] = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);

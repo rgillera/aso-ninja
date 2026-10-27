@@ -14,8 +14,8 @@ type Props = {
   apps: ChartApp[];
   data: VisibilityHistoryResult;
   loading: boolean;
-  /** Free plan: the user's own line stays readable, competitor lines are
-   *  blurred with no tooltip values, behind an upgrade prompt. */
+  /** Below Pro: the user's own line stays readable, competitor lines are
+   *  blurred with no tooltip values, behind an upgrade link. */
   competitorsLocked?: boolean;
 };
 
@@ -116,31 +116,25 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
 
   return (
     <div className="px-2 pt-4">
-      <div className="flex flex-wrap items-center gap-4 px-4 pb-1">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-1">
         {apps.map((app, i) => (
           <div key={app.id} className="flex items-center gap-1.5 text-xs text-gray-400 light:text-gray-600">
             <span className="size-2 rounded-full" style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }} />
             {app.name}
-            {isBlurred(app.id) && <LockClosedIcon className="size-3 text-gray-500" />}
           </div>
         ))}
-      </div>
-
-      {locked && (
-        <div className="mx-4 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs">
-          <span className="text-gray-300 light:text-gray-700">
-            {gap
-              ? <>Your top competitor gets ~{COUNT_FORMATTER.format(gap.top)} impressions a day. You get ~{COUNT_FORMATTER.format(gap.own)}.</>
-              : <>See how your visibility compares with competitors, day by day.</>}
-          </span>
+        {locked && (
           <Link
             href="/dashboard/subscription"
-            className="font-medium text-emerald-500 light:text-emerald-700 hover:underline"
+            className="ml-auto flex items-center gap-1.5 text-xs font-medium text-violet-400 light:text-violet-700 hover:underline"
           >
-            Upgrade to Basic to compare →
+            <LockClosedIcon className="size-3.5" />
+            {gap
+              ? <>Top competitor gets ~{COUNT_FORMATTER.format(gap.top)}/day. Compare on Pro</>
+              : <>Compare competitors on Pro</>}
           </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
@@ -155,7 +149,7 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
               );
             })}
             <filter id="vs-blur">
-              <feGaussianBlur stdDeviation="4" />
+              <feGaussianBlur stdDeviation="3" />
             </filter>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
@@ -184,10 +178,7 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
           />
           <Tooltip
             labelFormatter={(ts) => formatTs(Number(ts))}
-            formatter={(value, name, item) => [
-              isBlurred(String(item.dataKey)) ? "Locked" : `${COUNT_FORMATTER.format(Number(value))} impressions/day`,
-              name,
-            ]}
+            formatter={(value, name) => [`${COUNT_FORMATTER.format(Number(value))} impressions/day`, name]}
             contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
@@ -199,8 +190,13 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
               name={app.name}
               stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
               strokeWidth={2}
-              fill={`url(#vs-grad-${i})`}
+              // Locked competitor lines are a faint blurred stroke only: no
+              // fill, hover dot or tooltip row, so they hint without reading.
+              fill={isBlurred(app.id) ? "none" : `url(#vs-grad-${i})`}
+              strokeOpacity={isBlurred(app.id) ? 0.5 : 1}
               className={isBlurred(app.id) ? "[filter:url(#vs-blur)]" : undefined}
+              activeDot={isBlurred(app.id) ? false : undefined}
+              tooltipType={isBlurred(app.id) ? "none" : undefined}
               // A just-followed app has a single day of data, which an
               // area with no dots wouldn't draw at all.
               dot={rows.length === 1 ? { r: 3, fill: SERIES_COLORS[i % SERIES_COLORS.length], strokeWidth: 0 } : false}
