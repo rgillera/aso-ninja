@@ -790,7 +790,7 @@ export default function KeywordPerformancePage() {
           <CardHeader
             title="Search Visibility"
             subtitle="Est. impressions per day"
-            info="Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for."
+            info="Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for. Add competitors to see their visibility on the same keywords and compare."
             divider={chartOpen}
           >
             <button
