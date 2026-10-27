@@ -1,9 +1,23 @@
--- Visibility Score to one decimal instead of a whole number.
+-- Visibility Score as estimated search impressions per day, replacing the
+-- 0 to 100 percentage from 20261027000003.
 --
--- Most apps rank for a small share of their tracked keywords, so real scores
--- sit in the low single digits, where rounding to an integer hid every move
--- (3.6 and 4.4 both showed as 4, and the chart read as flat). Same function
--- as 20261027000003; only the final rounding changes.
+-- The percentage was the share of the best possible score over the tracked
+-- keywords, so it sat in the low single digits for most apps (they rank for
+-- few of what they track), barely moved on a 0-100 axis, and dropped whenever
+-- a keyword the app doesn't rank for yet was added. Impressions are a real
+-- number, rise with rank and with volume, and an unranked keyword adds 0.
+--
+-- Now, per (app, date), over the tracked keywords that have a check for that
+-- app in the 30 days up to that date (each keyword's most recent one):
+--   score = sum(daily_searches * view_rate)
+--   daily_searches = 10 ^ (popularity / 20), popularity clamped to 0..100
+--   view_rate = 1, .85, .7, .55, .45, .38, .32, .27, .23, .2 for ranks 1..10,
+--               0.2 * 10 / rank past that, 0 if not ranked
+-- Same model as estimateDailySearches / viewRateForRank in
+-- libs/keyword-impressions.ts, so it lines up with the keyword table's
+-- "Est. impressions" figures. Keep the two in sync.
+-- Returns { "<app_id>": [{ date, score }, ...] } with every app in
+-- p_app_ids present (0 on dates with nothing to score).
 create or replace function public.keyword_visibility_history(
   p_terms text[], p_store text, p_country text, p_app_ids text[], p_from date, p_to date
 )
@@ -63,8 +77,15 @@ as $$
   -- date.
   contrib as materialized (
     select l.app_id, l.d,
-           sum(p.score * case when r.position between 1 and 200 then 1 - (r.position - 1) / 200.0 else 0 end) as earned,
-           sum(p.score) as possible
+           sum(
+             power(10, greatest(0, least(p.score, 100)) / 20.0)
+             * case
+                 when r.position between 1 and 10
+                   then (array[1, 0.85, 0.7, 0.55, 0.45, 0.38, 0.32, 0.27, 0.23, 0.2])[r.position]
+                 when r.position > 10 then 0.2 * 10 / r.position
+                 else 0
+               end
+           ) as impressions
     from latest l
     join pop p on p.keyword = l.keyword and p.d = l.d
     left join rows r on r.keyword = l.keyword and r.recorded_on = l.checked_on and r.app_id = l.app_id
@@ -73,7 +94,7 @@ as $$
   select coalesce(jsonb_object_agg(a.app_id, coalesce((
     select jsonb_agg(jsonb_build_object(
       'date', dt.d,
-      'score', coalesce(round(100 * c.earned / nullif(c.possible, 0), 1), 0)
+      'score', coalesce(round(c.impressions), 0)::bigint
     ) order by dt.d)
     from dates dt
     left join contrib c on c.app_id = a.app_id and c.d = dt.d

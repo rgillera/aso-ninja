@@ -657,8 +657,9 @@ export default function KeywordPerformancePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, isLocked]);
 
-  // Visibility Score: our own derived metric (real Volume x real Rank-position
-  // weight, summed across tracked keywords), not an Apple/Google-reported number.
+  // Visibility Score: our own derived metric (estimated daily impressions from
+  // real Volume x real Rank, summed across tracked keywords), not an
+  // Apple/Google-reported number.
   const chartApps = useMemo<ChartApp[]>(() => {
     if (!activeApp) return [];
     const ourId = activeApp.store_id ?? activeApp.id;
@@ -788,7 +789,7 @@ export default function KeywordPerformancePage() {
         <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
           <CardHeader
             title="Visibility Score"
-            info="How easy your app is to find in search, from 0 to 100. It goes up when you rank higher, especially for keywords more people search for."
+            info="Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for."
             divider={chartOpen}
           >
             <button

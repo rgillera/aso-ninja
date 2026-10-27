@@ -142,15 +142,17 @@ const REPORT_ROWS = PERFORMANCE.map((row) => ({
   downloads: row.downloads,
 }));
 
-// Visibility Score over the last 30 days (0 to 100), you vs the competitor.
+// Visibility Score (estimated search impressions per day) over the last 30
+// days, you vs the competitor. VISIBILITY_MAX is the chart's top edge.
 const VISIBILITY = {
-  you: [41, 43, 42, 46, 48, 51, 50, 55, 58, 60, 63, 67],
-  them: [57, 58, 56, 58, 59, 58, 60, 59, 60, 61, 60, 62],
+  you: [4100, 4300, 4200, 4600, 4800, 5100, 5000, 5500, 5800, 6000, 6300, 6700],
+  them: [5700, 5800, 5600, 5800, 5900, 5800, 6000, 5900, 6000, 6100, 6000, 6200],
 };
+const VISIBILITY_MAX = 10_000;
 
 function chartPath(values: number[], width: number, height: number) {
   return values
-    .map((v, i) => `${i === 0 ? "M" : "L"}${((i / (values.length - 1)) * width).toFixed(1)},${(height - (v / 100) * height).toFixed(1)}`)
+    .map((v, i) => `${i === 0 ? "M" : "L"}${((i / (values.length - 1)) * width).toFixed(1)},${(height - (v / VISIBILITY_MAX) * height).toFixed(1)}`)
     .join(" ");
 }
 
@@ -1310,7 +1312,7 @@ export function DashboardHeroDemo() {
                   className={`absolute right-4 size-2.5 -translate-y-1/2 translate-x-1/2 rounded-full bg-indigo-500 ring-4 ring-indigo-500/20 ${
                     perfOpen ? "animate-[hero-fade-in_400ms_ease-out_1200ms_both]" : "opacity-0"
                   }`}
-                  style={{ top: `calc(0.5rem + ${(1 - VISIBILITY.you[VISIBILITY.you.length - 1] / 100) * 7}rem)` }}
+                  style={{ top: `calc(0.5rem + ${(1 - VISIBILITY.you[VISIBILITY.you.length - 1] / VISIBILITY_MAX) * 7}rem)` }}
                 />
                 <div className="mt-1 flex justify-between text-[10px] text-gray-400">
                   <span>30 days ago</span>
