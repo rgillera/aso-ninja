@@ -84,16 +84,6 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
     [rows],
   );
 
-  // The gap on the latest day, for the upgrade prompt: "your top competitor
-  // gets X a day, you get Y" sells the comparison better than a bare lock.
-  const gap = useMemo(() => {
-    const last = rows[rows.length - 1];
-    if (!locked || !last || !ownId) return null;
-    const own = Number(last[ownId] ?? 0);
-    const top = Math.max(...apps.slice(1).map((a) => Number(last[a.id] ?? 0)));
-    return top > own ? { own, top } : null;
-  }, [locked, rows, apps, ownId]);
-
   if (loading) {
     return (
       <div className="flex h-56 items-center justify-center text-xs text-gray-500">
@@ -129,9 +119,7 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
             className="ml-auto flex items-center gap-1.5 text-xs font-medium text-violet-400 light:text-violet-700 hover:underline"
           >
             <LockClosedIcon className="size-3.5" />
-            {gap
-              ? <>Top competitor gets ~{COUNT_FORMATTER.format(gap.top)}/day. Compare on Pro</>
-              : <>Compare competitors on Pro</>}
+            Compare in Pro
           </Link>
         )}
       </div>
