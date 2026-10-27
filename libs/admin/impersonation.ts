@@ -68,17 +68,30 @@ export function isReadOnlyAllowedRequest(method: string, pathname: string, isSer
   return m === "POST" && READ_ONLY_POST_ROUTES.has(pathname);
 }
 
+// Read-only RPCs not named get_*. Each is declared `stable` in SQL, so
+// Postgres itself refuses any write inside it. Add new ones here, or the page
+// using them comes up empty while viewing as a user.
+const READ_ONLY_RPCS = new Set([
+  "keyword_visibility_history",
+  "keyword_performance_snapshots",
+  "keyword_ranked_summary",
+  "keyword_performance_monthly",
+  "keyword_daily_observations",
+]);
+
 // Defense in depth for the impersonated Supabase client: refuses every
 // PostgREST/Storage/Auth write at the HTTP layer, so a code path that writes
 // through createClient() can't modify the user's data even if nothing above
-// it checked. Read-only RPCs (get_*) are POSTs too, so they're let through.
+// it checked. Read-only RPCs (get_* and READ_ONLY_RPCS) are POSTs too, so
+// they're let through.
 export const readOnlyFetch: typeof fetch = async (input, init) => {
   const method = (init?.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
   const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.href : input.url);
   const isRead =
     method === "GET" ||
     method === "HEAD" ||
-    (method === "POST" && url.pathname.startsWith("/rest/v1/rpc/get_"));
+    (method === "POST" && url.pathname.startsWith("/rest/v1/rpc/") &&
+      (url.pathname.startsWith("/rest/v1/rpc/get_") || READ_ONLY_RPCS.has(url.pathname.slice("/rest/v1/rpc/".length))));
 
   if (!isRead) {
     return new Response(
