@@ -29,7 +29,8 @@ const RANGE_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maxim
 
 export function formatEstimateRange(estimate: number): string {
   if (estimate < ESTIMATE_FLOOR) return `<${ESTIMATE_FLOOR}`;
-  return `${RANGE_FORMATTER.format(estimate / 2)}-${RANGE_FORMATTER.format(estimate * 2)}`;
+  // Rounded first so small counts read as whole people ("9", not "8.9").
+  return `${RANGE_FORMATTER.format(Math.round(estimate / 2))}-${RANGE_FORMATTER.format(Math.round(estimate * 2))}`;
 }
 
 // Share of searchers who scroll far enough to see the result at each

@@ -107,6 +107,8 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
             axisLine={false}
             tickLine={false}
             width={48}
+            domain={[0, 100]}
+            ticks={[0, 25, 50, 75, 100]}
           />
           <Tooltip
             labelFormatter={(d) => formatDate(String(d))}
@@ -123,7 +125,9 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
               stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
               strokeWidth={2}
               fill={`url(#vs-grad-${i})`}
-              dot={false}
+              // A just-followed app has a single day of data, which an
+              // area with no dots wouldn't draw at all.
+              dot={rows.length === 1 ? { r: 3, fill: SERIES_COLORS[i % SERIES_COLORS.length], strokeWidth: 0 } : false}
               connectNulls={false}
             />
           ))}

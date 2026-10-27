@@ -689,7 +689,13 @@ export default function KeywordPerformancePage() {
       const today = new Date();
       const from30 = new Date(today); from30.setDate(today.getDate() - 29);
       const toIso = today.toISOString().split("T")[0];
-      const fromIso = from30.toISOString().split("T")[0];
+      // Start no earlier than the day the app was followed (apps.created_at,
+      // the same "tracked since" the Export Report uses). Before that, the
+      // only checks of its keywords are whatever other users happened to run,
+      // too sparse to score fairly.
+      const trackedSince = activeApp.created_at?.slice(0, 10);
+      const last30 = from30.toISOString().split("T")[0];
+      const fromIso = trackedSince && trackedSince > last30 ? trackedSince : last30;
       const params = new URLSearchParams({
         terms: trackedTerms,
         appIds: chartApps.map((a) => a.id).join(","),
@@ -782,7 +788,7 @@ export default function KeywordPerformancePage() {
         <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
           <CardHeader
             title="Visibility Score"
-            info="How easy your app is to find in search. It goes up when you rank higher, and for keywords more people search for."
+            info="How easy your app is to find in search, from 0 to 100. It goes up when you rank higher, especially for keywords more people search for."
             divider={chartOpen}
           >
             <button
