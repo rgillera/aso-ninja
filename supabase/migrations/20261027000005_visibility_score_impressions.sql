@@ -1,5 +1,6 @@
 -- Visibility Score as estimated search impressions per day, replacing the
--- 0 to 100 percentage from 20261027000003.
+-- 0 to 100 percentage from 20261027000003 (rounded to one
+-- decimal in 20261027000004).
 --
 -- The percentage was the share of the best possible score over the tracked
 -- keywords, so it sat in the low single digits for most apps (they rank for
