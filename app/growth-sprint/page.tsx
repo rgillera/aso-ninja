@@ -52,7 +52,7 @@ const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
 const stats = [
   { label: "Duration", value: "90 days" },
-  { label: "Pricing", value: "$1,700/mo" },
+  { label: "Pricing", value: "$1,700/mo", note: "or $4,800 upfront" },
   { label: "Bonus", value: "1 yr Pro ($348)" },
 ];
 
@@ -201,19 +201,23 @@ export default async function GrowthSprintPage() {
               <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">fix what&apos;s holding your app&apos;s growth back</span>
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
-              No long-term contract. Just a fixed-price, three-phase engagement where we audit your app,
-              fix the leaks in your funnel, and test our way to more visibility, higher conversion,
-              and more revenue. It&apos;s run by the same team that built AppASO.
+              You built something you believe in. You&apos;ve tried every tactic and burned through ad
+              budgets that never paid back, yet the numbers barely move.{" "}
+              <span className="font-semibold text-gray-950">It&apos;s not your app. You&apos;re just missing the playbook.</span>{" "}
+              We&apos;ve already scaled apps like yours, so skip the years of trial and error and{" "}
+              <span className="font-semibold text-gray-950">let us do the work for you.</span>
             </p>
             <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-9">
               Book your free audit call
             </PortalButton>
+            <p className="mt-4 text-sm text-gray-500">90 days · Backed by guarantees · No long-term contract</p>
 
             <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-3 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10">
               {stats.map((stat) => (
                 <div key={stat.label} className="bg-white px-3 py-5">
                   <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">{stat.label}</dt>
                   <dd className="mt-1.5 whitespace-nowrap text-sm font-semibold text-gray-950 sm:text-lg">{stat.value}</dd>
+                  {stat.note && <dd className="mt-0.5 whitespace-nowrap text-xs text-gray-500">{stat.note}</dd>}
                 </div>
               ))}
             </dl>
