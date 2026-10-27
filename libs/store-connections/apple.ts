@@ -42,8 +42,12 @@ function parseTsv(text: string): Record<string, string>[] {
 // Analytics "Total Downloads" figure for the same day/app.
 const DOWNLOAD_PRODUCT_TYPES = new Set(["1", "1F", "1T"]);
 
+// listed: the app has any row at all in this vendor's report for the day
+// (downloads, updates, IAP, any country) — i.e. the key's vendor account
+// actually owns this app. A valid key for a different account still returns
+// 200 with downloads 0, so this is what tells the two apart.
 export type AppleSalesResult =
-  | { ok: true; downloads: number }
+  | { ok: true; downloads: number; listed: boolean }
   | { ok: false; status: number; reportMissing: boolean };
 
 // date: YYYY-MM-DD. appleStoreId: the app's numeric App Store ID (apps.store_id for iOS).
@@ -90,20 +94,30 @@ export async function fetchDailyDownloads(
       r["Country Code"]?.toUpperCase() === countryCode.toUpperCase()
     )
     .reduce((sum, r) => sum + (parseInt(r["Units"], 10) || 0), 0);
+  const listed = rows.some((r) => r["Apple Identifier"] === appleStoreId);
 
-  return { ok: true, downloads };
+  return { ok: true, downloads, listed };
 }
 
 // Used by the connect route to validate credentials before persisting them.
 // Queries a date old enough (7 days back) that a genuinely missing report is
 // implausible, so a failure response here unambiguously means bad
 // credentials rather than "report not generated yet".
+// requireListed: also reject when the app has no row in that day's report.
+// Off for the app the user is connecting by hand (a brand-new or very quiet
+// app can legitimately have an empty day), on when reusing a key across the
+// workspace's other apps, where a key from a different vendor account would
+// otherwise "connect" and silently sync zeros forever.
 export async function testAppleCredential(
-  credential: AppleStoreCredential, appleStoreId: string, countryCode: string
+  credential: AppleStoreCredential, appleStoreId: string, countryCode: string,
+  { requireListed = false }: { requireListed?: boolean } = {}
 ): Promise<{ valid: boolean; error?: string }> {
   const testDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   try {
     const result = await fetchDailyDownloads(credential, appleStoreId, testDate, countryCode);
+    if (result.ok && requireListed && !result.listed) {
+      return { valid: false, error: "Not found in this vendor account's sales report." };
+    }
     if (result.ok) return { valid: true };
     if (result.status === 401 || result.status === 403) {
       return { valid: false, error: "App Store Connect rejected these credentials. Double-check the Issuer ID, Key ID, private key, and Vendor Number." };

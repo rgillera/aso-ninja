@@ -48,6 +48,18 @@ function decodeStorageObject(buf: ArrayBuffer): string {
   return new TextDecoder("utf-8").decode(bytes);
 }
 
+// Play Console's Download reports page hands out the bucket as a URI
+// ("Copy Cloud Storage URI" → gs://pubsite_prod_rev_123/stats/installs/),
+// and that's what most people paste. Accept that, a console.cloud.google.com
+// browser link, or the bare bucket name, and reduce all of them to the name.
+export function normalizeBucketId(input: string): string {
+  return input
+    .trim()
+    .replace(/^gs:\/\//i, "")
+    .replace(/^https?:\/\/console\.cloud\.google\.com\/storage\/browser\//i, "")
+    .split(/[/?#]/)[0];
+}
+
 function parseCsv(text: string): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter((l) => l.length > 0);
   if (lines.length < 2) return [];
@@ -68,10 +80,6 @@ function parseCsv(text: string): Record<string, string>[] {
 // in Play Console's own Statistics UI).
 const DOWNLOADS_COLUMN = "Daily Device Installs";
 const COUNTRY_COLUMN = "Country";
-
-export type GoogleInstallsResult =
-  | { ok: true; downloads: number }
-  | { ok: false; error: string; reportMissing: boolean };
 
 export type GoogleMonthlyInstallsResult =
   | { ok: true; byDate: Record<string, number> }
@@ -112,12 +120,25 @@ export async function fetchMonthlyInstalls(
     if (objectRes.status === 404) {
       return { ok: false, error: "This month's install report isn't available yet in Cloud Storage.", reportMissing: true };
     }
+    if (objectRes.status === 401 || objectRes.status === 403) {
+      return {
+        ok: false,
+        error: "This service account can't read that bucket. In Play Console → Users and permissions, invite its email with \"View app information and download bulk reports\". New access can take up to 24 hours to apply.",
+        reportMissing: false,
+      };
+    }
     return { ok: false, error: `Cloud Storage returned an unexpected error (status ${objectRes.status}).`, reportMissing: false };
   }
 
   const text = decodeStorageObject(await objectRes.arrayBuffer());
+  const rows = parseCsv(text);
+  // Guard against Play renaming the column: without this, every day would
+  // parse as NaN → 0 and quietly store a month of zeros as real history.
+  if (rows.length && !(DOWNLOADS_COLUMN in rows[0])) {
+    return { ok: false, error: `Play Console's install report has no "${DOWNLOADS_COLUMN}" column.`, reportMissing: false };
+  }
   const byDate: Record<string, number> = {};
-  for (const row of parseCsv(text)) {
+  for (const row of rows) {
     // Case-insensitive: Play Console's country export uses lowercase codes
     // ("us"), while apps.country is stored uppercase — compare loosely rather
     // than betting on either side's casing.
@@ -126,17 +147,6 @@ export async function fetchMonthlyInstalls(
     byDate[row["Date"]] = isNaN(downloads) ? 0 : downloads;
   }
   return { ok: true, byDate };
-}
-
-// date: YYYY-MM-DD. Single-day convenience wrapper over fetchMonthlyInstalls.
-export async function fetchDailyInstalls(
-  credential: GoogleStoreCredential, packageName: string, date: string, countryCode: string
-): Promise<GoogleInstallsResult> {
-  const month = await fetchMonthlyInstalls(credential, packageName, date.slice(0, 7).replace("-", ""), countryCode);
-  if (!month.ok) return month;
-  const downloads = month.byDate[date];
-  if (downloads == null) return { ok: false, error: `No row found for ${date} (${countryCode}) in this month's report.`, reportMissing: true };
-  return { ok: true, downloads };
 }
 
 // Used by the connect route to validate credentials before persisting them.
@@ -150,18 +160,16 @@ export async function fetchDailyInstalls(
 // with silent nightly sync failures — reportMissing is therefore treated as
 // invalid too, not just outright errors. The one real false-positive case
 // this creates is the first few days of a new month, which is rare and
-// recoverable (the user just retries once that month's file exists). Now
-// that fetchDailyInstalls filters to one country, a second false-positive
-// exists too: a country with zero installs on the test date has no row in
-// the export at all, reading identically to reportMissing. Rare in practice
-// (7 days back, any country with real installs) but worth knowing if a valid
-// low-traffic-country credential ever gets rejected here.
+// recoverable (the user just retries once that month's file exists). Only
+// the file itself has to exist: reading it at all proves the bucket, package
+// and permissions are right, while a missing row for this one country/day
+// just means zero installs there (Play omits those rows), not a bad config.
 export async function testGoogleCredential(
   credential: GoogleStoreCredential, packageName: string, countryCode: string
 ): Promise<{ valid: boolean; error?: string }> {
-  const testDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const testMonth = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 7).replace("-", "");
   try {
-    const result = await fetchDailyInstalls(credential, packageName, testDate, countryCode);
+    const result = await fetchMonthlyInstalls(credential, packageName, testMonth, countryCode);
     if (result.ok) return { valid: true };
     return {
       valid: false,

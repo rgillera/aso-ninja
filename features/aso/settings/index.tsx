@@ -8,7 +8,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { ConnectAsaForm } from "@/features/asa/active-bids/ConnectAsaForm";
 import type { App } from "@/libs/contracts";
-import type { ConnectionStatus } from "@/libs/store-connections/types";
+import type { ConnectionStatus, OtherAppsResult } from "@/libs/store-connections/types";
 import type { AsaConnectionStatus } from "@/libs/asa-connections/types";
 
 type Props = { app: App };
@@ -33,11 +33,62 @@ function StatusBadge({ connection }: { connection: ConnectionStatus }) {
   );
 }
 
-function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c: ConnectionStatus) => void }) {
+type ConnectFormProps = {
+  appId: string;
+  otherAppsCount: number;
+  onConnected: (otherApps: OtherAppsResult | null) => void;
+};
+
+function storeAppsLabel(store: "ios" | "android", count: number) {
+  return `${count} other ${store === "ios" ? "iOS" : "Android"} app${count === 1 ? "" : "s"}`;
+}
+
+function OtherAppsCheckbox({ store, count, checked, onChange }: {
+  store: "ios" | "android"; count: number; checked: boolean; onChange: (checked: boolean) => void;
+}) {
+  if (count === 0) return null;
+  return (
+    <label className="flex items-start gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 accent-indigo-500"
+      />
+      <span>
+        Also connect my {storeAppsLabel(store, count)} with these credentials. Apps this account
+        doesn&apos;t own are skipped.
+      </span>
+    </label>
+  );
+}
+
+function OtherAppsSummary({ result }: { result: OtherAppsResult }) {
+  if (!result.connected.length && !result.failed.length) return null;
+  return (
+    <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3 space-y-1.5 text-xs">
+      {result.connected.length > 0 && (
+        <p className="flex items-start gap-1.5 text-emerald-400 light:text-emerald-700">
+          <CheckCircleIcon className="size-3.5 shrink-0 mt-px" />
+          <span>Also connected: {result.connected.join(", ")}. Their download history syncs in the next few minutes.</span>
+        </p>
+      )}
+      {result.failed.map((f) => (
+        <p key={f.name} className="flex items-start gap-1.5 text-gray-500">
+          <ExclamationTriangleIcon className="size-3.5 shrink-0 mt-px" />
+          <span>{f.name}: {f.error}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function IosConnectForm({ appId, otherAppsCount, onConnected }: ConnectFormProps) {
   const [issuerId, setIssuerId] = useState("");
   const [keyId, setKeyId] = useState("");
   const [privateKey, setPrivateKey] = useState("");
   const [vendorNumber, setVendorNumber] = useState("");
+  const [connectOthers, setConnectOthers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,14 +109,14 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
       const res = await fetch(`/api/apps/${appId}/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ issuerId, keyId, privateKey, vendorNumber }),
+        body: JSON.stringify({ issuerId, keyId, privateKey, vendorNumber, connectOtherApps: connectOthers && otherAppsCount > 0 }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Couldn't connect this app.");
         return;
       }
-      onConnected({ connected: true, status: "connected" });
+      onConnected(data.otherApps ?? null);
     } catch {
       setError("Couldn't reach the server. Try again.");
     } finally {
@@ -140,6 +191,8 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
           </p>
         </div>
 
+        <OtherAppsCheckbox store="ios" count={otherAppsCount} checked={connectOthers} onChange={setConnectOthers} />
+
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
@@ -183,9 +236,10 @@ function IosConnectForm({ appId, onConnected }: { appId: string; onConnected: (c
   );
 }
 
-function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected: (c: ConnectionStatus) => void }) {
+function AndroidConnectForm({ appId, otherAppsCount, onConnected }: ConnectFormProps) {
   const [serviceAccountJson, setServiceAccountJson] = useState("");
   const [bucketId, setBucketId] = useState("");
+  const [connectOthers, setConnectOthers] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,14 +260,14 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
       const res = await fetch(`/api/apps/${appId}/connect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceAccountJson, bucketId }),
+        body: JSON.stringify({ serviceAccountJson, bucketId, connectOtherApps: connectOthers && otherAppsCount > 0 }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Couldn't connect this app.");
         return;
       }
-      onConnected({ connected: true, status: "connected" });
+      onConnected(data.otherApps ?? null);
     } catch {
       setError("Couldn't reach the server. Try again.");
     } finally {
@@ -229,12 +283,12 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
           <input
             value={bucketId}
             onChange={(e) => setBucketId(e.target.value)}
-            placeholder="pubsite_prod_rev_01234567890987654321"
+            placeholder="gs://pubsite_prod_rev_01234567890987654321"
             required
             className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 focus:ring-indigo-500/40 outline-none px-3 py-2 text-sm text-gray-200 light:text-gray-800 placeholder-gray-600 light:placeholder-gray-400 transition-all"
           />
           <p className="mt-1 text-[11px] text-gray-600 light:text-gray-400">
-            Play Console → Setup → API access → Download reports
+            Play Console → Download reports → Statistics → Copy Cloud Storage URI
           </p>
         </div>
         <div>
@@ -262,6 +316,8 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
           </p>
         </div>
 
+        <OtherAppsCheckbox store="android" count={otherAppsCount} checked={connectOthers} onChange={setConnectOthers} />
+
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
             <ExclamationTriangleIcon className="size-4 shrink-0" />
@@ -282,10 +338,13 @@ function AndroidConnectForm({ appId, onConnected }: { appId: string; onConnected
       <div className="rounded-lg bg-white/[0.03] light:bg-black/[0.03] px-3.5 py-3">
         <p className="text-[11px] font-medium text-gray-400 light:text-gray-600 mb-1.5">Before connecting</p>
         <ol className="text-[11px] text-gray-500 list-decimal list-inside space-y-1.5">
-          <li>Play Console: Setup → API access → enable Cloud Storage download reports (if not already on).</li>
-          <li>Google Cloud Console: create a service account, then generate a JSON key for it.</li>
-          <li>Grant that service account read access to the bucket shown in Play Console&apos;s download reports settings.</li>
-          <li>Play Console: give the same service account &quot;View app info&quot; permission, set to Global.</li>
+          <li>Google Cloud Console: create a service account in any project, then add a JSON key for it under Keys.</li>
+          <li>
+            Play Console → Users and permissions → Invite new users: enter the service account&apos;s email
+            and, under Account permissions, turn on &quot;View app information and download bulk reports&quot;.
+          </li>
+          <li>Play Console → Download reports → Statistics: click Copy Cloud Storage URI and paste it into the bucket field.</li>
+          <li>Google can take up to 24 hours to apply new access. If connecting fails with an access error, try again later.</li>
         </ol>
       </div>
     </div>
@@ -308,6 +367,9 @@ export default function AppConnectionSettings({ app }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [otherAppsResult, setOtherAppsResult] = useState<OtherAppsResult | null>(null);
+  const [connectingOthers, setConnectingOthers] = useState(false);
+  const [connectOthersError, setConnectOthersError] = useState<string | null>(null);
 
   const [asaConnection, setAsaConnection] = useState<AsaConnectionStatus | null>(null);
   const [asaLoading, setAsaLoading] = useState(true);
@@ -367,10 +429,32 @@ export default function AppConnectionSettings({ app }: Props) {
     }
   }
 
+  async function handleConnected(otherApps: OtherAppsResult | null) {
+    setOtherAppsResult(otherApps);
+    await loadStatus();
+  }
+
+  async function handleConnectOthers() {
+    setConnectingOthers(true);
+    setConnectOthersError(null);
+    try {
+      const res = await fetch(`/api/apps/${app.id}/connect/others`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) setConnectOthersError(data.error ?? "Couldn't connect your other apps.");
+      else setOtherAppsResult(data.otherApps);
+      await loadStatus();
+    } catch {
+      setConnectOthersError("Couldn't reach the server.");
+    } finally {
+      setConnectingOthers(false);
+    }
+  }
+
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
       await fetch(`/api/apps/${app.id}/connect`, { method: "DELETE" });
+      setOtherAppsResult(null);
       await loadStatus();
     } finally {
       setDisconnecting(false);
@@ -471,6 +555,13 @@ export default function AppConnectionSettings({ app }: Props) {
                     {syncError}
                   </div>
                 )}
+                {connectOthersError && (
+                  <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-2.5 text-xs text-red-400 light:text-red-600">
+                    <ExclamationTriangleIcon className="size-4 shrink-0" />
+                    {connectOthersError}
+                  </div>
+                )}
+                {otherAppsResult && <OtherAppsSummary result={otherAppsResult} />}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSync}
@@ -480,6 +571,15 @@ export default function AppConnectionSettings({ app }: Props) {
                     <ArrowPathIcon className={`size-3.5 ${syncing ? "animate-spin" : ""}`} />
                     {syncing ? "Syncing…" : "Sync now"}
                   </button>
+                  {!downloadsLocked && (connection.unconnectedOtherApps ?? 0) > 0 && (
+                    <button
+                      onClick={handleConnectOthers}
+                      disabled={connectingOthers}
+                      className="rounded-lg bg-[#0a0a0c] light:bg-gray-50 hover:ring-indigo-500/40 disabled:opacity-50 px-3 py-2 text-xs font-medium text-gray-300 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+                    >
+                      {connectingOthers ? "Connecting…" : `Use for my ${storeAppsLabel(app.store, connection.unconnectedOtherApps!)}`}
+                    </button>
+                  )}
                   <button
                     onClick={handleDisconnect}
                     disabled={disconnecting}
@@ -490,9 +590,9 @@ export default function AppConnectionSettings({ app }: Props) {
                 </div>
               </div>
             ) : app.store === "ios" ? (
-              <IosConnectForm appId={app.id} onConnected={loadStatus} />
+              <IosConnectForm appId={app.id} otherAppsCount={connection?.unconnectedOtherApps ?? 0} onConnected={handleConnected} />
             ) : (
-              <AndroidConnectForm appId={app.id} onConnected={loadStatus} />
+              <AndroidConnectForm appId={app.id} otherAppsCount={connection?.unconnectedOtherApps ?? 0} onConnected={handleConnected} />
             )}
           </div>
         </div>
