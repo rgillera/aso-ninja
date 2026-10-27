@@ -42,6 +42,24 @@ function mergeSeries(apps: ChartApp[], data: VisibilityHistoryResult): MergedRow
   });
 }
 
+// Y axis top: the score is a 0 to 100 percentage, but most apps rank for a
+// small share of their tracked keywords and sit in the single digits, where a
+// fixed 0-100 axis draws every change as a flat line. Picks the smallest of
+// these that clears the highest point with some headroom; each divides into
+// 4 whole-number steps.
+const Y_TOPS = [4, 8, 12, 20, 40, 60, 80, 100];
+
+function yAxisTop(apps: ChartApp[], rows: MergedRow[]): number {
+  let max = 0;
+  for (const row of rows) {
+    for (const app of apps) {
+      const v = row[app.id];
+      if (typeof v === "number" && v > max) max = v;
+    }
+  }
+  return Y_TOPS.find((top) => top >= max * 1.15) ?? 100;
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
@@ -49,6 +67,7 @@ function formatDate(iso: string): string {
 
 export function VisibilityScoreChart({ apps, data, loading }: Props) {
   const rows = useMemo(() => mergeSeries(apps, data), [apps, data]);
+  const yTop = useMemo(() => yAxisTop(apps, rows), [apps, rows]);
 
   if (loading) {
     return (
@@ -107,12 +126,13 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
             axisLine={false}
             tickLine={false}
             width={48}
-            domain={[0, 100]}
-            ticks={[0, 25, 50, 75, 100]}
+            domain={[0, yTop]}
+            ticks={[0, 1, 2, 3, 4].map((i) => (yTop / 4) * i)}
+            tickFormatter={(v: number) => `${v}%`}
           />
           <Tooltip
             labelFormatter={(d) => formatDate(String(d))}
-            formatter={(value, name) => [value, name]}
+            formatter={(value, name) => [`${value}%`, name]}
             contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
