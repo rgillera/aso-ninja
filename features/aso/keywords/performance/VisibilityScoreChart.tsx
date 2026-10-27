@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
-import { ChartBarIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import { SERIES_COLORS, type VisibilityHistoryResult } from "./types";
 
 export type ChartApp = { id: string; name: string; icon: string };
@@ -13,9 +14,12 @@ type Props = {
   apps: ChartApp[];
   data: VisibilityHistoryResult;
   loading: boolean;
+  /** Free plan: the user's own line stays readable, competitor lines are
+   *  blurred with no tooltip values, behind an upgrade prompt. */
+  competitorsLocked?: boolean;
 };
 
-type MergedRow = { date: string; [appId: string]: number | string | null };
+type MergedRow = { date: string; ts: number; [appId: string]: number | string | null };
 
 // Each app's series only has points for dates we actually observed a rank.
 // Dates an app wasn't observed carry its last known score forward, so every
@@ -29,7 +33,7 @@ function mergeSeries(apps: ChartApp[], data: VisibilityHistoryResult): MergedRow
   for (const app of apps) { cursors[app.id] = 0; lastSeen[app.id] = null; }
 
   return allDates.map((date) => {
-    const row: MergedRow = { date };
+    const row: MergedRow = { date, ts: toTs(date) };
     for (const app of apps) {
       const series = data[app.id] ?? [];
       while (cursors[app.id] < series.length && series[cursors[app.id]].date <= date) {
@@ -46,13 +50,49 @@ function mergeSeries(apps: ChartApp[], data: VisibilityHistoryResult): MergedRow
 // of thousands, so ticks and the tooltip use short forms ("1.2K").
 const COUNT_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumSignificantDigits: 3 });
 
-function formatDate(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+const DAY_MS = 86_400_000;
+
+// Dates are plotted on a time axis (UTC midnight), not as categories, so a
+// gap between observed days takes up as much width as the days it spans
+// instead of looking like a sudden one-day jump.
+function toTs(iso: string): number {
+  return Date.parse(iso + "T00:00:00Z");
 }
 
-export function VisibilityScoreChart({ apps, data, loading }: Props) {
+function formatTs(ts: number): string {
+  return new Date(ts).toLocaleDateString(undefined, { day: "numeric", month: "short", timeZone: "UTC" });
+}
+
+// Whole-day ticks across the range, thinned to about 8 so labels don't collide.
+function dayTicks(min: number, max: number): number[] {
+  const days = Math.round((max - min) / DAY_MS);
+  const step = Math.max(1, Math.ceil(days / 7));
+  const ticks: number[] = [];
+  for (let d = 0; d <= days; d += step) ticks.push(min + d * DAY_MS);
+  return ticks;
+}
+
+export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = false }: Props) {
   const rows = useMemo(() => mergeSeries(apps, data), [apps, data]);
+  // apps[0] is always the user's own app; the rest are competitors.
+  const ownId = apps[0]?.id;
+  const locked = competitorsLocked && apps.length > 1;
+  const isBlurred = (appId: string) => locked && appId !== ownId;
+
+  const ticks = useMemo(
+    () => (rows.length ? dayTicks(rows[0].ts, rows[rows.length - 1].ts) : []),
+    [rows],
+  );
+
+  // The gap on the latest day, for the upgrade prompt: "your top competitor
+  // gets X a day, you get Y" sells the comparison better than a bare lock.
+  const gap = useMemo(() => {
+    const last = rows[rows.length - 1];
+    if (!locked || !last || !ownId) return null;
+    const own = Number(last[ownId] ?? 0);
+    const top = Math.max(...apps.slice(1).map((a) => Number(last[a.id] ?? 0)));
+    return top > own ? { own, top } : null;
+  }, [locked, rows, apps, ownId]);
 
   if (loading) {
     return (
@@ -81,9 +121,26 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
           <div key={app.id} className="flex items-center gap-1.5 text-xs text-gray-400 light:text-gray-600">
             <span className="size-2 rounded-full" style={{ backgroundColor: SERIES_COLORS[i % SERIES_COLORS.length] }} />
             {app.name}
+            {isBlurred(app.id) && <LockClosedIcon className="size-3 text-gray-500" />}
           </div>
         ))}
       </div>
+
+      {locked && (
+        <div className="mx-4 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs">
+          <span className="text-gray-300 light:text-gray-700">
+            {gap
+              ? <>Your top competitor gets ~{COUNT_FORMATTER.format(gap.top)} impressions a day. You get ~{COUNT_FORMATTER.format(gap.own)}.</>
+              : <>See how your visibility compares with competitors, day by day.</>}
+          </span>
+          <Link
+            href="/dashboard/subscription"
+            className="font-medium text-emerald-500 light:text-emerald-700 hover:underline"
+          >
+            Upgrade to Basic to compare →
+          </Link>
+        </div>
+      )}
 
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
@@ -97,11 +154,19 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
                 </linearGradient>
               );
             })}
+            <filter id="vs-blur">
+              <feGaussianBlur stdDeviation="4" />
+            </filter>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
           <XAxis
-            dataKey="date"
-            tickFormatter={formatDate}
+            dataKey="ts"
+            type="number"
+            scale="time"
+            // A single day has no span; pad it so the lone point sits mid-axis.
+            domain={rows.length === 1 ? [rows[0].ts - DAY_MS, rows[0].ts + DAY_MS] : ["dataMin", "dataMax"]}
+            ticks={ticks}
+            tickFormatter={formatTs}
             tick={{ fill: "#6b7280", fontSize: 11 }}
             axisLine={{ stroke: "#ffffff1a" }}
             tickLine={false}
@@ -118,8 +183,11 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
             tickFormatter={(v: number) => COUNT_FORMATTER.format(v)}
           />
           <Tooltip
-            labelFormatter={(d) => formatDate(String(d))}
-            formatter={(value, name) => [`${COUNT_FORMATTER.format(Number(value))} impressions/day`, name]}
+            labelFormatter={(ts) => formatTs(Number(ts))}
+            formatter={(value, name, item) => [
+              isBlurred(String(item.dataKey)) ? "Locked" : `${COUNT_FORMATTER.format(Number(value))} impressions/day`,
+              name,
+            ]}
             contentStyle={{ background: "#141417", border: "1px solid #ffffff1a", borderRadius: 8, fontSize: 12 }}
             labelStyle={{ color: "#9ca3af" }}
           />
@@ -132,6 +200,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
               stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
               strokeWidth={2}
               fill={`url(#vs-grad-${i})`}
+              className={isBlurred(app.id) ? "[filter:url(#vs-blur)]" : undefined}
               // A just-followed app has a single day of data, which an
               // area with no dots wouldn't draw at all.
               dot={rows.length === 1 ? { r: 3, fill: SERIES_COLORS[i % SERIES_COLORS.length], strokeWidth: 0 } : false}

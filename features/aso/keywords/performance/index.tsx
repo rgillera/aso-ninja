@@ -64,6 +64,8 @@ export default function KeywordPerformancePage() {
   const planSlug = usePlanSlug();
   const isLocked = !isPlanAtLeast(planSlug, "free");
   const translateLocked = !isPlanAtLeast(planSlug, "free");
+  // Free sees its own Search Visibility line; competitor lines need Basic+.
+  const competitorLinesLocked = !isPlanAtLeast(planSlug, "basic");
   const [keywords, setKeywords] = useState<PerformanceKeyword[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -801,7 +803,7 @@ export default function KeywordPerformancePage() {
               {chartOpen ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
             </button>
           </CardHeader>
-          {chartOpen && <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />}
+          {chartOpen && <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} competitorsLocked={competitorLinesLocked} />}
         </div>
 
         <PerformanceTable
