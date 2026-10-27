@@ -28,6 +28,9 @@ import type { DownloadsConnection } from "@/features/aso/keywords/research/types
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CardHeader } from "@/features/dashboard/CardHeader";
+import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
+import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
+import { estimateDailySearches, formatEstimateRange } from "@/libs/keyword-impressions";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
@@ -134,16 +137,23 @@ function RankCell({ value, date, store, onClick }: { value: TermSnapshot["rankPr
   );
 }
 
-function VolumeCell({ value, growth, onClick }: { value: number | null | undefined; growth: number | null; onClick: () => void }) {
+// Hover shows the 0-100 score as daily searches, same as the Volume cell in
+// Keyword Research. Pro-only there too.
+function VolumeCell({ value, growth, searchesLocked, onClick }: { value: number | null | undefined; growth: number | null; searchesLocked: boolean; onClick: () => void }) {
   if (value == null) return <span className="text-sm text-gray-600 light:text-gray-400">-</span>;
+  const hint = searchesLocked
+    ? <ProLockedHint label="Est. searches per day" footer="Click to view volume history" />
+    : `Est. searches: ${formatEstimateRange(estimateDailySearches(value))}/day\nClick to view volume history`;
   return (
-    <button onClick={onClick} className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors" title="View volume history">
-      <VolumeBar value={value} />
-      {growth !== null && growth < 0
-        ? <ArrowTrendingDownIcon className="size-3.5 text-red-400 light:text-red-600 shrink-0" />
-        : <ArrowTrendingUpIcon className={`size-3.5 shrink-0 ${growth ? "text-indigo-400 light:text-indigo-600" : "text-gray-600 light:text-gray-400"}`} />
-      }
-    </button>
+    <HoverTooltip text={hint}>
+      <button onClick={onClick} aria-label="View volume history" className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors">
+        <VolumeBar value={value} hoverHint />
+        {growth !== null && growth < 0
+          ? <ArrowTrendingDownIcon className="size-3.5 text-red-400 light:text-red-600 shrink-0" />
+          : <ArrowTrendingUpIcon className={`size-3.5 shrink-0 ${growth ? "text-indigo-400 light:text-indigo-600" : "text-gray-600 light:text-gray-400"}`} />
+        }
+      </button>
+    </HoverTooltip>
   );
 }
 
@@ -535,6 +545,7 @@ export function PerformanceTable({
                         <VolumeCell
                           value={s?.volumeLatest ?? k.volume}
                           growth={volumeGrowth(s?.volumePrev, s?.volumeLatest)}
+                          searchesLocked={downloadsLocked}
                           onClick={() => onViewVolumeHistory(k.term)}
                         />
                       )}
