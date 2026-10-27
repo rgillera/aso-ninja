@@ -51,9 +51,9 @@ export const metadata: Metadata = {
 const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 
 const stats = [
-  { label: "Duration", value: "90 days" },
+  { label: "Duration", value: "90 days", note: "hands-on in Slack" },
   { label: "Pricing", value: "$1,700/mo", note: "or $4,800 upfront" },
-  { label: "Bonus", value: "1 yr Pro ($348)" },
+  { label: "Bonus", value: "1 yr Pro ($348)", note: "included free" },
 ];
 
 const phases = [
