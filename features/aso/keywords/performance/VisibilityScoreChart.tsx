@@ -57,7 +57,7 @@ export function VisibilityScoreChart({ apps, data, loading }: Props) {
   if (loading) {
     return (
       <div className="flex h-56 items-center justify-center text-xs text-gray-500">
-        Loading visibility score…
+        Loading search visibility…
       </div>
     );
   }

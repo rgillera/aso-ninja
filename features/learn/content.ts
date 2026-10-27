@@ -267,7 +267,7 @@ export const LEARN_GROUPS: LearnGroup[] = [
           "See whether a dip is specific to you or affecting the whole category, by comparing against competitors",
         ],
         howToUse: [
-          "Watch the Visibility Score trend as your single \"is this working\" signal",
+          "Watch the Search Visibility trend as your single \"is this working\" signal",
           "Drill into a keyword's Volume or Rank history the moment something looks off",
           "Add competitors to the chart to put your trend in context",
         ],

@@ -142,7 +142,7 @@ const REPORT_ROWS = PERFORMANCE.map((row) => ({
   downloads: row.downloads,
 }));
 
-// Visibility Score (estimated search impressions per day) over the last 30
+// Search Visibility (estimated search impressions per day) over the last 30
 // days, you vs the competitor. VISIBILITY_MAX is the chart's top edge.
 const VISIBILITY = {
   you: [4100, 4300, 4200, 4600, 4800, 5100, 5000, 5500, 5800, 6000, 6300, 6700],
@@ -214,7 +214,7 @@ const TIMELINE: [Step, number][] = [
   ["exported", 900],
   // The downloaded report opens, so the viewer sees what they'd send a client.
   ["sheet", 3200],
-  // Back on the page, the cursor moves up to the Visibility Score chart,
+  // Back on the page, the cursor moves up to the Search Visibility chart,
   // which shares the page with the table (no tab to switch to).
   ["chart", 2400],
   ["reset", 800],
@@ -1213,7 +1213,7 @@ export function DashboardHeroDemo() {
 
           {/* Keyword Performance — a trimmed copy of features/aso/keywords/
               performance, opened from the sidebar: competitor chips, the
-              Visibility Score chart and the keyword table on one page. The
+              Search Visibility chart and the keyword table on one page. The
               cursor works the table (export) first, then the chart. */}
           <div
             aria-hidden={!perfOpen}
@@ -1270,9 +1270,12 @@ export function DashboardHeroDemo() {
               }`}
             >
               <div className="flex items-center justify-between border-b border-black/[0.08] px-4 py-2.5">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-semibold text-gray-900">Visibility Score</p>
-                  <InformationCircleIcon className="size-3.5 text-gray-400" />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-gray-900">Search Visibility</p>
+                    <InformationCircleIcon className="size-3.5 text-gray-400" />
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-gray-500">Est. impressions per day</p>
                 </div>
                 <ChevronUpIcon className="size-4 text-gray-500" />
               </div>

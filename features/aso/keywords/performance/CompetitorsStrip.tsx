@@ -13,7 +13,7 @@ type Props = {
   onCompetitorsChange: (competitors: CompetitorApp[]) => void;
   /** Outer spacing; defaults to the page gutter used on Keyword Performance. */
   className?: string;
-  /** Color dots matching the Visibility Score lines; off where there's no chart. */
+  /** Color dots matching the Search Visibility lines; off where there's no chart. */
   showColors?: boolean;
 };
 

@@ -657,7 +657,7 @@ export default function KeywordPerformancePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, isLocked]);
 
-  // Visibility Score: our own derived metric (estimated daily impressions from
+  // Search Visibility: our own derived metric (estimated daily impressions from
   // real Volume x real Rank, summed across tracked keywords), not an
   // Apple/Google-reported number.
   const chartApps = useMemo<ChartApp[]>(() => {
@@ -747,7 +747,7 @@ export default function KeywordPerformancePage() {
           description="Upgrade to Basic or above to monitor keyword rankings and visibility over time."
           benefits={[
             "Track search volume and rank for every tracked keyword",
-            "See your Visibility Score trend across the last 30 days",
+            "See your Search Visibility trend across the last 30 days",
             "Compare performance against competitor apps",
           ]}
         />
@@ -788,7 +788,8 @@ export default function KeywordPerformancePage() {
 
         <div className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
           <CardHeader
-            title="Visibility Score"
+            title="Search Visibility"
+            subtitle="Est. impressions per day"
             info="Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for."
             divider={chartOpen}
           >
