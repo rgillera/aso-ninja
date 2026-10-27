@@ -203,9 +203,9 @@ export default async function GrowthSprintPage() {
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               You built something you believe in. You&apos;ve tried every tactic and burned through ad
               budgets that never paid back, yet the numbers barely move.{" "}
-              <span className="font-semibold text-gray-950">It&apos;s not your app. You&apos;re just missing the playbook.</span>{" "}
+              <span className="font-semibold text-gray-950">The problem isn&apos;t your effort. It&apos;s the playbook.</span>{" "}
               We&apos;ve already scaled apps like yours, so skip the years of trial and error and{" "}
-              <span className="font-semibold text-gray-950">let us do the work for you.</span>
+              <span className="font-semibold text-indigo-600">let us do the work for you.</span>
             </p>
             <PortalButton href={bookHref} external={!!calendlyUrl} className="mt-9">
               Book your free audit call
