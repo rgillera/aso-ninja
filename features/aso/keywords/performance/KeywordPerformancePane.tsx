@@ -35,7 +35,8 @@ export function KeywordPerformancePane({
   const term = row?.keyword;
   const planSlug = usePlanSlug();
   // Free has no keyword history, so its charts (visibility, rank, volume,
-  // downloads) are one lock card under today's numbers.
+  // downloads) are one lock card under today's numbers, pointing at Pro (the
+  // plan with real history; Basic only keeps a month).
   const historyLocked = !isPlanAtLeast(planSlug, "basic");
   // Below Pro, Keyword Performance blurs competitor lines behind an upgrade
   // link; here it's just the app's own line.
@@ -132,7 +133,7 @@ export function KeywordPerformancePane({
         // FeatureLocked's own page margins don't apply inside the pane.
         <div className="[&>div]:mx-0 [&>div]:mt-0">
           <FeatureLocked
-            minPlan="basic"
+            minPlan="pro"
             icon={ChartBarIcon}
             title="Track this keyword over time"
             description={`See how "${row.keyword}" is doing day by day, not just today.`}

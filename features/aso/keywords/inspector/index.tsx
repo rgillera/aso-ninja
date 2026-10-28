@@ -328,7 +328,23 @@ function ResultRow({
 
 // Below Pro: the lock card over a blurred, made-up result, so it's clear
 // what the page does before upgrading. The numbers are decoration only.
-function InspectorLockedPreview() {
+// Docked in Keyword Research's side pane, just the card, the same as the
+// Long Tail tab's lock.
+function InspectorLockedPreview({ docked = false }: { docked?: boolean }) {
+  const lockCard = (
+    <FeatureLocked
+      minPlan="pro"
+      icon={DocumentMagnifyingGlassIcon}
+      title="Keyword Inspector is a Pro feature"
+      description="Upgrade to Pro to check any keyword before you commit to it."
+      benefits={[
+        "Volume, difficulty and daily searches for any keyword, in any country",
+        "The apps ranking for it right now, and the weakest spots to take",
+        "Where your app ranks for it today",
+      ]}
+    />
+  );
+  if (docked) return lockCard;
   return (
     <div className="relative flex-1 overflow-hidden">
       <div aria-hidden="true" className="pointer-events-none select-none px-4 @lg:px-6 py-6 space-y-6 blur-[6px] opacity-60">
@@ -359,17 +375,7 @@ function InspectorLockedPreview() {
         </div>
       </div>
       <div className="absolute inset-x-0 top-0">
-        <FeatureLocked
-          minPlan="pro"
-          icon={DocumentMagnifyingGlassIcon}
-          title="Keyword Inspector is a Pro feature"
-          description="Upgrade to Pro to check any keyword before you commit to it."
-          benefits={[
-            "Volume, difficulty and daily searches for any keyword, in any country",
-            "The apps ranking for it right now, and the weakest spots to take",
-            "Where your app ranks for it today",
-          ]}
-        />
+        {lockCard}
       </div>
     </div>
   );
@@ -945,7 +951,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     return (
       <div className="@container h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         {header}
-        <InspectorLockedPreview />
+        <InspectorLockedPreview docked={docked} />
       </div>
     );
   }
