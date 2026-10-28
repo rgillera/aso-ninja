@@ -64,7 +64,7 @@ export function CountryPicker({ value, onChange }: { value: string; onChange: (c
   }
 
   return (
-    <div ref={rootRef} className="relative h-full w-full md:w-52">
+    <div ref={rootRef} className="relative h-full w-full @3xl:w-52">
       <button
         type="button"
         onClick={() => (open ? setOpen(false) : openList())}

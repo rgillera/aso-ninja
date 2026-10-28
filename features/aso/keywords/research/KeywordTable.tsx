@@ -19,12 +19,9 @@ import {
   LockClosedIcon,
   ExclamationTriangleIcon,
   DocumentMagnifyingGlassIcon,
-  PuzzlePieceIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
-import { LiveSearchPanel } from "./LiveSearchPanel";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
-import type { CompetitorApp } from "./ManageCompetitorsModal";
 import { CardHeader } from "@/features/dashboard/CardHeader";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
@@ -153,7 +150,10 @@ type Props = {
   onStarSelected: (keywords: string[]) => void;
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
-  onCompetitorAdded?: (competitor: CompetitorApp) => void;
+  /** Opens a keyword in the Inspector pane docked beside the table, instead of navigating to the Inspector page. */
+  onInspect?: (keyword: string) => void;
+  /** The keyword showing in that pane, highlighted in the table. */
+  inspectedKeyword?: string | null;
   /** The "opportunity" and "inspect" steps of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
@@ -241,7 +241,8 @@ export function KeywordTable({
   onStarSelected,
   onRemoveSelected,
   onRemoveKeyword,
-  onCompetitorAdded,
+  onInspect,
+  inspectedKeyword = null,
   tourStep = null,
   onAdvanceTour = () => {},
 }: Props) {
@@ -272,7 +273,6 @@ export function KeywordTable({
 
   const [colPickerOpen, setColPickerOpen] = useState(false);
   const [colSearch, setColSearch] = useState("");
-  const [liveSearchKeyword, setLiveSearchKeyword] = useState<string | null>(null);
   const [volumeHistoryKeyword, setVolumeHistoryKeyword] = useState<string | null>(null);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translating, setTranslating] = useState(false);
@@ -1010,15 +1010,29 @@ export function KeywordTable({
                   </div>
                 </th>
               ))}
-              <th className="w-4 pr-4" />
+              {/* Pinned right (with its cells below) so Details and Remove are
+                  reachable without scrolling a narrowed table sideways. */}
+              <th className="sticky right-0 w-4 pr-4 bg-[#141417] light:bg-white" />
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
             {pageRows.map((row, j) => {
               const i = pageStart + j;
               const tourInspect = tourStep === "inspect" && i === 0 && !row.loading;
+              const inspected = !!inspectedKeyword && row.keyword.toLowerCase() === inspectedKeyword.toLowerCase();
               return (
-              <tr key={i} className={`hover:bg-white/[0.02] light:hover:bg-black/[0.02] transition-colors group ${row.frozen ? "opacity-60" : ""}`}>
+              <tr
+                key={i}
+                // With the side pane wired up, the whole row opens its
+                // details, so nothing needs a sideways scroll to reach.
+                // Clicks on the row's own controls (checkbox, star, volume
+                // chart, buttons) keep doing their own thing.
+                onClick={onInspect ? (e) => {
+                  if ((e.target as HTMLElement).closest("button, a, input, label")) return;
+                  onInspect(row.keyword);
+                } : undefined}
+                className={`transition-colors group ${onInspect ? "cursor-pointer" : ""} ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "hover:bg-white/[0.02] light:hover:bg-black/[0.02]"} ${row.frozen ? "opacity-60" : ""}`}
+              >
                 <td className="px-4 py-3.5">
                   <input
                     type="checkbox"
@@ -1063,8 +1077,25 @@ export function KeywordTable({
                     </td>
                   ))
                 )}
-                <td className={`pr-4 py-3.5 transition-opacity ${tourInspect ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                  <div className="flex items-center gap-1.5">
+                {/* Opaque so scrolled columns pass under it; the overlay
+                    repeats the row's own highlight/hover tint on top. */}
+                <td className="sticky right-0 pl-3 pr-4 py-3.5 bg-[#141417] light:bg-white">
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute inset-0 transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "group-hover:bg-white/[0.02] light:group-hover:bg-black/[0.02]"}`}
+                  />
+                  <div className={`relative flex items-center gap-1.5 transition-opacity ${tourInspect || inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    {/* The tour keeps the link: its Inspector steps live on the full page. */}
+                    {onInspect && !tourInspect ? (
+                      <button
+                        onClick={() => onInspect(row.keyword)}
+                        title="Results, long tail and performance for this keyword"
+                        className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                      >
+                        <DocumentMagnifyingGlassIcon className="size-3" />
+                        Details
+                      </button>
+                    ) : (
                     <Link
                       ref={tourInspect ? inspectLinkRef : undefined}
                       href={`/dashboard/keywords/inspector?${new URLSearchParams({
@@ -1080,27 +1111,13 @@ export function KeywordTable({
                       <DocumentMagnifyingGlassIcon className="size-3" />
                       Inspect
                     </Link>
-                    <button
-                      onClick={() => setLiveSearchKeyword(row.keyword)}
-                      title="Live App Store search"
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
-                    >
-                      <MagnifyingGlassIcon className="size-3" />
-                      Results
-                    </button>
-                    <Link
-                      href={`/dashboard/keywords/combination?${new URLSearchParams({ seed: row.keyword })}`}
-                      title="Find long tail keywords for this keyword"
-                      className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors whitespace-nowrap"
-                    >
-                      <PuzzlePieceIcon className="size-3" />
-                      Long tail
-                    </Link>
+                    )}
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}
-                      className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 hover:ring-red-500/30 transition-colors"
+                      title="Stop tracking this keyword"
+                      className="rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-red-400 light:hover:text-red-600 transition-colors whitespace-nowrap"
                     >
-                      <XMarkIcon className="size-3" />
+                      Remove
                     </button>
                   </div>
                 </td>
@@ -1155,16 +1172,6 @@ export function KeywordTable({
         onExport={handleExportSelected}
         onDelete={handleRemoveSelected}
       />
-
-      {liveSearchKeyword && (
-        <LiveSearchPanel
-          keyword={liveSearchKeyword}
-          store={store}
-          country={country}
-          onClose={() => setLiveSearchKeyword(null)}
-          onCompetitorAdded={onCompetitorAdded}
-        />
-      )}
 
       {pendingBulkAdd && (
         <BulkAddConfirmDialog

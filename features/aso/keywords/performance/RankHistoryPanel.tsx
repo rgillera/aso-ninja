@@ -16,7 +16,13 @@ type Props = {
   storeId: string;
   store: "ios" | "android";
   country: string;
-  onClose: () => void;
+  onClose?: () => void;
+  // A card in the page flow instead of a modal: the Performance tab of
+  // Keyword Research's side pane stacks these for one keyword.
+  inline?: boolean;
+  // The app doesn't rank for this keyword right now: an empty history then
+  // says so, instead of reading like missing data.
+  unranked?: boolean;
 };
 
 function formatDay(iso: string): string {
@@ -47,9 +53,9 @@ function dotShape(props: unknown) {
   return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
 }
 
-export function RankHistoryPanel({ term, storeId, store, country, onClose }: Props) {
+export function RankHistoryPanel({ term, storeId, store, country, onClose, inline, unranked = false }: Props) {
   const workspaceId = useWorkspaceId();
-  const [weekly, setWeekly] = useState<WeeklyRankEntry[]>([]);
+  const [allWeekly, setWeekly] = useState<WeeklyRankEntry[]>([]);
   // Defaults to the full window so nothing flashes as locked before the
   // real entitlement comes back from the API.
   const [unlockedWeeks, setUnlockedWeeks] = useState(0);
@@ -79,7 +85,11 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
 
   // Always a full ~52-week window; the oldest `weekly.length - unlockedWeeks`
   // of them are the locked/blurred tease — same split as Volume History.
-  const lockedCount = Math.max(0, weekly.length - unlockedWeeks);
+  const hiddenCount = Math.max(0, allWeekly.length - unlockedWeeks);
+  // Inline (Keyword Research's Performance tab) draws just the plan's
+  // unlocked weeks, with no locked stretch or upgrade prompt.
+  const weekly = inline ? allWeekly.slice(hiddenCount) : allWeekly;
+  const lockedCount = inline ? 0 : hiddenCount;
   const currentIndex = weekly.length - 1;
   // With only the current month unlocked there's barely a trend to show, so
   // the whole panel is the lock screen — same as Volume History.
@@ -131,6 +141,114 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
     );
   }
 
+  const body = (
+    <>
+      {loading ? (
+        <div className="flex h-64 items-center justify-center text-xs text-gray-500">
+          Loading rank history…
+        </div>
+      ) : weekly.length === 0 || (unranked && !weekly.some((w) => w.position != null)) ? (
+        <div className={`flex ${inline ? "h-40" : "h-64"} flex-col items-center justify-center text-center px-6`}>
+          <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">
+            {unranked ? "Your app isn't ranking for this keyword yet" : "No history yet for this keyword"}
+          </p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
+            {unranked
+              ? "Rank history starts the first week it shows up in search results."
+              : "Rank snapshots accumulate automatically each time this keyword is checked."}
+          </p>
+        </div>
+      ) : fullyLocked ? (
+        <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
+          <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
+          <p className="text-sm font-semibold text-white light:text-gray-900">Rank history locked</p>
+          <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
+            Upgrade to{" "}
+            <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+            to see how this keyword&apos;s rank has moved over the past months.
+          </p>
+          <Link
+            href="/dashboard/subscription"
+            className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+          >
+            Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis
+                  dataKey="recorded_on"
+                  tick={axisTick}
+                  axisLine={{ stroke: "#ffffff1a" }}
+                  tickLine={false}
+                  // Fewer labels in the narrow inline card, or they run together.
+                  interval={Math.max(0, Math.ceil(weekly.length / (inline ? 6 : 13)) - 1)}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  domain={yScale.domain}
+                  ticks={yScale.ticks}
+                  // #1 at the top: a better rank is a smaller number, so
+                  // an improving keyword should climb, not dip.
+                  reversed
+                  tick={{ fill: "#6b7280", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={36}
+                  tickFormatter={(v) => `#${v}`}
+                />
+                <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                <Line type="linear" dataKey="position" name="Rank" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+
+            {lockedCount > 0 && (
+              <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / weekly.length) * 100}%` }}>
+                <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
+                <p className="text-sm font-semibold text-white light:text-gray-900">Earlier rank trend locked</p>
+                <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
+                  Upgrade to{" "}
+                  <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+                  to see how this keyword&apos;s rank moved further back.
+                </p>
+                <Link
+                  href="/dashboard/subscription"
+                  className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+                >
+                  Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <p className="text-[10px] text-gray-600 light:text-gray-400 text-center">
+            {windowLabel} · weekly median rank
+          </p>
+
+          {hasUntrackedGap && firstRecordedOn && (
+            <p className="text-xs text-gray-500 text-center">
+              History starts {formatDay(firstRecordedOn)}. More will fill in as this keyword keeps being tracked.
+            </p>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <section className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+        <h3 className="px-4 pt-4 text-xs font-medium text-gray-500">Rank history</h3>
+        <div className="p-4">{body}</div>
+      </section>
+    );
+  }
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -147,95 +265,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose }: Pro
         </div>
 
         <div className="p-6 flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex h-64 items-center justify-center text-xs text-gray-500">
-              Loading rank history…
-            </div>
-          ) : weekly.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
-              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet for this keyword</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
-                Rank snapshots accumulate automatically each time this keyword is checked.
-              </p>
-            </div>
-          ) : fullyLocked ? (
-            <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
-              <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
-              <p className="text-sm font-semibold text-white light:text-gray-900">Rank history locked</p>
-              <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
-                Upgrade to{" "}
-                <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
-                to see how this keyword&apos;s rank has moved over the past months.
-              </p>
-              <Link
-                href="/dashboard/subscription"
-                className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
-              >
-                Upgrade to {planNeededForMoreHistory(unlockedMonths)}
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                    <XAxis
-                      dataKey="recorded_on"
-                      tick={axisTick}
-                      axisLine={{ stroke: "#ffffff1a" }}
-                      tickLine={false}
-                      interval={Math.max(0, Math.ceil(weekly.length / 13) - 1)}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      domain={yScale.domain}
-                      ticks={yScale.ticks}
-                      // #1 at the top: a better rank is a smaller number, so
-                      // an improving keyword should climb, not dip.
-                      reversed
-                      tick={{ fill: "#6b7280", fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={36}
-                      tickFormatter={(v) => `#${v}`}
-                    />
-                    <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
-                    <Line type="linear" dataKey="position" name="Rank" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-
-                {lockedCount > 0 && (
-                  <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / weekly.length) * 100}%` }}>
-                    <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
-                    <p className="text-sm font-semibold text-white light:text-gray-900">Earlier rank trend locked</p>
-                    <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
-                      Upgrade to{" "}
-                      <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
-                      to see how this keyword&apos;s rank moved further back.
-                    </p>
-                    <Link
-                      href="/dashboard/subscription"
-                      className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
-                    >
-                      Upgrade to {planNeededForMoreHistory(unlockedMonths)}
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-[10px] text-gray-600 light:text-gray-400 text-center">
-                {windowLabel} · weekly median rank
-              </p>
-
-              {hasUntrackedGap && firstRecordedOn && (
-                <p className="text-xs text-gray-500 text-center">
-                  History starts {formatDay(firstRecordedOn)}. More will fill in as this keyword keeps being tracked.
-                </p>
-              )}
-            </div>
-          )}
+          {body}
         </div>
       </div>
     </div>,

@@ -13,6 +13,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
+import { useDockedInspector, InspectorSplit } from "@/features/aso/keywords/inspector/InspectorSplit";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
@@ -93,6 +94,10 @@ export default function KeywordResearchPage() {
     return () => setSidebarTour({ active: false, onAdvance: () => {} });
   }, [tourStep, setSidebarTour]);
   const [keywords, setKeywords] = useState<Keyword[]>([]);
+
+  // The Keyword Inspector docked beside the table; see InspectorSplit.
+  const inspector = useDockedInspector(activeApp);
+
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
   const [translateToggle, setTranslateToggle] = useState(false);
@@ -558,14 +563,18 @@ export default function KeywordResearchPage() {
     persistRemoval([term]);
   }
 
-  // Live Search's "add as competitor" button saves directly via /api/competitors
-  // (it doesn't go through handleCompetitorsChange), so mirror the addition here
-  // to keep the Keyword Suggestions competitors section in sync without a reload.
-  function handleCompetitorAddedFromLiveSearch(competitor: CompetitorApp) {
+  // The Inspector pane's "Add as competitor" saves directly via
+  // /api/competitors (not through handleCompetitorsChange), so mirror the
+  // addition here to keep Keyword Suggestions' competitors in sync.
+  function handleCompetitorAdded(competitor: CompetitorApp) {
     setCompetitors((prev) =>
       prev.some((c) => c.storeId === competitor.storeId) ? prev : [...prev, competitor]
     );
   }
+
+  // Includes rows still loading, so Track flips to "Tracking" the moment
+  // the keyword lands in the table.
+  const trackedTerms = new Set(keywords.map((k) => k.keyword.toLowerCase()));
 
   if (!activeApp) {
     return <NoAppSelected />;
@@ -620,41 +629,53 @@ export default function KeywordResearchPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto">
-        <KeywordSuggestionsPanel
-          onAddKeyword={(kw) => handleAddKeywords([kw])}
-          onAddKeywords={handleAddKeywords}
-          onRemoveKeyword={handleRemoveKeyword}
-          activeApp={activeApp}
-          trackedKeywords={keywords}
-          competitors={competitors}
-          onCompetitorsChange={handleCompetitorsChange}
-          translateToggle={translateToggle && !translateLocked}
-          translateLocked={translateLocked}
-          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-          tourStep={tourStep}
-          onAdvanceTour={advanceTour}
-        />
+      <InspectorSplit
+        inspector={inspector}
+        trackedTerms={trackedTerms}
+        onTrack={handleAddKeywords}
+        app={activeApp}
+        keywords={keywords}
+        downloadsConnection={downloadsConnection}
+        competitors={competitors}
+        onCompetitorAdded={handleCompetitorAdded}
+      >
+        <div className="flex-1 min-w-0 overflow-y-auto">
+          <KeywordSuggestionsPanel
+            onAddKeyword={(kw) => handleAddKeywords([kw])}
+            onAddKeywords={handleAddKeywords}
+            onRemoveKeyword={handleRemoveKeyword}
+            activeApp={activeApp}
+            trackedKeywords={keywords}
+            competitors={competitors}
+            onCompetitorsChange={handleCompetitorsChange}
+            translateToggle={translateToggle && !translateLocked}
+            translateLocked={translateLocked}
+            onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+            tourStep={tourStep}
+            onAdvanceTour={advanceTour}
+          />
 
-        <KeywordTable
-          keywords={keywords}
-          store={activeApp?.store ?? "ios"}
-          country={activeApp?.country ?? "us"}
-          downloadsConnection={downloadsConnection}
-          translateToggle={translateToggle && !translateLocked}
-          translateLocked={translateLocked}
-          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-          adding={pendingAdds > 0}
-          onAddKeywords={handleAddKeywords}
-          onToggleStar={handleToggleStar}
-          onStarSelected={handleStarSelected}
-          onRemoveSelected={handleRemoveSelected}
-          onRemoveKeyword={handleRemoveKeyword}
-          onCompetitorAdded={handleCompetitorAddedFromLiveSearch}
-          tourStep={tourStep}
-          onAdvanceTour={advanceTour}
-        />
-      </div>
+          <KeywordTable
+            keywords={keywords}
+            store={activeApp?.store ?? "ios"}
+            country={activeApp?.country ?? "us"}
+            downloadsConnection={downloadsConnection}
+            translateToggle={translateToggle && !translateLocked}
+            translateLocked={translateLocked}
+            onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+            adding={pendingAdds > 0}
+            onAddKeywords={handleAddKeywords}
+            onToggleStar={handleToggleStar}
+            onStarSelected={handleStarSelected}
+            onRemoveSelected={handleRemoveSelected}
+            onRemoveKeyword={handleRemoveKeyword}
+            onInspect={inspector.selectKeyword}
+            inspectedKeyword={inspector.inspectedKeyword}
+            tourStep={tourStep}
+            onAdvanceTour={advanceTour}
+          />
+        </div>
+      </InspectorSplit>
     </div>
   );
 }

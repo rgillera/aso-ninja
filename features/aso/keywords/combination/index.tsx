@@ -12,6 +12,7 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CombinationTable } from "./CombinationTable";
+import { LongTailFocus } from "./LongTailFocus";
 import type { CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
@@ -32,7 +33,21 @@ function NoAppSelected() {
   );
 }
 
-export default function KeywordCombinationPage() {
+// Set when Long Tail is docked in Keyword Research's right-hand pane (tabbed
+// with the Inspector) instead of being its own page. Research owns the
+// tracked list there, so adds go through its add flow and land in its table,
+// and the URL/seed-link handling stays page-only.
+export type LongTailDock = {
+  // Each "Long tail" click from Research's table; the nonce re-runs a repeat
+  // of the same seed (it re-expands the group if it's already there).
+  seedRequest: { seed: string; nonce: number } | null;
+  trackedTerms: Set<string>;
+  // Resolves once the keywords are saved, so "Group by intent" can assign
+  // the rows right after.
+  onTrack: (terms: string[]) => Promise<void>;
+};
+
+export default function KeywordCombinationPage({ dock }: { dock?: LongTailDock } = {}) {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug = usePlanSlug();
@@ -45,14 +60,18 @@ export default function KeywordCombinationPage() {
   const [translateToggle, setTranslateToggle] = useState(false);
   const [intentThemes, setIntentThemes] = useState<IntentTheme[]>([]);
   const { setGuardMessage } = useNavigationGuard();
+  const docked = !!dock;
   useEffect(() => {
+    // Docked, Research's own guard covers adds (they go through it).
+    if (docked) return;
     setGuardMessage(pendingTerms.size > 0 ? "A keyword is still being saved. Leaving now may lose it." : null);
     return () => setGuardMessage(null);
-  }, [pendingTerms, setGuardMessage]);
+  }, [docked, pendingTerms, setGuardMessage]);
   const [researchTerms, setResearchTerms] = useState<string[]>([]);
   const [liveSearchTerm, setLiveSearchTerm] = useState<string | null>(null);
   const [appSubtitle, setAppSubtitle] = useState<string>("");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const trackedSet = dock ? dock.trackedTerms : trackedKeywords;
 
   // Shared identity for resolving/creating the apps row server-side — mirrors
   // the fallback used by /api/keywords/save so this works for a previewed
@@ -69,9 +88,12 @@ export default function KeywordCombinationPage() {
     };
   }
 
+  // Every visit starts with all groups collapsed, whatever was open last
+  // time (including groups opened from Keyword Research's side pane); a
+  // ?seed= link or the pane opens just the one it asked for.
   function toCombinationGroup(g: SavedCombinationGroup): CombinationGroup {
     return {
-      seed: g.seed, expanded: g.expanded, loading: false,
+      seed: g.seed, expanded: false, loading: false,
       children: g.children.map((c) => ({ ...c, starred: false, tracked: false })),
     };
   }
@@ -121,24 +143,30 @@ export default function KeywordCombinationPage() {
         : null;
     if (!params) return;
 
+    // Only the latest load writes: an older one (the app switched, or
+    // StrictMode's re-run in dev) resolving late would otherwise overwrite
+    // whatever happened since, e.g. the docked pane opening a seed's group.
+    let cancelled = false;
     (async () => {
-      await loadGroups(params);
-      setGroupsLoaded(true);
+      await loadGroups(params, () => cancelled);
+      if (!cancelled) setGroupsLoaded(true);
     })();
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.store_id, activeApp?.bundle_id, activeApp?.store, workspaceId]);
 
-  async function loadGroups(params: Record<string, string>) {
+  async function loadGroups(params: Record<string, string>, isCancelled: () => boolean) {
     if (!activeApp) return;
     try {
       const res = await fetch(`/api/keywords/combination-groups?${new URLSearchParams(params)}`);
       const data: { groups: SavedCombinationGroup[] } = await res.json();
+      if (isCancelled()) return;
       if (data.groups?.length) {
         setGroups(data.groups.map(toCombinationGroup));
         return;
       }
     } catch {
-      setGroups([]);
+      if (!isCancelled()) setGroups([]);
       return;
     }
 
@@ -154,7 +182,7 @@ export default function KeywordCombinationPage() {
         if (!raw) continue;
         const legacy = JSON.parse(raw) as CombinationGroup[];
         if (!legacy.length) continue;
-        setGroups(legacy);
+        setGroups(legacy.map((g) => ({ ...g, expanded: false })));
         legacy.forEach((g) => { void saveGroupToDb(g.seed, g.children, g.expanded); });
         localStorage.removeItem(`combinations-${id}`);
         return;
@@ -169,7 +197,7 @@ export default function KeywordCombinationPage() {
   // need a Suspense boundary (same as the Keyword Inspector).
   const linkSeedHandled = useRef(false);
   useEffect(() => {
-    if (!groupsLoaded || isLocked || linkSeedHandled.current) return;
+    if (docked || !groupsLoaded || isLocked || linkSeedHandled.current) return;
     linkSeedHandled.current = true;
     const seed = new URLSearchParams(window.location.search).get("seed")?.trim();
     if (!seed) return;
@@ -178,6 +206,26 @@ export default function KeywordCombinationPage() {
     void handleAddSeeds([seed]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupsLoaded, isLocked]);
+
+  // Docked: each "Long tail" click in Research's table shows just that
+  // seed's group, open at the top of the pane: every other group collapses,
+  // and the seed is added (or its existing group moved up and re-opened).
+  // Waits for the saved groups like the ?seed= link above, so an existing
+  // group isn't duplicated.
+  const seedRequest = dock?.seedRequest;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!docked || !groupsLoaded || isLocked || !seedRequest) return;
+    const seed = seedRequest.seed.trim().toLowerCase();
+    const target = groups.find((g) => g.seed === seed);
+    const rest = groups.filter((g) => g.seed !== seed).map((g) => ({ ...g, expanded: false }));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setGroups(target ? [{ ...target, expanded: true }, ...rest] : rest);
+    // A new seed's placeholder goes on top too (handleAddSeeds prepends).
+    if (!target) void handleAddSeeds([seed]);
+    scrollRef.current?.scrollTo({ top: 0 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docked, groupsLoaded, isLocked, seedRequest?.nonce]);
 
   // Fetch app subtitle/short-description for AI context
   const loadedSubtitleFor = useRef<string | undefined>(undefined);
@@ -199,7 +247,8 @@ export default function KeywordCombinationPage() {
   // Falls back to workspaceId+bundleId lookup when activeApp.id is undefined
   // (e.g. app shown via savedPreview cookie rather than a formal tracked-app route).
   useEffect(() => {
-    if (!activeApp || isLocked) return;
+    // Docked, Research's list is the source (dock.trackedTerms).
+    if (docked || !activeApp || isLocked) return;
 
     const listUrl = activeApp.id
       ? `/api/keywords/list?appId=${activeApp.id}`
@@ -224,7 +273,7 @@ export default function KeywordCombinationPage() {
     refreshTracked();
     window.addEventListener("focus", refreshTracked);
     return () => window.removeEventListener("focus", refreshTracked);
-  }, [activeApp?.id, activeApp?.bundle_id, workspaceId, isLocked]);
+  }, [docked, activeApp?.id, activeApp?.bundle_id, workspaceId, isLocked]);
 
   // Load this app's intent themes so selected combinations can be added
   // straight into one — same identity fallback as the tracked-keywords load
@@ -253,7 +302,7 @@ export default function KeywordCombinationPage() {
     const placeholders: CombinationGroup[] = fresh.map((seed) => ({
       seed, expanded: true, loading: true, children: [],
     }));
-    setGroups([...placeholders, ...groups]);
+    setGroups((prev) => [...placeholders, ...prev]);
 
     const country = activeApp?.country ?? "us";
     try {
@@ -301,7 +350,7 @@ export default function KeywordCombinationPage() {
     // Filter out already tracked AND currently in-flight terms to prevent duplicates
     const fresh = terms.filter((t) => {
       const lower = t.toLowerCase();
-      return !trackedKeywords.has(lower) && !pendingTerms.has(lower);
+      return !trackedSet.has(lower) && !pendingTerms.has(lower);
     });
     if (!fresh.length) return;
 
@@ -309,6 +358,17 @@ export default function KeywordCombinationPage() {
 
     // Mark as pending immediately — blocks duplicate clicks and bulk re-adds
     setPendingTerms((prev) => new Set([...prev, ...freshLower]));
+
+    // Docked: Research adds them (metrics, save, its table). Its banner shows
+    // any save error.
+    if (dock) {
+      try {
+        await dock.onTrack(fresh);
+      } finally {
+        setPendingTerms((prev) => { const next = new Set(prev); freshLower.forEach((t) => next.delete(t)); return next; });
+      }
+      return;
+    }
 
     const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
@@ -417,7 +477,7 @@ export default function KeywordCombinationPage() {
   if (isLocked) {
     return (
       <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
-        <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />
+        {!docked && <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />}
         <FeatureLocked
           minPlan="pro"
           icon={PuzzlePieceIcon}
@@ -439,7 +499,7 @@ export default function KeywordCombinationPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
-      <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />
+      {!docked && <AppHeader app={activeApp ?? null} title="Long Tail Keywords" />}
 
       {saveError && (
         <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
@@ -451,31 +511,43 @@ export default function KeywordCombinationPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pt-4">
-        <CombinationTable
-          groups={groups}
-          trackedSet={trackedKeywords}
-          pendingSet={pendingTerms}
-          availableSeeds={researchTerms.filter(
-            (t) => !groups.some((g) => g.seed === t.toLowerCase())
-          )}
-          onAddSeeds={handleAddSeeds}
-          onToggleExpand={handleToggleExpand}
+      {docked ? (
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          <LongTailFocus
+            seed={seedRequest?.seed.trim().toLowerCase() ?? null}
+            group={groups.find((g) => g.seed === seedRequest?.seed.trim().toLowerCase())}
+            trackedSet={trackedSet}
+            pendingSet={pendingTerms}
+            onAdd={addTermsToTracked}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto pt-4">
+          <CombinationTable
+            groups={groups}
+            trackedSet={trackedSet}
+            pendingSet={pendingTerms}
+            availableSeeds={researchTerms.filter(
+              (t) => !groups.some((g) => g.seed === t.toLowerCase())
+            )}
+            onAddSeeds={handleAddSeeds}
+            onToggleExpand={handleToggleExpand}
 
-          onAddTerm={(term) => addTermsToTracked([term])}
-          onAddTerms={addTermsToTracked}
+            onAddTerm={(term) => addTermsToTracked([term])}
+            onAddTerms={addTermsToTracked}
 
-          onRemoveGroup={handleRemoveGroup}
-          onLiveSearch={(term) => setLiveSearchTerm(term)}
-          store={activeApp?.store ?? "ios"}
-          country={activeApp?.country ?? "us"}
-          translateToggle={translateToggle && !translateLocked}
-          translateLocked={translateLocked}
-          onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-          intentThemes={intentThemes}
-          onAddTermsToIntent={addTermsToIntent}
-        />
-      </div>
+            onRemoveGroup={handleRemoveGroup}
+            onLiveSearch={(term) => setLiveSearchTerm(term)}
+            store={activeApp?.store ?? "ios"}
+            country={activeApp?.country ?? "us"}
+            translateToggle={translateToggle && !translateLocked}
+            translateLocked={translateLocked}
+            onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
+            intentThemes={intentThemes}
+            onAddTermsToIntent={addTermsToIntent}
+          />
+        </div>
+      )}
 
       {liveSearchTerm && (
         <LiveSearchPanel

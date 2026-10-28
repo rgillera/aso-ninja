@@ -60,12 +60,14 @@ async function clearCheckFailure(supabase: AdminClient, term: string, store: str
   await supabase.from("keyword_refresh_failures").delete().eq("term", term).eq("store", store).eq("country", country).then(() => {}, () => {});
 }
 
-// Refreshes rank + chance + volume for every app already tracking `term` in
-// this store/country, using the result names and volume this run just
-// computed — no extra network calls. Opportunity is recomputed from the
-// stored relevancy (same formula as the metrics route), never re-scored;
-// diff/relevancy are left alone (no AI, no rate-limit cost) so this stays a
-// pure DB read + in-memory match + DB write. Volume has to be written here:
+// Refreshes rank + chance + volume + diff for every app already tracking
+// `term` in this store/country, using the result names, volume and diff this
+// run just computed — no extra network calls. Opportunity is recomputed from
+// the stored relevancy (same formula as the metrics route), never re-scored;
+// relevancy is left alone (no AI cost) so this stays a pure DB read +
+// in-memory match + DB write. Diff used to be left alone too, which froze it
+// at its value from the day the keyword was added (and chance with it, which
+// is computed from diff), while Keyword Inspector showed today's. Volume has to be written here:
 // this upsert bumps updated_at, which keeps the metrics route's 7-day cache
 // fresh forever for a tracked keyword, so without it keyword_metrics.volume
 // would stay frozen at whatever it was when the keyword was first added.
@@ -73,7 +75,9 @@ async function clearCheckFailure(supabase: AdminClient, term: string, store: str
 // route uses, closing the staleness gap between keyword_metrics.rank and
 // keyword_rankings_history.position from up to 7 days down to ~1 day.
 async function refreshKeywordMetrics(
-  supabase: AdminClient, term: string, store: string, country: string, volume: number, names: string[],
+  // diff: null when this run couldn't measure it (see the Android caller), so
+  // the stored value is kept rather than overwritten with a bogus one.
+  supabase: AdminClient, term: string, store: string, country: string, volume: number, diff: number | null, names: string[],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ids: any[],
   changes: SignificantChange[]
@@ -110,14 +114,15 @@ async function refreshKeywordMetrics(
   const updates = (rows as any[]).filter((row) => !ipadRows.includes(row) || ipadRanks.has(row.app_id)).map((row) => {
     const rankIdx = findRankIdx(names, row.apps.name, ids, row.apps.store_id);
     const rank    = ipadRanks.has(row.app_id) ? ipadRanks.get(row.app_id) ?? null : rankIdx >= 0 ? rankIdx + 1 : null;
-    const chance  = computeChance(row.diff ?? 0, rank);
+    const rowDiff = diff ?? row.diff ?? 0;
+    const chance  = computeChance(rowDiff, rank);
 
     if (isSignificantRankChange(row.rank, rank)) {
       changes.push({ appId: row.app_id, appName: row.apps.name, term, previousRank: row.rank, rank: rank! });
     }
 
     const opportunity = recomputeOpportunity(row, volume, chance);
-    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, diff: rowDiff, opportunity, updated_at: new Date().toISOString() };
   });
 
   if (updates.length) await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });
@@ -270,7 +275,8 @@ export async function GET(req: Request) {
           );
         }
 
-        await refreshKeywordMetrics(supabase, term, "ios", country, volume, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
+        // No results means no top-5 ratings to score diff from.
+        await refreshKeywordMetrics(supabase, term, "ios", country, volume, apps.length ? diff : null, apps.map((a) => a.trackName), apps.map((a) => a.trackId), changes);
         refreshed++;
         await clearCheckFailure(supabase, term, store, country);
       } else if (store === "android") {
@@ -324,8 +330,10 @@ export async function GET(req: Request) {
           );
         }
 
+        // Every top-5 detail lookup failing leaves diff scored from 0 ratings,
+        // which says nothing about competition: keep the stored diff then.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await refreshKeywordMetrics(supabase, term, "android", country, volume, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
+        await refreshKeywordMetrics(supabase, term, "android", country, volume, resolvedRatingCounts.length ? diff : null, apps.map((a: any) => a.title ?? ""), apps.map((a: any) => a.appId), changes);
         refreshed++;
         await clearCheckFailure(supabase, term, store, country);
       }

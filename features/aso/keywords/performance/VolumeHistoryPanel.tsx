@@ -15,7 +15,10 @@ type Props = {
   term: string;
   store: "ios" | "android";
   country: string;
-  onClose: () => void;
+  onClose?: () => void;
+  // A card in the page flow instead of a modal: the Performance tab of
+  // Keyword Research's side pane stacks these for one keyword.
+  inline?: boolean;
 };
 
 function formatMonth(iso: string): string {
@@ -23,9 +26,9 @@ function formatMonth(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
-export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
+export function VolumeHistoryPanel({ term, store, country, onClose, inline }: Props) {
   const workspaceId = useWorkspaceId();
-  const [rows, setRows] = useState<VolumeHistoryEntry[]>([]);
+  const [allRows, setRows] = useState<VolumeHistoryEntry[]>([]);
   // Defaults to the full window so nothing flashes as locked before the
   // real entitlement comes back from the API.
   const [unlockedMonths, setUnlockedMonths] = useState(REPORT_MONTHS);
@@ -33,7 +36,11 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
 
   // Always a full REPORT_MONTHS window of bars; the oldest
   // `rows.length - unlockedMonths` of them are the locked/blurred tease.
-  const lockedCount = Math.max(0, rows.length - unlockedMonths);
+  const hiddenCount = Math.max(0, allRows.length - unlockedMonths);
+  // Inline (Keyword Research's Performance tab) draws just the plan's
+  // unlocked months, with no locked stretch or upgrade prompt.
+  const rows = inline ? allRows.slice(hiddenCount) : allRows;
+  const lockedCount = inline ? 0 : hiddenCount;
   const currentIndex = rows.length - 1;
   // With only the current month unlocked there's no trend to show (they've
   // already seen this month's volume), so the whole panel is the lock screen.
@@ -109,6 +116,96 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
     );
   }
 
+  const body = (
+    <>
+      {loading ? (
+        <div className="flex h-64 items-center justify-center text-xs text-gray-500">
+          Loading volume history…
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex h-64 flex-col items-center justify-center text-center px-6">
+          <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet for this keyword</p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
+            Volume snapshots accumulate automatically each time this keyword is checked.
+          </p>
+        </div>
+      ) : fullyLocked ? (
+        <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
+          <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
+          <p className="text-sm font-semibold text-white light:text-gray-900">Volume history locked</p>
+          <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
+            Upgrade to{" "}
+            <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+            to see how this keyword&apos;s volume has trended over the past months.
+          </p>
+          <Link
+            href="/dashboard/subscription"
+            className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+          >
+            Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+          </Link>
+        </div>
+      ) : (
+        <>
+          <div className="relative">
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                <XAxis
+                  dataKey="recorded_on"
+                  tick={axisTick}
+                  axisLine={{ stroke: "#ffffff1a" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fill: "#6b7280", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                />
+                <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                <Line type="linear" dataKey="score" name="Avg. Volume" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+
+            {lockedCount > 0 && (
+              <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / rows.length) * 100}%` }}>
+                <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
+                <p className="text-sm font-semibold text-white light:text-gray-900">{lockedCount} month{lockedCount === 1 ? "" : "s"} locked</p>
+                <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
+                  Upgrade to{" "}
+                  <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
+                  to see this keyword&apos;s volume trend further back.
+                </p>
+                <Link
+                  href="/dashboard/subscription"
+                  className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
+                >
+                  Upgrade to {planNeededForMoreHistory(unlockedMonths)}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 text-[10px] text-gray-600 light:text-gray-400">
+            {windowLabel} · monthly average
+          </div>
+        </>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <section className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+        <h3 className="px-4 pt-4 text-xs font-medium text-gray-500">Volume history</h3>
+        <div className="p-4">{body}</div>
+      </section>
+    );
+  }
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -125,82 +222,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose }: Props) {
         </div>
 
         <div className="p-6 flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex h-64 items-center justify-center text-xs text-gray-500">
-              Loading volume history…
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
-              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet for this keyword</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
-                Volume snapshots accumulate automatically each time this keyword is checked.
-              </p>
-            </div>
-          ) : fullyLocked ? (
-            <div className="flex h-64 flex-col items-center justify-center gap-2 text-center px-6">
-              <LockClosedIcon className="size-6 text-violet-400 light:text-violet-700" />
-              <p className="text-sm font-semibold text-white light:text-gray-900">Volume history locked</p>
-              <p className="text-xs text-gray-400 light:text-gray-600 max-w-xs">
-                Upgrade to{" "}
-                <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
-                to see how this keyword&apos;s volume has trended over the past months.
-              </p>
-              <Link
-                href="/dashboard/subscription"
-                className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
-              >
-                Upgrade to {planNeededForMoreHistory(unlockedMonths)}
-              </Link>
-            </div>
-          ) : (
-            <>
-              <div className="relative">
-                <ResponsiveContainer width="100%" height={280}>
-                  <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                    <XAxis
-                      dataKey="recorded_on"
-                      tick={axisTick}
-                      axisLine={{ stroke: "#ffffff1a" }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      tick={{ fill: "#6b7280", fontSize: 11 }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={32}
-                    />
-                    <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
-                    <Line type="linear" dataKey="score" name="Avg. Volume" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-
-                {lockedCount > 0 && (
-                  <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / rows.length) * 100}%` }}>
-                    <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
-                    <p className="text-sm font-semibold text-white light:text-gray-900">{lockedCount} month{lockedCount === 1 ? "" : "s"} locked</p>
-                    <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
-                      Upgrade to{" "}
-                      <span className="font-semibold text-white light:text-gray-900">{planNeededForMoreHistory(unlockedMonths)}</span>{" "}
-                      to see this keyword&apos;s volume trend further back.
-                    </p>
-                    <Link
-                      href="/dashboard/subscription"
-                      className="mt-1 text-xs font-semibold text-violet-400 light:text-violet-700 hover:text-violet-300 transition-colors underline underline-offset-2"
-                    >
-                      Upgrade to {planNeededForMoreHistory(unlockedMonths)}
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-3 text-[10px] text-gray-600 light:text-gray-400">
-                {windowLabel} · monthly average
-              </div>
-            </>
-          )}
+          {body}
         </div>
       </div>
     </div>,

@@ -29,12 +29,15 @@ import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
 import { formatEstimateRange } from "@/libs/keyword-impressions";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountryPicker } from "./CountryPicker";
+import { StatStrip } from "@/features/aso/keywords/StatStrip";
 import { canUseInspector } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
 import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
 import type { AppEstimate } from "@/libs/contracts";
+import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 import { CardHeader } from "@/features/dashboard/CardHeader";
 
@@ -210,7 +213,7 @@ function EstimateStat({ value, basis, label, format }: {
   format: (n: number) => string;
 }) {
   return (
-    <div className="hidden md:block w-20 shrink-0 pt-1 text-right" title={basis ? `Rough estimate: ${basis}` : undefined}>
+    <div className="hidden @xl:block w-20 shrink-0 pt-1 text-right" title={basis ? `Rough estimate: ${basis}` : undefined}>
       {value === undefined ? (
         <div className="ml-auto mt-0.5 h-3 w-10 rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
       ) : (
@@ -222,7 +225,7 @@ function EstimateStat({ value, basis, label, format }: {
 }
 
 function ResultRow({
-  app, store, country, subtitle, subtitleLoading, term, highlight, isYou, estimate, showEstimates,
+  app, store, country, subtitle, subtitleLoading, term, highlight, isYou, estimate, showEstimates, competitor,
 }: {
   app: AppSearchResult;
   store: Store;
@@ -238,6 +241,9 @@ function ResultRow({
   estimate: AppEstimate | null | undefined;
   // Off when the storefront has no estimate model.
   showEstimates: boolean;
+  // "Add as competitor" for the active app; omitted when the search isn't for
+  // its own storefront (competitors are per app and country) or on its own row.
+  competitor?: { state: "add" | "adding" | "added"; onAdd: () => void };
 }) {
   const storeUrl = store === "ios"
     ? app.trackId ? `https://apps.apple.com/${country}/app/id${app.trackId}` : null
@@ -266,8 +272,9 @@ function ResultRow({
           <p className="text-xs leading-snug text-gray-400 light:text-gray-600 break-words"><KeywordHighlight text={subtitle} term={term} active={highlight} /></p>
         )}
         <p className={`truncate text-gray-500 ${subtitle ? "text-[11px]" : "text-xs"}`}>{app.developer}</p>
-        {storeUrl && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+        {(storeUrl || competitor) && (
+          // One line, even in the narrow side pane: the two links are short.
+          <div className="mt-1.5 flex items-center gap-3 whitespace-nowrap">
             {storeUrl && (
               <a
                 href={storeUrl}
@@ -278,6 +285,26 @@ function ResultRow({
                 {store === "android" ? "View on Google Play" : "View on App Store"}
                 <ArrowTopRightOnSquareIcon className="size-3" />
               </a>
+            )}
+            {competitor && (
+              competitor.state === "added" ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500">
+                  <CheckIcon className="size-3" />
+                  Competitor
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={competitor.onAdd}
+                  disabled={competitor.state === "adding"}
+                  className={`inline-flex items-center gap-1 text-[11px] font-medium hover:underline disabled:opacity-60 disabled:cursor-wait ${store === "android" ? "text-[#01875f]" : "text-[#007AFF]"}`}
+                >
+                  {competitor.state === "adding"
+                    ? <ArrowPathIcon className="size-3 animate-spin" />
+                    : <PlusIcon className="size-3" />}
+                  Add as competitor
+                </button>
+              )
             )}
           </div>
         )}
@@ -305,9 +332,9 @@ function ResultRow({
 function InspectorLockedPreview() {
   return (
     <div className="relative flex-1 overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none select-none px-4 sm:px-6 py-6 space-y-6 blur-[6px] opacity-60">
+      <div aria-hidden="true" className="pointer-events-none select-none px-4 @lg:px-6 py-6 space-y-6 blur-[6px] opacity-60">
         <div className="h-[60px] rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07]" />
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-4">
           <StatCard label="Volume" hint="">
             <span className="text-2xl font-semibold text-white light:text-gray-900">58</span>
             <ScoreBar value={58} className="bg-indigo-500/70" />
@@ -354,16 +381,29 @@ function InspectorLockedPreview() {
 // the active app lives on the inspected store and country, since a tracked
 // keyword's rank and metrics are always for the app's own storefront.
 function TrackKeywordButton({
-  app, tracked, saving, onTrack,
+  app, tracked, saving, onTrack, docked,
 }: {
   app: { name: string; icon_url: string | null };
   tracked: boolean;
   saving: boolean;
   onTrack: () => void;
+  // Docked beside Keyword Research, the tracked keyword is already in the
+  // table next to it, so there's nothing to link to.
+  docked?: boolean;
 }) {
   const icon = app.icon_url
     ? <img src={app.icon_url} alt="" className="size-5 shrink-0 rounded-md object-cover ring-1 ring-white/10 light:ring-black/10" />
     : null;
+
+  if (tracked && docked) {
+    return (
+      <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-500/10 py-1 pl-3 pr-3 text-xs font-medium text-emerald-300 light:text-emerald-700 ring-1 ring-inset ring-emerald-500/25">
+        {icon ?? <span className="size-5" />}
+        <CheckIcon className="size-3.5 shrink-0" />
+        <span className="truncate">Tracking for {app.name}</span>
+      </span>
+    );
+  }
 
   if (tracked) {
     return (
@@ -396,10 +436,33 @@ function TrackKeywordButton({
   );
 }
 
-export default function KeywordInspectorPage() {
+// Set when the Inspector is docked in Keyword Research's right-hand pane
+// (tabbed with Long Tail) instead of being its own page. Research owns the tracked list there, so
+// "Track" goes through its add flow (full metrics, straight into the table)
+// rather than a bare save, and the tour/URL handling stays page-only.
+export type InspectorDock = {
+  // Each Inspect click from the table; the nonce re-runs a repeat of the
+  // same term (e.g. after the user typed something else in the form).
+  request: { term: string; store: Store; country: string; nonce: number } | null;
+  trackedTerms: Set<string>;
+  onTrack: (term: string) => void;
+  // "See long tail" on a keyword with no easy openings: switches the pane to
+  // its Long Tail tab for that term (the full page links to Long Tail instead).
+  onLongTail?: (term: string) => void;
+  // The app's current competitors (store ids), so their rows show as added,
+  // and a callback so Research's own list picks up one added here.
+  competitorIds?: Set<string>;
+  onCompetitorAdded?: (competitor: CompetitorApp) => void;
+  // The app's Chance for a term, from Research's table row (the Inspector
+  // has no app-specific score of its own); undefined when it isn't there.
+  chanceFor?: (term: string) => number | undefined;
+};
+
+export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } = {}) {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
   const locked = !canUseInspector(usePlanSlug());
+  const docked = !!dock;
 
   // The onboarding coach mark's Inspector steps (TOUR_STEPS in
   // @/features/onboarding/tour). Keywords Research's "inspect" step links
@@ -418,9 +481,12 @@ export default function KeywordInspectorPage() {
   // SidebarTourContext), same as Keywords Research does.
   const { setSidebarTour } = useSidebarTour();
   useEffect(() => {
+    // Docked, Keyword Research drives the sidebar step; this cleanup would
+    // switch its highlight off whenever the pane closes.
+    if (docked) return;
     setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
     return () => setSidebarTour({ active: false, onAdvance: () => {} });
-  }, [tourStep, setSidebarTour]);
+  }, [docked, tourStep, setSidebarTour]);
 
   const [term, setTerm] = useState("");
   const [store, setStore] = useState<Store>("ios");
@@ -459,8 +525,15 @@ export default function KeywordInspectorPage() {
   // search because the active app is iPad-only.
   const [ipadResults, setIpadResults] = useState(false);
   const [trackError, setTrackError] = useState<string | null>(null);
+  // Competitors added from the results list this session (store ids), the
+  // one being saved, and a save error, shown above the list.
+  const [addedCompetitors, setAddedCompetitors] = useState<Set<string>>(new Set());
+  const [addingCompetitor, setAddingCompetitor] = useState<string | null>(null);
+  const [competitorError, setCompetitorError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Docked, Keyword Research's own list is the source (dock.trackedTerms).
+    if (docked) return;
     if (!activeApp?.id && !activeApp?.bundle_id) return;
     let cancelled = false;
     // Same params Keyword Research uses: a previewed (not yet followed) app
@@ -483,7 +556,7 @@ export default function KeywordInspectorPage() {
       cancelled = true;
       setTrackedTerms(null);
     };
-  }, [activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, workspaceId]);
+  }, [docked, activeApp?.id, activeApp?.bundle_id, activeApp?.store, activeApp?.country, workspaceId]);
 
   // Store/country: last used here, else the active app's, else US App Store.
   // Read after mount (localStorage is client-only).
@@ -492,6 +565,9 @@ export default function KeywordInspectorPage() {
   // runs the inspection straight away. Read from window.location rather than
   // useSearchParams so the page doesn't need a Suspense boundary.
   useEffect(() => {
+    // Docked, the form follows each Inspect request instead (effect below),
+    // and the URL belongs to Keyword Research.
+    if (docked) return;
     const prefs = readJson<{ store?: Store; country?: string }>(PREFS_KEY);
     const url = new URLSearchParams(window.location.search);
     const linkTerm = url.get("term")?.trim();
@@ -536,6 +612,29 @@ export default function KeywordInspectorPage() {
   }
 
   useEffect(loadRecent, []);
+
+  // Docked: every Inspect click in Keyword Research's table lands here, for
+  // that table's own store and country (the storefront its metrics are for).
+  // An empty pane (opened from the header) starts on that storefront too.
+  const dockRequest = dock?.request;
+  useEffect(() => {
+    if (!docked) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!dockRequest) {
+      if (activeApp) {
+        setStore(activeApp.store);
+        setCountry((activeApp.country ?? "us").toLowerCase());
+      }
+      return;
+    }
+    setTerm(dockRequest.term);
+    setStore(dockRequest.store);
+    setCountry(dockRequest.country);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    if (!locked) inspect({ term: dockRequest.term, store: dockRequest.store, country: dockRequest.country });
+    // Keyed on the nonce: a new object with the same request shouldn't re-run.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docked, dockRequest?.nonce]);
 
   function rememberPrefs(next: { store: Store; country: string }) {
     writeJson(PREFS_KEY, next);
@@ -665,7 +764,50 @@ export default function KeywordInspectorPage() {
     }
   }
 
+  // Same save as Live Search's "add as competitor": straight to
+  // /api/competitors for the active app.
+  async function addCompetitor(result: AppSearchResult, store: Store) {
+    if (!activeApp || addingCompetitor) return;
+    const storeId = storeIdOf(result, store);
+    if (!storeId) return;
+    setCompetitorError(null);
+    setAddingCompetitor(storeId);
+    try {
+      const competitor: CompetitorApp = { storeId, name: result.name, icon: result.icon, developer: result.developer };
+      const res = await fetch("/api/competitors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workspaceId,
+          appId: activeApp.id,
+          bundleId: activeApp.bundle_id,
+          storeId: activeApp.store_id,
+          appName: activeApp.name,
+          iconUrl: activeApp.icon_url ?? undefined,
+          store: activeApp.store,
+          country: activeApp.country,
+          competitor,
+        }),
+      });
+      if (!res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        setCompetitorError(body.error ?? "Couldn't add this app as a competitor.");
+        return;
+      }
+      setAddedCompetitors((prev) => new Set(prev).add(storeId));
+      dock?.onCompetitorAdded?.(competitor);
+    } catch {
+      setCompetitorError("Couldn't add this app as a competitor.");
+    } finally {
+      setAddingCompetitor(null);
+    }
+  }
+
   async function trackKeyword(t: string) {
+    if (dock) {
+      dock.onTrack(t);
+      return;
+    }
     if (!activeApp || !workspaceId) return;
     setTrackSaving(true);
     setTrackError(null);
@@ -741,7 +883,8 @@ export default function KeywordInspectorPage() {
   // Inspector isn't tied to an app (any keyword, store and country), and an
   // app header would imply the form follows it. The active app only feeds
   // the "Your app's rank" card, which names the app itself.
-  const header = (
+  // Docked, Keyword Research's pane has its own tab bar (InspectorSplit).
+  const header = dock ? null : (
     <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
       <div className="size-8 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
         <DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600" />
@@ -759,6 +902,8 @@ export default function KeywordInspectorPage() {
   // (a crowded keyword can come back with 19). Only the App Store's count,
   // up to its 200 limit, is meaningful.
   const showResultsCard = query?.store === "ios";
+  // Docked, Chance (from the table row) takes Results' place in the strip.
+  const dockChance = query ? dock?.chanceFor?.(query.term) : undefined;
   // Words shared by 2+ of the top titles, and how many titles carry the
   // searched keyword itself: the strongest ranking signal you can see from
   // outside, and often a better read on direct competition than Difficulty.
@@ -776,7 +921,8 @@ export default function KeywordInspectorPage() {
   const canTrack = sameStore && !!workspaceId && !!activeApp
     && (activeApp.country ?? "us").toLowerCase() === query!.country
     && (!!activeApp.id || (!!activeApp.bundle_id && !!activeApp.store_id));
-  const isTracked = !!query && !!trackedTerms?.has(query.term);
+  const tracked = dock ? dock.trackedTerms : trackedTerms;
+  const isTracked = !!query && !!tracked?.has(query.term);
   const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId) : [];
   const rowSubtitles = query && apps ? apps.map((a) => subtitleFor(a, query.store, iosSubtitles)) : [];
   const hasSubtitles = rowSubtitles.some(Boolean);
@@ -815,7 +961,7 @@ export default function KeywordInspectorPage() {
 
   if (locked) {
     return (
-      <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
+      <div className="@container h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
         {header}
         <InspectorLockedPreview />
       </div>
@@ -823,105 +969,110 @@ export default function KeywordInspectorPage() {
   }
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
+    <div className="@container h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       {header}
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-6 py-6 space-y-6">
-          {/* ── Query form ── */}
-          <form onSubmit={onSubmit} className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4 space-y-3">
-            <div className="flex flex-col gap-3 md:flex-row">
-              <label className="relative flex-1">
-                <span className="sr-only">Keyword</span>
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
-                <input
-                  value={term}
-                  onChange={(e) => setTerm(e.target.value)}
-                  placeholder="Enter a keyword, e.g. habit tracker"
-                  maxLength={100}
-                  autoFocus
-                  className="w-full rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] py-2.5 pl-9 pr-3 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-indigo-500/60"
-                />
-              </label>
+        <div className="px-4 @lg:px-6 py-6 space-y-6">
+          {/* ── Query form ── (page only: docked, the pane inspects whichever
+              keyword was clicked in the table, so there's nothing to type) */}
+          {!docked && (
+            <form onSubmit={onSubmit} className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4 space-y-3">
+              <div className="flex flex-col gap-3 @3xl:flex-row">
+                <label className="relative flex-1">
+                  <span className="sr-only">Keyword</span>
+                  <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
+                  <input
+                    value={term}
+                    onChange={(e) => setTerm(e.target.value)}
+                    placeholder="Enter a keyword, e.g. habit tracker"
+                    maxLength={100}
+                    autoFocus
+                    className="w-full rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] py-2.5 pl-9 pr-3 text-sm text-white light:text-gray-900 placeholder:text-gray-600 light:placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-indigo-500/60"
+                  />
+                </label>
 
-              <div className="flex gap-3">
-                <div className="flex rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] p-1" role="radiogroup" aria-label="Store">
-                  {(["ios", "android"] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      role="radio"
-                      aria-checked={store === s}
-                      onClick={() => { setStore(s); rememberPrefs({ store: s, country }); }}
-                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
-                        store === s
-                          ? "bg-white/[0.08] light:bg-white text-white light:text-gray-900 light:shadow-sm"
-                          : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
-                      }`}
-                    >
-                      <img src={s === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3.5" />
-                      {s === "ios" ? "App Store" : "Google Play"}
-                    </button>
-                  ))}
+                <div className="flex gap-3">
+                  <div className="flex rounded-xl bg-[#0e0e10] light:bg-[#f7f7f8] p-1" role="radiogroup" aria-label="Store">
+                    {(["ios", "android"] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        role="radio"
+                        aria-checked={store === s}
+                        onClick={() => { setStore(s); rememberPrefs({ store: s, country }); }}
+                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+                          store === s
+                            ? "bg-white/[0.08] light:bg-white text-white light:text-gray-900 light:shadow-sm"
+                            : "text-gray-500 hover:text-gray-300 light:hover:text-gray-700"
+                        }`}
+                      >
+                        <img src={s === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3.5" />
+                        {s === "ios" ? "App Store" : "Google Play"}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="min-w-0 flex-1 @3xl:flex-none">
+                    <CountryPicker value={country} onChange={(c) => { setCountry(c); rememberPrefs({ store, country: c }); }} />
+                  </div>
                 </div>
 
-                <div className="min-w-0 flex-1 md:flex-none">
-                  <CountryPicker value={country} onChange={(c) => { setCountry(c); rememberPrefs({ store, country: c }); }} />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!term.trim() || busy}
-                className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                {busy ? "Inspecting..." : "Inspect"}
-              </button>
-            </div>
-
-            {recent.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-gray-600 light:text-gray-400 mr-1">Recent</span>
-                {recent.map((r) => (
-                  // Two sibling buttons in one pill (a button can't nest
-                  // another): the search itself, and × to drop just this one.
-                  <span
-                    key={`${r.term}-${r.store}-${r.country}`}
-                    className="group flex items-center rounded-full bg-white/[0.05] light:bg-black/[0.04] text-xs text-gray-300 light:text-gray-700 transition-colors hover:bg-white/[0.09] light:hover:bg-black/[0.07]"
-                  >
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => onRecentClick(r)}
-                      className="flex items-center gap-1 py-1 pl-2.5 pr-1 disabled:opacity-50"
-                    >
-                      <span>{countryFlag(r.country)}</span>
-                      <img src={r.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3" />
-                      {r.term}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => removeRecent(r)}
-                      aria-label={`Remove ${r.term} from recent searches`}
-                      className="mr-1 rounded-full p-0.5 text-gray-600 light:text-gray-400 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-gray-300 light:hover:text-gray-700 transition-colors"
-                    >
-                      <XMarkIcon className="size-3" />
-                    </button>
-                  </span>
-                ))}
-                <button type="button" onClick={clearRecent} className="ml-1 text-xs text-gray-600 light:text-gray-400 hover:text-gray-400 light:hover:text-gray-600 hover:underline">
-                  Clear all
+                <button
+                  type="submit"
+                  disabled={!term.trim() || busy}
+                  className="rounded-xl bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {busy ? "Inspecting..." : "Inspect"}
                 </button>
               </div>
-            )}
-          </form>
+
+              {recent.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs text-gray-600 light:text-gray-400 mr-1">Recent</span>
+                  {recent.map((r) => (
+                    // Two sibling buttons in one pill (a button can't nest
+                    // another): the search itself, and × to drop just this one.
+                    <span
+                      key={`${r.term}-${r.store}-${r.country}`}
+                      className="group flex items-center rounded-full bg-white/[0.05] light:bg-black/[0.04] text-xs text-gray-300 light:text-gray-700 transition-colors hover:bg-white/[0.09] light:hover:bg-black/[0.07]"
+                    >
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => onRecentClick(r)}
+                        className="flex items-center gap-1 py-1 pl-2.5 pr-1 disabled:opacity-50"
+                      >
+                        <span>{countryFlag(r.country)}</span>
+                        <img src={r.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3" />
+                        {r.term}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeRecent(r)}
+                        aria-label={`Remove ${r.term} from recent searches`}
+                        className="mr-1 rounded-full p-0.5 text-gray-600 light:text-gray-400 hover:bg-white/[0.08] light:hover:bg-black/[0.06] hover:text-gray-300 light:hover:text-gray-700 transition-colors"
+                      >
+                        <XMarkIcon className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <button type="button" onClick={clearRecent} className="ml-1 text-xs text-gray-600 light:text-gray-400 hover:text-gray-400 light:hover:text-gray-600 hover:underline">
+                    Clear all
+                  </button>
+                </div>
+              )}
+            </form>
+          )}
 
           {!query && (
             <div className="py-16 text-center">
               <DocumentMagnifyingGlassIcon className="size-10 text-gray-700 light:text-gray-300 mx-auto mb-4" />
               <p className="text-sm font-medium text-gray-400 light:text-gray-600">Inspect any keyword</p>
               <p className="mt-1 text-sm text-gray-600 light:text-gray-400 max-w-md mx-auto">
-                Pick a store and country, enter a keyword, and see how popular it is, how hard it is to rank for, and which apps rank for it right now. Then find out if you can beat them, with the weakest spots in the top 10 and where your app ranks today.
+                {docked
+                  ? "Click a keyword in your table to see its daily searches, who ranks for it, and whether you can beat them."
+                  : "Pick a store and country, enter a keyword, and see how popular it is, how hard it is to rank for, and which apps rank for it right now. Then find out if you can beat them, with the weakest spots in the top 10 and where your app ranks today."}
               </p>
             </div>
           )}
@@ -930,34 +1081,53 @@ export default function KeywordInspectorPage() {
             <>
               {/* ── Scores ── */}
               <section>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-white light:text-gray-900">
-                    &ldquo;{query.term}&rdquo;
-                    <span className="ml-2 font-normal text-gray-500">
-                      {countryFlag(query.country)} {COUNTRY_MAP[query.country.toUpperCase()] ?? query.country.toUpperCase()} · {query.store === "ios" ? "App Store" : "Google Play"}
-                    </span>
-                  </h2>
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-                    {metrics && (
-                      <button
-                        type="button"
-                        onClick={() => setShowHistory(true)}
-                        className="flex items-center gap-1.5 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
-                      >
-                        <ArrowTrendingUpIcon className="size-3.5" />
-                        Volume history
-                      </button>
-                    )}
-                    {canTrack && activeApp && trackedTerms && (
+                {docked ? (
+                  // Docked: just the keyword. Storefront is always the app's,
+                  // Volume history lives on the Performance tab, and Track
+                  // only matters for a keyword the table doesn't have yet.
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <h2 className="truncate text-sm font-semibold text-white light:text-gray-900">&ldquo;{query.term}&rdquo;</h2>
+                    {canTrack && activeApp && tracked && !isTracked && (
                       <TrackKeywordButton
                         app={activeApp}
-                        tracked={isTracked}
+                        tracked={false}
                         saving={trackSaving}
                         onTrack={() => trackKeyword(query.term)}
+                        docked
                       />
                     )}
                   </div>
-                </div>
+                ) : (
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-white light:text-gray-900">
+                      &ldquo;{query.term}&rdquo;
+                      <span className="ml-2 font-normal text-gray-500">
+                        {countryFlag(query.country)} {COUNTRY_MAP[query.country.toUpperCase()] ?? query.country.toUpperCase()} · {query.store === "ios" ? "App Store" : "Google Play"}
+                      </span>
+                    </h2>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+                      {metrics && (
+                        <button
+                          type="button"
+                          onClick={() => setShowHistory(true)}
+                          className="flex items-center gap-1.5 text-xs text-indigo-400 light:text-indigo-600 hover:text-indigo-300 light:hover:text-indigo-700 transition-colors"
+                        >
+                          <ArrowTrendingUpIcon className="size-3.5" />
+                          Volume history
+                        </button>
+                      )}
+                      {canTrack && activeApp && tracked && (
+                        <TrackKeywordButton
+                          app={activeApp}
+                          tracked={isTracked}
+                          saving={trackSaving}
+                          onTrack={() => trackKeyword(query.term)}
+                          docked={docked}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {trackError && (
                   <div className="mb-3 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-xs text-red-400 light:text-red-600">
@@ -977,14 +1147,32 @@ export default function KeywordInspectorPage() {
                   </div>
                 )}
 
-                {metricsLoading && (
-                  <div className={`grid grid-cols-2 gap-3 ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+                {docked && (metricsLoading || (metrics && pop && diff)) && (
+                  <StatStrip
+                    columns={dockChance === undefined ? 3 : 4}
+                    loading={metricsLoading}
+                    items={[
+                      { label: "Volume", value: String(metrics?.popularity ?? ""), note: pop?.label, noteTone: pop?.className, hint: "Estimated search demand (0 to 100), from App Store and Google Play search signals." },
+                      { label: "Difficulty", value: String(metrics?.difficulty ?? ""), note: diff?.label, tone: diff?.className, hint: "How hard it is to rank for this keyword (0 to 100), based on how established the top 5 apps are." },
+                      ...(dockChance === undefined ? [] : [{
+                        label: "Chance",
+                        value: String(dockChance),
+                        tone: dockChance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600",
+                        hint: "Your likelihood of ranking for this keyword (0 to 100), same as the Chance column in your table.",
+                      }]),
+                      { label: "Est. Searches/day", value: metrics ? formatEstimateRange(metrics.estDailySearches) : "", hint: "A ballpark modeled from Volume, for comparing keywords. Not a store-reported count." },
+                    ]}
+                  />
+                )}
+
+                {!docked && metricsLoading && (
+                  <div className={`grid grid-cols-2 gap-3 ${showResultsCard ? "@3xl:grid-cols-4" : "@3xl:grid-cols-3"}`}>
                     {Array.from({ length: showResultsCard ? 4 : 3 }).map((_, i) => <StatSkeleton key={i} />)}
                   </div>
                 )}
 
-                {metrics && pop && diff && (
-                  <div ref={statsRef} className={`grid grid-cols-2 gap-3 rounded-2xl transition-all ${showResultsCard ? "lg:grid-cols-4" : "lg:grid-cols-3"} ${
+                {!docked && metrics && pop && diff && (
+                  <div ref={statsRef} className={`grid grid-cols-2 gap-3 rounded-2xl transition-all ${showResultsCard ? "@3xl:grid-cols-4" : "@3xl:grid-cols-3"} ${
                     tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}>
                     <StatCard label="Volume" hint="Estimated search demand (0 to 100), from App Store and Google Play search signals.">
@@ -1019,11 +1207,22 @@ export default function KeywordInspectorPage() {
               {apps && apps.length > 0 && (
                 <section
                   ref={insightsRef}
-                  className={`grid gap-3 rounded-2xl transition-all ${sameStore ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""} ${
+                  className={`grid gap-3 rounded-2xl transition-all ${sameStore ? "@3xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""} ${
                     tourStep === "inspectorRank" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}
                 >
-                  {sameStore && activeApp && allResults && (
+                  {docked && sameStore && activeApp && allResults && (
+                    // Docked: one line; the rank trend is on the Performance tab.
+                    <div className="flex items-center gap-2.5 rounded-xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm px-3 py-2.5">
+                      {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-6 shrink-0 rounded-lg object-cover" />}
+                      <p className="text-xs text-gray-400 light:text-gray-600">
+                        {yourRankIdx >= 0
+                          ? <>Your app ranks <span className="font-semibold text-white light:text-gray-900">#{yourRankIdx + 1}</span> for this keyword</>
+                          : <>Your app isn&apos;t in the top {allResults.length} yet</>}
+                      </p>
+                    </div>
+                  )}
+                  {!docked && sameStore && activeApp && allResults && (
                     <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4">
                       <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
                         <TrophyIcon className="size-3.5" />
@@ -1061,29 +1260,84 @@ export default function KeywordInspectorPage() {
                       </p>
                     </div>
                   )}
-                  <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4">
-                    <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
-                      <LightBulbIcon className="size-3.5" />
-                      Beatable spots in the top {WEAK_SPOT_RANGE}
-                    </p>
+                  {/* The page's most actionable finding, so it's the one card
+                      that stands out (green = an opening), and comes first
+                      when the cards stack in a narrow pane. With no openings
+                      it stays a plain card, since there's nothing to act on. */}
+                  <div className={`order-first @3xl:order-none rounded-2xl p-4 ring-1 ${
+                    weakSpots.length > 0
+                      ? "bg-emerald-500/[0.07] ring-emerald-500/30 light:bg-emerald-50/70 light:ring-emerald-600/25"
+                      : "bg-amber-500/[0.06] ring-amber-500/25 light:bg-amber-50/70 light:ring-amber-600/20"
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className={`flex size-7 shrink-0 items-center justify-center rounded-lg ${
+                        weakSpots.length > 0 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700" : "bg-amber-500/15 text-amber-400 light:text-amber-700"
+                      }`}>
+                        <LightBulbIcon className="size-4" />
+                      </span>
+                      <p className="flex-1 text-sm font-semibold text-white light:text-gray-900">
+                        Beatable spots in the top {WEAK_SPOT_RANGE}
+                      </p>
+                      {weakSpots.length > 0 && (
+                        <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-300 light:text-emerald-700">
+                          {weakSpots.length} {weakSpots.length === 1 ? "opening" : "openings"}
+                        </span>
+                      )}
+                    </div>
                     {weakSpots.length > 0 ? (
-                      <ul className="mt-2 space-y-1.5">
+                      <ul className="mt-3 space-y-1.5">
                         {weakSpots.map(({ app, reasons }) => (
-                          <li key={`${app.position}-${app.trackId || app.appId}`} className="flex items-center gap-2 text-xs">
-                            <span className="w-6 shrink-0 text-right font-semibold tabular-nums text-amber-400 light:text-amber-600">#{app.position}</span>
-                            <span className="min-w-0 truncate text-gray-300 light:text-gray-700">{app.name}</span>
-                            <span className="shrink-0 text-gray-500">{reasons.join(", ")}</span>
+                          <li
+                            key={`${app.position}-${app.trackId || app.appId}`}
+                            className="flex items-center gap-2.5 rounded-xl bg-[#141417]/70 light:bg-white px-2.5 py-2 ring-1 ring-white/[0.05] light:ring-emerald-900/[0.06]"
+                          >
+                            <span className="w-8 shrink-0 rounded-md bg-emerald-500/15 py-0.5 text-center text-xs font-semibold tabular-nums text-emerald-300 light:text-emerald-700">
+                              #{app.position}
+                            </span>
+                            {app.icon && <img src={app.icon} alt="" className="size-7 shrink-0 rounded-lg object-cover" />}
+                            <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-200 light:text-gray-800">{app.name}</span>
+                            <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                              {reasons.map((reason) => (
+                                <span key={reason} className="rounded-full bg-white/[0.06] light:bg-gray-100 px-2 py-0.5 text-[11px] text-gray-400 light:text-gray-600">
+                                  {reason}
+                                </span>
+                              ))}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="mt-2 text-xs text-gray-400 light:text-gray-600">
-                        No easy openings. Every app in the top {WEAK_SPOT_RANGE} has {formatCount(WEAK_RATING_COUNT)}+ ratings and at least {WEAK_STARS} stars.
+                      // Amber, not red: a competitive keyword isn't an
+                      // error. One line on why, one link to the next step
+                      // (a longer, less contested variant), nothing else.
+                      <>
+                        <p className="mt-2 text-xs text-gray-400 light:text-gray-600">
+                          <span className="font-semibold text-amber-300 light:text-amber-700">No easy openings.</span>{" "}
+                          Every app here has {formatCount(WEAK_RATING_COUNT)}+ ratings and {WEAK_STARS}+ stars.
+                        </p>
+                        {dock?.onLongTail ? (
+                          <button
+                            type="button"
+                            onClick={() => dock.onLongTail!(query.term)}
+                            className="mt-2.5 text-xs font-semibold text-amber-300 light:text-amber-700 hover:underline underline-offset-2"
+                          >
+                            Try a long tail version instead &rarr;
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/dashboard/keywords/combination?${new URLSearchParams({ seed: query.term })}`}
+                            className="mt-2.5 inline-block text-xs font-semibold text-amber-300 light:text-amber-700 hover:underline underline-offset-2"
+                          >
+                            Try a long tail version instead &rarr;
+                          </Link>
+                        )}
+                      </>
+                    )}
+                    {weakSpots.length > 0 && (
+                      <p className="mt-3 text-[11px] text-gray-500">
+                        Apps with under {formatCount(WEAK_RATING_COUNT)} ratings or below {WEAK_STARS} stars are the easiest to outrank.
                       </p>
                     )}
-                    <p className="mt-2 text-[11px] text-gray-500">
-                      Apps with under {formatCount(WEAK_RATING_COUNT)} ratings or below {WEAK_STARS} stars are the easiest to outrank.
-                    </p>
                   </div>
                 </section>
               )}
@@ -1113,6 +1367,15 @@ export default function KeywordInspectorPage() {
                         hint={`Top apps with every word of "${query.term}" in their title or ${subtitleLabel}`}
                       />
                     )}
+                  </div>
+                )}
+                {competitorError && (
+                  <div className="mb-3 flex items-center gap-2 rounded-xl bg-red-500/10 px-4 py-3 text-xs text-red-400 light:text-red-600">
+                    <ExclamationTriangleIcon className="size-4 shrink-0" />
+                    <span className="flex-1"><PlanLimitMessage message={competitorError} /></span>
+                    <button type="button" onClick={() => setCompetitorError(null)} aria-label="Dismiss" className="hover:opacity-70">
+                      <XMarkIcon className="size-3.5" />
+                    </button>
                   </div>
                 )}
                 <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
@@ -1153,6 +1416,12 @@ export default function KeywordInspectorPage() {
                         isYou={!!yourStoreId && (query.store === "ios" ? String(app.trackId) : app.appId) === yourStoreId}
                         estimate={estimates ? estimates.estimates[storeIdOf(app, query.store)] ?? null : undefined}
                         showEstimates={estimates?.supported !== false}
+                        competitor={canTrack && !(!!yourStoreId && storeIdOf(app, query.store) === yourStoreId) && storeIdOf(app, query.store) ? {
+                          state: addingCompetitor === storeIdOf(app, query.store) ? "adding"
+                            : addedCompetitors.has(storeIdOf(app, query.store)) || !!dock?.competitorIds?.has(storeIdOf(app, query.store)) ? "added"
+                            : "add",
+                          onAdd: () => addCompetitor(app, query.store),
+                        } : undefined}
                       />
                   ))}
                 </div>

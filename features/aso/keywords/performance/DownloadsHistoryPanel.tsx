@@ -23,7 +23,10 @@ type Props = {
   term: string;
   appId: string;
   store?: string;
-  onClose: () => void;
+  onClose?: () => void;
+  // A card in the page flow instead of a modal: the Performance tab of
+  // Keyword Research's side pane stacks these for one keyword.
+  inline?: boolean;
 };
 
 function formatDate(iso: string): string {
@@ -59,7 +62,7 @@ function tooltipContent(props: unknown, store?: string) {
   );
 }
 
-export function DownloadsHistoryPanel({ term, appId, store, onClose }: Props) {
+export function DownloadsHistoryPanel({ term, appId, store, onClose, inline }: Props) {
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,6 +92,67 @@ export function DownloadsHistoryPanel({ term, appId, store, onClose }: Props) {
     );
   }
 
+  const body = (
+    <>
+      {loading ? (
+        <div className="flex h-64 items-center justify-center text-xs text-gray-500">
+          Loading downloads history…
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="flex h-64 flex-col items-center justify-center text-center px-6">
+          <ArrowTrendingUpIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
+          <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet</p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
+            Weekly totals appear here as your connected app syncs real download data.
+          </p>
+        </div>
+      ) : rows.length === 1 ? (
+        <div className="flex h-64 flex-col items-center justify-center text-center px-6">
+          <p className="text-3xl font-semibold text-white light:text-gray-900">{rows[0].estimated != null ? `~${rows[0].estimated}` : "-"}</p>
+          <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Week of {formatDate(rows[0].week)} ({rows[0].days} of 7 days synced)</p>
+          <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A weekly trend will appear once your app keeps syncing.</p>
+        </div>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+              <XAxis
+                dataKey="week"
+                tick={axisTick}
+                axisLine={{ stroke: "#ffffff1a" }}
+                tickLine={false}
+                interval={Math.max(0, Math.ceil(rows.length / 13) - 1)}
+              />
+              <YAxis
+                tick={{ fill: "#6b7280", fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                width={36}
+                allowDecimals={false}
+                tickFormatter={(v) => DOWNLOADS_FORMATTER.format(v)}
+              />
+              <Tooltip content={(p: unknown) => tooltipContent(p, store)} cursor={{ stroke: "#ffffff20" }} />
+              <Line type="linear" dataKey="estimated" name="Est. downloads" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+            </LineChart>
+          </ResponsiveContainer>
+          <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
+            Weekly totals: each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
+          </p>
+        </>
+      )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <section className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+        <h3 className="px-4 pt-4 text-xs font-medium text-gray-500">Est. downloads history</h3>
+        <div className="p-4">{body}</div>
+      </section>
+    );
+  }
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
@@ -105,53 +169,7 @@ export function DownloadsHistoryPanel({ term, appId, store, onClose }: Props) {
         </div>
 
         <div className="p-6 flex-1 overflow-auto">
-          {loading ? (
-            <div className="flex h-64 items-center justify-center text-xs text-gray-500">
-              Loading downloads history…
-            </div>
-          ) : rows.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <ArrowTrendingUpIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
-              <p className="text-sm font-medium text-gray-400 light:text-gray-600">No history yet</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
-                Weekly totals appear here as your connected app syncs real download data.
-              </p>
-            </div>
-          ) : rows.length === 1 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center px-6">
-              <p className="text-3xl font-semibold text-white light:text-gray-900">{rows[0].estimated != null ? `~${rows[0].estimated}` : "-"}</p>
-              <p className="mt-1 text-xs text-gray-600 light:text-gray-400">Week of {formatDate(rows[0].week)} ({rows[0].days} of 7 days synced)</p>
-              <p className="mt-3 text-xs text-gray-600 light:text-gray-400 max-w-xs">A weekly trend will appear once your app keeps syncing.</p>
-            </div>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={rows} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                  <XAxis
-                    dataKey="week"
-                    tick={axisTick}
-                    axisLine={{ stroke: "#ffffff1a" }}
-                    tickLine={false}
-                    interval={Math.max(0, Math.ceil(rows.length / 13) - 1)}
-                  />
-                  <YAxis
-                    tick={{ fill: "#6b7280", fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={36}
-                    allowDecimals={false}
-                    tickFormatter={(v) => DOWNLOADS_FORMATTER.format(v)}
-                  />
-                  <Tooltip content={(p: unknown) => tooltipContent(p, store)} cursor={{ stroke: "#ffffff20" }} />
-                  <Line type="linear" dataKey="estimated" name="Est. downloads" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
-                </LineChart>
-              </ResponsiveContainer>
-              <p className="mt-3 text-center text-[11px] text-gray-600 light:text-gray-400">
-                Weekly totals: each day&apos;s real downloads, split by this keyword&apos;s search volume and rank on that day
-              </p>
-            </>
-          )}
+          {body}
         </div>
       </div>
     </div>,
