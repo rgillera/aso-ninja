@@ -102,8 +102,8 @@ export default function KeywordResearchPage() {
 
   // A row's Details (or row click) opening the pane is also how the
   // "details" step is completed.
-  function handleInspect(term: string) {
-    inspector.selectKeyword(term);
+  function handleInspect(term: string, viaDetails?: boolean) {
+    inspector.selectKeyword(term, viaDetails);
     if (tourStep === "details") advanceTour();
   }
 

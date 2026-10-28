@@ -80,11 +80,13 @@ export function useDockedInspector(activeApp: DockApp) {
     }
   }
 
-  // A row click or Details: the open pane stays on its tab, now for this keyword;
-  // a closed one opens on the Inspector.
-  function selectKeyword(term: string) {
+  // A row click: the open pane stays on its tab, now for this keyword, so
+  // rows can be stepped through on Performance or Long Tail; a closed one
+  // opens on the Inspector. A row's Details button always opens the
+  // Inspector (`toInspector`).
+  function selectKeyword(term: string, toInspector = false) {
     setKeyword(term);
-    show(open ? tab : "inspector", term);
+    show(open && !toInspector ? tab : "inspector", term);
   }
 
   // From inside the pane (the Inspector's "See long tail"): straight to the

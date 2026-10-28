@@ -150,8 +150,8 @@ type Props = {
   onStarSelected: (keywords: string[]) => void;
   onRemoveSelected: (keywords: string[]) => void;
   onRemoveKeyword: (keyword: string) => void;
-  /** Opens a keyword in the Inspector pane docked beside the table, instead of navigating to the Inspector page. */
-  onInspect?: (keyword: string) => void;
+  /** Opens a keyword in the side pane docked beside the table. `viaDetails`: from the row's Details button, which always opens its Inspector tab (a row click keeps the pane's current tab). */
+  onInspect?: (keyword: string, viaDetails?: boolean) => void;
   /** The keyword showing in that pane, highlighted in the table. */
   inspectedKeyword?: string | null;
   /** The "opportunity" and "details" steps of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
@@ -953,7 +953,7 @@ export function KeywordTable({
         message={
           <>Click <span className="font-semibold text-white light:text-gray-900">Details</span> to see how many people search for &ldquo;{displayed[0]?.keyword}&rdquo; every day, and whether your app can rank for it.</>
         }
-        onAdvance={() => (onInspect && displayed[0] ? onInspect(displayed[0].keyword) : onAdvanceTour())}
+        onAdvance={() => (onInspect && displayed[0] ? onInspect(displayed[0].keyword, true) : onAdvanceTour())}
       />
 
       {/* Table */}
@@ -1089,7 +1089,7 @@ export function KeywordTable({
                     {onInspect ? (
                       <button
                         ref={tourDetails ? detailsButtonRef : undefined}
-                        onClick={() => onInspect(row.keyword)}
+                        onClick={() => onInspect(row.keyword, true)}
                         title="Results, long tail and performance for this keyword"
                         className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap ${
                           tourDetails ? "ring-1 ring-indigo-400/70 text-white light:text-indigo-900" : ""

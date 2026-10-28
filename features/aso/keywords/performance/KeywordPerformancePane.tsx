@@ -128,7 +128,7 @@ export function KeywordPerformancePane({
           <div className="px-4 pt-4">
             <h3 className="text-xs font-medium text-gray-500">Search visibility</h3>
             <p className="mt-0.5 text-[11px] text-gray-600 light:text-gray-400">
-              Est. impressions/day from this keyword{chartApps.length > 1 ? ", you vs. your competitors" : ""}
+              Est. impressions/day from &ldquo;{row.keyword}&rdquo; only{chartApps.length > 1 ? ", you vs. your competitors" : ""}
             </p>
           </div>
           <VisibilityScoreChart apps={chartApps} data={visibility} loading={visibilityLoading} />
