@@ -325,8 +325,8 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     await trackAdsConversion(ADS_CONVERSIONS.activation, `activation-${workspaceId}`);
     // `tip=tour` tells the research page to walk this first-timer through
     // the coach mark once, right after they land: Keyword Suggestions →
-    // the Opportunity column → Inspect, on into the Keyword Inspector and
-    // finally the sidebar — see TOUR_STEPS in @/features/onboarding/tour and
+    // the Opportunity column → Details, then the side pane's Inspector and
+    // Long Tail tab — see TOUR_STEPS in @/features/onboarding/tour and
     // the `tourStep` state in KeywordResearchPage for the rest of that
     // handoff. It reads and strips
     // the param itself, so there's nothing to clean up here.

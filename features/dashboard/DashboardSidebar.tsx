@@ -37,7 +37,6 @@ import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { useTrialEndsAt, trialDaysLeft } from "@/features/dashboard/PlanContext";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS } from "@/features/onboarding/tour";
-import { recordTourCompletedAction } from "@/features/activity/actions";
 import type { PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
 const LOCK_BADGE: Partial<Record<PlanSlug, { label: string; className: string }>> = {
@@ -234,11 +233,10 @@ export default function DashboardSidebar({
   const railHide = rail ? "lg:hidden" : "";
   const railLink = rail ? "lg:justify-center lg:px-0" : "";
   const navRef = useRef<HTMLElement>(null);
-  // The tour ends on Long Tail Keywords: it answers "what if I can't rank
-  // for this?", the question the Inspector step just raised, and it works on
-  // day one. Pro, so anyone without it (e.g. an invitee to a Free workspace)
-  // ends on Keyword Performance instead.
-  const tourLink = isPlanAtLeast(planSlug, "pro") ? LONG_TAIL_HREF : "/dashboard/keywords/performance";
+  // The tour ends on Keyword Performance: where the keywords they just
+  // researched get tracked day by day from here on. (Long Tail, the other
+  // next step, is already a tab in Keyword Research's side pane.)
+  const tourLink = "/dashboard/keywords/performance";
 
   const active = workspaces.find((w) => w.id === activeWorkspaceId) ?? workspaces[0];
 
@@ -407,23 +405,14 @@ export default function DashboardSidebar({
           total={TOUR_STEPS.length}
           icon={<MapIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
           message={
-            tourLink === LONG_TAIL_HREF ? (
-              <>
-                That&apos;s the tour. If a keyword is hard to rank for, open <span className="font-semibold text-white light:text-gray-900">Long Tail Keywords</span> to find easier variants of it. Then track and export their rankings in <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span>.
-              </>
-            ) : (
-              <>
-                That&apos;s the tour. Check <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> anytime to see how your keywords rank day by day, and export a full report.
-              </>
-            )
+            <>
+              That&apos;s the tour. Check <span className="font-semibold text-white light:text-gray-900">Keyword Performance</span> anytime to see how your keywords rank day by day, how you compare with competitors, and export a full report.
+            </>
           }
           buttonLabel="Done"
-          onAdvance={() => {
-            // Last step, so closing it any way (Done, X, outside click)
-            // means they reached the end of the tour.
-            recordTourCompletedAction().catch(() => {});
-            onAdvanceTour();
-          }}
+          // Last step: Keywords Research's advance records the tour as
+          // completed, however it's closed (Done, X, outside click).
+          onAdvance={onAdvanceTour}
           anchor="right"
         />
         <a

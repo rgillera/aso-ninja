@@ -32,20 +32,20 @@ import {
   CreditCardIcon,
   LightBulbIcon,
   XMarkIcon,
-  ChevronRightIcon,
   ArrowDownTrayIcon,
+  ArrowTopRightOnSquareIcon,
 } from "@heroicons/react/24/outline";
 import { VolumeBar, TranslateToggle } from "@/features/aso/keywords/research/ui";
 import { countryFlag } from "@/libs/countries";
-import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
 
 // A fully fake replica of the Keyword Research screen — same approach as the
 // onboarding/how-it-works demo components (real markup, sample data, no live
 // calls) so the marketing hero renders instead of shipping a screenshot (or
 // a GIF) that goes stale the moment the UI changes. It plays a short loop
 // with a fake cursor: type a keyword, add it to the tracked keywords table,
-// open it in the Keyword Inspector, then find long tail variants of it. See
-// TIMELINE and SCENES below.
+// open its Details in the side pane (the docked Inspector, then the Long
+// Tail tab, as in features/aso/keywords/inspector/InspectorSplit), then
+// track it in Keyword Performance. See TIMELINE and SCENES below.
 //
 // Unlike the other demo components, this one renders in the dashboard's
 // *light* theme (data-theme="light" below, matched by the `light:` custom
@@ -86,8 +86,8 @@ const TOP_APPS = [
 // Weak spots the Inspector would flag in the top 10 (low ratings count or
 // stars), same idea as WEAK_SPOT_RANGE on the real page.
 const BEATABLE = [
-  { position: 5, name: "Framely", reason: "1.2K ratings" },
-  { position: 8, name: "Snapsy", reason: "3.8 stars" },
+  { position: 5, name: "Framely", reason: "only 1.2K ratings", tone: "from-violet-400 to-fuchsia-500" },
+  { position: 8, name: "Snapsy", reason: "rated 3.4★", tone: "from-lime-400 to-emerald-500" },
 ];
 
 // Bolds the searched words inside an app's subtitle, like KeywordHighlight
@@ -102,9 +102,10 @@ function highlightTerm(text: string) {
   );
 }
 
-// Long tail variants of NEW_ROW.keyword for the Long Tail Keywords scene,
-// shaped like the real page's expanded seed group (features/aso/keywords/
-// combination). LONG_TAIL_PICK is the one the cursor adds: lowest difficulty.
+// Long tail variants of NEW_ROW.keyword for the side pane's Long Tail tab,
+// listed like features/aso/keywords/combination/LongTailFocus: easiest to
+// rank first, "Easier" on any clearly below the group's average difficulty.
+// LONG_TAIL_PICK is the one the cursor adds: the easiest, so the top row.
 const LONG_TAIL = [
   { term: "photo sharing app", volume: 46, difficulty: 72, chance: 48 },
   { term: "private photo sharing", volume: 31, difficulty: 28, chance: 74 },
@@ -112,12 +113,15 @@ const LONG_TAIL = [
   { term: "family photo sharing", volume: 24, difficulty: 33, chance: 70 },
   { term: "photo sharing album", volume: 19, difficulty: 45, chance: 58 },
 ];
-const LONG_TAIL_PICK = 1;
-const LONG_TAIL_AVG = {
-  volume: Math.round(LONG_TAIL.reduce((n, k) => n + k.volume, 0) / LONG_TAIL.length),
-  difficulty: Math.round(LONG_TAIL.reduce((n, k) => n + k.difficulty, 0) / LONG_TAIL.length),
-  chance: Math.round(LONG_TAIL.reduce((n, k) => n + k.chance, 0) / LONG_TAIL.length),
-};
+const LONG_TAIL_SORTED = [...LONG_TAIL].sort((a, b) => b.chance - a.chance || a.difficulty - b.difficulty);
+const LONG_TAIL_PICK = LONG_TAIL_SORTED[0].term;
+const LONG_TAIL_AVG_DIFF = LONG_TAIL.reduce((n, k) => n + k.difficulty, 0) / LONG_TAIL.length;
+
+const PANE_TABS = [
+  { key: "inspector", label: "Inspector", icon: DocumentMagnifyingGlassIcon },
+  { key: "longTail", label: "Long Tail", icon: PuzzlePieceIcon },
+  { key: "performance", label: "Performance", icon: ChartBarIcon },
+] as const;
 
 // Keyword Performance scene: tracked keywords with this week's rank change
 // for your app and one competitor, like features/aso/keywords/performance's
@@ -168,7 +172,7 @@ function ChangeCell({ value }: { value: number }) {
 
 type Step =
   | "rest" | "toInput" | "typing" | "toAdd" | "pressAdd" | "loadingRow" | "added"
-  | "toSort" | "pressSort" | "sorting" | "sorted" | "reveal"
+  | "toSort" | "pressSort" | "sorting" | "sorted"
   | "toInspect" | "pressInspect" | "inspector"
   | "back" | "pressLongTail" | "longTailLoading" | "longTail" | "toAddChild" | "pressAddChild" | "childAdded"
   | "toPerfNav" | "pressPerfNav" | "performance" | "toExport" | "pressExport" | "exporting" | "exported" | "sheet"
@@ -191,10 +195,9 @@ const TIMELINE: [Step, number][] = [
   ["toSort", 650],
   ["pressSort", 220],
   ["sorting", 750],
-  ["sorted", 450],
-  // The table slides sideways to show the row's action buttons, the same as
-  // scrolling the real table, instead of floating them over the metrics.
-  ["reveal", 750],
+  ["sorted", 700],
+  // Details (pinned at the table's right edge, like the real row) opens the
+  // side pane on the Inspector tab; the Long Tail tab is next to it.
   ["toInspect", 650],
   ["pressInspect", 220],
   ["inspector", 3800],
@@ -234,7 +237,7 @@ const TOTAL_MS = STEP_START[TIMELINE.length - 1] + TIMELINE[TIMELINE.length - 1]
 // the next chapter's first step; clicking one jumps the loop there.
 const SCENES: { label: string; start: Step }[] = [
   { label: "Add a keyword", start: "rest" },
-  { label: "Inspect it", start: "toInspect" },
+  { label: "See its details", start: "toInspect" },
   { label: "Find long tail", start: "back" },
   { label: "Track performance", start: "toPerfNav" },
 ];
@@ -397,21 +400,6 @@ function SkeletonCell({ width = "w-10" }: { width?: string }) {
   return <span className={`block h-3 ${width} rounded bg-black/[0.07] animate-pulse`} />;
 }
 
-function InspectorStat({ label, value, sub, bar }: { label: string; value: string; sub?: string; bar?: number }) {
-  return (
-    <div className="rounded-2xl bg-white p-3 ring-1 ring-gray-950/[0.07] shadow-sm">
-      <p className="text-[11px] font-medium text-gray-500">{label}</p>
-      <p className="mt-0.5 text-lg font-semibold tabular-nums text-gray-900">{value}</p>
-      {bar !== undefined && (
-        <div className="mt-2 h-1.5 rounded-full bg-black/[0.06]">
-          <div className="h-full rounded-full bg-indigo-500" style={{ width: `${bar}%` }} />
-        </div>
-      )}
-      {sub && <p className="mt-1 text-[11px] text-gray-500">{sub}</p>}
-    </div>
-  );
-}
-
 export function DashboardHeroDemo() {
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -425,7 +413,6 @@ export function DashboardHeroDemo() {
   const perfNavRef = useRef<HTMLDivElement>(null);
   const perfChangeRef = useRef<HTMLSpanElement>(null);
   const chartEndRef = useRef<HTMLSpanElement>(null);
-  const tableWrapRef = useRef<HTMLDivElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
   const sortRef = useRef<HTMLSpanElement>(null);
   // Row pitch of the tracked keywords table, for the sort slide.
@@ -531,7 +518,7 @@ export function DashboardHeroDemo() {
     const target =
       step === "toInput" || step === "typing" ? inputRef.current :
       step === "toAdd" || step === "pressAdd" || step === "loadingRow" || step === "added" ? addRef.current :
-      step === "toSort" || step === "pressSort" || step === "sorting" || step === "sorted" || step === "reveal" ? sortRef.current :
+      step === "toSort" || step === "pressSort" || step === "sorting" || step === "sorted" ? sortRef.current :
       step === "toInspect" || step === "pressInspect" ? inspectRef.current :
       step === "inspector" ? searchesRef.current :
       step === "back" || step === "pressLongTail" || step === "longTailLoading" || step === "longTail" ? longTailRef.current :
@@ -566,10 +553,10 @@ export function DashboardHeroDemo() {
   const sortActive = stepAtLeast(step, "pressSort") && step !== "reset";
   const sorting = step === "sorting";
   const sorted = stepAtLeast(step, "sorted") && step !== "reset";
-  const slid = stepAtLeast(step, "reveal") && step !== "reset";
-  const rowHovered = stepAtLeast(step, "reveal") && step !== "reset";
-  const inspectorOpen = step === "inspector";
-  const longTailOpen = stepAtLeast(step, "longTailLoading") && !stepAtLeast(step, "performance");
+  // The cursor heading for the row's Details shows its (hover) actions.
+  const rowHovered = stepAtLeast(step, "toInspect") && step !== "reset";
+  const paneOpen = stepAtLeast(step, "inspector") && !stepAtLeast(step, "performance");
+  const paneTab = stepAtLeast(step, "longTailLoading") ? "longTail" : "inspector";
   const perfOpen = stepAtLeast(step, "performance") && step !== "reset";
   const chartFocused = step === "chart";
   const longTailLoading = step === "longTailLoading";
@@ -582,14 +569,6 @@ export function DashboardHeroDemo() {
   const sheetOpen = step === "sheet";
   const scene = sceneOf(stepIndex);
 
-  // Scroll the tracked keywords table sideways to its action buttons during
-  // the "reveal" beat, and back once the loop resets. The keyword column is
-  // pinned (sticky), so the row stays identifiable while the metrics scroll.
-  useEffect(() => {
-    const wrap = tableWrapRef.current;
-    if (!wrap) return;
-    wrap.scrollTo({ left: slid ? wrap.scrollWidth : 0, behavior: reducedMotion ? "auto" : "smooth" });
-  }, [slid, reducedMotion]);
   const inputText = step === "typing" || step === "toAdd" || step === "pressAdd" ? NEW_ROW.keyword.slice(0, typed) : "";
 
   // DOM order: insertion order until the sort settles, then sorted. During
@@ -616,9 +595,8 @@ export function DashboardHeroDemo() {
 
         {/* Sidebar — mirrors features/dashboard/DashboardSidebar.tsx's structure,
             labels, and icons as they'd show on this page (Keyword Research
-            active; Campaign Data collapsed). Follows the loop over to
-            Keyword Inspector, Long Tail Keywords and Keyword Performance as
-            those open. */}
+            active; Campaign Data collapsed). The side pane keeps the loop on
+            Keyword Research until it moves over to Keyword Performance. */}
         <aside className="flex w-48 shrink-0 flex-col bg-white border-r border-black/[0.08]">
           {/* Workspace switcher — its own bordered region, same as the real
               sidebar (a plain margin doesn't read as a section break the way
@@ -640,9 +618,9 @@ export function DashboardHeroDemo() {
             <div className="pt-3">
               <p className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-gray-400">Keyword Intelligence</p>
               <div className="space-y-1">
-                <NavRow icon={MagnifyingGlassIcon} label="Keyword Research" active={!inspectorOpen && !longTailOpen && !perfOpen} />
-                <NavRow icon={DocumentMagnifyingGlassIcon} label="Keyword Inspector" active={inspectorOpen} />
-                <NavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" active={longTailOpen} />
+                <NavRow icon={MagnifyingGlassIcon} label="Keyword Research" active={!perfOpen} />
+                <NavRow icon={DocumentMagnifyingGlassIcon} label="Keyword Inspector" />
+                <NavRow icon={PuzzlePieceIcon} label="Long Tail Keywords" />
                 <div ref={perfNavRef} className={`rounded-lg transition-transform ${step === "pressPerfNav" ? "scale-[0.97]" : ""}`}>
                   <NavRow icon={ArrowTrendingUpIcon} label="Keyword Performance" active={perfOpen} />
                 </div>
@@ -809,14 +787,13 @@ export function DashboardHeroDemo() {
               </span>
             </div>
 
-            {/* Scrolled programmatically (see the "reveal" effect above),
-                like a user scrolling the real table sideways to reach its
-                action buttons. */}
-            <div ref={tableWrapRef} className="overflow-hidden">
+            {/* Wider than the panel, like the real table: the keyword column is
+                pinned left and the row actions right, so both stay in view. */}
+            <div className="overflow-hidden">
               <table className="w-max min-w-full">
                 <thead>
                   <tr className="border-b border-black/[0.08] bg-white">
-                    <th className={`sticky left-0 z-10 bg-white px-3 py-2 text-left transition-shadow ${slid ? "shadow-[6px_0_8px_-6px_rgba(0,0,0,0.12)]" : ""}`}>
+                    <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left">
                       <span className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                         <span className="block size-3.5 rounded border border-gray-300" />
                         Keywords
@@ -839,7 +816,7 @@ export function DashboardHeroDemo() {
                     </th>
                     <ColHead>Est. Daily Downloads</ColHead>
                     <ColHead>App Rank</ColHead>
-                    <th />
+                    <th className="sticky right-0 z-10 bg-white" />
                   </tr>
                 </thead>
                 <tbody ref={tbodyRef} className="divide-y divide-black/[0.06]">
@@ -851,7 +828,7 @@ export function DashboardHeroDemo() {
                       <tr
                         key={row.keyword}
                         className={`relative transition-[background-color,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                          isNew && rowHighlighted ? "bg-indigo-50" : isNew && rowHovered ? "bg-gray-50" : "bg-white"
+                          isNew && (rowHighlighted || paneOpen) ? "bg-indigo-50" : isNew && rowHovered ? "bg-gray-50" : "bg-white"
                         } ${isNew && (step === "loadingRow" || step === "added") ? "animate-[hero-row-in_400ms_ease-out]" : ""} ${
                           isNew ? "z-[1]" : ""
                         }`}
@@ -859,7 +836,7 @@ export function DashboardHeroDemo() {
                       >
                         {/* Pinned: checkbox + keyword. bg-inherit takes the row's
                             (opaque) background so scrolled cells pass under it. */}
-                        <td className={`sticky left-0 z-10 bg-inherit px-3 py-2.5 transition-shadow ${slid ? "shadow-[6px_0_8px_-6px_rgba(0,0,0,0.12)]" : ""}`}>
+                        <td className="sticky left-0 z-10 bg-inherit px-3 py-2.5">
                           <div className="flex items-center gap-1.5">
                             <span className="mr-1.5 block size-3.5 shrink-0 rounded border border-gray-300" />
                             <StarIcon className="size-3.5 text-gray-400 shrink-0" />
@@ -879,10 +856,11 @@ export function DashboardHeroDemo() {
                         <td className="px-2.5 py-2.5">
                           {loading ? <SkeletonCell width="w-6" /> : <span className={`text-sm font-medium tabular-nums ${rankColor(row.rank)}`}>#{row.rank}</span>}
                         </td>
-                        {/* Hover actions, same four as the real table row:
-                            Inspect, Results, Long tail, remove. */}
-                        <td className="pr-3 pl-1 py-2.5">
-                          <div className={`flex items-center gap-1.5 transition-opacity ${isNew && rowHovered ? "opacity-100" : "opacity-0"}`}>
+                        {/* Hover actions, same two as the real table row (Details,
+                            Remove), pinned right; bg-inherit, like the keyword
+                            column, so the metrics pass under them. */}
+                        <td className="sticky right-0 z-10 bg-inherit pl-2 pr-3 py-2.5">
+                          <div className={`flex items-center gap-1.5 transition-opacity ${isNew && (rowHovered || paneOpen) ? "opacity-100" : "opacity-0"}`}>
                             <span
                               ref={isNew ? inspectRef : undefined}
                               className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium whitespace-nowrap transition-all ${
@@ -890,24 +868,9 @@ export function DashboardHeroDemo() {
                               }`}
                             >
                               <DocumentMagnifyingGlassIcon className="size-3" />
-                              Inspect
+                              Details
                             </span>
-                            <span className="flex items-center gap-1 rounded bg-gray-100 px-2 py-1 text-[10px] font-medium text-gray-700 whitespace-nowrap">
-                              <MagnifyingGlassIcon className="size-3" />
-                              Results
-                            </span>
-                            <span
-                              ref={isNew ? longTailRef : undefined}
-                              className={`flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium whitespace-nowrap transition-all ${
-                                isNew && step === "pressLongTail" ? "scale-95 bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-700"
-                              }`}
-                            >
-                              <PuzzlePieceIcon className="size-3" />
-                              Long tail
-                            </span>
-                            <span className="flex items-center rounded bg-gray-100 px-2 py-1 text-gray-700">
-                              <XMarkIcon className="size-3" />
-                            </span>
+                            <span className="rounded bg-gray-100 px-2 py-1 text-[10px] font-medium text-gray-700 whitespace-nowrap">Remove</span>
                           </div>
                         </td>
                       </tr>
@@ -925,289 +888,191 @@ export function DashboardHeroDemo() {
             </div>
           </div>
 
-          {/* Keyword Inspector — a trimmed copy of features/aso/keywords/
-              inspector, laid over the research screen while the loop shows
-              where the Inspect click leads. Always rendered (just hidden)
-              so the cursor can measure its target before it fades in. */}
+          {/* Side pane — Keyword Research's docked Inspector / Long Tail /
+              Performance (features/aso/keywords/inspector/InspectorSplit),
+              opened by the row's Details over the right of the screen. Always
+              rendered (just faded out) so the cursor can measure its targets;
+              it only fades and nudges in, so those measurements stay put. */}
           <div
-            aria-hidden={!inspectorOpen}
-            className={`absolute inset-0 z-20 overflow-hidden bg-[#f7f7f8] transition-all duration-500 ${
-              inspectorOpen ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
+            aria-hidden={!paneOpen}
+            className={`absolute inset-y-0 right-0 z-20 w-[500px] overflow-hidden border-l border-black/[0.08] bg-[#f7f7f8] shadow-[-12px_0_24px_-12px_rgba(0,0,0,0.12)] transition-all duration-500 ${
+              paneOpen ? "opacity-100 translate-x-0" : "pointer-events-none opacity-0 translate-x-3"
             }`}
           >
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-black/[0.08]">
-              <MagnifyingGlassIcon className="size-4 text-gray-400 shrink-0" />
-              <span className="text-sm text-gray-400">Search for an app by name, app id or URL …</span>
+            {/* Tab bar */}
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-black/[0.08]">
+              <div className="flex flex-1 gap-1">
+                {PANE_TABS.map(({ key, label, icon: Icon }) => (
+                  <span
+                    key={key}
+                    ref={key === "longTail" ? longTailRef : undefined}
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${
+                      paneTab === key ? "bg-black/[0.06] text-gray-900" : "text-gray-500"
+                    } ${key === "longTail" && step === "pressLongTail" ? "scale-95 bg-black/[0.08]" : ""}`}
+                  >
+                    <Icon className="size-3.5" />
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <ArrowTopRightOnSquareIcon className="size-4 text-gray-500" />
+              <XMarkIcon className="ml-2 size-4 text-gray-500" />
             </div>
-            <div className="flex items-center gap-3 px-5 py-3 border-b border-black/[0.08]">
-              <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                <DocumentMagnifyingGlassIcon className="size-4" />
-              </span>
-              <div>
-                <p className="text-sm font-semibold text-gray-900 leading-tight">Keyword Inspector</p>
-                <p className="text-xs text-gray-500 leading-tight">Volume, difficulty, daily searches and live results for any keyword</p>
-              </div>
-            </div>
 
-            <div className="space-y-3 px-5 py-4">
-              <div className="flex items-center gap-2 rounded-xl bg-white p-2.5 ring-1 ring-gray-950/[0.07] shadow-sm">
-                <div className="flex flex-1 items-center gap-2 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-800">
-                  <MagnifyingGlassIcon className="size-4 text-gray-400" />
-                  {NEW_ROW.keyword}
-                </div>
-                <span className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 ring-1 ring-black/[0.08]">
-                  <img src="/app-store.svg" alt="" className="size-3.5" />
-                  App Store
-                </span>
-                <span className="rounded-lg bg-white px-3 py-2 text-xs font-medium text-gray-700 ring-1 ring-black/[0.08]">
-                  {countryFlag("us")} United States
-                </span>
-                <span className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-semibold text-white">Inspect</span>
-              </div>
+            {/* Inspector tab: one strip of numbers, beatable spots, your rank,
+                then the live results with the keyword highlighted. */}
+            <div className={`space-y-3 px-4 py-4 ${paneTab === "inspector" ? "" : "hidden"}`}>
+              <p className="text-sm font-semibold text-gray-900">&ldquo;{NEW_ROW.keyword}&rdquo;</p>
 
-              <div className="grid grid-cols-4 gap-3">
-                <InspectorStat label="Volume" value={String(NEW_ROW.volume)} bar={NEW_ROW.volume} />
-                <InspectorStat label="Difficulty" value={String(NEW_ROW.diff)} bar={NEW_ROW.diff} />
-                <div ref={searchesRef}>
-                  <InspectorStat label="Est. daily searches" value="~9.8K" sub="people a day" />
-                </div>
-                <InspectorStat label="Results" value="212" sub="apps compete" />
-              </div>
-
-              {/* Top 10 insights: your rank and the weakest spots to aim for */}
-              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3">
-                <div className="rounded-2xl bg-white p-3 ring-1 ring-gray-950/[0.07] shadow-sm">
-                  <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
-                    <TrophyIcon className="size-3.5" />
-                    Your app&apos;s rank
-                  </p>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
-                      <CameraIcon className="size-3.5 text-white" />
-                    </span>
-                    <p className="text-lg font-semibold leading-tight text-gray-900">
-                      #{NEW_ROW.rank}
-                      <span className="ml-1.5 text-[11px] font-normal text-gray-500">in {countryFlag("us")} United States</span>
+              <div className="grid grid-cols-4 gap-px overflow-hidden rounded-xl bg-gray-950/[0.07] ring-1 ring-gray-950/[0.07] shadow-sm">
+                {[
+                  { label: "Volume", value: String(NEW_ROW.volume), note: "High", tone: "text-gray-900", noteTone: "text-indigo-700" },
+                  { label: "Difficulty", value: String(NEW_ROW.diff), note: "Hard", tone: "text-red-600", noteTone: "text-red-600" },
+                  { label: "Chance", value: String(NEW_ROW.chance), tone: "text-emerald-700" },
+                  { label: "Est. Searches/day", value: "2K-7K", tone: "text-gray-900", searches: true },
+                ].map((stat) => (
+                  <div key={stat.label} ref={"searches" in stat ? searchesRef : undefined} className="min-w-0 bg-white px-2.5 py-2">
+                    <p className="text-[10px] leading-tight text-gray-500">{stat.label}</p>
+                    <p className={`mt-0.5 flex items-baseline gap-1 ${stat.tone}`}>
+                      <span className="text-base font-semibold tabular-nums">{stat.value}</span>
+                      {stat.note && <span className={`text-[10px] font-medium ${stat.noteTone}`}>{stat.note}</span>}
                     </p>
                   </div>
-                  <p className="mt-1.5 text-[11px] text-gray-500">Highlighted in the list below</p>
-                </div>
-                <div className="rounded-2xl bg-white p-3 ring-1 ring-gray-950/[0.07] shadow-sm">
-                  <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
+                ))}
+              </div>
+
+              <div className="rounded-xl bg-emerald-50/70 p-3 ring-1 ring-emerald-600/25">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700">
                     <LightBulbIcon className="size-3.5" />
-                    Beatable spots in the top 10
-                  </p>
-                  <ul className="mt-1.5 space-y-1">
-                    {BEATABLE.map((spot) => (
-                      <li key={spot.position} className="flex items-center gap-2 text-xs">
-                        <span className="w-6 shrink-0 text-right font-semibold tabular-nums text-amber-600">#{spot.position}</span>
-                        <span className="min-w-0 truncate text-gray-700">{spot.name}</span>
-                        <span className="shrink-0 text-gray-500">{spot.reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-1.5 text-[11px] text-gray-500">Apps here have few ratings or low stars, so they&apos;re easier to pass.</p>
+                  </span>
+                  <p className="flex-1 text-xs font-semibold text-gray-900">Beatable spots in the top 10</p>
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    {BEATABLE.length} openings
+                  </span>
                 </div>
+                <ul className="mt-2 space-y-1.5">
+                  {BEATABLE.map((spot) => (
+                    <li key={spot.position} className="flex items-center gap-2 rounded-lg bg-white px-2 py-1.5 ring-1 ring-emerald-900/[0.06]">
+                      <span className="w-7 shrink-0 rounded-md bg-emerald-500/15 py-px text-center text-[10px] font-semibold tabular-nums text-emerald-700">#{spot.position}</span>
+                      <span className={`size-5 shrink-0 rounded-md bg-gradient-to-br ${spot.tone}`} />
+                      <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-gray-800">{spot.name}</span>
+                      <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-px text-[10px] text-gray-600">{spot.reason}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <div className="flex gap-2">
-                <span className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 ring-1 ring-gray-950/[0.07]">
-                  <span className="text-xs text-gray-500">Keyword in title</span>
-                  <span className="text-xs font-semibold tabular-nums text-gray-900">3/10</span>
+              <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-gray-950/[0.07] shadow-sm">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600">
+                  <CameraIcon className="size-3 text-white" />
                 </span>
-                <span className="flex items-center gap-2 rounded-lg bg-white px-3 py-1.5 ring-1 ring-gray-950/[0.07]">
-                  <span className="text-xs text-gray-500">In title or subtitle</span>
-                  <span className="text-xs font-semibold tabular-nums text-gray-900">7/10</span>
-                </span>
+                <p className="text-[11px] text-gray-600">
+                  Your app ranks <span className="font-semibold text-gray-900">#{NEW_ROW.rank}</span> for this keyword
+                </p>
               </div>
 
-              <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-950/[0.07] shadow-sm">
-                <div className="flex items-center gap-1.5 border-b border-black/[0.08] px-4 py-2.5">
-                  <span className="text-sm font-semibold text-gray-900">Top 10 apps</span>
-                  <span className="text-xs text-gray-500">for &ldquo;{NEW_ROW.keyword}&rdquo;</span>
-                </div>
-                <div className="divide-y divide-black/[0.05]">
-                  {TOP_APPS.map((app, i) => (
-                    <div key={app.name} className={`flex items-center gap-3 px-4 py-2 ${"mine" in app ? "bg-indigo-50/60" : ""}`}>
-                      <span className="w-5 text-xs font-medium tabular-nums text-gray-400">#{i + 1}</span>
-                      <span className={`flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${app.tone}`}>
-                        <CameraIcon className="size-4 text-white" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="flex items-center gap-1.5 truncate text-xs font-semibold text-gray-900">
-                          {app.name}
-                          {"mine" in app && (
-                            <span className="rounded-full bg-indigo-100 px-1.5 py-px text-[9px] font-semibold text-indigo-700">You</span>
-                          )}
-                        </p>
-                        <p className="truncate text-[11px] text-gray-600">{highlightTerm(app.subtitle)}</p>
-                        <p className="truncate text-[10px] text-gray-400">{app.developer}</p>
-                      </div>
-                      <div className="w-20 shrink-0 text-right">
-                        <p className="text-xs text-gray-700"><span className="text-amber-400">★</span> {app.rating.toFixed(1)}</p>
-                        <p className="text-[10px] text-gray-500">{app.ratings} ratings</p>
-                      </div>
-                      <div className="w-20 shrink-0 text-right">
-                        <p className="text-xs tabular-nums text-gray-700">{formatDownloads(app.downloads)}</p>
-                        <p className="text-[10px] text-gray-500">downloads/mo</p>
-                      </div>
-                      <div className="w-20 shrink-0 text-right">
-                        <p className="text-xs tabular-nums text-gray-700">{formatRevenue(app.revenue)}</p>
-                        <p className="text-[10px] text-gray-500">revenue/mo</p>
-                      </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-900">Top 20 search results</p>
+                <span className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                  <span className="relative h-3.5 w-6 rounded-full bg-indigo-500">
+                    <span className="absolute right-0.5 top-0.5 size-2.5 rounded-full bg-white" />
+                  </span>
+                  Highlight the searched keyword
+                </span>
+              </div>
+              <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-950/[0.07] shadow-sm divide-y divide-black/[0.05]">
+                {TOP_APPS.map((app, i) => (
+                  <div key={app.name} className={`flex items-start gap-2.5 px-3 py-2 ${"mine" in app ? "bg-indigo-50/60" : ""}`}>
+                    <span className="w-3 pt-2 text-[10px] font-semibold text-gray-400">{i + 1}</span>
+                    <span className={`size-8 shrink-0 rounded-lg bg-gradient-to-br ${app.tone}`} />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1.5 truncate text-[11px] font-semibold text-gray-900">
+                        {app.name}
+                        {"mine" in app && <span className="rounded-full bg-indigo-100 px-1.5 py-px text-[9px] font-semibold text-indigo-700">Your app</span>}
+                      </p>
+                      <p className="truncate text-[10px] text-gray-600">{highlightTerm(app.subtitle)}</p>
+                      <p className="mt-0.5 flex items-center gap-2.5 text-[10px] font-medium text-[#007AFF] whitespace-nowrap">
+                        <span className="flex items-center gap-0.5">View on App Store <ArrowTopRightOnSquareIcon className="size-2.5" /></span>
+                        {!("mine" in app) && <span className="flex items-center gap-0.5"><PlusIcon className="size-2.5" />Add as competitor</span>}
+                      </p>
                     </div>
-                  ))}
-                </div>
+                    <div className="shrink-0 pt-0.5 text-right">
+                      <p className="text-[11px] text-gray-700"><span className="text-amber-400">★</span> {app.rating.toFixed(1)}</p>
+                      <p className="text-[10px] text-gray-500">{app.ratings} ratings</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Long Tail Keywords — a trimmed copy of features/aso/keywords/
-              combination, opened from the row's "Long tail" button with the
-              keyword as its seed. Always rendered for the same reason as the
-              Inspector above. */}
-          <div
-            aria-hidden={!longTailOpen}
-            className={`absolute inset-0 z-20 overflow-hidden bg-[#f7f7f8] transition-all duration-500 ${
-              longTailOpen ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
-            }`}
-          >
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-black/[0.08]">
-              <MagnifyingGlassIcon className="size-4 text-gray-400 shrink-0" />
-              <span className="text-sm text-gray-400">Search for an app by name, app id or URL …</span>
-            </div>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-black/[0.08]">
-              <div className="flex items-center gap-3">
-                <div className="size-8 rounded-xl bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center shrink-0">
-                  <CameraIcon className="size-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 leading-tight">Instagram</p>
-                  <p className="text-xs text-gray-500 leading-tight flex items-center gap-1">
-                    <img src="/app-store.svg" alt="" className="size-3" />
-                    App Store
-                    <span className="ml-1.5">&middot; {countryFlag("us")} US</span>
+            {/* Long Tail tab: just this keyword's variations, easiest first. */}
+            <div className={`px-4 py-4 ${paneTab === "longTail" ? "" : "hidden"}`}>
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900">Long tail for &ldquo;{NEW_ROW.keyword}&rdquo;</p>
+                  <p className="mt-0.5 text-[11px] text-gray-500">
+                    {longTailLoading ? "Finding variations, please wait..." : `${LONG_TAIL.length} variations, easiest to rank first`}
                   </p>
                 </div>
+                {!longTailLoading && (
+                  <span className="flex shrink-0 items-center gap-1 rounded-lg bg-indigo-500 px-2.5 py-1.5 text-[11px] font-semibold text-white">
+                    <PlusIcon className="size-3" />
+                    Add all
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-gray-900">Long Tail Keywords</p>
-                <InformationCircleIcon className="size-4 text-gray-500" />
-              </div>
-            </div>
-
-            <div className="mx-5 mt-4 overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/[0.08]">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-black/[0.08]">
-                <div className="flex-1 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-400">
-                  Add keywords separated with a comma e.g: games,…
+              <div className="overflow-hidden rounded-xl bg-white ring-1 ring-gray-950/[0.07] shadow-sm">
+                <div className="grid grid-cols-[minmax(0,1fr)_76px_30px_42px_52px] items-center gap-2 border-b border-black/[0.06] px-3 py-2 text-[9px] font-semibold uppercase tracking-wider text-gray-500">
+                  <span>Keyword</span>
+                  <span>Vol.</span>
+                  <span className="text-right">Diff.</span>
+                  <span className="text-right">Chance</span>
+                  <span />
                 </div>
-                <span className="flex items-center gap-1.5 rounded-lg bg-indigo-500 px-4 py-2 text-xs font-semibold text-white shrink-0">
-                  <PlusIcon className="size-3.5" />
-                  Add
-                </span>
-                <TranslateToggle checked={false} onChange={() => {}} locked={false} />
-              </div>
-
-              <div className="px-4 py-3 border-b border-black/[0.08]">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-500">From Keyword Research</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {ROWS.slice(0, 4).map((row) => (
-                    <span key={row.keyword} className="flex items-center gap-1 rounded-md bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
-                      <PlusIcon className="size-3 text-gray-500" />
-                      {row.keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-black/[0.08]">
-                    <th className="w-10 px-4 py-2.5" />
-                    <ColHead>Keywords</ColHead>
-                    <ColHead>Combinations</ColHead>
-                    <ColHead>Avg.Vol.</ColHead>
-                    <ColHead>Avg.Difficulty</ColHead>
-                    <ColHead>Avg.Chance</ColHead>
-                    <th className="w-20" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/[0.06]">
-                  {/* The seed group row */}
-                  <tr>
-                    <td className="px-4 py-3">
-                      <span className="block size-3.5 rounded border border-gray-300" />
-                    </td>
-                    <td className="px-2.5 py-3">
-                      <div className="flex items-center gap-1.5">
-                        {longTailLoading
-                          ? <ChevronRightIcon className="size-3.5 text-gray-500 shrink-0" />
-                          : <ChevronDownIcon className="size-3.5 text-gray-500 shrink-0" />}
-                        <span className="text-sm font-medium text-gray-900">{NEW_ROW.keyword}</span>
-                        {childAdded && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600">
-                            <CheckIcon className="size-3" />
-                            1 added to tracked keywords
-                          </span>
-                        )}
+                {longTailLoading
+                  ? Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="border-b border-black/[0.05] px-3 py-3 last:border-0">
+                        <SkeletonCell width="w-2/3" />
                       </div>
-                    </td>
-                    <td className="px-2.5 py-3 text-sm text-gray-700">{longTailLoading ? <SkeletonCell width="w-6" /> : LONG_TAIL.length}</td>
-                    <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-12" /> : <VolumeBar value={LONG_TAIL_AVG.volume} hoverHint />}</td>
-                    <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-8" /> : <span className={`text-sm ${diffColor(LONG_TAIL_AVG.difficulty)}`}>{LONG_TAIL_AVG.difficulty}</span>}</td>
-                    <td className="px-2.5 py-3">{longTailLoading ? <SkeletonCell width="w-8" /> : <span className={`text-sm ${chanceColor(LONG_TAIL_AVG.chance)}`}>{LONG_TAIL_AVG.chance}</span>}</td>
-                    <td className="pr-4 py-3">
-                      <span className="flex w-fit items-center rounded bg-gray-50 px-2 py-1 text-gray-600">
-                        <XMarkIcon className="size-3" />
-                      </span>
-                    </td>
-                  </tr>
-                  {/* Its long tail variants, shown once the group loads */}
-                  {!longTailLoading && LONG_TAIL.map((kw, i) => {
-                    const isPick = i === LONG_TAIL_PICK;
-                    const hovered = isPick && (step === "toAddChild" || step === "pressAddChild" || childAdded);
-                    return (
-                      <tr key={kw.term} className={`animate-[hero-row-in_400ms_ease-out] transition-colors ${hovered ? "bg-gray-50" : ""}`}>
-                        <td className="px-4 py-2.5">
-                          <span className={`block size-3.5 rounded border ${isPick && childAdded ? "border-indigo-500 bg-indigo-500" : "border-gray-300"}`} />
-                        </td>
-                        <td className="py-2.5 pl-9 pr-2.5">
-                          <span className="text-sm text-gray-700">{highlightTerm(kw.term)}</span>
-                        </td>
-                        <td className="px-2.5 py-2.5 text-sm text-gray-400">—</td>
-                        <td className="px-2.5 py-2.5"><VolumeBar value={kw.volume} hoverHint /></td>
-                        <td className="px-2.5 py-2.5"><span className={`text-sm ${diffColor(kw.difficulty)}`}>{kw.difficulty}</span></td>
-                        <td className="px-2.5 py-2.5"><span className={`text-sm ${chanceColor(kw.chance)}`}>{kw.chance}</span></td>
-                        <td className="pr-4 py-2.5">
-                          <div className={`flex items-center gap-1.5 transition-opacity ${hovered ? "opacity-100" : "opacity-0"}`}>
-                            <span className="flex items-center gap-1 rounded bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 whitespace-nowrap">
-                              <DocumentMagnifyingGlassIcon className="size-3.5" />
-                              Inspect
-                            </span>
-                            <span className="flex items-center gap-1 rounded bg-gray-100 px-2.5 py-1.5 text-xs font-medium text-gray-700 whitespace-nowrap">
-                              <MagnifyingGlassIcon className="size-3.5" />
-                              Results
-                            </span>
-                            <span
-                              ref={isPick ? childAddRef : undefined}
-                              className={`flex items-center gap-1 rounded px-2.5 py-1.5 text-xs font-medium ring-1 whitespace-nowrap transition-all ${
-                                isPick && childAdded
-                                  ? "bg-indigo-500/20 text-indigo-600 ring-indigo-500/40"
-                                  : isPick && step === "pressAddChild"
-                                    ? "scale-90 bg-gray-100 text-gray-900 ring-black/[0.12]"
-                                    : "bg-gray-50 text-gray-600 ring-black/[0.08]"
-                              }`}
-                            >
-                              {isPick && childAdded ? <CheckIcon className="size-3.5" /> : <PlusIcon className="size-3.5" />}
-                              {isPick && childAdded ? "Added" : "Add"}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    ))
+                  : LONG_TAIL_SORTED.map((kw) => {
+                      const isPick = kw.term === LONG_TAIL_PICK;
+                      const easier = kw.difficulty <= LONG_TAIL_AVG_DIFF - 10;
+                      return (
+                        <div
+                          key={kw.term}
+                          className="grid grid-cols-[minmax(0,1fr)_76px_30px_42px_52px] items-center gap-2 border-b border-black/[0.05] px-3 py-2.5 last:border-0 animate-[hero-row-in_400ms_ease-out]"
+                        >
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <span className="truncate text-xs text-gray-800">{kw.term}</span>
+                            {easier && <span className="shrink-0 rounded-full bg-emerald-500/15 px-1.5 py-px text-[9px] font-semibold text-emerald-700">Easier</span>}
+                          </span>
+                          <VolumeBar value={kw.volume} />
+                          <span className={`text-right text-xs tabular-nums ${diffColor(kw.difficulty)}`}>{kw.difficulty}</span>
+                          <span className={`text-right text-xs tabular-nums ${chanceColor(kw.chance)}`}>{kw.chance}</span>
+                          <span className="flex justify-end">
+                            {isPick && childAdded ? (
+                              <span className="flex items-center gap-0.5 text-[11px] font-medium text-indigo-600">
+                                <CheckIcon className="size-3" />
+                                Added
+                              </span>
+                            ) : (
+                              <span
+                                ref={isPick ? childAddRef : undefined}
+                                className={`flex items-center gap-0.5 rounded-md px-1.5 py-1 text-[11px] font-semibold text-indigo-600 transition-all ${
+                                  isPick && step === "pressAddChild" ? "scale-90 bg-indigo-500/10" : ""
+                                }`}
+                              >
+                                <PlusIcon className="size-3" />
+                                Add
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+              </div>
             </div>
           </div>
 
@@ -1217,7 +1082,7 @@ export function DashboardHeroDemo() {
               cursor works the table (export) first, then the chart. */}
           <div
             aria-hidden={!perfOpen}
-            className={`absolute inset-0 z-20 overflow-hidden bg-[#f7f7f8] transition-all duration-500 ${
+            className={`absolute inset-0 z-30 overflow-hidden bg-[#f7f7f8] transition-all duration-500 ${
               perfOpen ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-2"
             }`}
           >

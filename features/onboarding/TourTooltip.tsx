@@ -53,7 +53,7 @@ export function TourPulse() {
 }
 
 // The floating bubble shared by every step of the onboarding coach mark that
-// runs across Keywords Research and the sidebar right after the onboarding
+// runs across Keywords Research and its side pane right after the onboarding
 // wizard hands off (see TOUR_STEPS in ./tour) — each step's owning component
 // mounts one of these so the position-tracking, outside-click-to-advance,
 // and bubble chrome only has to be written once.

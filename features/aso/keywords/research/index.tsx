@@ -16,7 +16,9 @@ import { KeywordTable } from "./KeywordTable";
 import { useDockedInspector, InspectorSplit } from "@/features/aso/keywords/inspector/InspectorSplit";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
+import { canUseInspector } from "@/features/aso/keywords/inspector/limits";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
+import { recordTourCompletedAction } from "@/features/activity/actions";
 import type { Keyword, DownloadsConnection } from "./types";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { CompetitorApp } from "./ManageCompetitorsModal";
@@ -46,17 +48,18 @@ export default function KeywordResearchPage() {
   // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
   // so we can walk them across the page once, right as they land: Keyword
   // Suggestions section → the table's Opportunity column → the top row's
-  // Inspect link, which hands off to the Keyword Inspector (TOUR_STEPS, in
+  // Details button, which opens the side pane for the rest (TOUR_STEPS, in
   // that order — see the comment there for the full route).
   // Captured via a lazy initializer (not the searchParams value
   // itself) so each step's own dismiss logic — clicking its X, completing
   // its instruction, clicking elsewhere — isn't fighting a prop that keeps
   // resetting on every render. The effect below strips the param from the
   // URL so a refresh doesn't replay it. State (not the prop) lives here
-  // rather than inside any child because the tour has to hand off between
-  // three components: KeywordSuggestionsPanel and KeywordTable (this page's
-  // own children, reached via props) and DashboardSidebar (a sibling of
-  // this page under DashboardShell, reached via SidebarTourContext instead).
+  // rather than inside any child because the tour hands off between
+  // KeywordSuggestionsPanel, KeywordTable and the side pane (InspectorSplit,
+  // and the docked Inspector inside it), reached via props, and
+  // DashboardSidebar (a sibling of this page under DashboardShell, reached
+  // via SidebarTourContext instead).
   const [tourStep, setTourStep] = useState<TourStep | null>(() =>
     searchParams.get("tip") === "tour" ? TOUR_STEPS[0] : null
   );
@@ -73,15 +76,17 @@ export default function KeywordResearchPage() {
   // instruction) means move on to the next one, not just disappear — that's
   // what makes this a tutorial rather than five unrelated one-off tips.
   function advanceTour() {
-    setTourStep((step) => {
-      if (!step) return null;
-      // The Inspector steps only exist on the Inspector, which "inspect"
-      // reaches by its link. Dismissing "inspect" here instead (outside
-      // click) skips them and goes straight to the sidebar.
-      if (step === "inspect") return "sidebar";
-      const next = TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1];
-      return next ?? null;
-    });
+    if (!tourStep) return;
+    // The pane's steps are the Inspector, which is Pro: when it's locked
+    // (e.g. an invitee to a Free workspace) there's nothing to point at, so
+    // "details" skips straight to the sidebar.
+    const next = tourStep === "details" && !canUseInspector(planSlug)
+      ? "sidebar"
+      : TOUR_STEPS[TOUR_STEPS.indexOf(tourStep) + 1];
+    // Closing the last step any way (Done, X, outside click) means they
+    // reached the end of the tour.
+    if (!next) recordTourCompletedAction().catch(() => {});
+    setTourStep(next ?? null);
   }
 
   // Hands the tour's last step off to DashboardSidebar, which isn't a child
@@ -92,7 +97,16 @@ export default function KeywordResearchPage() {
   useEffect(() => {
     setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
     return () => setSidebarTour({ active: false, onAdvance: () => {} });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tourStep, setSidebarTour]);
+
+  // A row's Details (or row click) opening the pane is also how the
+  // "details" step is completed.
+  function handleInspect(term: string) {
+    inspector.selectKeyword(term);
+    if (tourStep === "details") advanceTour();
+  }
+
   const [keywords, setKeywords] = useState<Keyword[]>([]);
 
   // The Keyword Inspector docked beside the table; see InspectorSplit.
@@ -638,6 +652,8 @@ export default function KeywordResearchPage() {
         downloadsConnection={downloadsConnection}
         competitors={competitors}
         onCompetitorAdded={handleCompetitorAdded}
+        tourStep={tourStep}
+        onAdvanceTour={advanceTour}
       >
         <div className="flex-1 min-w-0 overflow-y-auto">
           <KeywordSuggestionsPanel
@@ -669,7 +685,7 @@ export default function KeywordResearchPage() {
             onStarSelected={handleStarSelected}
             onRemoveSelected={handleRemoveSelected}
             onRemoveKeyword={handleRemoveKeyword}
-            onInspect={inspector.selectKeyword}
+            onInspect={handleInspect}
             inspectedKeyword={inspector.inspectedKeyword}
             tourStep={tourStep}
             onAdvanceTour={advanceTour}

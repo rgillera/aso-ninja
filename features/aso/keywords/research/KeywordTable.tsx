@@ -154,7 +154,7 @@ type Props = {
   onInspect?: (keyword: string) => void;
   /** The keyword showing in that pane, highlighted in the table. */
   inspectedKeyword?: string | null;
-  /** The "opportunity" and "inspect" steps of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
+  /** The "opportunity" and "details" steps of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
   tourStep?: TourStep | null;
   onAdvanceTour?: () => void;
 };
@@ -290,16 +290,16 @@ export function KeywordTable({
   const colPickerMenuRef = useRef<HTMLDivElement>(null);
   const pickerRectRef = useRef<{ top: number; right: number } | null>(null);
 
-  // The coach mark's "opportunity" and "inspect" steps (see TOUR_STEPS in
+  // The coach mark's "opportunity" and "details" steps (see TOUR_STEPS in
   // @/features/onboarding/tour and the `tourStep`/`onAdvanceTour` props
   // above). The other steps live in KeywordSuggestionsPanel, the Keyword
   // Inspector and the sidebar, which is why the step state itself is owned
   // by the parent page instead of here. Each ref below is a target the
   // TourTooltip instances further down point at.
   const opportunityThRef = useRef<HTMLTableCellElement>(null);
-  // The top row's Inspect link: after the Opportunity sort, the best
+  // The top row's Details button: after the Opportunity sort, the best
   // keyword to look at.
-  const inspectLinkRef = useRef<HTMLAnchorElement>(null);
+  const detailsButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!colPickerOpen) return;
@@ -939,20 +939,21 @@ export function KeywordTable({
         onAdvance={onAdvanceTour}
       />
 
-      {/* Points at the top row's Inspect link, which carries the tour on to
-          the Keyword Inspector (`tip=tour`). No Next button: the click is the
-          step. Shows once the row has loaded (TourTooltip waits for its
-          target to exist). */}
+      {/* Points at the top row's Details button, which opens the side pane
+          for the tour's remaining steps. No Next button: the click is the
+          step. Dismissing it opens the pane on that row anyway, so those
+          steps still have something to point at. Shows once the row has
+          loaded (TourTooltip waits for its target to exist). */}
       <TourTooltip
-        targetRef={inspectLinkRef}
-        active={tourStep === "inspect"}
-        step={TOUR_STEPS.indexOf("inspect") + 1}
+        targetRef={detailsButtonRef}
+        active={tourStep === "details"}
+        step={TOUR_STEPS.indexOf("details") + 1}
         total={TOUR_STEPS.length}
         icon={<DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>Click <span className="font-semibold text-white light:text-gray-900">Inspect</span> to see how many people search for &ldquo;{displayed[0]?.keyword}&rdquo; every day, and whether your app can rank for it.</>
+          <>Click <span className="font-semibold text-white light:text-gray-900">Details</span> to see how many people search for &ldquo;{displayed[0]?.keyword}&rdquo; every day, and whether your app can rank for it.</>
         }
-        onAdvance={onAdvanceTour}
+        onAdvance={() => (onInspect && displayed[0] ? onInspect(displayed[0].keyword) : onAdvanceTour())}
       />
 
       {/* Table */}
@@ -1018,7 +1019,7 @@ export function KeywordTable({
           <tbody className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
             {pageRows.map((row, j) => {
               const i = pageStart + j;
-              const tourInspect = tourStep === "inspect" && i === 0 && !row.loading;
+              const tourDetails = tourStep === "details" && i === 0 && !row.loading;
               const inspected = !!inspectedKeyword && row.keyword.toLowerCase() === inspectedKeyword.toLowerCase();
               return (
               <tr
@@ -1084,33 +1085,29 @@ export function KeywordTable({
                     aria-hidden="true"
                     className={`pointer-events-none absolute inset-0 transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "group-hover:bg-white/[0.02] light:group-hover:bg-black/[0.02]"}`}
                   />
-                  <div className={`relative flex items-center gap-1.5 transition-opacity ${tourInspect || inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-                    {/* The tour keeps the link: its Inspector steps live on the full page. */}
-                    {onInspect && !tourInspect ? (
+                  <div className={`relative flex items-center gap-1.5 transition-opacity ${tourDetails || inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    {onInspect ? (
                       <button
+                        ref={tourDetails ? detailsButtonRef : undefined}
                         onClick={() => onInspect(row.keyword)}
                         title="Results, long tail and performance for this keyword"
-                        className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                        className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap ${
+                          tourDetails ? "ring-1 ring-indigo-400/70 text-white light:text-indigo-900" : ""
+                        }`}
                       >
+                        {tourDetails && <TourPulse />}
                         <DocumentMagnifyingGlassIcon className="size-3" />
                         Details
                       </button>
                     ) : (
-                    <Link
-                      ref={tourInspect ? inspectLinkRef : undefined}
-                      href={`/dashboard/keywords/inspector?${new URLSearchParams({
-                        term: row.keyword, store, country: country.toLowerCase(),
-                        ...(tourInspect ? { tip: "tour" } : {}),
-                      })}`}
-                      title="Open in Keyword Inspector"
-                      className={`relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap ${
-                        tourInspect ? "ring-1 ring-indigo-400/70 text-white light:text-indigo-900" : ""
-                      }`}
-                    >
-                      {tourInspect && <TourPulse />}
-                      <DocumentMagnifyingGlassIcon className="size-3" />
-                      Inspect
-                    </Link>
+                      <Link
+                        href={`/dashboard/keywords/inspector?${new URLSearchParams({ term: row.keyword, store, country: country.toLowerCase() })}`}
+                        title="Open in Keyword Inspector"
+                        className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                      >
+                        <DocumentMagnifyingGlassIcon className="size-3" />
+                        Inspect
+                      </Link>
                     )}
                     <button
                       onClick={() => onRemoveKeyword(row.keyword)}

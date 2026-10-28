@@ -9,6 +9,7 @@ import { KeywordPerformancePane } from "@/features/aso/keywords/performance/Keyw
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword, DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
+import type { TourStep } from "@/features/onboarding/tour";
 
 // Split view for Keyword Research: its table on the left, and a pane on the
 // right about one keyword, picked by clicking its row (or Details). Its tabs
@@ -123,7 +124,7 @@ const TABS: { key: PaneTab; label: string; icon: typeof PuzzlePieceIcon; href: s
 // The table (children) on the left, the pane on the right. Below xl there
 // isn't room for both, so the pane slides over the table instead.
 export function InspectorSplit({
-  inspector, trackedTerms, onTrack, app, keywords, downloadsConnection, competitors, onCompetitorAdded, children,
+  inspector, trackedTerms, onTrack, app, keywords, downloadsConnection, competitors, onCompetitorAdded, tourStep, onAdvanceTour, children,
 }: {
   inspector: DockedInspector;
   // For the Performance tab, which reads the keyword's row from the table.
@@ -134,6 +135,10 @@ export function InspectorSplit({
   // Performance tab's visibility chart.
   competitors: CompetitorApp[];
   onCompetitorAdded: (competitor: CompetitorApp) => void;
+  // The onboarding tour (owned by Keywords Research): the docked Inspector
+  // shows two of its steps.
+  tourStep: TourStep | null;
+  onAdvanceTour: () => void;
   // Lowercased terms already in the table, so Track can show "Tracking".
   trackedTerms: Set<string>;
   // Resolves once the keywords are saved.
@@ -246,6 +251,8 @@ export function InspectorSplit({
                     onLongTail: inspector.openLongTail,
                     competitorIds: new Set(competitors.map((c) => c.storeId)),
                     onCompetitorAdded,
+                    tourStep,
+                    onAdvanceTour,
                     chanceFor: (term) => {
                       const row = keywords.find((k) => k.keyword.toLowerCase() === term.toLowerCase());
                       return row && !row.loading ? row.chance : undefined;

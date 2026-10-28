@@ -44,7 +44,7 @@ export function LongTailFocus({
             Long tail for &ldquo;{seed}&rdquo;
           </h2>
           <p className="mt-0.5 text-xs text-gray-500">
-            {loading ? "Finding variations..." : `${children.length} variations, easiest to rank first`}
+            {loading ? "Finding variations, please wait..." : `${children.length} variations, easiest to rank first`}
           </p>
         </div>
         {!loading && untracked.length > 0 && (

@@ -18,7 +18,6 @@ import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
-import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
 import { TourTooltip } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import { fetchLiveSearchResults, resolveIpadOnlyClient, type TrackedApp } from "@/features/aso/keywords/research/liveSearch";
@@ -456,6 +455,10 @@ export type InspectorDock = {
   // The app's Chance for a term, from Research's table row (the Inspector
   // has no app-specific score of its own); undefined when it isn't there.
   chanceFor?: (term: string) => number | undefined;
+  // The onboarding tour's step, which Keywords Research owns; the
+  // Inspector shows "inspectorSearches" and "inspectorRank".
+  tourStep?: TourStep | null;
+  onAdvanceTour?: () => void;
 };
 
 export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } = {}) {
@@ -465,28 +468,14 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const docked = !!dock;
 
   // The onboarding coach mark's Inspector steps (TOUR_STEPS in
-  // @/features/onboarding/tour). Keywords Research's "inspect" step links
-  // here with ?tip=tour; the mount effect below picks it up. Each step's
-  // bubble waits for its section to load, and a section that never shows
-  // (failed lookup) is skipped further down.
-  const [tourStep, setTourStep] = useState<TourStep | null>(null);
+  // @/features/onboarding/tour), driven by Keywords Research through the
+  // dock; the full page has no tour of its own. Each step's bubble waits for
+  // its section to load, and a section that never shows (failed lookup) is
+  // skipped further down.
+  const tourStep = dock?.tourStep ?? null;
+  const advanceTour = () => dock?.onAdvanceTour?.();
   const statsRef = useRef<HTMLDivElement>(null);
   const insightsRef = useRef<HTMLElement>(null);
-
-  function advanceTour() {
-    setTourStep((step) => (step ? TOUR_STEPS[TOUR_STEPS.indexOf(step) + 1] ?? null : null));
-  }
-
-  // The last step lights up the sidebar, a sibling of this page (see
-  // SidebarTourContext), same as Keywords Research does.
-  const { setSidebarTour } = useSidebarTour();
-  useEffect(() => {
-    // Docked, Keyword Research drives the sidebar step; this cleanup would
-    // switch its highlight off whenever the pane closes.
-    if (docked) return;
-    setSidebarTour({ active: tourStep === "sidebar", onAdvance: advanceTour });
-    return () => setSidebarTour({ active: false, onAdvance: () => {} });
-  }, [docked, tourStep, setSidebarTour]);
 
   const [term, setTerm] = useState("");
   const [store, setStore] = useState<Store>("ios");
@@ -580,16 +569,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     /* eslint-disable react-hooks/set-state-in-effect */
     setStore(nextStore);
     setCountry(nextCountry);
-    if (linkTerm) {
-      const tour = url.get("tip") === "tour";
-      // Locked: nothing to inspect, so the tour skips to its last step.
-      if (locked) {
-        if (tour) setTourStep("sidebar");
-      } else {
-        setTerm(linkTerm);
-        if (tour) setTourStep("inspectorSearches");
-        inspect({ term: linkTerm, store: nextStore, country: nextCountry });
-      }
+    if (linkTerm && !locked) {
+      setTerm(linkTerm);
+      inspect({ term: linkTerm, store: nextStore, country: nextCountry });
     }
     /* eslint-enable react-hooks/set-state-in-effect */
     // Drop the params so a refresh doesn't re-run it over a newer search.
@@ -1148,6 +1130,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                 )}
 
                 {docked && (metricsLoading || (metrics && pop && diff)) && (
+                  <div ref={statsRef} className={`rounded-xl transition-all ${
+                    tourStep === "inspectorSearches" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
+                  }`}>
                   <StatStrip
                     columns={dockChance === undefined ? 3 : 4}
                     loading={metricsLoading}
@@ -1163,6 +1148,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       { label: "Est. Searches/day", value: metrics ? formatEstimateRange(metrics.estDailySearches) : "", hint: "A ballpark modeled from Volume, for comparing keywords. Not a store-reported count." },
                     ]}
                   />
+                  </div>
                 )}
 
                 {!docked && metricsLoading && (
