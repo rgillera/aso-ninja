@@ -46,9 +46,10 @@ export default function KeywordResearchPage() {
   const searchParams = useSearchParams();
   const translateLocked = !isPlanAtLeast(planSlug, "free");
   // OnboardingWizard's handleFinish sends first-timers here with ?tip=tour
-  // so we can walk them across the page once, right as they land: Keyword
-  // Suggestions section → the table's Opportunity column → the top row's
-  // Details button, which opens the side pane for the rest (TOUR_STEPS, in
+  // so we can walk them across the page once, right as they land: the
+  // table's Opportunity column → the top row's
+  // Details button, which opens the side pane for most of the rest, ending
+  // on the sidebar (TOUR_STEPS, in
   // that order — see the comment there for the full route).
   // Captured via a lazy initializer (not the searchParams value
   // itself) so each step's own dismiss logic — clicking its X, completing
@@ -56,7 +57,7 @@ export default function KeywordResearchPage() {
   // resetting on every render. The effect below strips the param from the
   // URL so a refresh doesn't replay it. State (not the prop) lives here
   // rather than inside any child because the tour hands off between
-  // KeywordSuggestionsPanel, KeywordTable and the side pane (InspectorSplit,
+  // KeywordTable and the side pane (InspectorSplit,
   // and the docked Inspector inside it), reached via props, and
   // DashboardSidebar (a sibling of this page under DashboardShell, reached
   // via SidebarTourContext instead).
@@ -77,15 +78,18 @@ export default function KeywordResearchPage() {
   // what makes this a tutorial rather than five unrelated one-off tips.
   function advanceTour() {
     if (!tourStep) return;
-    // The pane's steps are the Inspector, which is Pro: when it's locked
-    // (e.g. an invitee to a Free workspace) there's nothing to point at, so
-    // "details" skips straight to the sidebar.
+    // The pane's steps are the Inspector and Long Tail, both Pro: when
+    // they're locked (e.g. an invitee to a Free workspace) there's nothing
+    // to point at, so "details" skips straight to the sidebar.
     const next = tourStep === "details" && !canUseInspector(planSlug)
       ? "sidebar"
       : TOUR_STEPS[TOUR_STEPS.indexOf(tourStep) + 1];
     // Closing the last step any way (Done, X, outside click) means they
     // reached the end of the tour.
     if (!next) recordTourCompletedAction().catch(() => {});
+    // Leaving the Long Tail step any way (Next, X, outside click) opens the
+    // tab it pointed at, so they see the list while the last step shows.
+    if (tourStep === "longTail") inspector.showTab("longTail");
     setTourStep(next ?? null);
   }
 
@@ -667,8 +671,6 @@ export default function KeywordResearchPage() {
             translateToggle={translateToggle && !translateLocked}
             translateLocked={translateLocked}
             onTranslateToggle={() => !translateLocked && setTranslateToggle((v) => !v)}
-            tourStep={tourStep}
-            onAdvanceTour={advanceTour}
           />
 
           <KeywordTable

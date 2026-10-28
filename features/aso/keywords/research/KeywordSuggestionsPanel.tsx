@@ -1,13 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon, SparklesIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { SUGGESTION_TABS } from "./constants";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { TranslateToggle } from "./ui";
-import { TourTooltip } from "@/features/onboarding/TourTooltip";
-import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import { KeywordSuggestionMetadata } from "./KeywordSuggestionMetadata";
@@ -29,9 +27,6 @@ type Props = {
   translateToggle: boolean;
   translateLocked?: boolean;
   onTranslateToggle: () => void;
-  /** Step 1 of the onboarding coach mark — see TOUR_STEPS in @/features/onboarding/tour. */
-  tourStep?: TourStep | null;
-  onAdvanceTour?: () => void;
 };
 
 export function KeywordSuggestionsPanel({
@@ -45,40 +40,18 @@ export function KeywordSuggestionsPanel({
   translateToggle,
   translateLocked = false,
   onTranslateToggle,
-  tourStep = null,
-  onAdvanceTour = () => {},
 }: Props) {
   const planSlug = usePlanSlug();
   const aiLocked = !isPlanAtLeast(planSlug, "pro");
-  const [savedOpen, toggleOpen] = usePersistedOpen("research:keyword-suggestions-open");
-  // The tour's suggestions step points at the tabs, so a remembered
-  // "collapsed" can't hide them mid-tour.
-  const open = savedOpen || tourStep === "suggestions";
+  const [open, toggleOpen] = usePersistedOpen("research:keyword-suggestions-open");
   const [activeTab, setActiveTab] = useState<string>(SUGGESTION_TABS[0].label);
-  const panelRef = useRef<HTMLDivElement>(null);
 
   const tabProps = { activeApp, trackedKeywords, onAddKeyword, onAddKeywords, onRemoveKeyword };
 
   return (
     <div
-      ref={panelRef}
-      className={`mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm transition-all ${
-        tourStep === "suggestions" ? "ring-2! ring-indigo-400/70!" : ""
-      }`}
+      className="mx-6 mt-4 mb-4 rounded-xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm transition-all"
     >
-      <TourTooltip
-        targetRef={panelRef}
-        active={tourStep === "suggestions"}
-        step={TOUR_STEPS.indexOf("suggestions") + 1}
-        total={TOUR_STEPS.length}
-        icon={<SparklesIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
-        message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Suggestions</span> panel. Browse the Metadata, Competitor Gap, AI Suggestions, and Combinations tabs to find keyword ideas for your app. Have your own in mind? Type them into the box above the keyword table and click <span className="font-semibold text-white light:text-gray-900">Add</span>.</>
-        }
-        buttonLabel="Next"
-        onAdvance={onAdvanceTour}
-        anchor="top"
-      />
       <CardHeader title="Keyword Suggestions" divider={open}>
         <button
           onClick={toggleOpen}

@@ -18,30 +18,35 @@
 // self-evident + already has a hover tooltip — before adding another
 // column as its own step.
 //
-// Driven by Keywords Research, which owns the step state. "suggestions"
-// (KeywordSuggestionsPanel) and "opportunity"/"details" (KeywordTable) are
-// on the page itself. "details" points at the top row's Details button and
-// has no Next button, because the click is the step: it opens the side pane
-// (InspectorSplit) on that keyword, and dismissing the step opens it the
-// same way, so the rest of the tour always has its targets. The pane then
-// carries the last three: "inspectorSearches" (the docked Inspector's stat
-// strip) and "inspectorRank" (beatable spots + your app's rank), the payoff,
-// since how many people search the keyword and whether this app can rank
-// for it is the question a first-timer came with. The Inspector is Pro,
-// which new accounts have during the signup trial; if it's locked anyway
-// (e.g. an invitee to a Free workspace) "details" skips to "sidebar".
+// The route answers a first-timer's questions in order: which keyword is
+// best ("opportunity", where sorting puts it on top), how big and how hard
+// is it ("inspectorSearches"), can I win it ("inspectorRank"), and if not,
+// what instead ("longTail": most new apps can't take their head terms, and
+// the Inspector step usually just showed that). It ends where they'll come
+// back to day to day ("sidebar": Keyword Performance).
+//
+// Driven by Keywords Research, which owns the step state. "opportunity" and
+// "details" (KeywordTable) are on the page itself. "details" points at the
+// top row's Details button and has no Next button, because the click is the
+// step: it opens the side pane (InspectorSplit) on that keyword, and
+// dismissing the step opens it the same way, so the next steps always have
+// their targets. The pane carries "inspectorSearches" (the docked
+// Inspector's stat strip), "inspectorRank" (beatable spots + your app's
+// rank) and "longTail" (its Long Tail tab; clicking it, or leaving the step
+// any other way, opens the tab so they see the list). The Inspector and
+// Long Tail are Pro, which new accounts have during the signup trial; if
+// they're locked anyway (e.g. an invitee to a Free workspace) "details"
+// skips to "sidebar".
 //
 // "sidebar" is last and lights up the Keyword Performance link in
 // DashboardSidebar (a sibling of the page, reached via SidebarTourContext)
-// with a Done button, not a forced click: where the keywords they just
-// researched get tracked from here on. Long Tail, which it used to point at,
-// is a tab in the side pane now.
+// with a Done button, not a forced click. Mostly empty on day one (no rank
+// history yet), so it's a pointer, not a stop.
 //
+// Cut along the way: a Keyword Suggestions step (the wizard had just had
+// them pick keywords, so it repeated it, and the panel's "+" chips explain
+// themselves), a forced "add a keyword" step, and an "export report" step.
 // It used to cross pages (the Inspect link carried `tip=tour` to the
-// Inspector page); the side pane brought the rest onto one page. Table and
-// Opportunity used to be separate steps, and there was a forced "add a
-// keyword" step (the wizard already had them add some) and an "export
-// report" step on Keyword Performance. Folded or cut to keep the tour at
-// six steps with the Inspector in it.
-export const TOUR_STEPS = ["suggestions", "opportunity", "details", "inspectorSearches", "inspectorRank", "sidebar"] as const;
+// Inspector page); the side pane brought the rest onto one page.
+export const TOUR_STEPS = ["opportunity", "details", "inspectorSearches", "inspectorRank", "longTail", "sidebar"] as const;
 export type TourStep = typeof TOUR_STEPS[number];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { DocumentMagnifyingGlassIcon, PuzzlePieceIcon, ChartBarIcon, ArrowTopRightOnSquareIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import KeywordInspectorPage, { type InspectorDock } from "./index";
@@ -9,7 +9,8 @@ import { KeywordPerformancePane } from "@/features/aso/keywords/performance/Keyw
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword, DownloadsConnection } from "@/features/aso/keywords/research/types";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
-import type { TourStep } from "@/features/onboarding/tour";
+import { TourTooltip } from "@/features/onboarding/TourTooltip";
+import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 
 // Split view for Keyword Research: its table on the left, and a pane on the
 // right about one keyword, picked by clicking its row (or Details). Its tabs
@@ -138,7 +139,7 @@ export function InspectorSplit({
   competitors: CompetitorApp[];
   onCompetitorAdded: (competitor: CompetitorApp) => void;
   // The onboarding tour (owned by Keywords Research): the docked Inspector
-  // shows two of its steps.
+  // shows two of its steps, and the Long Tail tab is the one after.
   tourStep: TourStep | null;
   onAdvanceTour: () => void;
   // Lowercased terms already in the table, so Track can show "Tracking".
@@ -150,6 +151,8 @@ export function InspectorSplit({
   // A tab mounts the first time it's shown and then stays mounted (just
   // hidden), so switching back keeps its results instead of reloading.
   const [mounted, setMounted] = useState<Set<PaneTab>>(new Set());
+  const longTailTabRef = useRef<HTMLButtonElement>(null);
+  const tourLongTail = tourStep === "longTail";
   if (inspector.open && !mounted.has(inspector.tab)) setMounted(new Set(mounted).add(inspector.tab));
 
   const [width, setWidth] = useState(DEFAULT_WIDTH);
@@ -208,10 +211,16 @@ export function InspectorSplit({
                 {TABS.map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
+                    ref={key === "longTail" ? longTailTabRef : undefined}
                     type="button"
                     role="tab"
                     aria-selected={inspector.tab === key}
-                    onClick={() => inspector.showTab(key)}
+                    onClick={() => {
+                      // Opening Long Tail is that tour step's instruction;
+                      // advancing also shows the tab (see advanceTour).
+                      if (key === "longTail" && tourLongTail) onAdvanceTour();
+                      else inspector.showTab(key);
+                    }}
                     className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
                       inspector.tab === key
                         ? "bg-white/[0.08] light:bg-black/[0.06] text-white light:text-gray-900"
@@ -242,6 +251,22 @@ export function InspectorSplit({
                 <XMarkIcon className="size-4" />
               </button>
             </div>
+
+            {/* Tour: after "can I win it?", what to do when the answer is no. */}
+            <TourTooltip
+              targetRef={longTailTabRef}
+              active={tourLongTail}
+              step={TOUR_STEPS.indexOf("longTail") + 1}
+              total={TOUR_STEPS.length}
+              icon={<PuzzlePieceIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+              message={
+                <>
+                  Hard to rank for? Open <span className="font-semibold text-white light:text-gray-900">Long Tail</span> to see easier, more specific versions of this keyword, with the easiest first. Add the good ones to your table in one click.
+                </>
+              }
+              buttonLabel="Next"
+              onAdvance={onAdvanceTour}
+            />
 
             {mounted.has("inspector") && (
               <div className={`min-h-0 flex-1 ${inspector.tab === "inspector" ? "" : "hidden"}`}>
