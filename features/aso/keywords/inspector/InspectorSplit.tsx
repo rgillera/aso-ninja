@@ -51,7 +51,9 @@ function writePrefs(next: Partial<Prefs>) {
 
 type DockApp = { store: "ios" | "android"; country?: string | null } | null | undefined;
 
-export function useDockedInspector(activeApp: DockApp) {
+// `inspectorLocked`: below Pro the Inspector tab is only a lock screen, so a
+// keyword opens on Performance instead, the tab that works on every plan.
+export function useDockedInspector(activeApp: DockApp, inspectorLocked = false) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<PaneTab>("inspector");
   // The keyword every tab is about.
@@ -84,10 +86,11 @@ export function useDockedInspector(activeApp: DockApp) {
   // A row click: the open pane stays on its tab, now for this keyword, so
   // rows can be stepped through on Performance or Long Tail; a closed one
   // opens on the Inspector. A row's Details button always opens the
-  // Inspector (`toInspector`).
+  // Inspector (`toInspector`). Either way, Performance instead when the
+  // Inspector is locked.
   function selectKeyword(term: string, toInspector = false) {
     setKeyword(term);
-    show(open && !toInspector ? tab : "inspector", term);
+    show(open && !toInspector ? tab : inspectorLocked ? "performance" : "inspector", term);
   }
 
   // From inside the pane (the Inspector's "See long tail"): straight to the

@@ -114,7 +114,7 @@ export default function KeywordResearchPage() {
   const [keywords, setKeywords] = useState<Keyword[]>([]);
 
   // The Keyword Inspector docked beside the table; see InspectorSplit.
-  const inspector = useDockedInspector(activeApp);
+  const inspector = useDockedInspector(activeApp, !canUseInspector(planSlug));
 
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
   const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);

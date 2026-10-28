@@ -15,6 +15,7 @@ import type { VisibilityHistoryResult } from "./types";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
@@ -32,9 +33,13 @@ export function KeywordPerformancePane({
   competitors: CompetitorApp[];
 }) {
   const term = row?.keyword;
+  const planSlug = usePlanSlug();
+  // Free has no keyword history, so its charts (visibility, rank, volume,
+  // downloads) are one lock card under today's numbers.
+  const historyLocked = !isPlanAtLeast(planSlug, "basic");
   // Below Pro, Keyword Performance blurs competitor lines behind an upgrade
-  // link; this tab keeps upgrade prompts out, so it's just the app's line.
-  const competitorsLocked = !isPlanAtLeast(usePlanSlug(), "pro");
+  // link; here it's just the app's own line.
+  const competitorsLocked = !isPlanAtLeast(planSlug, "pro");
   const chartApps = useMemo<ChartApp[]>(() => {
     const ownId = app.store_id ?? app.id;
     if (!ownId) return [];
@@ -52,7 +57,7 @@ export function KeywordPerformancePane({
   const [visibilityLoading, setVisibilityLoading] = useState(true);
   const appIds = chartApps.map((a) => a.id).join(",");
   useEffect(() => {
-    if (!term || !appIds) return;
+    if (!term || !appIds || historyLocked) return;
     let cancelled = false;
     const today = new Date();
     const from30 = new Date(today); from30.setDate(today.getDate() - 29);
@@ -76,7 +81,7 @@ export function KeywordPerformancePane({
       .catch(() => { if (!cancelled) setVisibility({}); })
       .finally(() => { if (!cancelled) setVisibilityLoading(false); });
     return () => { cancelled = true; };
-  }, [term, appIds, app.store, app.country, app.created_at]);
+  }, [term, appIds, app.store, app.country, app.created_at, historyLocked]);
 
   if (!row) {
     return (
@@ -123,7 +128,24 @@ export function KeywordPerformancePane({
         ]}
       />
 
-      {chartApps.length > 0 && (
+      {historyLocked && (
+        // FeatureLocked's own page margins don't apply inside the pane.
+        <div className="[&>div]:mx-0 [&>div]:mt-0">
+          <FeatureLocked
+            minPlan="basic"
+            icon={ChartBarIcon}
+            title="Track this keyword over time"
+            description={`See how "${row.keyword}" is doing day by day, not just today.`}
+            benefits={[
+              "Search visibility: est. impressions/day from this keyword",
+              "Rank history: where your app ranked each week",
+              "Volume history: how search demand is trending",
+            ]}
+          />
+        </div>
+      )}
+
+      {!historyLocked && chartApps.length > 0 && (
         <section className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm pb-2">
           <div className="px-4 pt-4">
             <h3 className="text-xs font-medium text-gray-500">Search visibility</h3>
@@ -137,11 +159,11 @@ export function KeywordPerformancePane({
 
       {/* Keyed by term: the panels fetch on mount (Downloads only ever
           does), so a new keyword gets fresh ones. */}
-      {app.store_id && (
+      {!historyLocked && app.store_id && (
         <RankHistoryPanel key={`rank-${row.keyword}`} inline unranked={!row.loading && row.rank === null} term={row.keyword} storeId={app.store_id} store={app.store} country={country} />
       )}
-      <VolumeHistoryPanel key={`volume-${row.keyword}`} inline term={row.keyword} store={app.store} country={country} />
-      {showDownloads && app.id && (
+      {!historyLocked && <VolumeHistoryPanel key={`volume-${row.keyword}`} inline term={row.keyword} store={app.store} country={country} />}
+      {!historyLocked && showDownloads && app.id && (
         <DownloadsHistoryPanel key={`downloads-${row.keyword}`} inline term={row.keyword} appId={app.id} store={app.store} />
       )}
     </div>
