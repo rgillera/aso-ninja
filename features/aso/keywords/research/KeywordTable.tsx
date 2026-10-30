@@ -174,7 +174,7 @@ const COLUMN_DEFS: ColumnDef[] = [
   { key: "results", label: "Results", defaultVisible: false, tooltip: "How many apps show up for this keyword. More results = more competition." },
   { key: "diff", label: "Difficulty", defaultVisible: true, tableLabel: "Diff.", tooltip: "How hard it is to rank for this keyword (0–100). Higher = harder." },
   { key: "chance", label: "Chance", defaultVisible: true, tooltip: "Your likelihood of ranking for this keyword (0–100). Higher = better." },
-  { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well this keyword matches your app (0–100). Higher = better match." },
+  { key: "relevancy", label: "Relevancy", defaultVisible: true, smart: true, tooltip: "How well your app serves what people searching this keyword want (0–100), judged on what your app does, not on which words are in your listing. Higher = better fit." },
   { key: "opportunity", label: "Opportunity", defaultVisible: true, smart: true, tooltip: "How valuable this keyword is for your app, combining demand, ranking chance and relevancy. Higher = better." },
   { key: "potentialImpressions", label: "Potential Impressions", tableLabel: "Potential Impr.", defaultVisible: false, tooltip: `Estimated times a day your app would be shown in search results for this keyword if it ranked #${POTENTIAL_RANK}, based on volume. A ballpark for comparing keywords, not a store-reported count.` },
   { key: "estimatedDownloads", label: "Est. Daily Downloads", defaultVisible: true, tooltip: "Estimated daily downloads from this keyword, based on your app's connected store data." },

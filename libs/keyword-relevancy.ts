@@ -103,15 +103,17 @@ App subtitle: "${appSubtitle || "(none)"}"
 App description: "${description}"
 Keyword: "${keyword}"
 ${collisionSection}
-Rules — apply in order, stop at first match. The app name and subtitle are the strongest signal — a keyword that directly matches wording in the name or subtitle should score at least as high as one that only matches the description:
+Use the name, subtitle and description together only to understand what this app does. Then judge the keyword purely on whether this app would satisfy the person searching it. Do NOT reward a keyword because its words appear in the name or subtitle, and do NOT penalize one because they don't: a keyword that never appears in the listing but describes exactly what this app does deserves the same score as one copied from its title.
+
+Rules — apply in order, stop at first match:
 1. If the keyword is another app's brand name or company name → score 0-10. The user wants that specific product, not this one.
 2. If the keyword describes a completely unrelated category (e.g. "baby tracker", "pet care", "ride sharing" for a nutrition app) → score 0-15.
 3. If the keyword is loosely related but this app is unlikely to satisfy the search intent → score 16-40.
 4. If the keyword is a secondary use case this app genuinely supports → score 41-60.
 5. If the keyword directly describes a core feature of this app → score 61-80.
-6. If the keyword is exactly what this app is built for, or closely matches its name/subtitle → score 81-100.
+6. If the keyword is exactly what this app is built for → score 81-100.
 
-Critical: score USER INTENT, not category overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).${intentSection}`;
+Critical: score USER INTENT, not category overlap or word overlap. Two apps in the same category can still have very different intents (e.g. "myfitnesspal" typed by someone who wants MyFitnessPal specifically = score 5 for any other app).${intentSection}`;
     const raw = await generateText(prompt, 0);
     if (!raw) return { score: await embeddingDescScore(keyword, context), intentThemeId: null };
     const lines = raw.trim().split("\n").map((l) => l.trim()).filter(Boolean);
@@ -263,8 +265,10 @@ export async function computeRelevancy(
     return { score: 100, intentThemeId: null };
   }
 
-  // Name/subtitle are always considered (title carries the strongest real
-  // App Store relevancy signal); description just needs to clear a noise floor.
+  // Name/subtitle are always considered (the clearest summary of what the app
+  // does, though a keyword is never credited just for appearing in them;
+  // that ranking benefit belongs to rank/chance); description just needs to
+  // clear a noise floor.
   const hasContext = (!!appDescription && appDescription.length > 10) || !!appSubtitle?.trim();
 
   // 1. Name/subtitle/description relevance (70%) — LLM or embedding

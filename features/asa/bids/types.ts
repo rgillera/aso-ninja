@@ -15,7 +15,7 @@ export function suggestBid(k: SavedKeyword): { tier: BidTier; reason: string } {
     return { tier: "Unscored", reason: "Not yet scored — visit Keyword Research to compute relevancy." };
   }
   if (k.relevancy < 40) {
-    return { tier: "Skip", reason: "Low relevancy match for your app." };
+    return { tier: "Skip", reason: "Searchers of this keyword likely want something your app doesn't do." };
   }
   if (k.rank !== null && k.rank <= 3) {
     return { tier: "Low", reason: `Already ranking #${k.rank} organically — ASA spend here mostly cannibalizes free installs.` };
@@ -24,7 +24,7 @@ export function suggestBid(k: SavedKeyword): { tier: BidTier; reason: string } {
     return { tier: "Aggressive", reason: "High-value keyword you don't yet own organically — bid to capture visibility." };
   }
   if (k.opportunity >= 40) {
-    return { tier: "Moderate", reason: "Solid volume and relevancy match — worth a moderate bid." };
+    return { tier: "Moderate", reason: "Solid volume and a good fit for what your app does, worth a moderate bid." };
   }
   if (k.opportunity >= 15) {
     return { tier: "Low", reason: "Modest value — a small bid may be worth testing." };

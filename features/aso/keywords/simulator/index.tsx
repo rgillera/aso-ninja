@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MagnifyingGlassIcon, ExclamationTriangleIcon, XMarkIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, BeakerIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
@@ -9,11 +9,9 @@ import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { MetadataSection } from "@/features/aso/metadata/preview/MetadataFieldCard";
-import { SimulatedRelevancyTable } from "./SimulatedRelevancyTable";
-import type { SavedKeyword, SimulatedResult, SimulatorRow } from "./types";
-
-// Matches MAX_TERMS in app/api/keywords/simulate/route.ts.
-const MAX_TERMS = 50;
+import { SimulatedCoverageTable } from "./SimulatedCoverageTable";
+import { keywordCoverage, COVERAGE_STRENGTH } from "./coverage";
+import type { SavedKeyword, SimulatorRow } from "./types";
 
 function NoAppSelected() {
   const resolving = useActiveAppResolving();
@@ -42,13 +40,6 @@ export default function KeywordSimulator() {
   const [hypotheticalTitle, setHypotheticalTitle] = useState("");
   const [hypotheticalSubtitle, setHypotheticalSubtitle] = useState("");
 
-  const [simulating, setSimulating] = useState(false);
-  const [simulateProgress, setSimulateProgress] = useState<number | null>(null);
-  const [simulatedResults, setSimulatedResults] = useState<Record<string, SimulatedResult> | null>(null);
-  const [relevancyLimitReached, setRelevancyLimitReached] = useState(false);
-  const [aiDown, setAiDown] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   // Keyed on bundle_id rather than the internal id: a previewed-but-not-yet-
   // followed app never gets an `id` from ActiveAppContext, so gating on it
   // would skip loading entirely for apps that aren't tracked yet — Keyword
@@ -63,10 +54,6 @@ export default function KeywordSimulator() {
     setHypotheticalTitle(activeApp?.name ?? "");
     setHypotheticalSubtitle("");
     setStoreSubtitle("");
-    setSimulatedResults(null);
-    setRelevancyLimitReached(false);
-    setAiDown(false);
-    setError(null);
     setKeywords([]);
     setLoadingKeywords(true);
 
@@ -105,98 +92,28 @@ export default function KeywordSimulator() {
   function handleClearAll() {
     setHypotheticalTitle(originalTitle);
     setHypotheticalSubtitle(storeSubtitle);
-    setSimulatedResults(null);
-    setRelevancyLimitReached(false);
-    setAiDown(false);
-    setError(null);
   }
 
-  async function handleSimulate() {
-    if (!hasChanges || simulating || !activeApp?.id) return;
-    setSimulating(true);
-    setSimulateProgress(null);
-    setError(null);
-    setRelevancyLimitReached(false);
-    setAiDown(false);
-    try {
-      // Already-tracked keywords only, capped so a "Simulate" click stays
-      // bounded, prioritized by current opportunity so the most decision-
-      // relevant keywords are the ones that make the cut.
-      const terms = [...keywords]
-        .sort((a, b) => (b.opportunity ?? 0) - (a.opportunity ?? 0))
-        .slice(0, MAX_TERMS)
-        .map((k) => k.term);
-
-      const res = await fetch("/api/keywords/simulate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          appId: activeApp.id,
-          workspaceId,
-          appName: activeApp.name,
-          store: activeApp.store,
-          country: activeApp.country ?? "us",
-          hypotheticalTitle,
-          hypotheticalSubtitle,
-          terms,
-        }),
-      });
-
-      // Error/early-exit responses (locked plan, pool exhausted, AI down,
-      // bad input) come back as a single JSON object. A successful run
-      // streams NDJSON progress lines instead, so the two are told apart by
-      // content-type rather than trying to parse one as the other.
-      if (!res.headers.get("content-type")?.includes("application/x-ndjson")) {
-        const data: {
-          results?: Record<string, SimulatedResult>;
-          _relevancyLimitReached?: boolean;
-          _aiDown?: boolean;
-          error?: string;
-        } = await res.json();
-        if (data.error) { setError(data.error); return; }
-        if (data._relevancyLimitReached) setRelevancyLimitReached(true);
-        if (data._aiDown) setAiDown(true);
-        setSimulatedResults(data.results ?? {});
-        return;
-      }
-
-      const reader = res.body?.getReader();
-      if (!reader) { setError("Something went wrong running the simulation. Try again."); return; }
-      const decoder = new TextDecoder();
-      let buffer = "";
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const event = JSON.parse(line) as
-            | { type: "progress"; done: number; total: number }
-            | { type: "done"; results: Record<string, SimulatedResult> };
-          if (event.type === "progress") {
-            setSimulateProgress(event.total > 0 ? Math.round((event.done / event.total) * 100) : 100);
-          } else {
-            setSimulatedResults(event.results ?? {});
-          }
-        }
-      }
-    } catch {
-      setError("Something went wrong running the simulation. Try again.");
-    } finally {
-      setSimulating(false);
-      setSimulateProgress(null);
-    }
-  }
-
+  // Pure text matching against the current vs. edited fields, so it updates
+  // live as the user types: no store search, no AI, no scoring pool.
   const rows: SimulatorRow[] = useMemo(() => keywords.map((k) => ({
     term: k.term,
-    currentRelevancy: k.relevancy,
-    currentOpportunity: k.opportunity,
-    simulatedRelevancy: simulatedResults?.[k.term]?.relevancy ?? null,
-    simulatedOpportunity: simulatedResults?.[k.term]?.opportunity ?? null,
-  })), [keywords, simulatedResults]);
+    volume: k.volume,
+    rank: k.rank,
+    relevancy: k.relevancy,
+    currentCoverage: keywordCoverage(k.term, originalTitle, storeSubtitle),
+    simulatedCoverage: keywordCoverage(k.term, hypotheticalTitle, hypotheticalSubtitle),
+  })), [keywords, originalTitle, storeSubtitle, hypotheticalTitle, hypotheticalSubtitle]);
+
+  const summary = useMemo(() => {
+    let stronger = 0, weaker = 0;
+    for (const r of rows) {
+      const delta = COVERAGE_STRENGTH[r.simulatedCoverage] - COVERAGE_STRENGTH[r.currentCoverage];
+      if (delta > 0) stronger++;
+      else if (delta < 0) weaker++;
+    }
+    return { stronger, weaker };
+  }, [rows]);
 
   if (isLocked) {
     return (
@@ -206,10 +123,10 @@ export default function KeywordSimulator() {
           minPlan="pro_plus"
           icon={BeakerIcon}
           title="Keyword Simulator is a Pro+ feature"
-          description="Upgrade to Pro+ or above to preview how a title/subtitle change would move your tracked keywords' relevancy before you publish it."
+          description="Upgrade to Pro+ or above to preview which of your tracked keywords a title or subtitle change would add to or drop from your listing, before you publish it."
           benefits={[
             "Try a new title & subtitle against your already-tracked keywords",
-            "See predicted relevancy and opportunity deltas before publishing",
+            "See which keywords you'd gain or lose, next to their volume, rank and relevancy",
           ]}
         />
       </div>
@@ -220,6 +137,7 @@ export default function KeywordSimulator() {
     return <NoAppSelected />;
   }
 
+  const subtitleLabel = activeApp.store === "android" ? "Short Description" : "Subtitle";
   const limits = activeApp.store === "android"
     ? { title: 30, subtitle: 80 }
     : { title: 30, subtitle: 30 };
@@ -245,7 +163,7 @@ export default function KeywordSimulator() {
               onChange={setHypotheticalTitle}
             />
             <MetadataSection
-              title={activeApp.store === "android" ? "Short Description" : "App Subtitle"}
+              title={activeApp.store === "android" ? subtitleLabel : "App Subtitle"}
               value={hypotheticalSubtitle}
               limit={limits.subtitle}
               placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
@@ -253,57 +171,25 @@ export default function KeywordSimulator() {
               originalValue={storeSubtitle}
               onChange={setHypotheticalSubtitle}
             />
-            <button
-              onClick={handleSimulate}
-              disabled={!hasChanges || simulating || loadingKeywords || keywords.length === 0 || !activeApp.id}
-              className="w-full rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {simulating ? `Simulating…${simulateProgress !== null ? ` ${simulateProgress}%` : ""}` : "Simulate"}
-            </button>
-            {!activeApp.id ? (
-              <p className="text-xs text-gray-600 light:text-gray-400">
-                Follow this app and track some keywords in Keyword Research to run a simulation.
-              </p>
-            ) : !hasChanges ? (
-              <p className="text-xs text-gray-600 light:text-gray-400">
-                Edit the title or subtitle above, then click Simulate to see how your tracked keywords&rsquo; relevancy would change. Nothing here is saved or published.
-              </p>
-            ) : null}
+            <p className="text-xs text-gray-600 light:text-gray-400">
+              Edit the title or {subtitleLabel.toLowerCase()} to see which tracked keywords you&rsquo;d gain or lose. The store ranks you on the words in these fields, and the title counts most. Nothing here is saved or published.
+            </p>
           </div>
         </div>
 
         {/* Right: comparison table */}
         <div className="flex flex-col flex-1 lg:overflow-y-auto">
-          {relevancyLimitReached && (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 light:text-indigo-600 text-xs">
-              <ExclamationTriangleIcon className="size-4 shrink-0" />
-              <span className="flex-1">Your plan&apos;s relevancy &amp; opportunity scoring pool is used up. Upgrade for a bigger pool.</span>
-              <button onClick={() => setRelevancyLimitReached(false)} className="shrink-0 hover:text-indigo-200">
-                <XMarkIcon className="size-4" />
-              </button>
-            </div>
-          )}
-          {aiDown && (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-300 text-xs">
-              <ExclamationTriangleIcon className="size-4 shrink-0" />
-              <span className="flex-1">Scoring is temporarily unavailable. Try again shortly.</span>
-              <button onClick={() => setAiDown(false)} className="shrink-0 hover:text-amber-200">
-                <XMarkIcon className="size-4" />
-              </button>
-            </div>
-          )}
-          {error && (
-            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
-              <ExclamationTriangleIcon className="size-4 shrink-0" />
-              <span className="flex-1">{error}</span>
-              <button onClick={() => setError(null)} className="shrink-0 hover:text-red-300">
-                <XMarkIcon className="size-4" />
-              </button>
+          {hasChanges && (summary.stronger > 0 || summary.weaker > 0) && (
+            <div className="flex items-center gap-4 px-6 pt-6 text-sm">
+              {summary.stronger > 0 && <span className="text-green-400 light:text-green-600">{summary.stronger} keyword{summary.stronger !== 1 ? "s" : ""} stronger</span>}
+              {summary.weaker > 0 && <span className="text-red-400 light:text-red-600">{summary.weaker} keyword{summary.weaker !== 1 ? "s" : ""} weaker</span>}
             </div>
           )}
           <div className="p-6">
             <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-              <SimulatedRelevancyTable rows={rows} hasSimulated={simulatedResults !== null} />
+              {loadingKeywords
+                ? <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Loading tracked keywords…</p>
+                : <SimulatedCoverageTable rows={rows} subtitleLabel={subtitleLabel} />}
             </div>
           </div>
         </div>

@@ -56,7 +56,6 @@ const READ_ONLY_POST_ROUTES = new Set([
   "/api/keywords/estimates",
   "/api/keywords/subtitles",
   "/api/keywords/performance-report",
-  "/api/keywords/simulate",
   "/api/keywords/translate",
   "/api/market/compare/insights",
 ]);

@@ -32,7 +32,7 @@ const STEPS = [
 
 const FEATURES = [
   { icon: MagnifyingGlassIcon, title: "Keyword research", body: "Volume, difficulty and long-tail ideas for any country." },
-  { icon: SparklesIcon, title: "Relevancy scoring", body: "Skip keywords that don't fit your app before you chase them." },
+  { icon: SparklesIcon, title: "Relevancy scoring", body: "Scored on what your app actually does, not on word matches, so you skip keywords that don't fit before you chase them." },
   { icon: ChartBarIcon, title: "Downloads per keyword", body: "Estimated from your real App Store Connect or Play Console totals." },
   { icon: DevicePhoneMobileIcon, title: "Both stores", body: "App Store and Google Play in one workspace, in your browser." },
 ];

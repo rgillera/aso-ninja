@@ -383,7 +383,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         items: [
           "A free plan you can stay on, not just a trial: 100 tracked keywords across 2 apps.",
           "No keyword or app caps on Pro, versus 2,500 keywords and 10 apps on Sonar Indie.",
-          "Relevancy scoring that tells you how well each keyword fits your app, and opportunity scoring that combines it with volume and difficulty.",
+          "Relevancy scoring that tells you how well each keyword fits what your app actually does, not just which words are in your listing, and opportunity scoring that combines it with volume and difficulty.",
           "Estimated downloads per keyword, based on your real totals from App Store Connect or Google Play Console.",
           "AI keyword suggestions, Keyword Inspector for any keyword in any country, long-tail discovery, and intent grouping on Pro.",
         ],
