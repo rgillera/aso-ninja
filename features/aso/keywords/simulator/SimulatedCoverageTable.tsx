@@ -171,8 +171,8 @@ export function SimulatedCoverageTable({
     );
   }
 
-  // Android's extra Density and Details columns need the tighter padding to
-  // fit beside the editor.
+  // Android's extra Density column needs the tighter padding to fit beside
+  // the editor.
   const px = hasDescription ? "px-2.5" : "px-3";
   const keywordPx = hasDescription ? "pl-4 pr-2" : "px-4";
   const th = `border-t border-white/[0.08] light:border-black/[0.08] ${px} py-3 text-right font-medium text-gray-400 light:text-gray-600`;
@@ -235,7 +235,7 @@ export function SimulatedCoverageTable({
                     </span>
                   </th>
                 )}
-                <th className={hasDescription ? "border-t border-white/[0.08] light:border-black/[0.08]" : "sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]"} />
+                <th className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white" />
               </tr>
             </thead>
             <tbody>
@@ -258,51 +258,29 @@ export function SimulatedCoverageTable({
                     {hasDescription && row.currentDensity && row.simulatedDensity && (
                       <td className={`${td} tabular-nums`}><DensityCell now={row.currentDensity} edit={row.simulatedDensity} /></td>
                     )}
-                    {hasDescription ? (
-                      // Android: a column of its own, so Details never covers
-                      // Density. Not sticky either, for the same reason; when
-                      // the table is too narrow it scrolls into view, and a
-                      // row click opens the pane anyway.
-                      <td className="border-t border-white/[0.08] light:border-black/[0.08] pl-0 pr-2.5 py-3">
-                        <div className={`flex justify-end transition-opacity ${inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"}`}>
+                    {/* As in Keyword Research: pinned to the right edge, so
+                        Details stays in reach while the pane narrows the table,
+                        and opaque so scrolled columns pass under it; the
+                        overlay repeats the row's own highlight/hover tint. */}
+                    <td className={`sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white py-3 ${hasDescription ? "pl-0 pr-2.5" : "pl-3 pr-4"}`}>
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute inset-0 transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "group-hover:bg-white/[0.02] light:group-hover:bg-black/[0.02]"}`}
+                      />
+                      <div className={`relative flex justify-end transition-opacity ${inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"}`}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onInspect(row.term, true);
                           }}
                           title="Results, long tail and performance for this keyword"
-                          className="relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                          className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
                         >
                           <DocumentMagnifyingGlassIcon className="size-3" />
                           Details
                         </button>
-                        </div>
-                      </td>
-                    ) : (
-                      /* iOS: zero width, so it takes no room from the columns:
-                         Details floats over the row's right end on hover,
-                         opaque so the cells under it don't show through, with
-                         the row's own highlight/hover tint repeated on top. */
-                      <td className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]">
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pl-3 pr-4 bg-[#141417] light:bg-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
-                          <span
-                            aria-hidden="true"
-                            className={`pointer-events-none absolute inset-0 ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "bg-white/[0.02] light:bg-black/[0.02]"}`}
-                          />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onInspect(row.term, true);
-                            }}
-                            title="Results, long tail and performance for this keyword"
-                            className="relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
-                          >
-                            <DocumentMagnifyingGlassIcon className="size-3" />
-                            Details
-                          </button>
-                        </div>
-                      </td>
-                    )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
