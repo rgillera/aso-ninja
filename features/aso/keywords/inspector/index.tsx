@@ -45,6 +45,7 @@ type Store = "ios" | "android";
 const RESULTS_DISPLAY_LIMIT = 20;
 const RECENT_LIMIT = 8;
 const PREFS_KEY = "keyword-inspector-prefs";
+const HIGHLIGHT_KEY = "keyword-inspector-highlight";
 
 type Recent = { term: string; store: Store; country: string };
 
@@ -493,7 +494,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const [query, setQuery] = useState<Recent | null>(null);
   const [metrics, setMetrics] = useState<KeywordInspection | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [highlightKeyword, setHighlightKeyword] = useState(false);
+  const [highlightKeyword, setHighlightKeyword] = useState(true);
   const [iosSubtitles, setIosSubtitles] = useState<Record<string, string>>({});
   const [subtitlesLoading, setSubtitlesLoading] = useState(false);
   // Monthly downloads/revenue per result, keyed by store id. null = loading
@@ -584,6 +585,12 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     if (linkTerm) window.history.replaceState(null, "", window.location.pathname);
     // Only on mount: switching apps later shouldn't clobber a choice made here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Highlight is on by default; only a saved "off" changes it. Docked or not.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (readJson<boolean>(HIGHLIGHT_KEY) === false) setHighlightKeyword(false);
   }, []);
 
   // Recent searches live server-side (keyword_inspector_searches, written by
@@ -1340,7 +1347,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                   <h2 className="text-sm font-semibold text-white light:text-gray-900">Top {RESULTS_DISPLAY_LIMIT} {ipadResults ? "iPad " : ""}search results</h2>
                   {apps && apps.length > 0 && (
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <Toggle checked={highlightKeyword} onChange={() => setHighlightKeyword((v) => !v)} />
+                      <Toggle checked={highlightKeyword} onChange={() => { const next = !highlightKeyword; setHighlightKeyword(next); writeJson(HIGHLIGHT_KEY, next); }} />
                       <span className="text-xs text-gray-500 whitespace-nowrap">Highlight the searched keyword</span>
                     </label>
                   )}
