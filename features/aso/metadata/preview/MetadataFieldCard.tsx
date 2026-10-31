@@ -33,6 +33,7 @@ export function MetadataSection({
   rows = 2,
   originalValue,
   onChange,
+  loading = false,
 }: {
   title: string;
   value: string;
@@ -41,9 +42,12 @@ export function MetadataSection({
   rows?: number;
   originalValue?: string;
   onChange: (value: string) => void;
+  // The value is still being fetched: pulsing lines instead of an empty box
+  // and a "0 characters" badge.
+  loading?: boolean;
 }) {
-  const exceeded = value.length > limit;
-  const showCurrentValue = originalValue !== undefined && originalValue !== "" && originalValue !== value;
+  const exceeded = !loading && value.length > limit;
+  const showCurrentValue = !loading && originalValue !== undefined && originalValue !== "" && originalValue !== value;
 
   return (
     <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
@@ -65,6 +69,19 @@ export function MetadataSection({
           toggle for that), so it follows the site theme like any other
           recessed input well. */}
       <div className={`mx-4 rounded-xl bg-[#0a0a0c] light:bg-gray-50 ${exceeded ? "ring-1 ring-red-500/40" : ""} ${showCurrentValue ? "mb-2" : "mb-4"}`}>
+        {loading ? (
+          <div aria-busy="true" aria-label={`Loading ${title}`}>
+            <div className="space-y-2.5 px-4 pt-4 pb-3" style={{ minHeight: `${rows * 1.625 + 0.75}rem` }}>
+              {Array.from({ length: Math.min(rows, 3) }, (_, i) => (
+                <div key={i} className={`h-3 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse ${i === Math.min(rows, 3) - 1 ? "w-2/3" : "w-full"}`} />
+              ))}
+            </div>
+            <div className="px-4 pb-3">
+              <div className="h-5 w-24 rounded-full bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+            </div>
+          </div>
+        ) : (
+        <>
         <div className="px-4 pt-3 pb-2">
           <textarea
             value={value}
@@ -77,6 +94,8 @@ export function MetadataSection({
         <div className="px-4 pb-3">
           <CharBadge count={value.length} limit={limit} />
         </div>
+        </>
+        )}
       </div>
 
       {showCurrentValue && (

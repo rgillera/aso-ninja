@@ -44,6 +44,12 @@ export default function KeywordSimulator() {
   const isLocked = !isPlanAtLeast(planSlug, "pro_plus");
 
   const [storeSubtitle, setStoreSubtitle] = useState("");
+  // The fields fetched on load (subtitle and description from the store, the
+  // saved keyword field), shown as loading until they arrive. Both start true
+  // so the first render, before the load effect runs, doesn't flash empty
+  // fields; the title waits with them so all the fields fill in together.
+  const [loadingStoreData, setLoadingStoreData] = useState(true);
+  const [loadingKeywordField, setLoadingKeywordField] = useState(true);
   const [keywords, setKeywords] = useState<SavedKeyword[]>([]);
   const [loadingKeywords, setLoadingKeywords] = useState(true);
   const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
@@ -81,6 +87,8 @@ export default function KeywordSimulator() {
     setHypotheticalTitle(activeApp?.name ?? "");
     setHypotheticalSubtitle("");
     setStoreSubtitle("");
+    setLoadingStoreData(true);
+    setLoadingKeywordField(activeApp?.store === "ios" && !!activeApp.id);
     setSavedKeywordField("");
     setHypotheticalKeywordField("");
     setStoreDescription("");
@@ -107,7 +115,8 @@ export default function KeywordSimulator() {
         setStoreDescription(data.description ?? "");
         setHypotheticalDescription(data.description ?? "");
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingStoreData(false));
 
     if (activeApp?.store === "ios" && activeApp.id) {
       getKeywordFieldAction(activeApp.id)
@@ -115,7 +124,8 @@ export default function KeywordSimulator() {
           setSavedKeywordField(value);
           setHypotheticalKeywordField(value);
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => setLoadingKeywordField(false));
     }
 
     const kwParams = activeApp?.id
@@ -270,11 +280,12 @@ export default function KeywordSimulator() {
 
   const spacedCommas = isIos && /,\s/.test(hypotheticalKeywordField);
   const keywordFieldDirty = hypotheticalKeywordField.trim() !== savedKeywordField;
-  const canSaveKeywordField = !!activeApp?.id && keywordFieldDirty && hypotheticalKeywordField.length <= KEYWORD_FIELD_LIMIT;
+  const canSaveKeywordField = !loadingKeywordField && !!activeApp?.id && keywordFieldDirty && hypotheticalKeywordField.length <= KEYWORD_FIELD_LIMIT;
   // The one line beside Save: whatever the user most needs to know about
   // where the keyword field stands.
   const keywordFieldStatus: { text: string; color: string } | null =
-    keywordFieldSave.status === "error" ? { text: keywordFieldSave.error, color: "text-red-400 light:text-red-600" }
+    loadingKeywordField ? null
+    : keywordFieldSave.status === "error" ? { text: keywordFieldSave.error, color: "text-red-400 light:text-red-600" }
     : !activeApp?.id ? { text: "Follow this app to save its keyword field.", color: "text-gray-500" }
     : keywordFieldSave.status === "saved" && !keywordFieldDirty ? { text: "Saved as your live keyword field.", color: "text-green-400 light:text-green-600" }
     : !savedKeywordField ? { text: "Apple keeps this private. Paste yours and save it so Now counts it.", color: "text-gray-500" }
@@ -368,6 +379,7 @@ export default function KeywordSimulator() {
                 limit={limits.title}
                 placeholder="Enter app name…"
                 originalValue={originalTitle}
+              loading={loadingStoreData}
                 onChange={setHypotheticalTitle}
               />
               <MetadataSection
@@ -377,6 +389,7 @@ export default function KeywordSimulator() {
                 placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
                 rows={activeApp.store === "android" ? 3 : 2}
                 originalValue={storeSubtitle}
+                loading={loadingStoreData}
                 onChange={setHypotheticalSubtitle}
               />
               {isAndroid && (
@@ -387,6 +400,7 @@ export default function KeywordSimulator() {
                   placeholder="Enter full description…"
                   rows={10}
                   originalValue={storeDescription}
+                  loading={loadingStoreData}
                   onChange={setHypotheticalDescription}
                 />
               )}
@@ -399,6 +413,7 @@ export default function KeywordSimulator() {
                     placeholder="keywords,separated,by,commas"
                     rows={3}
                     originalValue={savedKeywordField}
+                    loading={loadingKeywordField}
                     onChange={(value) => {
                       setHypotheticalKeywordField(value);
                       if (keywordFieldSave.status !== "saving") setKeywordFieldSave({ status: "idle" });
