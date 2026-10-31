@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MagnifyingGlassIcon, BeakerIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, BeakerIcon, ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
+import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
+import { useDockedInspector, InspectorSplit } from "@/features/aso/keywords/inspector/InspectorSplit";
+import { canUseInspector } from "@/features/aso/keywords/inspector/limits";
+import type { Keyword, DownloadsConnection } from "@/features/aso/keywords/research/types";
+import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { MetadataSection } from "@/features/aso/metadata/preview/MetadataFieldCard";
 import { SimulatedCoverageTable } from "./SimulatedCoverageTable";
 import { keywordCoverage, COVERAGE_STRENGTH } from "./coverage";
@@ -27,6 +32,10 @@ function NoAppSelected() {
   );
 }
 
+// /api/keywords/metrics, keyed by term. `true` marks a term the fast pass
+// skipped.
+type MetricsMap = Record<string, { volume: number; diff: number; chance: number; opportunity: number | null; results: number | null; relevancy: number | null; rank: number | null } | true>;
+
 export default function KeywordSimulator() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
@@ -36,6 +45,14 @@ export default function KeywordSimulator() {
   const [storeSubtitle, setStoreSubtitle] = useState("");
   const [keywords, setKeywords] = useState<SavedKeyword[]>([]);
   const [loadingKeywords, setLoadingKeywords] = useState(true);
+  const [downloadsConnection, setDownloadsConnection] = useState<DownloadsConnection | undefined>(undefined);
+  const [competitors, setCompetitors] = useState<CompetitorApp[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // The same side pane as Keyword Research (see InspectorSplit), docked here
+  // instead of linking to the Inspector page, since leaving would lose the
+  // edited title and subtitle.
+  const inspector = useDockedInspector(activeApp, !canUseInspector(planSlug));
 
   const [hypotheticalTitle, setHypotheticalTitle] = useState("");
   const [hypotheticalSubtitle, setHypotheticalSubtitle] = useState("");
@@ -56,6 +73,10 @@ export default function KeywordSimulator() {
     setStoreSubtitle("");
     setKeywords([]);
     setLoadingKeywords(true);
+    setDownloadsConnection(undefined);
+    setCompetitors([]);
+    setSaveError(null);
+    inspector.closeInspector();
 
     const storeDataParams = new URLSearchParams({
       store: activeApp?.store ?? "ios",
@@ -81,10 +102,116 @@ export default function KeywordSimulator() {
         });
     fetch(`/api/keywords/list?${kwParams}`)
       .then((r) => r.json())
-      .then((data: { keywords: SavedKeyword[] }) => setKeywords(data.keywords ?? []))
+      .then((data: { keywords: SavedKeyword[]; downloadsConnection?: DownloadsConnection }) => {
+        setKeywords(data.keywords ?? []);
+        setDownloadsConnection(data.downloadsConnection);
+      })
       .finally(() => setLoadingKeywords(false));
+
+    // For the pane: the Inspector's "Add as competitor" and the Performance
+    // tab's visibility chart.
+    fetch(`/api/competitors?${kwParams}`)
+      .then((r) => r.json())
+      .then((data: { competitors: CompetitorApp[] }) => setCompetitors(data.competitors ?? []))
+      .catch(() => setCompetitors([]));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeApp?.id, activeApp?.bundle_id, isLocked]);
+
+  // The pane reads Keyword Research's row shape (Performance tab, chance).
+  const paneKeywords: Keyword[] = useMemo(() => keywords.map((k) => ({
+    keyword: k.term,
+    volume: k.volume,
+    diff: k.diff,
+    chance: k.chance,
+    opportunity: k.opportunity,
+    relevancy: k.relevancy,
+    rank: k.rank,
+    results: k.results,
+    starred: false,
+    frozen: k.frozen,
+    estimatedDownloads: k.estimatedDownloads,
+  })), [keywords]);
+  const trackedTerms = useMemo(() => new Set(keywords.map((k) => k.term.toLowerCase())), [keywords]);
+
+  // Track from the pane (Inspector or Long Tail), in the same steps as
+  // Keyword Research: reserve the keywords first, so a plan-limit rejection
+  // shows before anything is computed; then fast metrics (no AI relevancy),
+  // which put the rows in the table within seconds; then full metrics, saved
+  // with the keywords, which fill in relevancy. The full pass can take tens
+  // of seconds, which is why the rows don't wait for it.
+  async function handleTrack(terms: string[]) {
+    const fresh = terms.filter((t) => !trackedTerms.has(t.toLowerCase()));
+    if (!fresh.length || !workspaceId || !activeApp) return;
+    const store = activeApp.store ?? "ios";
+    const country = activeApp.country ?? "us";
+    const saveBody = {
+      terms: fresh,
+      workspaceId,
+      appId: activeApp.id,
+      bundleId: activeApp.bundle_id,
+      storeId: activeApp.store_id,
+      appName: activeApp.name,
+      iconUrl: activeApp.icon_url ?? undefined,
+      store,
+      country,
+    };
+    async function save(metrics?: MetricsMap) {
+      const res = await fetch("/api/keywords/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(metrics ? { ...saveBody, metrics } : saveBody),
+      }).catch(() => null);
+      if (res && !res.ok) {
+        const body: { error?: string } = await res.json().catch(() => ({}));
+        setSaveError(body.error ?? "Couldn't save this keyword.");
+        return false;
+      }
+      return !!res;
+    }
+    function fetchMetrics(fast: boolean): Promise<MetricsMap | null> {
+      const params = new URLSearchParams({
+        // Encoded one by one so a term containing a comma isn't split in two.
+        terms: fresh.map(encodeURIComponent).join(","),
+        store,
+        country,
+        appName: activeApp?.name ?? "",
+        storeId: activeApp?.store_id ?? "",
+        ...(activeApp?.id ? { appId: activeApp.id } : {}),
+        workspaceId: workspaceId ?? "",
+        ...(fast ? { fast: "1" } : {}),
+      });
+      return fetch(`/api/keywords/metrics?${params}`).then((r) => r.json()).catch(() => null);
+    }
+    function applyMetrics(data: MetricsMap | null) {
+      setKeywords((prev) => prev.map((k) => {
+        const m = fresh.includes(k.term) ? data?.[k.term] : undefined;
+        return m && m !== true ? { ...k, ...m, hasCachedMetrics: true } : k;
+      }));
+    }
+
+    setSaveError(null);
+    if (!(await save())) return;
+
+    const fastData = await fetchMetrics(true);
+    setKeywords((prev) => [
+      ...fresh.map((term): SavedKeyword => ({
+        term,
+        volume: 0, diff: 0, chance: 0,
+        opportunity: null, relevancy: null, rank: null, results: null,
+        intentThemeId: null,
+        hasCachedMetrics: false,
+        estimatedDownloads: null,
+        frozen: false,
+      })),
+      ...prev,
+    ]);
+    applyMetrics(fastData);
+
+    const fullData = await fetchMetrics(false);
+    if (!fullData) return;
+    applyMetrics(fullData);
+    await save(fullData);
+  }
 
   const originalTitle = activeApp?.name ?? "";
   const hasChanges = hypotheticalTitle !== originalTitle || hypotheticalSubtitle !== storeSubtitle;
@@ -146,54 +273,78 @@ export default function KeywordSimulator() {
     <div className="h-full flex flex-col overflow-hidden bg-[#0e0e10] light:bg-[#f7f7f8]">
       <AppHeader app={activeApp} title="Keyword Simulator" />
 
-      <div className="flex flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
-        {/* Left: hypothetical title/subtitle */}
-        <div className="flex flex-col lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-white/[0.07] light:border-black/[0.08]">
-          <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] light:border-black/[0.08] bg-[#0e0e10] light:bg-[#f7f7f8]">
-            <p className="text-sm font-medium text-white light:text-gray-900">Try a new title &amp; subtitle</p>
-            <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">Clear all</button>
+      <InspectorSplit
+        inspector={inspector}
+        trackedTerms={trackedTerms}
+        onTrack={handleTrack}
+        app={activeApp}
+        keywords={paneKeywords}
+        downloadsConnection={downloadsConnection}
+        competitors={competitors}
+        onCompetitorAdded={(competitor) => setCompetitors((prev) => prev.some((c) => c.storeId === competitor.storeId) ? prev : [...prev, competitor])}
+        tourStep={null}
+        onAdvanceTour={() => {}}
+      >
+        <div className="flex flex-1 min-w-0 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
+          {/* Left: hypothetical title/subtitle. Hidden while the pane is docked
+              beside the table on screens that can't fit all three; the edits
+              are kept, and closing the pane brings it back. */}
+          <div className={`flex flex-col lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-white/[0.07] light:border-black/[0.08] ${inspector.open ? "xl:hidden" : ""}`}>
+            <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] light:border-black/[0.08] bg-[#0e0e10] light:bg-[#f7f7f8]">
+              <p className="text-sm font-medium text-white light:text-gray-900">Try a new title &amp; subtitle</p>
+              <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">Clear all</button>
+            </div>
+            <div className="flex-1 p-6 space-y-4 bg-[#0e0e10] light:bg-[#f7f7f8]">
+              <MetadataSection
+                title="App Name"
+                value={hypotheticalTitle}
+                limit={limits.title}
+                placeholder="Enter app name…"
+                originalValue={originalTitle}
+                onChange={setHypotheticalTitle}
+              />
+              <MetadataSection
+                title={activeApp.store === "android" ? subtitleLabel : "App Subtitle"}
+                value={hypotheticalSubtitle}
+                limit={limits.subtitle}
+                placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
+                rows={activeApp.store === "android" ? 3 : 2}
+                originalValue={storeSubtitle}
+                onChange={setHypotheticalSubtitle}
+              />
+              <p className="text-xs text-gray-600 light:text-gray-400">
+                Edit the title or {subtitleLabel.toLowerCase()} to see which tracked keywords you&rsquo;d gain or lose. The store ranks you on the words in these fields, and the title counts most. Nothing here is saved or published.
+              </p>
+            </div>
           </div>
-          <div className="flex-1 p-6 space-y-4 bg-[#0e0e10] light:bg-[#f7f7f8]">
-            <MetadataSection
-              title="App Name"
-              value={hypotheticalTitle}
-              limit={limits.title}
-              placeholder="Enter app name…"
-              originalValue={originalTitle}
-              onChange={setHypotheticalTitle}
-            />
-            <MetadataSection
-              title={activeApp.store === "android" ? subtitleLabel : "App Subtitle"}
-              value={hypotheticalSubtitle}
-              limit={limits.subtitle}
-              placeholder={activeApp.store === "android" ? "Enter short description…" : "Enter subtitle…"}
-              rows={activeApp.store === "android" ? 3 : 2}
-              originalValue={storeSubtitle}
-              onChange={setHypotheticalSubtitle}
-            />
-            <p className="text-xs text-gray-600 light:text-gray-400">
-              Edit the title or {subtitleLabel.toLowerCase()} to see which tracked keywords you&rsquo;d gain or lose. The store ranks you on the words in these fields, and the title counts most. Nothing here is saved or published.
-            </p>
-          </div>
-        </div>
 
-        {/* Right: comparison table */}
-        <div className="flex flex-col flex-1 lg:overflow-y-auto">
-          {hasChanges && (summary.stronger > 0 || summary.weaker > 0) && (
-            <div className="flex items-center gap-4 px-6 pt-6 text-sm">
-              {summary.stronger > 0 && <span className="text-green-400 light:text-green-600">{summary.stronger} keyword{summary.stronger !== 1 ? "s" : ""} stronger</span>}
-              {summary.weaker > 0 && <span className="text-red-400 light:text-red-600">{summary.weaker} keyword{summary.weaker !== 1 ? "s" : ""} weaker</span>}
-            </div>
-          )}
-          <div className="p-6">
-            <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-              {loadingKeywords
-                ? <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Loading tracked keywords…</p>
-                : <SimulatedCoverageTable rows={rows} subtitleLabel={subtitleLabel} />}
+          {/* Right: comparison table */}
+          <div className="flex flex-col flex-1 min-w-0 lg:overflow-y-auto">
+            {saveError && (
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border-b border-red-500/20 text-red-400 light:text-red-600 text-xs">
+                <ExclamationTriangleIcon className="size-4 shrink-0" />
+                <span className="flex-1"><PlanLimitMessage message={saveError} /></span>
+                <button onClick={() => setSaveError(null)} className="shrink-0 hover:text-red-300">
+                  <XMarkIcon className="size-4" />
+                </button>
+              </div>
+            )}
+            {hasChanges && (summary.stronger > 0 || summary.weaker > 0) && (
+              <div className="flex items-center gap-4 px-6 pt-6 text-sm">
+                {summary.stronger > 0 && <span className="text-green-400 light:text-green-600">{summary.stronger} keyword{summary.stronger !== 1 ? "s" : ""} stronger</span>}
+                {summary.weaker > 0 && <span className="text-red-400 light:text-red-600">{summary.weaker} keyword{summary.weaker !== 1 ? "s" : ""} weaker</span>}
+              </div>
+            )}
+            <div className="p-6">
+              <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
+                {loadingKeywords
+                  ? <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Loading tracked keywords…</p>
+                  : <SimulatedCoverageTable rows={rows} subtitleLabel={subtitleLabel} onInspect={inspector.selectKeyword} inspectedKeyword={inspector.inspectedKeyword} />}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </InspectorSplit>
     </div>
   );
 }

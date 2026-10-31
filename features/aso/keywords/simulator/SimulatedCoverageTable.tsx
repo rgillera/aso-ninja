@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ArrowsUpDownIcon, ChevronUpIcon, ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { ArrowsUpDownIcon, ChevronUpIcon, ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon, DocumentMagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { COVERAGE_STRENGTH, type Coverage } from "./coverage";
 import type { SimulatorRow } from "./types";
@@ -53,7 +53,15 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
     : <ChevronDownIcon className="size-3 text-indigo-400 light:text-indigo-600" />;
 }
 
-export function SimulatedCoverageTable({ rows, subtitleLabel }: { rows: SimulatorRow[]; subtitleLabel: string }) {
+export function SimulatedCoverageTable({
+  rows, subtitleLabel, onInspect, inspectedKeyword = null,
+}: {
+  rows: SimulatorRow[];
+  subtitleLabel: string;
+  /** Opens a keyword in the docked side pane, as in Keyword Research. `viaDetails`: from the row's Details button, which always opens its Inspector tab (a row click keeps the pane's current tab). */
+  onInspect: (keyword: string, viaDetails?: boolean) => void;
+  inspectedKeyword?: string | null;
+}) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -175,13 +183,19 @@ export function SimulatedCoverageTable({ rows, subtitleLabel }: { rows: Simulato
                     <ColumnTooltip text={`Whether the edit adds or removes this keyword from your title and ${subtitleLabel.toLowerCase()}, which the store uses to rank you for it. The title counts more than the ${subtitleLabel.toLowerCase()}.`} />
                   </span>
                 </th>
+                <th className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {pageRows.map((row) => {
                 const change = changeLabel(row);
+                const inspected = !!inspectedKeyword && row.term.toLowerCase() === inspectedKeyword.toLowerCase();
                 return (
-                  <tr key={row.term}>
+                  <tr
+                    key={row.term}
+                    onClick={() => onInspect(row.term)}
+                    className={`group cursor-pointer transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "hover:bg-white/[0.02] light:hover:bg-black/[0.02]"}`}
+                  >
                     <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-gray-200 light:text-gray-800">{row.term}</td>
                     <td className={`${td} text-gray-400 light:text-gray-600 tabular-nums`}>{row.volume}</td>
                     <td className={`${td} text-gray-400 light:text-gray-600 tabular-nums`}>{row.rank ?? "—"}</td>
@@ -189,6 +203,27 @@ export function SimulatedCoverageTable({ rows, subtitleLabel }: { rows: Simulato
                     <td className={`${td} ${COVERAGE_COLOR[row.currentCoverage]}`}>{coverageLabel(row.currentCoverage, subtitleLabel)}</td>
                     <td className={`${td} ${COVERAGE_COLOR[row.simulatedCoverage]}`}>{coverageLabel(row.simulatedCoverage, subtitleLabel)}</td>
                     <td className={`${td} font-medium ${change.color}`}>{change.label}</td>
+                    {/* Opaque so scrolled columns pass under it; the overlay
+                        repeats the row's own highlight/hover tint on top. */}
+                    <td className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white pl-3 pr-4 py-3">
+                      <span
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute inset-0 transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "group-hover:bg-white/[0.02] light:group-hover:bg-black/[0.02]"}`}
+                      />
+                      <div className={`relative flex justify-end transition-opacity ${inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onInspect(row.term, true);
+                          }}
+                          title="Results, long tail and performance for this keyword"
+                          className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                        >
+                          <DocumentMagnifyingGlassIcon className="size-3" />
+                          Details
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

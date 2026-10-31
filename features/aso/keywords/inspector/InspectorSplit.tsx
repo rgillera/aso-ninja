@@ -199,7 +199,7 @@ export function InspectorSplit({
           style={{ "--inspector-w": `${width}px` } as React.CSSProperties}
           // Literal numbers (Tailwind can't see interpolated classes):
           // MIN_WIDTH, and the table's 640px minimum.
-          className="absolute inset-y-0 right-0 z-30 w-full sm:w-[440px] shadow-2xl shadow-black/40 border-l border-white/[0.07] light:border-black/[0.08] xl:relative xl:z-auto xl:shrink-0 xl:shadow-none xl:w-[max(380px,min(var(--inspector-w),calc(100%-640px)))]"
+          className="absolute inset-y-0 right-0 z-30 w-full sm:w-[440px] bg-[#0e0e10] light:bg-[#f7f7f8] shadow-2xl shadow-black/40 border-l border-white/[0.07] light:border-black/[0.08] xl:relative xl:z-auto xl:shrink-0 xl:shadow-none xl:w-[max(380px,min(var(--inspector-w),calc(100%-640px)))]"
         >
           <div
             role="separator"
