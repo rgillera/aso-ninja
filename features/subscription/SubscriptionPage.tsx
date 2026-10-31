@@ -132,13 +132,25 @@ function formatPrice(cents: number) {
     : `$${dollars.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// How close a capped bar is to its limit: amber from 70%, red once full, so
+// a limit about to block an add stands out before the user hits it.
+type UsageLevel = "ok" | "near" | "full";
+
+const USAGE_COLORS: Record<UsageLevel, { bar: string; barOnColor: string; count: string; countOnColor: string }> = {
+  ok: { bar: "bg-indigo-500", barOnColor: "bg-white", count: "", countOnColor: "" },
+  near: { bar: "bg-amber-500", barOnColor: "bg-amber-300", count: "text-amber-500 light:text-amber-600", countOnColor: "text-amber-200" },
+  full: { bar: "bg-red-500", barOnColor: "bg-red-300", count: "text-red-400 light:text-red-600", countOnColor: "text-red-200" },
+};
+
 function UsageBar({ label, used, limit, frozen, onColor, hint }: { label: string; used: number; limit: number | null; frozen?: number; onColor?: boolean; hint?: string }) {
   const pct = limit === null ? 0 : Math.min(100, (used / Math.max(limit, 1)) * 100);
+  const level: UsageLevel = limit === null ? "ok" : used >= limit ? "full" : pct >= 70 ? "near" : "ok";
+  const colors = USAGE_COLORS[level];
   return (
     <div>
       <div className={`flex items-center justify-between gap-3 text-xs ${onColor ? "text-indigo-100" : "text-gray-400 light:text-gray-600"}`}>
         <span className="truncate">{label}</span>
-        <span className="shrink-0 whitespace-nowrap tabular-nums">
+        <span className={`shrink-0 whitespace-nowrap tabular-nums ${onColor ? colors.countOnColor : colors.count}`}>
           {limit === null ? used.toLocaleString() : `${used.toLocaleString()} / ${limit.toLocaleString()}`}
           {!!frozen && <span className="ml-1.5 text-amber-500 light:text-amber-700">({frozen.toLocaleString()} paused)</span>}
         </span>
@@ -147,7 +159,7 @@ function UsageBar({ label, used, limit, frozen, onColor, hint }: { label: string
       {limit !== null && (
         <div className={`mt-1.5 h-1.5 rounded-full ${onColor ? "bg-white/20" : "bg-white/[0.06] light:bg-black/[0.05]"}`}>
           <div
-            className={`h-full rounded-full ${onColor ? "bg-white" : "bg-indigo-500"}`}
+            className={`h-full rounded-full transition-colors ${onColor ? colors.barOnColor : colors.bar}`}
             style={{ width: `${pct}%` }}
           />
         </div>
