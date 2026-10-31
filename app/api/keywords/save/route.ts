@@ -116,13 +116,16 @@ export async function POST(request: NextRequest) {
   if (appId) {
     // With ignoreDuplicates only newly linked rows come back, so the
     // reserve-then-save pair of calls per add counts each keyword once.
-    const { data: linked } = await supabase
+    // The plan keyword limit is checked on this insert (keywords count per
+    // app), so a rejection has to reach the client like the one above.
+    const { data: linked, error: linkErr } = await supabase
       .from("app_keywords")
       .upsert(
         keywordRows.map((kw) => ({ app_id: appId!, keyword_id: kw.id })),
         { onConflict: "app_id,keyword_id", ignoreDuplicates: true }
       )
       .select("keyword_id");
+    if (linkErr) return NextResponse.json({ error: linkErr.message }, { status: 403 });
     if (linked?.length) {
       const count = linked.length;
       after(() => trackCurrentUserEvent("Keywords Added", { count, store: store ?? null }));

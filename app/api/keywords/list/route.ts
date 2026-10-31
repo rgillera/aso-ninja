@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
   const [akResult, metricsResult, connectionResult, downloadsResult, appResult] = await Promise.all([
     supabase
       .from("app_keywords")
-      .select("keyword_id, keywords!inner(id, term, status)")
+      .select("keyword_id, status, keywords!inner(id, term)")
       .eq("app_id", appId)
       .order("added_at", { ascending: true }),
     supabase
@@ -163,7 +163,9 @@ export async function GET(request: NextRequest) {
         intentThemeId:    m?.intentThemeId ?? null,
         results:          m?.results     ?? null,
         hasCachedMetrics: !!m,
-        frozen:           kw?.status === "frozen",
+        // Per app: the same term can be paused here and active on another
+        // app (see the count_keywords_per_app migration).
+        frozen:           row.status === "frozen",
         estimatedDownloads: null, // filled in below once the full set's weights are known
       } satisfies SavedKeyword;
     })

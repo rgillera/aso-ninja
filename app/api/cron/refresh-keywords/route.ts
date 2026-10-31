@@ -83,7 +83,7 @@ async function refreshKeywordMetrics(
   changes: SignificantChange[]
 ) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rows } = await (supabase as any)
+  const { data: allRows } = await (supabase as any)
     .from("keyword_metrics")
     .select("app_id, keyword_id, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id, icon_url, ipad_only), keywords!inner(term, status)")
     .eq("keywords.term", term)
@@ -92,7 +92,25 @@ async function refreshKeywordMetrics(
     .eq("apps.store", store)
     .eq("apps.country", country.toUpperCase());
 
-  if (!rows?.length) return;
+  if (!allRows?.length) return;
+
+  // keywords.status is active while any app tracks the term actively, so it
+  // can't tell that this particular app's link is paused over the plan's
+  // keyword limit (keywords count per app). Skip those pairs.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: frozenLinks } = await (supabase as any)
+    .from("app_keywords")
+    .select("app_id, keyword_id")
+    .eq("status", "frozen")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .in("app_id", [...new Set((allRows as any[]).map((r) => r.app_id))])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .in("keyword_id", [...new Set((allRows as any[]).map((r) => r.keyword_id))]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const frozen = new Set(((frozenLinks ?? []) as any[]).map((l) => `${l.app_id}:${l.keyword_id}`));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = (allRows as any[]).filter((r) => !frozen.has(`${r.app_id}:${r.keyword_id}`));
+  if (!rows.length) return;
 
   // iPad-only apps are never in the iPhone results above — rank them from one
   // extra iPad search, paid only when some iPad-only app tracks this term. A
