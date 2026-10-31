@@ -2,6 +2,7 @@
 
 import { CheckIcon, PlusIcon, PuzzlePieceIcon } from "@heroicons/react/24/outline";
 import { VolumeBar } from "@/features/aso/keywords/research/ui";
+import { GenerateMore } from "./GenerateMore";
 import type { CombinationGroup } from "./types";
 
 // Same thresholds as CombinationTable, so a number reads the same color in
@@ -14,13 +15,14 @@ const chanceColor = (c: number) => c > 15 ? "text-emerald-400 light:text-emerald
 // each with its own Add, plus Add all. The full page's table, with its
 // other groups, seed chips and bulk selection, stays on the full page.
 export function LongTailFocus({
-  seed, group, trackedSet, pendingSet, onAdd,
+  seed, group, trackedSet, pendingSet, onAdd, onGenerateMore,
 }: {
   seed: string | null;
   group: CombinationGroup | undefined;
   trackedSet: Set<string>;
   pendingSet: Set<string>;
   onAdd: (terms: string[]) => void;
+  onGenerateMore: (seed: string) => void;
 }) {
   if (!seed) {
     return (
@@ -124,6 +126,12 @@ export function LongTailFocus({
           })
         )}
       </div>
+
+      {!loading && group && (
+        <div className="mt-3 flex justify-center">
+          <GenerateMore group={group} onGenerateMore={onGenerateMore} />
+        </div>
+      )}
     </div>
   );
 }

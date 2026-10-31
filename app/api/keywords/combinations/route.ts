@@ -4,6 +4,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateCombinations } from "@/libs/keyword-combinations";
 import { resolveIosVolume } from "@/libs/keyword-autocomplete";
+import { MAX_COMBINATIONS_PER_SEED } from "@/features/aso/keywords/combination/types";
 
 export type CombinationChild = { term: string; volume: number; results: number; difficulty: number; chance: number };
 export type CombinationGroup = { seed: string; children: CombinationChild[] };
@@ -89,6 +90,8 @@ async function fetchVolume(
 }
 
 // GET /api/keywords/combinations?seeds=fitness,boxing&country=us&perSeed=8
+// &exclude=... (percent-encoded, comma-joined like seeds): phrases already
+// shown, left out of the result. Used by "Generate more" on one seed.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const seedsParam  = searchParams.get("seeds") ?? "";
@@ -102,12 +105,15 @@ export async function GET(request: NextRequest) {
   // of being mistaken for the between-seeds delimiter.
   const seeds = [...new Set(seedsParam.split(",").map((s) => decodeURIComponent(s.trim()).toLowerCase()).filter(Boolean))];
   if (!seeds.length) return NextResponse.json(EMPTY);
+  const exclude = (searchParams.get("exclude") ?? "").split(",")
+    .map((s) => decodeURIComponent(s.trim()).toLowerCase()).filter(Boolean)
+    .slice(0, MAX_COMBINATIONS_PER_SEED);
 
   const supabase = await createClient();
 
   const groups: CombinationGroup[] = await Promise.all(
     seeds.map(async (seed) => {
-      const phrases  = await generateCombinations(seed, perSeed, appName, appSubtitle);
+      const phrases  = await generateCombinations(seed, perSeed, appName, appSubtitle, exclude);
       const children = await Promise.all(phrases.map((term) => fetchVolume(term, country, supabase)));
       children.sort((a, b) => b.volume - a.volume);
       return { seed, children };

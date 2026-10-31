@@ -21,6 +21,7 @@ import { estimateDailySearches, formatEstimateRange } from "@/libs/keyword-impre
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { IntentTheme } from "@/features/aso/keywords/intent/types";
+import { GenerateMore } from "./GenerateMore";
 import type { CombinationGroup } from "./types";
 
 type SortKey = "keyword" | "combinations" | "volume" | "difficulty" | "chance";
@@ -32,6 +33,7 @@ type Props = {
   availableSeeds: string[];
   onAddSeeds: (seeds: string[]) => void;
   onToggleExpand: (seed: string) => void;
+  onGenerateMore: (seed: string) => void;
   onAddTerm: (term: string) => void;
   onAddTerms: (terms: string[]) => void;
   onRemoveGroup: (seed: string) => void;
@@ -72,7 +74,7 @@ function groupAggregates(group: CombinationGroup) {
 }
 
 export function CombinationTable({
-  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch, store, country,
+  groups, trackedSet, pendingSet, availableSeeds, onAddSeeds, onToggleExpand, onGenerateMore, onAddTerm, onAddTerms, onRemoveGroup, onLiveSearch, store, country,
   translateToggle, translateLocked = false, onTranslateToggle, intentThemes, onAddTermsToIntent,
 }: Props) {
   const searchesLocked = !isPlanAtLeast(usePlanSlug(), "pro");
@@ -399,6 +401,15 @@ export function CombinationTable({
                       </tr>
                     );
                   })}
+
+                  {group.expanded && !group.loading && (
+                    <tr className="bg-white/[0.01]">
+                      <td />
+                      <td colSpan={6} className="px-4 py-2 pl-7">
+                        <GenerateMore group={group} onGenerateMore={onGenerateMore} />
+                      </td>
+                    </tr>
+                  )}
                 </Fragment>
               );
             })}

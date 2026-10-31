@@ -13,7 +13,7 @@ import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CombinationTable } from "./CombinationTable";
 import { LongTailFocus } from "./LongTailFocus";
-import type { CombinationGroup } from "./types";
+import { MAX_COMBINATIONS_PER_SEED, COMBINATIONS_PER_ROUND, type CombinationGroup } from "./types";
 import type { CombinationsResult } from "@/app/api/keywords/combinations/route";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { SavedCombinationGroup } from "@/app/api/keywords/combination-groups/route";
@@ -335,6 +335,53 @@ export default function KeywordCombinationPage({ dock }: { dock?: LongTailDock }
     }
   }
 
+  // "Generate more": one more round for a seed, appended below what it
+  // already has (so the new rows show up next to the button) and never
+  // repeating it. Stops at MAX_COMBINATIONS_PER_SEED.
+  async function handleGenerateMore(seed: string) {
+    const group = groups.find((g) => g.seed === seed);
+    if (!group || group.loading || group.loadingMore) return;
+    const room = MAX_COMBINATIONS_PER_SEED - group.children.length;
+    if (room <= 0) return;
+
+    const patch = (fields: Partial<CombinationGroup>) =>
+      setGroups((prev) => prev.map((g) => g.seed === seed ? { ...g, ...fields } : g));
+    patch({ loadingMore: true, exhausted: false });
+
+    try {
+      const params = new URLSearchParams({
+        seeds: encodeURIComponent(seed),
+        exclude: group.children.map((c) => encodeURIComponent(c.term)).join(","),
+        perSeed: String(Math.min(COMBINATIONS_PER_ROUND, room)),
+        country: activeApp?.country ?? "us",
+        appName: activeApp?.name ?? "",
+        appSubtitle,
+      });
+      const res = await fetch(`/api/keywords/combinations?${params}`);
+      const data: CombinationsResult = await res.json();
+      const existing = new Set(group.children.map((c) => c.term.toLowerCase()));
+      const fresh = (data.groups.find((d) => d.seed === seed)?.children ?? [])
+        .filter((c) => !existing.has(c.term.toLowerCase()))
+        .slice(0, room)
+        .map((c) => ({
+          term: c.term, volume: c.volume, results: c.results,
+          difficulty: c.difficulty, chance: c.chance,
+          starred: false, tracked: false,
+        }));
+      if (!fresh.length) {
+        patch({ loadingMore: false, exhausted: true });
+        return;
+      }
+      // Only this handler changes a loaded group's children, and loadingMore
+      // blocks a second round, so the group read above is still current.
+      const children = [...group.children, ...fresh];
+      patch({ loadingMore: false, children });
+      void saveGroupToDb(seed, children, group.expanded);
+    } catch {
+      patch({ loadingMore: false });
+    }
+  }
+
   function handleToggleExpand(seed: string) {
     const nextExpanded = !groups.find((g) => g.seed === seed)?.expanded;
     setGroups(groups.map((g) => g.seed === seed ? { ...g, expanded: nextExpanded } : g));
@@ -519,6 +566,7 @@ export default function KeywordCombinationPage({ dock }: { dock?: LongTailDock }
             trackedSet={trackedSet}
             pendingSet={pendingTerms}
             onAdd={addTermsToTracked}
+            onGenerateMore={handleGenerateMore}
           />
         </div>
       ) : (
@@ -532,6 +580,7 @@ export default function KeywordCombinationPage({ dock }: { dock?: LongTailDock }
             )}
             onAddSeeds={handleAddSeeds}
             onToggleExpand={handleToggleExpand}
+            onGenerateMore={handleGenerateMore}
 
             onAddTerm={(term) => addTermsToTracked([term])}
             onAddTerms={addTermsToTracked}

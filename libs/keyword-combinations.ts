@@ -12,12 +12,12 @@ function isLikelyNonEnglish(seed: string): boolean {
   return /[^\x00-\x7F]/.test(seed);
 }
 
-function ruleBasedCombinations(seed: string, count: number): string[] {
+function ruleBasedCombinations(seed: string, count: number, exclude: Set<string>): string[] {
   if (isLikelyNonEnglish(seed)) return [];
   const results = [
     ...SUFFIX_MODIFIERS.map((m) => `${seed} ${m}`),
     ...PREFIX_MODIFIERS.map((m) => `${m} ${seed}`),
-  ].filter((p, i, arr) => arr.indexOf(p) === i);
+  ].filter((p, i, arr) => arr.indexOf(p) === i && !exclude.has(p));
   return results.slice(0, count);
 }
 
@@ -26,7 +26,12 @@ export async function generateCombinations(
   count: number,
   appName: string,
   appSubtitle: string,
+  // Phrases already shown for this seed ("Generate more"): kept out of the
+  // result, and listed in the prompt so the model looks for new angles
+  // instead of handing the same ones back.
+  exclude: string[] = [],
 ): Promise<string[]> {
+  const excludeSet = new Set(exclude.map((k) => k.toLowerCase().trim()));
   const contextLines: string[] = [];
   if (appName)     contextLines.push(`App name: "${appName}"`);
   if (appSubtitle) contextLines.push(`App subtitle/short description: "${appSubtitle}"`);
@@ -34,9 +39,15 @@ export async function generateCombinations(
     ? `Context about the app:\n${contextLines.join("\n")}\n\nOnly suggest combinations relevant to what this app does and the users it serves.`
     : "";
 
+  const excludeContext = excludeSet.size
+    ? `These phrases were already suggested. Do not repeat them or reword them with a synonym, plural or reordering. Find different angles:\n${[...excludeSet].map((k) => `- ${k}`).join("\n")}`
+    : "";
+
   const prompt = `You are an App Store Optimization expert. Generate ${count} realistic App Store search phrases that each contain the exact word or phrase "${seed}".
 
 ${appContext}
+
+${excludeContext}
 
 Think about the specific niche and users of this app. Combine "${seed}" with words that users of THIS app would actually search for — related topics, tasks, problems, or features specific to its domain.
 
@@ -51,10 +62,12 @@ Rules:
 Reply with ONLY a JSON array of strings. The example below is for JSON formatting only — match its structure, not its language: ["${seed} tracker","pet ${seed}"]`;
 
   try {
-    const raw = await generateText(prompt, 0.5);
-    if (!raw) return ruleBasedCombinations(seed, count);
+    // A bit warmer on later rounds, so they don't keep landing on the
+    // first round's phrasing.
+    const raw = await generateText(prompt, excludeSet.size ? 0.8 : 0.5);
+    if (!raw) return ruleBasedCombinations(seed, count, excludeSet);
     const match = raw.match(/\[[\s\S]*\]/);
-    if (!match) return ruleBasedCombinations(seed, count);
+    if (!match) return ruleBasedCombinations(seed, count, excludeSet);
     const parsed = JSON.parse(match[0]) as unknown[];
     const seedLower = seed.toLowerCase();
     // Compare with whitespace stripped: CJK scripts don't use spaces between
@@ -68,7 +81,8 @@ Reply with ONLY a JSON array of strings. The example below is for JSON formattin
         .filter((k): k is string => typeof k === "string")
         .map((k) => k.toLowerCase().trim())
         .filter((k) => k.replace(/\s+/g, "").includes(seedCompact) && k.length >= seed.length && k.length <= 50)
+        .filter((k) => !excludeSet.has(k))
     )].slice(0, count);
-    return llmResults.length > 0 ? llmResults : ruleBasedCombinations(seed, count);
-  } catch { return ruleBasedCombinations(seed, count); }
+    return llmResults.length > 0 ? llmResults : ruleBasedCombinations(seed, count, excludeSet);
+  } catch { return ruleBasedCombinations(seed, count, excludeSet); }
 }
