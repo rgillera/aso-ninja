@@ -171,8 +171,12 @@ export function SimulatedCoverageTable({
     );
   }
 
-  const th = "border-t border-white/[0.08] light:border-black/[0.08] px-3 py-3 text-right font-medium text-gray-400 light:text-gray-600";
-  const td = "border-t border-white/[0.08] light:border-black/[0.08] px-3 py-3 text-right";
+  // Android's extra Density and Details columns need the tighter padding to
+  // fit beside the editor.
+  const px = hasDescription ? "px-2.5" : "px-3";
+  const keywordPx = hasDescription ? "pl-4 pr-2" : "px-4";
+  const th = `border-t border-white/[0.08] light:border-black/[0.08] ${px} py-3 text-right font-medium text-gray-400 light:text-gray-600`;
+  const td = `border-t border-white/[0.08] light:border-black/[0.08] ${px} py-3 text-right`;
 
   return (
     <div>
@@ -200,7 +204,7 @@ export function SimulatedCoverageTable({
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr>
-                <th className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-left font-medium text-gray-400 light:text-gray-600">
+                <th className={`border-t border-white/[0.08] light:border-black/[0.08] ${keywordPx} py-3 text-left font-medium text-gray-400 light:text-gray-600`}>
                   <button onClick={() => handleSort("term")} className={`flex items-center gap-1 hover:text-gray-300 light:hover:text-gray-700 transition-colors ${sortKey === "term" ? "text-gray-300 light:text-gray-700" : ""}`}>
                     Keyword <SortIcon active={sortKey === "term"} dir={sortDir} />
                   </button>
@@ -231,7 +235,7 @@ export function SimulatedCoverageTable({
                     </span>
                   </th>
                 )}
-                <th className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]" />
+                <th className={hasDescription ? "border-t border-white/[0.08] light:border-black/[0.08]" : "sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]"} />
               </tr>
             </thead>
             <tbody>
@@ -244,7 +248,7 @@ export function SimulatedCoverageTable({
                     onClick={() => onInspect(row.term)}
                     className={`group cursor-pointer transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "hover:bg-white/[0.02] light:hover:bg-black/[0.02]"}`}
                   >
-                    <td className="border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-gray-200 light:text-gray-800">{row.term}</td>
+                    <td className={`border-t border-white/[0.08] light:border-black/[0.08] ${keywordPx} py-3 text-gray-200 light:text-gray-800`}>{row.term}</td>
                     <td className={`${td} text-gray-400 light:text-gray-600 tabular-nums`}>{row.volume}</td>
                     <td className={`${td} text-gray-400 light:text-gray-600 tabular-nums`}>{row.rank ?? "—"}</td>
                     <td className={`${td} text-gray-400 light:text-gray-600 tabular-nums`}>{row.relevancy ?? "—"}</td>
@@ -254,16 +258,13 @@ export function SimulatedCoverageTable({
                     {hasDescription && row.currentDensity && row.simulatedDensity && (
                       <td className={`${td} tabular-nums`}><DensityCell now={row.currentDensity} edit={row.simulatedDensity} /></td>
                     )}
-                    {/* Zero width, so it takes no room from the columns: Details
-                        floats over the row's right end on hover, opaque so the
-                        cells under it don't show through, with the row's own
-                        highlight/hover tint repeated on top. */}
-                    <td className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]">
-                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pl-3 pr-4 bg-[#141417] light:bg-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
-                        <span
-                          aria-hidden="true"
-                          className={`pointer-events-none absolute inset-0 ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "bg-white/[0.02] light:bg-black/[0.02]"}`}
-                        />
+                    {hasDescription ? (
+                      // Android: a column of its own, so Details never covers
+                      // Density. Not sticky either, for the same reason; when
+                      // the table is too narrow it scrolls into view, and a
+                      // row click opens the pane anyway.
+                      <td className="border-t border-white/[0.08] light:border-black/[0.08] pl-0 pr-2.5 py-3">
+                        <div className={`flex justify-end transition-opacity ${inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"}`}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -275,8 +276,33 @@ export function SimulatedCoverageTable({
                           <DocumentMagnifyingGlassIcon className="size-3" />
                           Details
                         </button>
-                      </div>
-                    </td>
+                        </div>
+                      </td>
+                    ) : (
+                      /* iOS: zero width, so it takes no room from the columns:
+                         Details floats over the row's right end on hover,
+                         opaque so the cells under it don't show through, with
+                         the row's own highlight/hover tint repeated on top. */
+                      <td className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]">
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pl-3 pr-4 bg-[#141417] light:bg-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
+                          <span
+                            aria-hidden="true"
+                            className={`pointer-events-none absolute inset-0 ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "bg-white/[0.02] light:bg-black/[0.02]"}`}
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onInspect(row.term, true);
+                            }}
+                            title="Results, long tail and performance for this keyword"
+                            className="relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                          >
+                            <DocumentMagnifyingGlassIcon className="size-3" />
+                            Details
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
