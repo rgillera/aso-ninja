@@ -327,10 +327,11 @@ export default function SubscriptionPage({
 
                 {showsUsage && usage && (
                   <div className={`mt-5 space-y-3 border-t pt-5 ${c.divider}`}>
-                    {/* Shown even when unlimited (Pro, the signup trial) so the tracked total isn't confused with "Keywords scored" below. */}
-                    <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
+                    {/* Unlimited keyword/app counts have nothing to fill a bar against, so only capped plans show them. */}
+                    {usage.keyword_limit !== null && (
+                      <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
+                    )}
                     <UsageBar onColor={tone !== "default"} label="Keywords scored" hint={isTrialPlan ? "Goes up to 1,000 when you upgrade" : undefined} used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
-                    {/* Unlimited app counts have nothing to fill a bar against, so only capped plans show them. */}
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}
