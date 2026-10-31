@@ -67,3 +67,48 @@ export function wastedKeywordFieldWords(keywordField: string, title: string, sub
   const indexed = new Set([...tokens(title), ...tokens(subtitle)]);
   return [...new Set(tokens(keywordField))].filter((t) => indexed.has(t));
 }
+
+// Google Play's full description limit.
+export const DESCRIPTION_LIMIT = 4000;
+
+// How often a keyword appears in the Android full description, as whole
+// words in order. `density` is the share of the description's words those
+// mentions take up (mentions × words in the keyword ÷ total words), in
+// percent. For scripts written without spaces it's measured in characters
+// instead, since there are no words to count.
+export type Density = { count: number; density: number };
+
+export function descriptionDensity(keyword: string, description: string): Density {
+  const kw = tokens(keyword);
+  if (!kw.length || !description.trim()) return { count: 0, density: 0 };
+
+  if (kw.some((t) => UNSPACED_SCRIPT.test(t))) {
+    const needle = kw.join("");
+    const haystack = description.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+    if (!haystack.length) return { count: 0, density: 0 };
+    const count = haystack.split(needle).length - 1;
+    return { count, density: (count * needle.length * 100) / haystack.length };
+  }
+
+  const words = tokens(description);
+  let count = 0;
+  for (let i = 0; i + kw.length <= words.length; i++) {
+    if (kw.every((t, j) => words[i + j] === t)) {
+      count++;
+      i += kw.length - 1;
+    }
+  }
+  return { count, density: words.length ? (count * kw.length * 100) / words.length : 0 };
+}
+
+// Rule-of-thumb bands, not a published Google number: under 1% barely
+// registers, over 3% starts to read as keyword stuffing, which Google Play's
+// metadata policy does prohibit.
+export type DensityBand = "none" | "low" | "good" | "high";
+
+export function densityBand(d: Density): DensityBand {
+  if (d.count === 0) return "none";
+  if (d.density < 1) return "low";
+  if (d.density <= 3) return "good";
+  return "high";
+}

@@ -3,12 +3,12 @@
 import { useState, useMemo } from "react";
 import { ArrowsUpDownIcon, ChevronUpIcon, ChevronDownIcon, MagnifyingGlassIcon, XMarkIcon, DocumentMagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { ColumnTooltip } from "@/features/aso/keywords/ColumnTooltip";
-import { COVERAGE_STRENGTH, type Coverage } from "./coverage";
+import { COVERAGE_STRENGTH, densityBand, type Coverage, type Density, type DensityBand } from "./coverage";
 import type { SimulatorRow } from "./types";
 
 const PAGE_SIZE = 25;
 
-type SortKey = "term" | "volume" | "rank" | "relevancy" | "change";
+type SortKey = "term" | "volume" | "rank" | "relevancy" | "change" | "density";
 
 const COVERAGE_COLOR: Record<Coverage, string> = {
   title: "text-green-400 light:text-green-600",
@@ -18,6 +18,37 @@ const COVERAGE_COLOR: Record<Coverage, string> = {
   partial: "text-amber-400 light:text-amber-600",
   none: "text-gray-600 light:text-gray-400",
 };
+
+const DENSITY_COLOR: Record<DensityBand, string> = {
+  none: "text-gray-600 light:text-gray-400",
+  low: "text-amber-400 light:text-amber-600",
+  good: "text-green-400 light:text-green-600",
+  high: "text-red-400 light:text-red-600",
+};
+
+function densityText(d: Density): string {
+  return d.count === 0 ? "None" : `${d.density.toFixed(1)}%`;
+}
+
+// The edited description's density over its mention count, each with the
+// live value before it when the edit changes it. Stacked so the column stays
+// narrow enough to fit beside the editor.
+function DensityCell({ now, edit }: { now: Density; edit: Density }) {
+  const changed = now.count !== edit.count || now.density.toFixed(1) !== edit.density.toFixed(1);
+  return (
+    <span className="flex flex-col items-end whitespace-nowrap">
+      <span>
+        {changed && <span className={`opacity-60 ${DENSITY_COLOR[densityBand(now)]}`}>{densityText(now)} → </span>}
+        <span className={DENSITY_COLOR[densityBand(edit)]}>{densityText(edit)}</span>
+      </span>
+      {(now.count > 0 || edit.count > 0) && (
+        <span className="text-[11px] text-gray-500">
+          {changed ? `${now.count}× → ${edit.count}×` : `${edit.count}×`}
+        </span>
+      )}
+    </span>
+  );
+}
 
 function coverageLabel(c: Coverage, subtitleLabel: string): string {
   switch (c) {
@@ -56,12 +87,14 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 }
 
 export function SimulatedCoverageTable({
-  rows, subtitleLabel, hasKeywordField = false, onInspect, inspectedKeyword = null,
+  rows, subtitleLabel, hasKeywordField = false, hasDescription = false, onInspect, inspectedKeyword = null,
 }: {
   rows: SimulatorRow[];
   subtitleLabel: string;
   /** iOS: the keyword field counts toward coverage too. */
   hasKeywordField?: boolean;
+  /** Android: a Description column with each keyword's density there. */
+  hasDescription?: boolean;
   /** Opens a keyword in the docked side pane, as in Keyword Research. `viaDetails`: from the row's Details button, which always opens its Inspector tab (a row click keeps the pane's current tab). */
   onInspect: (keyword: string, viaDetails?: boolean) => void;
   inspectedKeyword?: string | null;
@@ -96,7 +129,8 @@ export function SimulatedCoverageTable({
     if (sortKey === "term") {
       return [...filtered].sort((a, b) => sortDir === "asc" ? a.term.localeCompare(b.term) : b.term.localeCompare(a.term));
     }
-    const getValue = (row: SimulatorRow): number | null => (sortKey === "change" ? changeOf(row) : row[sortKey]);
+    const getValue = (row: SimulatorRow): number | null =>
+      sortKey === "change" ? changeOf(row) : sortKey === "density" ? row.simulatedDensity?.density ?? null : row[sortKey];
     return [...filtered].sort((a, b) => {
       const av = getValue(a);
       const bv = getValue(b);
@@ -137,8 +171,8 @@ export function SimulatedCoverageTable({
     );
   }
 
-  const th = "border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right font-medium text-gray-400 light:text-gray-600";
-  const td = "border-t border-white/[0.08] light:border-black/[0.08] px-4 py-3 text-right";
+  const th = "border-t border-white/[0.08] light:border-black/[0.08] px-3 py-3 text-right font-medium text-gray-400 light:text-gray-600";
+  const td = "border-t border-white/[0.08] light:border-black/[0.08] px-3 py-3 text-right";
 
   return (
     <div>
@@ -189,7 +223,15 @@ export function SimulatedCoverageTable({
                       : `Whether the edit adds or removes this keyword from your title and ${subtitleLabel.toLowerCase()}, which the store uses to rank you for it. The title counts more than the ${subtitleLabel.toLowerCase()}.`} />
                   </span>
                 </th>
-                <th className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white px-4 py-3" />
+                {hasDescription && (
+                  <th className={th}>
+                    <span className="ml-auto inline-flex items-center justify-end gap-1.5">
+                      {headerButton("density", "Density")}
+                      <ColumnTooltip text="How much of your full description this keyword takes up, and how many times it's mentioned there. Around 1 to 3% is a common rule of thumb, not a Google number. Much more can read as keyword stuffing, which Google Play's policy prohibits." />
+                    </span>
+                  </th>
+                )}
+                <th className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]" />
               </tr>
             </thead>
             <tbody>
@@ -209,21 +251,26 @@ export function SimulatedCoverageTable({
                     <td className={`${td} ${COVERAGE_COLOR[row.currentCoverage]}`}>{coverageLabel(row.currentCoverage, subtitleLabel)}</td>
                     <td className={`${td} ${COVERAGE_COLOR[row.simulatedCoverage]}`}>{coverageLabel(row.simulatedCoverage, subtitleLabel)}</td>
                     <td className={`${td} font-medium ${change.color}`}>{change.label}</td>
-                    {/* Opaque so scrolled columns pass under it; the overlay
-                        repeats the row's own highlight/hover tint on top. */}
-                    <td className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white pl-3 pr-4 py-3">
-                      <span
-                        aria-hidden="true"
-                        className={`pointer-events-none absolute inset-0 transition-colors ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "group-hover:bg-white/[0.02] light:group-hover:bg-black/[0.02]"}`}
-                      />
-                      <div className={`relative flex justify-end transition-opacity ${inspected ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    {hasDescription && row.currentDensity && row.simulatedDensity && (
+                      <td className={`${td} tabular-nums`}><DensityCell now={row.currentDensity} edit={row.simulatedDensity} /></td>
+                    )}
+                    {/* Zero width, so it takes no room from the columns: Details
+                        floats over the row's right end on hover, opaque so the
+                        cells under it don't show through, with the row's own
+                        highlight/hover tint repeated on top. */}
+                    <td className="sticky right-0 w-0 p-0 border-t border-white/[0.08] light:border-black/[0.08]">
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pl-3 pr-4 bg-[#141417] light:bg-white opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none absolute inset-0 ${inspected ? "bg-indigo-500/[0.08] light:bg-indigo-50/70" : "bg-white/[0.02] light:bg-black/[0.02]"}`}
+                        />
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             onInspect(row.term, true);
                           }}
                           title="Results, long tail and performance for this keyword"
-                          className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
+                          className="relative flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 hover:text-white light:hover:text-indigo-900 transition-colors whitespace-nowrap"
                         >
                           <DocumentMagnifyingGlassIcon className="size-3" />
                           Details

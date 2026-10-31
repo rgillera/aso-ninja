@@ -15,7 +15,7 @@ import type { Keyword, DownloadsConnection } from "@/features/aso/keywords/resea
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { MetadataSection } from "@/features/aso/metadata/preview/MetadataFieldCard";
 import { SimulatedCoverageTable } from "./SimulatedCoverageTable";
-import { keywordCoverage, wastedKeywordFieldWords, COVERAGE_STRENGTH, KEYWORD_FIELD_LIMIT } from "./coverage";
+import { keywordCoverage, wastedKeywordFieldWords, descriptionDensity, COVERAGE_STRENGTH, KEYWORD_FIELD_LIMIT, DESCRIPTION_LIMIT } from "./coverage";
 import { getKeywordFieldAction, saveKeywordFieldAction } from "./actions";
 import type { SavedKeyword, SimulatorRow } from "./types";
 
@@ -60,6 +60,10 @@ export default function KeywordSimulator() {
   // iOS only. Apple never publishes the keyword field, so "current" is
   // whatever the user saved for this app (see saveKeywordFieldAction).
   const [savedKeywordField, setSavedKeywordField] = useState("");
+  // Android only: the live full description (public, so fetched like the
+  // short description) and the edited one, for keyword density.
+  const [storeDescription, setStoreDescription] = useState("");
+  const [hypotheticalDescription, setHypotheticalDescription] = useState("");
   const [hypotheticalKeywordField, setHypotheticalKeywordField] = useState("");
   const [keywordFieldSave, setKeywordFieldSave] = useState<{ status: "idle" | "saving" | "saved" } | { status: "error"; error: string }>({ status: "idle" });
 
@@ -79,6 +83,8 @@ export default function KeywordSimulator() {
     setStoreSubtitle("");
     setSavedKeywordField("");
     setHypotheticalKeywordField("");
+    setStoreDescription("");
+    setHypotheticalDescription("");
     setKeywordFieldSave({ status: "idle" });
     setKeywords([]);
     setLoadingKeywords(true);
@@ -95,9 +101,11 @@ export default function KeywordSimulator() {
     });
     fetch(`/api/apps/store-data?${storeDataParams}`)
       .then((r) => r.json())
-      .then((data: { subtitle: string }) => {
+      .then((data: { subtitle: string; description: string }) => {
         setStoreSubtitle(data.subtitle ?? "");
         setHypotheticalSubtitle(data.subtitle ?? "");
+        setStoreDescription(data.description ?? "");
+        setHypotheticalDescription(data.description ?? "");
       })
       .catch(() => {});
 
@@ -233,14 +241,17 @@ export default function KeywordSimulator() {
 
   const originalTitle = activeApp?.name ?? "";
   const isIos = activeApp?.store === "ios";
+  const isAndroid = activeApp?.store === "android";
   const currentKeywordField = isIos ? savedKeywordField : "";
   const simulatedKeywordField = isIos ? hypotheticalKeywordField : "";
-  const hasChanges = hypotheticalTitle !== originalTitle || hypotheticalSubtitle !== storeSubtitle || simulatedKeywordField !== currentKeywordField;
+  const hasChanges = hypotheticalTitle !== originalTitle || hypotheticalSubtitle !== storeSubtitle || simulatedKeywordField !== currentKeywordField
+    || (isAndroid && hypotheticalDescription !== storeDescription);
 
   function handleClearAll() {
     setHypotheticalTitle(originalTitle);
     setHypotheticalSubtitle(storeSubtitle);
     setHypotheticalKeywordField(savedKeywordField);
+    setHypotheticalDescription(storeDescription);
   }
 
   async function handleSaveKeywordField() {
@@ -257,6 +268,19 @@ export default function KeywordSimulator() {
     setKeywordFieldSave({ status: "saved" });
   }
 
+  const spacedCommas = isIos && /,\s/.test(hypotheticalKeywordField);
+  const keywordFieldDirty = hypotheticalKeywordField.trim() !== savedKeywordField;
+  const canSaveKeywordField = !!activeApp?.id && keywordFieldDirty && hypotheticalKeywordField.length <= KEYWORD_FIELD_LIMIT;
+  // The one line beside Save: whatever the user most needs to know about
+  // where the keyword field stands.
+  const keywordFieldStatus: { text: string; color: string } | null =
+    keywordFieldSave.status === "error" ? { text: keywordFieldSave.error, color: "text-red-400 light:text-red-600" }
+    : !activeApp?.id ? { text: "Follow this app to save its keyword field.", color: "text-gray-500" }
+    : keywordFieldSave.status === "saved" && !keywordFieldDirty ? { text: "Saved as your live keyword field.", color: "text-green-400 light:text-green-600" }
+    : !savedKeywordField ? { text: "Apple keeps this private. Paste yours and save it so Now counts it.", color: "text-gray-500" }
+    : keywordFieldDirty ? { text: "Unsaved changes.", color: "text-gray-500" }
+    : null;
+
   const wastedWords = useMemo(
     () => (isIos ? wastedKeywordFieldWords(hypotheticalKeywordField, hypotheticalTitle, hypotheticalSubtitle) : []),
     [isIos, hypotheticalKeywordField, hypotheticalTitle, hypotheticalSubtitle],
@@ -271,7 +295,9 @@ export default function KeywordSimulator() {
     relevancy: k.relevancy,
     currentCoverage: keywordCoverage(k.term, originalTitle, storeSubtitle, currentKeywordField),
     simulatedCoverage: keywordCoverage(k.term, hypotheticalTitle, hypotheticalSubtitle, simulatedKeywordField),
-  })), [keywords, originalTitle, storeSubtitle, hypotheticalTitle, hypotheticalSubtitle, currentKeywordField, simulatedKeywordField]);
+    currentDensity: isAndroid ? descriptionDensity(k.term, storeDescription) : null,
+    simulatedDensity: isAndroid ? descriptionDensity(k.term, hypotheticalDescription) : null,
+  })), [keywords, originalTitle, storeSubtitle, hypotheticalTitle, hypotheticalSubtitle, currentKeywordField, simulatedKeywordField, isAndroid, storeDescription, hypotheticalDescription]);
 
   const summary = useMemo(() => {
     let stronger = 0, weaker = 0;
@@ -332,7 +358,7 @@ export default function KeywordSimulator() {
               are kept, and closing the pane brings it back. */}
           <div className={`flex flex-col lg:w-[380px] lg:shrink-0 lg:overflow-y-auto lg:border-r lg:border-white/[0.07] light:border-black/[0.08] ${inspector.open ? "xl:hidden" : ""}`}>
             <div className="shrink-0 flex items-center justify-between px-6 py-3.5 border-b border-white/[0.07] light:border-black/[0.08] bg-[#0e0e10] light:bg-[#f7f7f8]">
-              <p className="text-sm font-medium text-white light:text-gray-900">{isIos ? "Try new metadata" : <>Try a new title &amp; subtitle</>}</p>
+              <p className="text-sm font-medium text-white light:text-gray-900">Try new metadata</p>
               <button onClick={handleClearAll} className="text-xs text-gray-500 hover:text-gray-300 light:hover:text-gray-700 transition-colors">Clear all</button>
             </div>
             <div className="flex-1 p-6 space-y-4 bg-[#0e0e10] light:bg-[#f7f7f8]">
@@ -353,6 +379,17 @@ export default function KeywordSimulator() {
                 originalValue={storeSubtitle}
                 onChange={setHypotheticalSubtitle}
               />
+              {isAndroid && (
+                <MetadataSection
+                  title="Full Description"
+                  value={hypotheticalDescription}
+                  limit={DESCRIPTION_LIMIT}
+                  placeholder="Enter full description…"
+                  rows={10}
+                  originalValue={storeDescription}
+                  onChange={setHypotheticalDescription}
+                />
+              )}
               {isIos && (
                 <div className="space-y-2">
                   <MetadataSection
@@ -367,45 +404,42 @@ export default function KeywordSimulator() {
                       if (keywordFieldSave.status !== "saving") setKeywordFieldSave({ status: "idle" });
                     }}
                   />
-                  {!savedKeywordField && (
-                    <p className="text-xs text-gray-500">
-                      Apple keeps this field private, so we can&rsquo;t read it. Paste your live one and save it, and &ldquo;Now&rdquo; will count it too.
-                    </p>
+                  {(wastedWords.length > 0 || spacedCommas) && (
+                    <div className="space-y-2 rounded-xl bg-amber-500/[0.06] px-3 py-2.5 text-xs text-amber-400 light:text-amber-700 ring-1 ring-amber-500/15">
+                      {wastedWords.length > 0 && (
+                        <div className="space-y-1.5">
+                          <p>Already in your title or subtitle. Apple counts each word once, so these can go:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {wastedWords.map((w) => (
+                              <span key={w} className="rounded-md bg-amber-500/10 px-1.5 py-0.5 font-medium">{w}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {spacedCommas && <p>Remove the spaces after commas. They use up characters.</p>}
+                    </div>
                   )}
-                  {wastedWords.length > 0 && (
-                    <p className="text-xs text-amber-400 light:text-amber-600">
-                      Already in your title or subtitle: {wastedWords.join(", ")}. Apple counts each word once, so you can drop these and use the characters for new words.
-                    </p>
-                  )}
-                  {/,\s/.test(hypotheticalKeywordField) && (
-                    <p className="text-xs text-amber-400 light:text-amber-600">
-                      Leave out spaces after commas. They count toward the {KEYWORD_FIELD_LIMIT} characters.
-                    </p>
-                  )}
-                  {activeApp.id ? (
-                    hypotheticalKeywordField.trim() !== savedKeywordField && hypotheticalKeywordField.length <= KEYWORD_FIELD_LIMIT ? (
+                  {(keywordFieldStatus || canSaveKeywordField) && (
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <p className={`text-xs ${keywordFieldStatus?.color ?? ""}`}>{keywordFieldStatus?.text}</p>
+                    {canSaveKeywordField && (
                       <button
                         onClick={handleSaveKeywordField}
                         disabled={keywordFieldSave.status === "saving"}
-                        className="rounded-lg px-3 py-1.5 text-xs font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 disabled:opacity-50 transition-colors"
+                        title="Save this as your app's live keyword field, so Now counts it"
+                        className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium bg-indigo-500/15 light:bg-indigo-50 text-indigo-300 light:text-indigo-700 hover:bg-indigo-500/25 light:hover:bg-indigo-100 disabled:opacity-50 transition-colors"
                       >
-                        {keywordFieldSave.status === "saving" ? "Saving…" : "Save as my live keyword field"}
+                        {keywordFieldSave.status === "saving" ? "Saving…" : "Save as live"}
                       </button>
-                    ) : keywordFieldSave.status === "saved" ? (
-                      <p className="text-xs text-green-400 light:text-green-600">Saved as your live keyword field.</p>
-                    ) : null
-                  ) : (
-                    <p className="text-xs text-gray-500">Follow this app to save its keyword field.</p>
-                  )}
-                  {keywordFieldSave.status === "error" && (
-                    <p className="text-xs text-red-400 light:text-red-600">{keywordFieldSave.error}</p>
+                    )}
+                  </div>
                   )}
                 </div>
               )}
               <p className="text-xs text-gray-600 light:text-gray-400">
                 {isIos
-                  ? <>Edit the title, {subtitleLabel.toLowerCase()} or keyword field to see which tracked keywords you&rsquo;d gain or lose. The store ranks you on the words in these fields, and the title counts most. Only the keyword field is saved, and only when you save it. Nothing is published.</>
-                  : <>Edit the title or {subtitleLabel.toLowerCase()} to see which tracked keywords you&rsquo;d gain or lose. The store ranks you on the words in these fields, and the title counts most. Nothing here is saved or published.</>}
+                  ? <>The table updates as you type. The title counts most, then the {subtitleLabel.toLowerCase()}, then the keyword field. Nothing is published.</>
+                  : <>Edit the title or {subtitleLabel.toLowerCase()} to see which tracked keywords you&rsquo;d gain or lose, and the full description to see how often each one is mentioned. The title counts most. Nothing here is saved or published.</>}
               </p>
             </div>
           </div>
@@ -431,7 +465,7 @@ export default function KeywordSimulator() {
               <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
                 {loadingKeywords
                   ? <p className="px-5 py-8 text-center text-sm text-gray-600 light:text-gray-400">Loading tracked keywords…</p>
-                  : <SimulatedCoverageTable rows={rows} subtitleLabel={subtitleLabel} hasKeywordField={isIos} onInspect={inspector.selectKeyword} inspectedKeyword={inspector.inspectedKeyword} />}
+                  : <SimulatedCoverageTable rows={rows} subtitleLabel={subtitleLabel} hasKeywordField={isIos} hasDescription={isAndroid} onInspect={inspector.selectKeyword} inspectedKeyword={inspector.inspectedKeyword} />}
               </div>
             </div>
           </div>
