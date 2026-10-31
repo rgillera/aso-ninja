@@ -14,6 +14,7 @@ const COVERAGE_COLOR: Record<Coverage, string> = {
   title: "text-green-400 light:text-green-600",
   split: "text-green-400/80 light:text-green-600/80",
   subtitle: "text-sky-400 light:text-sky-600",
+  keywordField: "text-violet-400 light:text-violet-600",
   partial: "text-amber-400 light:text-amber-600",
   none: "text-gray-600 light:text-gray-400",
 };
@@ -23,6 +24,7 @@ function coverageLabel(c: Coverage, subtitleLabel: string): string {
     case "title": return "Title";
     case "split": return `Title + ${subtitleLabel}`;
     case "subtitle": return subtitleLabel;
+    case "keywordField": return "Keyword field";
     case "partial": return "Some words";
     case "none": return "Not covered";
   }
@@ -54,10 +56,12 @@ function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
 }
 
 export function SimulatedCoverageTable({
-  rows, subtitleLabel, onInspect, inspectedKeyword = null,
+  rows, subtitleLabel, hasKeywordField = false, onInspect, inspectedKeyword = null,
 }: {
   rows: SimulatorRow[];
   subtitleLabel: string;
+  /** iOS: the keyword field counts toward coverage too. */
+  hasKeywordField?: boolean;
   /** Opens a keyword in the docked side pane, as in Keyword Research. `viaDetails`: from the row's Details button, which always opens its Inspector tab (a row click keeps the pane's current tab). */
   onInspect: (keyword: string, viaDetails?: boolean) => void;
   inspectedKeyword?: string | null;
@@ -180,7 +184,9 @@ export function SimulatedCoverageTable({
                 <th className={th}>
                   <span className="ml-auto inline-flex items-center justify-end gap-1.5">
                     {headerButton("change", "Change")}
-                    <ColumnTooltip text={`Whether the edit adds or removes this keyword from your title and ${subtitleLabel.toLowerCase()}, which the store uses to rank you for it. The title counts more than the ${subtitleLabel.toLowerCase()}.`} />
+                    <ColumnTooltip text={hasKeywordField
+                      ? `Whether the edit adds or removes this keyword from your title, ${subtitleLabel.toLowerCase()} and keyword field, which the store uses to rank you for it. The title counts most, then the ${subtitleLabel.toLowerCase()}, then the keyword field.`
+                      : `Whether the edit adds or removes this keyword from your title and ${subtitleLabel.toLowerCase()}, which the store uses to rank you for it. The title counts more than the ${subtitleLabel.toLowerCase()}.`} />
                   </span>
                 </th>
                 <th className="sticky right-0 border-t border-white/[0.08] light:border-black/[0.08] bg-[#141417] light:bg-white px-4 py-3" />
