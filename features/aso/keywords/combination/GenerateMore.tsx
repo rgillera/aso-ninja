@@ -1,6 +1,6 @@
 "use client";
 
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import { PlusCircleIcon } from "@heroicons/react/24/outline";
 import { MAX_COMBINATIONS_PER_SEED, type CombinationGroup } from "./types";
 
 // "Generate more" under a group's combinations, shared by the full table and
@@ -37,7 +37,7 @@ export function GenerateMore({ group, onGenerateMore }: {
         onClick={() => onGenerateMore(group.seed)}
         className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-indigo-400 light:text-indigo-600 hover:bg-indigo-500/10 transition-colors"
       >
-        <SparklesIcon className="size-3.5" />
+        <PlusCircleIcon className="size-3.5" />
         {group.exhausted ? "Try again" : "Generate more"}
       </button>
       {group.exhausted && (
