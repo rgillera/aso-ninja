@@ -143,14 +143,15 @@ function UsageBar({ label, used, limit, frozen, onColor, hint }: { label: string
           {!!frozen && <span className="ml-1.5 text-amber-500 light:text-amber-700">({frozen.toLocaleString()} paused)</span>}
         </span>
       </div>
-      <div className={`mt-1.5 h-1.5 rounded-full ${onColor ? "bg-white/20" : "bg-white/[0.06] light:bg-black/[0.05]"}`}>
-        {limit !== null && (
+      {/* Unlimited: just the count, an empty track would read as "0% used". */}
+      {limit !== null && (
+        <div className={`mt-1.5 h-1.5 rounded-full ${onColor ? "bg-white/20" : "bg-white/[0.06] light:bg-black/[0.05]"}`}>
           <div
             className={`h-full rounded-full ${onColor ? "bg-white" : "bg-indigo-500"}`}
             style={{ width: `${pct}%` }}
           />
-        )}
-      </div>
+        </div>
+      )}
       {hint && <p className={`mt-1.5 text-[11px] ${onColor ? "text-indigo-200/80" : "text-gray-500"}`}>{hint}</p>}
     </div>
   );
@@ -326,11 +327,10 @@ export default function SubscriptionPage({
 
                 {showsUsage && usage && (
                   <div className={`mt-5 space-y-3 border-t pt-5 ${c.divider}`}>
-                    {/* Unlimited keyword/app counts have nothing to fill a bar against, so only capped plans show them. */}
-                    {usage.keyword_limit !== null && (
-                      <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
-                    )}
+                    {/* Shown even when unlimited (Pro, the signup trial) so the tracked total isn't confused with "Keywords scored" below. */}
+                    <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
                     <UsageBar onColor={tone !== "default"} label="Keywords scored" hint={isTrialPlan ? "Goes up to 1,000 when you upgrade" : undefined} used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
+                    {/* Unlimited app counts have nothing to fill a bar against, so only capped plans show them. */}
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}
