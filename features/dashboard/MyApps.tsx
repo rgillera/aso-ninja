@@ -56,12 +56,12 @@ function groupApps(apps: App[]): AppGroup[] {
     map.get(key)!.push(app);
   }
   // Store names are per storefront (a rename can land in US only), so the
-  // card prefers the US row to match what the app header shows by default.
-  return [...map.entries()].map(([key, entries]) => ({
-    key,
-    primary: entries.find((a) => (a.country ?? "US").toUpperCase() === "US") ?? entries[0],
-    entries,
-  }));
+  // card takes its name from the US row and lists US first, next to it.
+  const isUs = (a: App) => (a.country ?? "US").toUpperCase() === "US";
+  return [...map.entries()].map(([key, entries]) => {
+    const sorted = [...entries.filter(isUs), ...entries.filter((a) => !isUs(a))];
+    return { key, primary: sorted[0], entries: sorted };
+  });
 }
 
 function ConfirmRemoveDialog({
@@ -234,7 +234,14 @@ function AppRow({
       {/* Name + bundle — links to first entry */}
       <Link href={`/dashboard/apps/${primary.id}/report`} className={`flex-1 min-w-0 ${allFrozen ? "opacity-60" : ""}`}>
         <p className="text-sm font-semibold text-white light:text-gray-900 truncate flex items-center gap-1.5">
-          {primary.name}
+          <span
+            className="truncate"
+            title={entries.length > 1 && primary.country
+              ? `Name from the ${primary.country.toUpperCase()} ${primary.store === "ios" ? "App Store" : "Google Play"}`
+              : undefined}
+          >
+            {primary.name}
+          </span>
           {allFrozen && (
             <span
               className="inline-flex items-center rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 shrink-0"
