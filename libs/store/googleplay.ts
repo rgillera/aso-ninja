@@ -94,9 +94,10 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
 // benchmark requests (e.g. as each other's category peer) shares one cache entry.
 const cachedFetchAndroidStoreData = unstable_cache(fetchAndroidStoreDataImpl, ["android-store-data"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
-export async function fetchAndroidStoreData(bundleId: string, country: string): Promise<StoreData> {
+// `fresh` skips the cache; see fetchIosStoreData.
+export async function fetchAndroidStoreData(bundleId: string, country: string, { fresh = false }: { fresh?: boolean } = {}): Promise<StoreData> {
   try {
-    return await cachedFetchAndroidStoreData(bundleId, country);
+    return await (fresh ? fetchAndroidStoreDataImpl(bundleId, country) : cachedFetchAndroidStoreData(bundleId, country));
   } catch {
     return null;
   }

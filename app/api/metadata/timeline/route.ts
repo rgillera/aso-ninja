@@ -98,9 +98,9 @@ export async function GET(request: NextRequest) {
   if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ events: [] });
 
   const storeData = store === "ios" && storeId
-    ? await fetchIosStoreData(storeId, country)
+    ? await fetchIosStoreData(storeId, country, { fresh: true })
     : store === "android" && bundleId
-      ? await fetchAndroidStoreData(bundleId, country)
+      ? await fetchAndroidStoreData(bundleId, country, { fresh: true })
       : null;
 
   const supabase = await createClient();

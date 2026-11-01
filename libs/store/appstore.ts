@@ -149,9 +149,9 @@ function detectIosInAppPurchases(html: string): boolean | undefined {
   return /<html[^>]*\slang="en/i.test(html) ? false : undefined;
 }
 
-async function fetchIosStoreDataImpl(storeId: string, country: string): Promise<StoreData> {
+async function fetchIosStoreDataImpl(storeId: string, country: string, fresh = false): Promise<StoreData> {
   const [apiRes, page] = await Promise.all([
-    itunesFetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`),
+    itunesFetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`, { fresh }),
     scrapeIosAppPage(storeId, country),
   ]);
   const json = await apiRes?.json();
@@ -182,11 +182,18 @@ async function fetchIosStoreDataImpl(storeId: string, country: string): Promise<
 
 // Cached per app (not per caller) — the same peer app looked up by two different
 // benchmark requests (e.g. as each other's category peer) shares one cache entry.
-const cachedFetchIosStoreData = unstable_cache(fetchIosStoreDataImpl, ["ios-store-data"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchIosStoreData = unstable_cache(
+  (storeId: string, country: string) => fetchIosStoreDataImpl(storeId, country),
+  ["ios-store-data"],
+  { revalidate: CACHE_REVALIDATE_SECONDS },
+);
 
-export async function fetchIosStoreData(storeId: string, country: string): Promise<StoreData> {
+// `fresh` skips both caches, for callers recording what the listing looks
+// like right now (metadata snapshots). The cache is stale-while-revalidate,
+// so a once-a-day caller would otherwise always get the previous day's copy.
+export async function fetchIosStoreData(storeId: string, country: string, { fresh = false }: { fresh?: boolean } = {}): Promise<StoreData> {
   try {
-    return await cachedFetchIosStoreData(storeId, country);
+    return await (fresh ? fetchIosStoreDataImpl(storeId, country, true) : cachedFetchIosStoreData(storeId, country));
   } catch {
     return null;
   }

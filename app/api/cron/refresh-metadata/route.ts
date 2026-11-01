@@ -12,8 +12,11 @@ import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 // stale_metadata_apps always re-evaluates from scratch — see that function's
 // migration for why the staleness + plan filtering happens in SQL rather
 // than after an app-side `.limit()`.
+// Apple calls are 3.5s apart, so 200 iOS apps needed ~12 minutes and the run
+// was killed partway; 60 fits in 300s. The cron runs hourly, and once every
+// listing has today's snapshot a run returns right away.
 export const maxDuration = 300;
-const BATCH_LIMIT = 200;
+const BATCH_LIMIT = 60;
 
 type AppRow = {
   id: string;
@@ -50,10 +53,10 @@ export async function GET(req: Request) {
     try {
       const storeData = app.store === "ios"
         ? app.store_id
-          ? await enqueueAppleRequest(() => fetchIosStoreData(app.store_id, app.country ?? "US"))
+          ? await enqueueAppleRequest(() => fetchIosStoreData(app.store_id, app.country ?? "US", { fresh: true }))
           : null
         : app.bundle_id
-          ? await fetchAndroidStoreData(app.bundle_id, app.country ?? "US")
+          ? await fetchAndroidStoreData(app.bundle_id, app.country ?? "US", { fresh: true })
           : null;
 
       if (storeData) {

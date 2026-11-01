@@ -10,6 +10,7 @@ import {
   Cog6ToothIcon,
   DocumentChartBarIcon,
   EyeIcon,
+  ClockIcon,
   PuzzlePieceIcon,
   ArrowTrendingUpIcon,
   ListBulletIcon,
@@ -206,6 +207,10 @@ export default function DashboardSidebar({
       currentPath.startsWith("/dashboard/metadata/preview") ||
       (!isOnPreviewRoute && currentPath.endsWith("/preview"))
     );
+  const isOnTimeline =
+    (isOnPreviewRoute && activePreviewPage === "timeline") ||
+    currentPath.startsWith("/dashboard/metadata/timeline") ||
+    (!isOnPreviewRoute && currentPath.endsWith("/timeline"));
   const [open, setOpen] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [asaAccountOpen, setAsaAccountOpen] = useState(
@@ -222,6 +227,12 @@ export default function DashboardSidebar({
     if (metaOverrideHref) return `${metaOverrideHref}&page=preview`;
     if (activeAppId) return `/dashboard/apps/${activeAppId}/preview`;
     return activeWorkspaceId ? `/dashboard/metadata/preview?ws=${activeWorkspaceId}` : "/dashboard/metadata/preview";
+  }
+
+  function timelineHref() {
+    if (metaOverrideHref) return `${metaOverrideHref}&page=timeline`;
+    if (activeAppId) return `/dashboard/apps/${activeAppId}/timeline`;
+    return activeWorkspaceId ? `/dashboard/metadata/timeline?ws=${activeWorkspaceId}` : "/dashboard/metadata/timeline";
   }
 
   const ref = useRef<HTMLDivElement>(null);
@@ -454,6 +465,20 @@ export default function DashboardSidebar({
         >
           <EyeIcon className="size-5 shrink-0" />
           <span className={railHide}>Metadata</span>
+        </a>
+
+        <a
+          href={timelineHref()}
+          title={rail ? "Timeline" : undefined}
+          className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${railLink} ${
+            isOnTimeline
+              ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+              : "text-gray-400 light:text-gray-600 hover:bg-white/5 light:hover:bg-black/[0.04] hover:text-white light:hover:text-gray-900"
+          }`}
+        >
+          <ClockIcon className="size-5 shrink-0" />
+          <span className={`flex-1 ${railHide}`}>Timeline</span>
+          {!rail && !isPlanAtLeast(planSlug, "pro") && <PlanLockBadge minPlan="pro" />}
         </a>
 
         <div className="pt-3">
