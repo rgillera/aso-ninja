@@ -174,7 +174,7 @@ function ChangeCell({ value }: { value: number }) {
 type Step =
   | "rest" | "toInput" | "typing" | "toAdd" | "pressAdd" | "loadingRow" | "added"
   | "toSort" | "pressSort" | "sorting" | "sorted"
-  | "toInspect" | "pressInspect" | "inspector"
+  | "scrollRight" | "toInspect" | "pressInspect" | "inspector"
   | "back" | "pressLongTail" | "longTailLoading" | "longTail" | "toAddChild" | "pressAddChild" | "childAdded"
   | "toPerfNav" | "pressPerfNav" | "performance" | "toExport" | "pressExport" | "exporting" | "exported" | "sheet"
   | "chart"
@@ -197,8 +197,9 @@ const TIMELINE: [Step, number][] = [
   ["pressSort", 220],
   ["sorting", 750],
   ["sorted", 700],
-  // Details (pinned at the table's right edge, like the real row) opens the
+  // The table scrolls right to the end of the row, where Details opens the
   // side pane on the Inspector tab; the Long Tail tab is next to it.
+  ["scrollRight", 900],
   ["toInspect", 650],
   ["pressInspect", 220],
   ["inspector", 3800],
@@ -238,7 +239,7 @@ const TOTAL_MS = STEP_START[TIMELINE.length - 1] + TIMELINE[TIMELINE.length - 1]
 // the next chapter's first step; clicking one jumps the loop there.
 const SCENES: { label: string; start: Step }[] = [
   { label: "Add a keyword", start: "rest" },
-  { label: "See its details", start: "toInspect" },
+  { label: "See its details", start: "scrollRight" },
   { label: "Find long tail", start: "back" },
   { label: "Track performance", start: "toPerfNav" },
 ];
@@ -415,6 +416,7 @@ export function DashboardHeroDemo() {
   const perfChangeRef = useRef<HTMLSpanElement>(null);
   const chartEndRef = useRef<HTMLSpanElement>(null);
   const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLSpanElement>(null);
   // Row pitch of the tracked keywords table, for the sort slide.
   const [rowPitch, setRowPitch] = useState(45);
@@ -520,6 +522,7 @@ export function DashboardHeroDemo() {
       step === "toInput" || step === "typing" ? inputRef.current :
       step === "toAdd" || step === "pressAdd" || step === "loadingRow" || step === "added" ? addRef.current :
       step === "toSort" || step === "pressSort" || step === "sorting" || step === "sorted" ? sortRef.current :
+      step === "scrollRight" ? tableScrollRef.current :
       step === "toInspect" || step === "pressInspect" ? inspectRef.current :
       step === "inspector" ? searchesRef.current :
       step === "back" || step === "pressLongTail" || step === "longTailLoading" || step === "longTail" ? longTailRef.current :
@@ -537,9 +540,20 @@ export function DashboardHeroDemo() {
     const s = stage.getBoundingClientRect();
     const t = target.getBoundingClientRect();
     const k = scale || 1;
-    const offsetX = step === "toInput" || step === "typing" ? 40 : t.width / 2;
+    const offsetX = step === "toInput" || step === "typing" ? 40 : step === "scrollRight" ? t.width * 0.7 : t.width / 2;
     setCursor({ x: (t.left - s.left) / k + offsetX, y: (t.top - s.top + t.height / 2) / k });
   }, [step, scale]);
+
+  // Scroll the table to the end of the row for the Details click (the row
+  // actions sit after the last column, like the real table), and back to the
+  // start for every other beat. Before the cursor measures Details: the
+  // scrollRight beat outlasts the smooth scroll.
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    const right = stepAtLeast(step, "scrollRight") && !stepAtLeast(step, "performance");
+    el.scrollTo({ left: right ? el.scrollWidth : 0, behavior: running ? "smooth" : "auto" });
+  }, [step, running]);
 
   // Measure the row pitch just before sorting (rows are all one height).
   useLayoutEffect(() => {
@@ -790,8 +804,9 @@ export function DashboardHeroDemo() {
             </div>
 
             {/* Wider than the panel, like the real table: the keyword column is
-                pinned left and the row actions right, so both stay in view. */}
-            <div className="overflow-hidden">
+                pinned left, and the row actions come after the last column, so
+                the loop scrolls right to reach Details. */}
+            <div ref={tableScrollRef} className="overflow-hidden">
               <table className="w-max min-w-full">
                 <thead>
                   <tr className="border-b border-black/[0.08] bg-white">
@@ -818,7 +833,7 @@ export function DashboardHeroDemo() {
                     </th>
                     <ColHead>Est. Daily Downloads</ColHead>
                     <ColHead>App Rank</ColHead>
-                    <th className="sticky right-0 z-10 bg-white" />
+                    <th />
                   </tr>
                 </thead>
                 <tbody ref={tbodyRef} className="divide-y divide-black/[0.06]">
@@ -859,9 +874,8 @@ export function DashboardHeroDemo() {
                           {loading ? <SkeletonCell width="w-6" /> : <span className={`text-sm font-medium tabular-nums ${rankColor(row.rank)}`}>#{row.rank}</span>}
                         </td>
                         {/* Hover actions, same two as the real table row (Details,
-                            Remove), pinned right; bg-inherit, like the keyword
-                            column, so the metrics pass under them. */}
-                        <td className="sticky right-0 z-10 bg-inherit pl-2 pr-3 py-2.5">
+                            Remove), at the end of the row. */}
+                        <td className="pl-2 pr-3 py-2.5">
                           <div className={`flex items-center gap-1.5 transition-opacity ${isNew && (rowHovered || paneOpen) ? "opacity-100" : "opacity-0"}`}>
                             <span
                               ref={isNew ? inspectRef : undefined}
