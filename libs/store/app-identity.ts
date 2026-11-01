@@ -19,7 +19,7 @@ async function fetchIosIdentities(storeIds: string[], country: string): Promise<
   const out = new Map<string, Identity>();
   for (let i = 0; i < storeIds.length; i += IOS_LOOKUP_BATCH) {
     const ids = storeIds.slice(i, i + IOS_LOOKUP_BATCH).join(",");
-    const res = await enqueueAppleRequest(() => itunesFetch(`https://itunes.apple.com/lookup?id=${ids}&country=${country.toLowerCase()}`));
+    const res = await enqueueAppleRequest(() => itunesFetch(`https://itunes.apple.com/lookup?id=${ids}&country=${country.toLowerCase()}`, { fresh: true }));
     if (!res) continue;
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

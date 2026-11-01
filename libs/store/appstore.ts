@@ -13,11 +13,14 @@ const SCRAPE_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/5
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function itunesFetch(url: string): Promise<Response | null> {
+// `fresh` skips Next's data cache. Its revalidate is stale-while-revalidate, so
+// the first call after expiry still gets the old response, which is wrong for
+// callers checking whether the listing changed (libs/store/app-identity.ts).
+export async function itunesFetch(url: string, { fresh = false }: { fresh?: boolean } = {}): Promise<Response | null> {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const res = await fetch(url, { next: { revalidate: 60 } } as any);
+      const res = await fetch(url, (fresh ? { cache: "no-store" } : { next: { revalidate: 60 } }) as any);
       if (res.ok) return res;
       if (res.status === 429 || res.status === 503) {
         await sleep(600 * (attempt + 1));
