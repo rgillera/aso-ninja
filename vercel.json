@@ -21,6 +21,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/sync-app-identity",
+      "schedule": "0 6 * * *"
+    },
+    {
       "path": "/api/cron/send-welcome-emails",
       "schedule": "*/5 * * * *"
     },

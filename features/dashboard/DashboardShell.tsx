@@ -259,6 +259,17 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
   const resolvedAppId = params.id ?? savedAppId;
   const activeApp = resolvedAppId ? allApps.find(a => a.id === resolvedAppId) : undefined;
 
+  // Picks up a store-side rename or new icon (throttled server-side); a
+  // change re-runs the layout so allApps carries the new name.
+  const activeAppId = activeApp?.id;
+  useEffect(() => {
+    if (!activeAppId) return;
+    fetch(`/api/apps/${activeAppId}/sync-identity`, { method: "POST" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.changed) router.refresh(); })
+      .catch(() => {});
+  }, [activeAppId, router]);
+
   // Persist an explicit workspace switch (the sidebar switcher navigates to
   // /dashboard?ws=<id>) so it sticks on the next navigation — otherwise it's
   // only reflected on that one URL and any link without ?ws= (e.g. App
