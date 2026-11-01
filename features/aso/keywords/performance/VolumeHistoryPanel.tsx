@@ -77,18 +77,13 @@ export function VolumeHistoryPanel({ term, store, country, onClose, inline }: Pr
     return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
   }
 
+  // Every other month, counted back from the latest so it's always
+  // labeled; twelve "Mon YYYY" labels side by side would run together.
   function axisTick(props: unknown) {
     const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
-    const isCurrent = index === currentIndex;
+    if ((currentIndex - index) % 2 !== 0) return <></>;
     return (
-      <text
-        x={x}
-        y={y + 12}
-        textAnchor="middle"
-        fontSize={11}
-        fontWeight={isCurrent ? 600 : 400}
-        className={isCurrent ? "fill-gray-200 light:fill-gray-800" : "fill-gray-500"}
-      >
+      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} className="fill-gray-500">
         {formatMonth(payload.value)}
       </text>
     );
@@ -157,6 +152,7 @@ export function VolumeHistoryPanel({ term, store, country, onClose, inline }: Pr
                   tick={axisTick}
                   axisLine={{ stroke: "#ffffff1a" }}
                   tickLine={false}
+                  interval={0}
                 />
                 <YAxis
                   domain={[0, 100]}

@@ -32,7 +32,7 @@ function formatDay(iso: string): string {
 
 function formatMonth(month: string): string {
   const d = new Date(month + "-01T00:00:00");
-  return d.toLocaleDateString(undefined, { month: "short" });
+  return d.toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
 function formatMonthLong(month: string): string {
@@ -57,13 +57,26 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
 }
 
-// Weeks are bucketed by the month their Monday falls in. The ~52-week
-// window spills into a 13th partial month at the front, so only the last
+function monthKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+// A week belongs to the month most of its days fall in (its Thursday's),
+// except the current week, which always counts toward this month so the
+// chart ends on the same month as Volume History. The ~52-week window
+// spills into a 13th partial month at the front, so only the last
 // REPORT_MONTHS are kept, matching Volume History's month count.
+function weekMonth(week: string, isCurrent: boolean): string {
+  if (isCurrent) return monthKey(new Date());
+  const d = new Date(week + "T00:00:00");
+  d.setDate(d.getDate() + 3);
+  return monthKey(d);
+}
+
 function toMonthly(weekly: WeeklyRankEntry[], lockedWeeks: number): MonthlyRankEntry[] {
   const byMonth = new Map<string, { weeks: WeeklyRankEntry[]; anyUnlocked: boolean }>();
   weekly.forEach((w, i) => {
-    const key = w.week.slice(0, 7);
+    const key = weekMonth(w.week, i === weekly.length - 1);
     const bucket = byMonth.get(key) ?? { weeks: [], anyUnlocked: false };
     if (i >= lockedWeeks) {
       bucket.weeks.push(w);
@@ -158,11 +171,13 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
   const yScale = yAxisScale(worstShown);
   const hasUntrackedGap = months.some((m) => m.weeks.some((w) => w.position == null));
 
+  // Every other month, counted back from the latest so it's always
+  // labeled; twelve "Mon YYYY" labels side by side would run together.
   function axisTick(props: unknown) {
     const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
-    const isCurrent = index === currentIndex;
+    if ((currentIndex - index) % 2 !== 0) return <></>;
     return (
-      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
+      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill="#6b7280">
         {formatMonth(payload.value)}
       </text>
     );
@@ -189,8 +204,13 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
         ) : (
           <>
             <p className="mt-0.5 text-gray-200 light:text-gray-800">
-              Rank: <span className="font-semibold">#{entry.position}</span>
+              Median rank: <span className="font-semibold">#{entry.position}</span>
             </p>
+            {tracked.length > 1 && (
+              <p className="text-gray-400 light:text-gray-600">
+                Best: <span className="font-semibold text-gray-200 light:text-gray-800">#{tracked[0].position}</span>
+              </p>
+            )}
             <ul className="mt-1.5 flex flex-col gap-0.5 border-t border-white/[0.07] light:border-black/[0.08] pt-1.5">
               {tracked.map((w) => (
                 <li key={w.week} className="flex items-center justify-between gap-4">

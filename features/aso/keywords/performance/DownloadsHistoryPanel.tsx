@@ -81,12 +81,13 @@ export function DownloadsHistoryPanel({ term, appId, store, onClose, inline }: P
   const rows = data?.history ?? [];
   const currentIndex = rows.length - 1;
 
-  // Latest (usually still in progress) week in bold, same as Rank History.
+  // Every other week, counted back from the latest so it's always labeled,
+  // same as Rank and Volume History.
   function axisTick(props: unknown) {
     const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
-    const isCurrent = index === currentIndex;
+    if ((currentIndex - index) % 2 !== 0) return <></>;
     return (
-      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
+      <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill="#6b7280">
         {formatShortDate(payload.value)}
       </text>
     );
@@ -122,7 +123,7 @@ export function DownloadsHistoryPanel({ term, appId, store, onClose, inline }: P
                 tick={axisTick}
                 axisLine={{ stroke: "#ffffff1a" }}
                 tickLine={false}
-                interval={Math.max(0, Math.ceil(rows.length / 13) - 1)}
+                interval={0}
               />
               <YAxis
                 tick={{ fill: "#6b7280", fontSize: 11 }}
