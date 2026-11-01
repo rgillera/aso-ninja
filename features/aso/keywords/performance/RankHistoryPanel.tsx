@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { XMarkIcon, ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { WeeklyRankEntry } from "@/app/api/keywords/rankings-history/route";
@@ -40,16 +40,22 @@ function formatMonthLong(month: string): string {
   return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
-// One bar per calendar month, spanning that month's best to worst weekly
-// rank. `weeks` keeps only the weeks the plan can see, so a month that's
-// half inside the locked stretch shows just its unlocked half; `locked` is
-// a month with no unlocked weeks at all.
+// One point per calendar month, like Volume History: the median of that
+// month's weekly ranks. `weeks` keeps only the weeks the plan can see, so a
+// month that's half inside the locked stretch shows just its unlocked half;
+// `locked` is a month with no unlocked weeks at all.
 type MonthlyRankEntry = {
   month: string; // "2026-08"
   weeks: WeeklyRankEntry[];
-  range: [number, number] | null; // [best, worst]; null = nothing to draw
+  position: number | null; // null = nothing to draw
   locked: boolean;
 };
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid];
+}
 
 // Weeks are bucketed by the month their Monday falls in. The ~52-week
 // window spills into a 13th partial month at the front, so only the last
@@ -70,7 +76,7 @@ function toMonthly(weekly: WeeklyRankEntry[], lockedWeeks: number): MonthlyRankE
     return {
       month,
       weeks,
-      range: ranks.length ? [Math.min(...ranks), Math.max(...ranks)] : null,
+      position: ranks.length ? median(ranks) : null,
       locked: !anyUnlocked,
     };
   });
@@ -89,15 +95,13 @@ function yAxisScale(max: number): { domain: [number, number]; ticks: number[] } 
   return { domain: [1, end], ticks };
 }
 
-// A month whose best and worst week match would be a zero-height bar, so
-// every bar gets a minimum height, centered on its real span.
-function rangeBarShape(props: unknown) {
-  const { x, y, width, height } = props as { x: number; y: number; width: number; height: number };
-  const top = Math.min(y, y + height);
-  const h = Math.abs(height);
-  const minH = 4;
-  const drawH = Math.max(h, minH);
-  return <rect x={x} y={top - (drawH - h) / 2} width={width} height={drawH} rx={Math.min(3, width / 2)} fill="#818cf8" />;
+function dotShape(props: unknown) {
+  const { cx, cy, payload } = props as { cx: number; cy: number; payload: { position: number | null } };
+  // Nothing to draw for a month before this keyword's first-ever snapshot.
+  // connectNulls={false} on the Line already breaks the line itself there;
+  // this just keeps a dot from appearing at that gap too.
+  if (payload.position == null) return <></>;
+  return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
 }
 
 export function RankHistoryPanel({ term, storeId, store, country, onClose, inline, unranked = false }: Props) {
@@ -147,8 +151,10 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
     : `${unlockedMonths === 1 ? "This month" : `Last ${unlockedMonths} months`} · earlier history locked`;
 
   // Locked weeks never make it into `months` (see toMonthly), so neither
-  // the bars nor the y-axis scale can hint at a rank the plan can't see.
-  const worstShown = months.reduce((m, r) => Math.max(m, r.range?.[1] ?? 0), 0);
+  // the line nor the y-axis scale can hint at a rank the plan can't see.
+  // The axis fits the worst single week, not just the medians, so the
+  // tooltip's weekly ranks always sit inside what the chart shows.
+  const worstShown = months.reduce((m, r) => Math.max(m, ...r.weeks.map((w) => w.position ?? 0)), 0);
   const yScale = yAxisScale(worstShown);
   const hasUntrackedGap = months.some((m) => m.weeks.some((w) => w.position == null));
 
@@ -162,14 +168,15 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
     );
   }
 
-  // The month's best-to-worst span, then each of its weeks. A locked month
+  // The month's rank, then its weeks from best to worst. A locked month
   // only says so; its weeks were never handed to the chart.
   function tooltipContent(props: unknown) {
     const { active, payload } = props as { active?: boolean; payload?: { payload: MonthlyRankEntry }[] };
     if (!active || !payload || !payload.length) return null;
     const entry = payload[0].payload;
-    const best = entry.range?.[0];
-    const worst = entry.range?.[1];
+    const tracked = entry.weeks
+      .filter((w): w is WeeklyRankEntry & { position: number } => w.position != null)
+      .sort((a, b) => a.position - b.position);
     return (
       <div className="min-w-40 rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
         <p className="text-gray-400 light:text-gray-600">{formatMonthLong(entry.month)}</p>
@@ -177,31 +184,18 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
           <p className="mt-0.5 flex items-center gap-1 text-violet-400 light:text-violet-700">
             <LockClosedIcon className="size-3" /> Upgrade to see this
           </p>
-        ) : !entry.range ? (
+        ) : entry.position == null ? (
           <p className="mt-0.5 text-gray-200 light:text-gray-800">Not tracked yet</p>
         ) : (
           <>
             <p className="mt-0.5 text-gray-200 light:text-gray-800">
-              {best === worst ? "Rank " : "Rank range "}
-              <span className="font-semibold">{best === worst ? `#${best}` : `#${best} to #${worst}`}</span>
+              Rank: <span className="font-semibold">#{entry.position}</span>
             </p>
             <ul className="mt-1.5 flex flex-col gap-0.5 border-t border-white/[0.07] light:border-black/[0.08] pt-1.5">
-              {entry.weeks.map((w) => (
+              {tracked.map((w) => (
                 <li key={w.week} className="flex items-center justify-between gap-4">
                   <span className="text-gray-500">Week of {formatDay(w.week)}</span>
-                  <span
-                    className={
-                      w.position == null
-                        ? "text-gray-600 light:text-gray-400"
-                        : best !== worst && w.position === best
-                          ? "font-semibold text-emerald-400 light:text-emerald-700"
-                          : best !== worst && w.position === worst
-                            ? "font-semibold text-rose-400 light:text-rose-700"
-                            : "text-gray-200 light:text-gray-800"
-                    }
-                  >
-                    {w.position == null ? "n/a" : `#${w.position}`}
-                  </span>
+                  <span className="font-medium text-gray-200 light:text-gray-800">#{w.position}</span>
                 </li>
               ))}
             </ul>
@@ -217,7 +211,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
         <div className="flex h-64 items-center justify-center text-xs text-gray-500">
           Loading rank history…
         </div>
-      ) : months.length === 0 || (unranked && !months.some((m) => m.range)) ? (
+      ) : months.length === 0 || (unranked && !months.some((m) => m.position != null)) ? (
         <div className={`flex ${inline ? "h-40" : "h-64"} flex-col items-center justify-center text-center px-6`}>
           <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
           <p className="text-sm font-medium text-gray-400 light:text-gray-600">
@@ -249,7 +243,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
         <div className="flex flex-col gap-3">
           <div className="relative">
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={months} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+              <LineChart data={months} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                 <XAxis
                   dataKey="month"
@@ -271,10 +265,9 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
                   width={36}
                   tickFormatter={(v) => `#${v}`}
                 />
-                <Tooltip content={tooltipContent} cursor={{ fill: "#ffffff08" }} />
-                {/* A [best, worst] pair per month draws a floating bar between the two. */}
-                <Bar dataKey="range" name="Rank" maxBarSize={inline ? 14 : 18} shape={rangeBarShape} isAnimationActive={false} />
-              </BarChart>
+                <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
+                <Line type="linear" dataKey="position" name="Rank" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
+              </LineChart>
             </ResponsiveContainer>
 
             {lockedCount > 0 && (
@@ -297,7 +290,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
           </div>
 
           <p className="text-[10px] text-gray-600 light:text-gray-400 text-center">
-            {windowLabel} · best to worst weekly rank each month
+            {windowLabel} · monthly median rank
           </p>
 
           {hasUntrackedGap && firstRecordedOn && (
