@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { XMarkIcon, ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { WeeklyRankEntry } from "@/app/api/keywords/rankings-history/route";
@@ -30,6 +30,52 @@ function formatDay(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatMonth(month: string): string {
+  const d = new Date(month + "-01T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "short" });
+}
+
+function formatMonthLong(month: string): string {
+  const d = new Date(month + "-01T00:00:00");
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+// One bar per calendar month, spanning that month's best to worst weekly
+// rank. `weeks` keeps only the weeks the plan can see, so a month that's
+// half inside the locked stretch shows just its unlocked half; `locked` is
+// a month with no unlocked weeks at all.
+type MonthlyRankEntry = {
+  month: string; // "2026-08"
+  weeks: WeeklyRankEntry[];
+  range: [number, number] | null; // [best, worst]; null = nothing to draw
+  locked: boolean;
+};
+
+// Weeks are bucketed by the month their Monday falls in. The ~52-week
+// window spills into a 13th partial month at the front, so only the last
+// REPORT_MONTHS are kept, matching Volume History's month count.
+function toMonthly(weekly: WeeklyRankEntry[], lockedWeeks: number): MonthlyRankEntry[] {
+  const byMonth = new Map<string, { weeks: WeeklyRankEntry[]; anyUnlocked: boolean }>();
+  weekly.forEach((w, i) => {
+    const key = w.week.slice(0, 7);
+    const bucket = byMonth.get(key) ?? { weeks: [], anyUnlocked: false };
+    if (i >= lockedWeeks) {
+      bucket.weeks.push(w);
+      bucket.anyUnlocked = true;
+    }
+    byMonth.set(key, bucket);
+  });
+  return [...byMonth.entries()].slice(-REPORT_MONTHS).map(([month, { weeks, anyUnlocked }]) => {
+    const ranks = weeks.map((w) => w.position).filter((p): p is number => p != null);
+    return {
+      month,
+      weeks,
+      range: ranks.length ? [Math.min(...ranks), Math.max(...ranks)] : null,
+      locked: !anyUnlocked,
+    };
+  });
+}
+
 // Ranks start at #1 (there's no #0), so the axis does too. Ticks are #1
 // plus round multiples of a step sized to the worst rank shown, with the top
 // rounded up to the next one, so labels read #1, #5, #10... instead of
@@ -43,14 +89,15 @@ function yAxisScale(max: number): { domain: [number, number]; ticks: number[] } 
   return { domain: [1, end], ticks };
 }
 
-function dotShape(props: unknown) {
-  const { cx, cy, payload } = props as { cx: number; cy: number; payload: { position: number | null } };
-  // Nothing to draw before this keyword's first-ever snapshot, or across the
-  // locked leading stretch — see `firstRecordedOn` and `lockedCount` below.
-  // connectNulls={false} on the Line already breaks the line itself there;
-  // this just keeps a dot from appearing at that gap too.
-  if (payload.position == null) return <></>;
-  return <circle cx={cx} cy={cy} r={3} fill="#818cf8" />;
+// A month whose best and worst week match would be a zero-height bar, so
+// every bar gets a minimum height, centered on its real span.
+function rangeBarShape(props: unknown) {
+  const { x, y, width, height } = props as { x: number; y: number; width: number; height: number };
+  const top = Math.min(y, y + height);
+  const h = Math.abs(height);
+  const minH = 4;
+  const drawH = Math.max(h, minH);
+  return <rect x={x} y={top - (drawH - h) / 2} width={width} height={drawH} rx={Math.min(3, width / 2)} fill="#818cf8" />;
 }
 
 export function RankHistoryPanel({ term, storeId, store, country, onClose, inline, unranked = false }: Props) {
@@ -89,8 +136,9 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
   // Inline (Keyword Research's Performance tab) draws just the plan's
   // unlocked weeks, with no locked stretch or upgrade prompt.
   const weekly = inline ? allWeekly.slice(hiddenCount) : allWeekly;
-  const lockedCount = inline ? 0 : hiddenCount;
-  const currentIndex = weekly.length - 1;
+  const months = toMonthly(weekly, inline ? 0 : hiddenCount);
+  const lockedCount = months.filter((m) => m.locked).length;
+  const currentIndex = months.length - 1;
   // With only the current month unlocked there's barely a trend to show, so
   // the whole panel is the lock screen — same as Volume History.
   const fullyLocked = lockedCount > 0 && unlockedMonths <= 1;
@@ -98,44 +146,66 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
     ? `Last ${unlockedMonths} month${unlockedMonths === 1 ? "" : "s"}`
     : `${unlockedMonths === 1 ? "This month" : `Last ${unlockedMonths} months`} · earlier history locked`;
 
-  // Real values before the plan's unlocked window stay in `weekly` (for the
-  // tooltip to explain what's there) but are nulled out for the line/dots
-  // themselves, so the chart doesn't draw through the locked stretch —
-  // exactly like it already doesn't draw before `firstRecordedOn`.
-  const chartData = weekly.map((w, i) => (i < lockedCount ? { ...w, position: null } : w));
-  const weeklyMax = weekly.reduce((m, r) => Math.max(m, r.position ?? 0), 0);
-  const yScale = yAxisScale(weeklyMax);
-  const hasUntrackedGap = weekly.some((w, i) => i >= lockedCount && w.position == null);
+  // Locked weeks never make it into `months` (see toMonthly), so neither
+  // the bars nor the y-axis scale can hint at a rank the plan can't see.
+  const worstShown = months.reduce((m, r) => Math.max(m, r.range?.[1] ?? 0), 0);
+  const yScale = yAxisScale(worstShown);
+  const hasUntrackedGap = months.some((m) => m.weeks.some((w) => w.position == null));
 
   function axisTick(props: unknown) {
     const { x, y, payload, index } = props as { x: number; y: number; payload: { value: string }; index: number };
     const isCurrent = index === currentIndex;
     return (
       <text x={x} y={y + 12} textAnchor="middle" fontSize={11} fill={isCurrent ? "#e5e7eb" : "#6b7280"} fontWeight={isCurrent ? 600 : 400}>
-        {formatDay(payload.value)}
+        {formatMonth(payload.value)}
       </text>
     );
   }
 
-  // Never reveal a locked week's real rank through the tooltip, even though
-  // there's no dot there to hover.
+  // The month's best-to-worst span, then each of its weeks. A locked month
+  // only says so; its weeks were never handed to the chart.
   function tooltipContent(props: unknown) {
-    const { active, payload } = props as { active?: boolean; payload?: { payload: WeeklyRankEntry }[] };
+    const { active, payload } = props as { active?: boolean; payload?: { payload: MonthlyRankEntry }[] };
     if (!active || !payload || !payload.length) return null;
     const entry = payload[0].payload;
-    const index = weekly.findIndex((w) => w.week === entry.week);
-    const isLocked = index < lockedCount;
+    const best = entry.range?.[0];
+    const worst = entry.range?.[1];
     return (
-      <div className="rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
-        <p className="text-gray-400 light:text-gray-600">Week of {formatDay(entry.recorded_on)}</p>
-        {isLocked ? (
+      <div className="min-w-40 rounded-lg border border-white/10 bg-[#141417] light:bg-white px-3 py-2 text-xs">
+        <p className="text-gray-400 light:text-gray-600">{formatMonthLong(entry.month)}</p>
+        {entry.locked ? (
           <p className="mt-0.5 flex items-center gap-1 text-violet-400 light:text-violet-700">
             <LockClosedIcon className="size-3" /> Upgrade to see this
           </p>
+        ) : !entry.range ? (
+          <p className="mt-0.5 text-gray-200 light:text-gray-800">Not tracked yet</p>
         ) : (
-          <p className="mt-0.5 text-gray-200 light:text-gray-800">
-            Rank: <span className="font-semibold">{weekly[index]?.position == null ? "Not tracked yet" : `#${weekly[index].position}`}</span>
-          </p>
+          <>
+            <p className="mt-0.5 text-gray-200 light:text-gray-800">
+              {best === worst ? "Rank " : "Rank range "}
+              <span className="font-semibold">{best === worst ? `#${best}` : `#${best} to #${worst}`}</span>
+            </p>
+            <ul className="mt-1.5 flex flex-col gap-0.5 border-t border-white/[0.07] light:border-black/[0.08] pt-1.5">
+              {entry.weeks.map((w) => (
+                <li key={w.week} className="flex items-center justify-between gap-4">
+                  <span className="text-gray-500">Week of {formatDay(w.week)}</span>
+                  <span
+                    className={
+                      w.position == null
+                        ? "text-gray-600 light:text-gray-400"
+                        : best !== worst && w.position === best
+                          ? "font-semibold text-emerald-400 light:text-emerald-700"
+                          : best !== worst && w.position === worst
+                            ? "font-semibold text-rose-400 light:text-rose-700"
+                            : "text-gray-200 light:text-gray-800"
+                    }
+                  >
+                    {w.position == null ? "n/a" : `#${w.position}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </div>
     );
@@ -147,7 +217,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
         <div className="flex h-64 items-center justify-center text-xs text-gray-500">
           Loading rank history…
         </div>
-      ) : weekly.length === 0 || (unranked && !weekly.some((w) => w.position != null)) ? (
+      ) : months.length === 0 || (unranked && !months.some((m) => m.range)) ? (
         <div className={`flex ${inline ? "h-40" : "h-64"} flex-col items-center justify-center text-center px-6`}>
           <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
           <p className="text-sm font-medium text-gray-400 light:text-gray-600">
@@ -179,15 +249,14 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
         <div className="flex flex-col gap-3">
           <div className="relative">
             <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
+              <BarChart data={months} margin={{ top: 8, right: 24, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                 <XAxis
-                  dataKey="recorded_on"
+                  dataKey="month"
                   tick={axisTick}
                   axisLine={{ stroke: "#ffffff1a" }}
                   tickLine={false}
-                  // Fewer labels in the narrow inline card, or they run together.
-                  interval={Math.max(0, Math.ceil(weekly.length / (inline ? 6 : 13)) - 1)}
+                  interval={0}
                 />
                 <YAxis
                   allowDecimals={false}
@@ -202,13 +271,14 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
                   width={36}
                   tickFormatter={(v) => `#${v}`}
                 />
-                <Tooltip content={tooltipContent} cursor={{ stroke: "#ffffff20" }} />
-                <Line type="linear" dataKey="position" name="Rank" stroke="#818cf8" strokeWidth={2} dot={dotShape} activeDot={{ r: 4 }} connectNulls={false} isAnimationActive={false} />
-              </LineChart>
+                <Tooltip content={tooltipContent} cursor={{ fill: "#ffffff08" }} />
+                {/* A [best, worst] pair per month draws a floating bar between the two. */}
+                <Bar dataKey="range" name="Rank" maxBarSize={inline ? 14 : 18} shape={rangeBarShape} isAnimationActive={false} />
+              </BarChart>
             </ResponsiveContainer>
 
             {lockedCount > 0 && (
-              <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / weekly.length) * 100}%` }}>
+              <div className="absolute inset-y-0 left-0 flex flex-col items-center justify-center gap-2 text-center px-4" style={{ width: `${(lockedCount / months.length) * 100}%` }}>
                 <LockClosedIcon className="size-5 text-violet-400 light:text-violet-700" />
                 <p className="text-sm font-semibold text-white light:text-gray-900">Earlier rank trend locked</p>
                 <p className="text-xs text-gray-400 light:text-gray-600 max-w-[16rem]">
@@ -227,7 +297,7 @@ export function RankHistoryPanel({ term, storeId, store, country, onClose, inlin
           </div>
 
           <p className="text-[10px] text-gray-600 light:text-gray-400 text-center">
-            {windowLabel} · weekly median rank
+            {windowLabel} · best to worst weekly rank each month
           </p>
 
           {hasUntrackedGap && firstRecordedOn && (
