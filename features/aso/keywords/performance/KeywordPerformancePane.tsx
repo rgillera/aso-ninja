@@ -139,8 +139,8 @@ export function KeywordPerformancePane({
             description={`See how "${row.keyword}" is doing day by day, not just today.`}
             benefits={[
               "Search visibility: est. impressions/day from this keyword",
-              "Rank history: where your app ranked each week",
               "Volume history: how search demand is trending",
+              "Rank history: where your app ranked each week",
             ]}
           />
         </div>
@@ -160,10 +160,10 @@ export function KeywordPerformancePane({
 
       {/* Keyed by term: the panels fetch on mount (Downloads only ever
           does), so a new keyword gets fresh ones. */}
+      {!historyLocked && <VolumeHistoryPanel key={`volume-${row.keyword}`} inline term={row.keyword} store={app.store} country={country} />}
       {!historyLocked && app.store_id && (
         <RankHistoryPanel key={`rank-${row.keyword}`} inline unranked={!row.loading && row.rank === null} term={row.keyword} storeId={app.store_id} store={app.store} country={country} />
       )}
-      {!historyLocked && <VolumeHistoryPanel key={`volume-${row.keyword}`} inline term={row.keyword} store={app.store} country={country} />}
       {!historyLocked && showDownloads && app.id && (
         <DownloadsHistoryPanel key={`downloads-${row.keyword}`} inline term={row.keyword} appId={app.id} store={app.store} />
       )}
