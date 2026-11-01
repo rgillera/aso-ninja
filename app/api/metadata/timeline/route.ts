@@ -6,6 +6,7 @@ import { fetchAndroidStoreData } from "@/libs/store/googleplay";
 import { recordMetadataSnapshot, fetchMetadataSnapshots, type MetadataListingKey, type MetadataSnapshotRow } from "@/libs/store/metadata-snapshots";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
+import { historyDaysFor } from "@/features/aso/metadata/timeline/constants";
 import type { UpdateEvent, FieldUpdate, ScreenshotItem, CompetitorTimeline } from "@/features/aso/metadata/timeline/types";
 
 function textField(field: string, before: string | null, after: string | null): FieldUpdate | null {
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
   const country     = searchParams.get("country") ?? "US";
   const storeId     = searchParams.get("storeId") ?? "";
   const bundleId    = searchParams.get("bundleId") ?? "";
-  const from        = searchParams.get("from") ?? "";
+  const fromParam   = searchParams.get("from") ?? "";
   const to          = searchParams.get("to") ?? "";
 
   if (!appId) return NextResponse.json({ error: "appId is required" }, { status: 400 });
@@ -97,6 +98,15 @@ export async function GET(request: NextRequest) {
   const planState = workspaceId ? await getWorkspacePlanState(workspaceId) : null;
   const planSlug = planState && !("error" in planState) ? planState.plan.slug : "free";
   if (!isPlanAtLeast(planSlug, "pro")) return NextResponse.json({ events: [] });
+
+  // Clamp to the plan's history window (the UI does too; this is the
+  // enforcement). One extra day so the oldest visible day can still be
+  // diffed against the snapshot before it.
+  const historyDays = historyDaysFor(planSlug);
+  const earliest = historyDays === null
+    ? ""
+    : new Date(Date.now() - (historyDays + 1) * 86_400_000).toISOString().slice(0, 10);
+  const from = fromParam && fromParam < earliest ? earliest : fromParam;
 
   const storeData = store === "ios" && storeId
     ? await fetchIosStoreData(storeId, country, { fresh: true })

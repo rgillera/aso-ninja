@@ -65,6 +65,7 @@ export const PLANS: Plan[] = [
       "1 workspace, 3 seats",
       "5 competitors per app",
       "6 months of history",
+      "Daily timeline of your app's and competitors' listing changes",
       "Keyword Inspector",
       "Est. searches, impressions & downloads per keyword",
       "Relevancy & opportunity scoring (1,000 keywords)",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { CalendarIcon, InformationCircleIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
+import { CalendarIcon, InformationCircleIcon, DevicePhoneMobileIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { App } from "@/libs/contracts";
 import { countryFlag } from "@/libs/countries";
 import { FollowButton, StoreLinkButton } from "@/features/aso/AppHeader";
@@ -12,6 +12,8 @@ type Props = {
   rangeStart: Date;
   rangeEnd: Date;
   onRangeChange: (start: Date, end: Date) => void;
+  // The plan's history window in days; null = no limit.
+  historyDays: number | null;
 };
 
 const PRESETS = [
@@ -21,12 +23,13 @@ const PRESETS = [
   { label: "1Y", days: 365 },
 ];
 
-export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Props) {
+export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange, historyDays }: Props) {
   const [open, setOpen] = useState(false);
   const [draftStart, setDraftStart] = useState(toDateStr(rangeStart));
   const [draftEnd, setDraftEnd] = useState(toDateStr(rangeEnd));
   const ref = useRef<HTMLDivElement>(null);
   const todayStr = toDateStr(today());
+  const earliestStr = historyDays === null ? "" : toDateStr(daysAgo(historyDays));
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -42,7 +45,7 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
     setOpen(v => !v);
   }
 
-  const draftValid = !!draftStart && !!draftEnd && draftStart <= draftEnd && draftEnd <= todayStr;
+  const draftValid = !!draftStart && !!draftEnd && draftStart <= draftEnd && draftEnd <= todayStr && draftStart >= earliestStr;
 
   function apply() {
     if (!draftValid) return;
@@ -78,25 +81,33 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <h1 className="text-sm font-semibold text-white light:text-gray-900">Timeline</h1>
-          <span title="The store listing is saved once a day for your app and its competitors. A dot marks a day something changed.">
+          <span title="We check your app and its competitors on the store every day. A dot marks a day something changed; click it to see what.">
             <InformationCircleIcon className="size-4 text-gray-500" />
           </span>
         </div>
 
         <div className="flex items-center rounded-lg bg-[#141417] light:bg-white p-0.5">
-          {PRESETS.map(p => (
-            <button
-              key={p.label}
-              onClick={() => onRangeChange(daysAgo(p.days), today())}
-              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                activePreset?.label === p.label
-                  ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
-                  : "text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+          {PRESETS.map(p => {
+            const locked = historyDays !== null && p.days > historyDays;
+            return (
+              <button
+                key={p.label}
+                onClick={() => onRangeChange(daysAgo(p.days), today())}
+                disabled={locked}
+                title={locked ? "Upgrade to Pro+ for 1 year of history" : undefined}
+                className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  activePreset?.label === p.label
+                    ? "bg-white/10 light:bg-indigo-50 text-white light:text-indigo-700"
+                    : locked
+                      ? "text-gray-600 light:text-gray-400 cursor-not-allowed"
+                      : "text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"
+                }`}
+              >
+                {locked && <LockClosedIcon className="size-3" />}
+                {p.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="relative" ref={ref}>
@@ -115,7 +126,7 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
               <p className="text-xs font-semibold text-white light:text-gray-900">Custom range</p>
               <div>
                 <label className="block text-[10px] text-gray-500 mb-1">From</label>
-                <input type="date" value={draftStart} max={draftEnd || todayStr} onChange={e => setDraftStart(e.target.value)} className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-1.5 text-xs text-white light:text-gray-900 [color-scheme:dark] light:[color-scheme:light] focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                <input type="date" value={draftStart} min={earliestStr || undefined} max={draftEnd || todayStr} onChange={e => setDraftStart(e.target.value)} className="w-full rounded-lg bg-[#0a0a0c] light:bg-gray-50 px-3 py-1.5 text-xs text-white light:text-gray-900 [color-scheme:dark] light:[color-scheme:light] focus:outline-none focus:ring-1 focus:ring-indigo-500" />
               </div>
               <div>
                 <label className="block text-[10px] text-gray-500 mb-1">To</label>
@@ -123,7 +134,11 @@ export function TimelineHeader({ app, rangeStart, rangeEnd, onRangeChange }: Pro
               </div>
               {!draftValid && draftStart && draftEnd && (
                 <p className="text-[10px] text-red-400 light:text-red-600">
-                  {draftEnd > todayStr ? "End date can't be in the future." : "Start date must be before the end date."}
+                  {draftEnd > todayStr
+                    ? "End date can't be in the future."
+                    : draftStart < earliestStr
+                      ? `Your plan includes ${historyDays === 365 ? "1 year" : "6 months"} of history.`
+                      : "Start date must be before the end date."}
                 </p>
               )}
               <div className="flex gap-2 pt-1">

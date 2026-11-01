@@ -6,7 +6,7 @@ import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import type { TimelineProps, UpdateEvent, CompetitorTimeline, SelectedUpdate, TimelineRow } from "./types";
-import { ALL_FIELDS, DAYS_SHOWN } from "./constants";
+import { ALL_FIELDS, DAYS_SHOWN, historyDaysFor } from "./constants";
 import { buildDates, defaultRange, toDateStr } from "./utils";
 import { TimelineHeader } from "./TimelineHeader";
 import { TimelineToolbar } from "./TimelineToolbar";
@@ -101,11 +101,11 @@ export default function Timeline({ app }: TimelineProps) {
           minPlan="pro"
           icon={ClockIcon}
           title="Timeline is a Pro feature"
-          description="Upgrade to Pro or above to see your metadata's update history."
+          description="Upgrade to Pro to see every change to your listing and your competitors' listings, day by day."
           benefits={[
-            "See every past title, subtitle, and screenshot change side by side",
-            "Compare before & after copy with word-level diffs",
-            "Learn what worked by lining updates up with rating shifts",
+            "Check your competitors every day and see exactly what they changed, and when",
+            "Track your own title, subtitle, description, and screenshot updates",
+            "Compare before and after, with changed words highlighted",
           ]}
         />
       </main>
@@ -119,6 +119,7 @@ export default function Timeline({ app }: TimelineProps) {
           rangeStart={rangeStart}
           rangeEnd={rangeEnd}
           onRangeChange={handleRangeChange}
+          historyDays={historyDaysFor(planSlug)}
         />
 
         <TimelineToolbar
@@ -149,19 +150,20 @@ export default function Timeline({ app }: TimelineProps) {
         ) : isUnfollowed ? (
           <div className="flex-1 flex flex-col items-center justify-center gap-3">
             <p className="text-xs text-gray-600 light:text-gray-400 text-center max-w-sm leading-relaxed">
-              Follow this app to start tracking its listing. It&apos;s saved once a day, along with its competitors, and changes show up from the day after.
+              Follow this app to start its timeline. We&apos;ll check it and its competitors on the store every day, and changes show up from the next day.
             </p>
             <FollowButton app={app} />
           </div>
         ) : !hasEvents ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-gray-600 light:text-gray-400 text-center max-w-sm leading-relaxed">
-              No changes in this date range yet. The listing is saved once a day for your app and its competitors, so changes show up from the day after tracking starts.
+              No changes in this date range. We check your app{competitors.length > 0 ? " and its competitors" : ""} on the store every day, and any change will show up here.
+              {competitors.length === 0 && " Add competitors to see what they change too."}
             </p>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-600 light:text-gray-400">Click a dot to compare before &amp; after</p>
+            <p className="text-xs text-gray-600 light:text-gray-400">Click a dot to see what changed</p>
           </div>
         )}
     </main>
