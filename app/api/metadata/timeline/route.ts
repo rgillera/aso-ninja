@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { createAdminClient } from "@/libs/supabase/admin";
 import { fetchIosStoreData } from "@/libs/store/appstore";
 import { fetchAndroidStoreData } from "@/libs/store/googleplay";
 import { recordMetadataSnapshot, fetchMetadataSnapshots, type MetadataListingKey, type MetadataSnapshotRow } from "@/libs/store/metadata-snapshots";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import type { UpdateEvent, FieldUpdate, ScreenshotItem } from "@/features/aso/metadata/timeline/types";
+import type { UpdateEvent, FieldUpdate, ScreenshotItem, CompetitorTimeline } from "@/features/aso/metadata/timeline/types";
 
 function textField(field: string, before: string | null, after: string | null): FieldUpdate | null {
   if (before == null || after == null || before === after) return null;
@@ -117,13 +118,45 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const snapshots = from && to ? await fetchMetadataSnapshots(supabase, listing, from, to) : [];
+  if (!from || !to) return NextResponse.json({ events: [], competitors: [] });
 
+  // Competitors are only snapshotted by the refresh-metadata cron (an Apple
+  // fetch per competitor on every page view would be too slow). The RLS
+  // select of app_competitors is the access check; their snapshots are read
+  // with the admin client, since metadata_snapshots' RLS only covers
+  // listings the workspace follows.
+  const { data: competitorRows } = await supabase
+    .from("app_competitors")
+    .select("store_id, bundle_id, name, icon_url")
+    .eq("app_id", appId)
+    .order("created_at", { ascending: true });
+  const admin = createAdminClient();
+
+  const [events, ...competitorEvents] = await Promise.all([
+    fetchMetadataSnapshots(supabase, listing, from, to).then(toEvents),
+    ...(competitorRows ?? []).map((c) => {
+      const competitorBundleId = store === "android" ? c.store_id : c.bundle_id;
+      // An iOS competitor the cron hasn't fetched yet has no history.
+      if (!competitorBundleId) return Promise.resolve([]);
+      return fetchMetadataSnapshots(admin, { store, storeId: c.store_id, bundleId: competitorBundleId, country }, from, to).then(toEvents);
+    }),
+  ]);
+
+  const competitors: CompetitorTimeline[] = (competitorRows ?? []).map((c, i) => ({
+    storeId: c.store_id,
+    name: c.name,
+    iconUrl: c.icon_url,
+    events: competitorEvents[i],
+  }));
+
+  return NextResponse.json({ events, competitors });
+}
+
+function toEvents(snapshots: MetadataSnapshotRow[]): UpdateEvent[] {
   const events: UpdateEvent[] = [];
   for (let i = 1; i < snapshots.length; i++) {
     const event = diffSnapshots(snapshots[i - 1], snapshots[i]);
     if (event) events.push(event);
   }
-
-  return NextResponse.json({ events });
+  return events;
 }

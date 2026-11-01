@@ -5,7 +5,7 @@ import { ClockIcon } from "@heroicons/react/24/outline";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import type { TimelineProps, UpdateEvent } from "./types";
+import type { TimelineProps, UpdateEvent, CompetitorTimeline, SelectedUpdate, TimelineRow } from "./types";
 import { ALL_FIELDS, DAYS_SHOWN } from "./constants";
 import { buildDates, defaultRange, toDateStr } from "./utils";
 import { TimelineHeader } from "./TimelineHeader";
@@ -22,22 +22,23 @@ export default function Timeline({ app }: TimelineProps) {
   const [rangeEnd, setRangeEnd] = useState(defEnd);
   const [dateOffset, setDateOffset] = useState(0);
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(ALL_FIELDS));
-  const [selectedEvent, setSelectedEvent] = useState<UpdateEvent | null>(null);
+  const [selected, setSelected] = useState<SelectedUpdate | null>(null);
   const [showDiff, setShowDiff] = useState(true);
   const [events, setEvents] = useState<UpdateEvent[]>([]);
+  const [competitors, setCompetitors] = useState<CompetitorTimeline[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Reset selection when app changes
-  useEffect(() => { setSelectedEvent(null); }, [app.id]);
+  useEffect(() => { setSelected(null); }, [app.id]);
 
   const allDates = useMemo(() => buildDates(rangeStart, rangeEnd), [rangeStart, rangeEnd]);
 
   // Reposition window to end when range changes; drop selection if out of range
   useEffect(() => {
     setDateOffset(Math.max(0, allDates.length - DAYS_SHOWN));
-    setSelectedEvent(prev => {
+    setSelected(prev => {
       if (!prev) return null;
-      return (prev.date >= toDateStr(rangeStart) && prev.date <= toDateStr(rangeEnd)) ? prev : null;
+      return (prev.event.date >= toDateStr(rangeStart) && prev.event.date <= toDateStr(rangeEnd)) ? prev : null;
     });
   }, [allDates.length, rangeStart, rangeEnd]);
 
@@ -59,18 +60,24 @@ export default function Timeline({ app }: TimelineProps) {
       });
       fetch(`/api/metadata/timeline?${params}`)
         .then(r => r.json())
-        .then((data: { events?: UpdateEvent[] }) => setEvents(data.events ?? []))
-        .catch(() => setEvents([]))
+        .then((data: { events?: UpdateEvent[]; competitors?: CompetitorTimeline[] }) => {
+          setEvents(data.events ?? []);
+          setCompetitors(data.competitors ?? []);
+        })
+        .catch(() => { setEvents([]); setCompetitors([]); })
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
   }, [app.id, app.workspace_id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked]);
 
-  const eventByDate = useMemo(() => {
-    const m = new Map<string, UpdateEvent>();
-    for (const e of events) m.set(e.date, e);
-    return m;
-  }, [events]);
+  const rows = useMemo<TimelineRow[]>(() => {
+    const byDate = (list: UpdateEvent[]) => new Map(list.map(e => [e.date, e]));
+    return [
+      { key: "app", name: app.name, iconUrl: app.icon_url, isCompetitor: false, eventByDate: byDate(events) },
+      ...competitors.map(c => ({ key: c.storeId, name: c.name, iconUrl: c.iconUrl, isCompetitor: true, eventByDate: byDate(c.events) })),
+    ];
+  }, [app.name, app.icon_url, events, competitors]);
+  const hasEvents = rows.some(r => r.eventByDate.size > 0);
 
   function toggleField(f: string) {
     setSelectedFields(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n; });
@@ -119,35 +126,35 @@ export default function Timeline({ app }: TimelineProps) {
         />
 
         <TimelineGrid
-          app={app}
+          rows={rows}
           allDates={allDates}
           dateOffset={dateOffset}
           onOffsetChange={setDateOffset}
-          eventByDate={eventByDate}
-          selectedEvent={selectedEvent}
-          onSelectEvent={setSelectedEvent}
+          selected={selected}
+          onSelect={setSelected}
         />
 
-        {selectedEvent ? (
+        {selected ? (
           <BeforeAfterPanel
-            event={selectedEvent}
+            event={selected.event}
+            appName={selected.rowName}
             selectedFields={selectedFields}
             showDiff={showDiff}
             onShowDiffChange={setShowDiff}
           />
-        ) : loading && events.length === 0 ? (
+        ) : loading && !hasEvents ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-gray-600 light:text-gray-400">Loading update history…</p>
           </div>
-        ) : events.length === 0 ? (
+        ) : !hasEvents ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-gray-600 light:text-gray-400 text-center max-w-sm leading-relaxed">
-              No changes recorded yet — history builds up automatically once the app is followed.
+              No changes in this date range yet. The listing is saved once a day for your app and its competitors, so changes show up from the day after tracking starts.
             </p>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <p className="text-xs text-gray-600 light:text-gray-400">Click an update dot on the timeline to compare before &amp; after</p>
+            <p className="text-xs text-gray-600 light:text-gray-400">Click a dot to compare before &amp; after</p>
           </div>
         )}
     </main>

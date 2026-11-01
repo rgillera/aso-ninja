@@ -161,6 +161,7 @@ async function fetchIosStoreDataImpl(storeId: string, country: string, fresh = f
   const subtitle = (page.html ? extractIosSubtitle(page.html, r.trackName ?? "", String(r.trackId ?? "")) : "") || ((r.subtitle ?? "") as string);
   return {
     name: (r.trackName ?? "") as string,
+    bundleId: r.bundleId as string | undefined,
     screenshotUrls: page.screenshotUrls,
     subtitle,
     description: (r.description ?? "") as string,

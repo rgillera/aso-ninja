@@ -1,5 +1,7 @@
 export type StoreData = {
   name?: string;
+  // iOS only (from the lookup API); on Android the package name is the store id.
+  bundleId?: string;
   screenshotUrls: string[];
   subtitle: string;
   description: string;

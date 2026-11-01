@@ -2,15 +2,18 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import type { UpdateEvent } from "./types";
 import { WordDiff } from "./WordDiff";
 import { ScreenshotComparison } from "./ScreenshotComparison";
+import { fromDateStr } from "./utils";
 
 type Props = {
   event: UpdateEvent;
+  // Which app changed: yours or a competitor's.
+  appName: string;
   selectedFields: Set<string>;
   showDiff: boolean;
   onShowDiffChange: (v: boolean) => void;
 };
 
-export function BeforeAfterPanel({ event, selectedFields, showDiff, onShowDiffChange }: Props) {
+export function BeforeAfterPanel({ event, appName, selectedFields, showDiff, onShowDiffChange }: Props) {
   const panelFields = event.fields.filter(f => selectedFields.has(f.field));
 
   return (
@@ -20,8 +23,10 @@ export function BeforeAfterPanel({ event, selectedFields, showDiff, onShowDiffCh
         <div className="text-center text-sm font-semibold text-gray-300 light:text-gray-700">
           Before <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 inline ml-0.5 -mt-0.5" />
         </div>
-        <div className="flex justify-center">
-          <span className="rounded-full bg-teal-500/15 text-teal-400 light:text-teal-700 ring-1 ring-teal-500/30 px-4 py-0.5 text-xs font-semibold">Updates</span>
+        <div className="flex justify-center min-w-0">
+          <span className="truncate rounded-full bg-teal-500/15 text-teal-400 light:text-teal-700 ring-1 ring-teal-500/30 px-4 py-0.5 text-xs font-semibold">
+            {appName} &middot; {fromDateStr(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          </span>
         </div>
         <div className="flex items-center justify-center gap-4">
           <span className="text-sm font-semibold text-gray-300 light:text-gray-700">

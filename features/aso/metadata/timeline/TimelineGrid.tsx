@@ -2,32 +2,30 @@
 
 import { useMemo } from "react";
 import { ChevronLeftIcon, ChevronRightIcon, DevicePhoneMobileIcon } from "@heroicons/react/24/outline";
-import type { App } from "@/libs/contracts";
-import type { UpdateEvent } from "./types";
+import type { SelectedUpdate, TimelineRow } from "./types";
 import { COL_W, LABEL_W, DAYS_SHOWN } from "./constants";
 import { toDateStr } from "./utils";
 
 type Props = {
-  app: App;
+  rows: TimelineRow[];
   allDates: Date[];
   dateOffset: number;
   onOffsetChange: (offset: number) => void;
-  eventByDate: Map<string, UpdateEvent>;
-  selectedEvent: UpdateEvent | null;
-  onSelectEvent: (event: UpdateEvent | null) => void;
+  selected: SelectedUpdate | null;
+  onSelect: (selected: SelectedUpdate | null) => void;
 };
 
-function AppIcon({ app }: { app: App }) {
-  return app.icon_url
-    ? <img src={app.icon_url} alt={app.name} className="size-8 rounded-xl object-cover" />
+function RowIcon({ row }: { row: TimelineRow }) {
+  return row.iconUrl
+    ? <img src={row.iconUrl} alt={row.name} title={row.name} className={`rounded-xl object-cover ${row.isCompetitor ? "size-7" : "size-8"}`} />
     : (
-      <div className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
+      <div title={row.name} className="size-8 rounded-xl bg-[#0a0a0c] light:bg-gray-100 flex items-center justify-center">
         <DevicePhoneMobileIcon className="size-4 text-gray-500" />
       </div>
     );
 }
 
-export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventByDate, selectedEvent, onSelectEvent }: Props) {
+export function TimelineGrid({ rows, allDates, dateOffset, onOffsetChange, selected, onSelect }: Props) {
   const visibleDates = allDates.slice(dateOffset, dateOffset + DAYS_SHOWN);
 
   const yearMonthGroups = useMemo(() => {
@@ -42,22 +40,23 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
     return { years, months };
   }, [visibleDates]);
 
+  // Days where any row changed get a brighter day number.
   const visibleEventDates = useMemo(() => {
     const s = new Set<string>();
     for (const d of visibleDates) {
       const ds = toDateStr(d);
-      if (eventByDate.has(ds)) s.add(ds);
+      if (rows.some(r => r.eventByDate.has(ds))) s.add(ds);
     }
     return s;
-  }, [visibleDates, eventByDate]);
+  }, [visibleDates, rows]);
 
   return (
-    <div className="shrink-0 relative border-b border-white/[0.07] light:border-black/[0.08] overflow-x-auto">
+    <div className="shrink-0 relative border-b border-white/[0.07] light:border-black/[0.08] overflow-x-auto max-h-[45vh] overflow-y-auto">
       {/* Prev */}
       <button
         onClick={() => onOffsetChange(Math.max(0, dateOffset - DAYS_SHOWN))}
         disabled={dateOffset === 0}
-        className="absolute left-[52px] top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
+        className="absolute left-[52px] top-[30px] z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronLeftIcon className="size-3" />
       </button>
@@ -65,7 +64,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
       <button
         onClick={() => onOffsetChange(Math.min(allDates.length - DAYS_SHOWN, dateOffset + DAYS_SHOWN))}
         disabled={dateOffset + DAYS_SHOWN >= allDates.length}
-        className="absolute right-1 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
+        className="absolute right-1 top-[30px] z-20 flex items-center justify-center size-5 rounded-full bg-[#141417] light:bg-white text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 disabled:opacity-20 transition-colors shadow-md light:shadow-black/10"
       >
         <ChevronRightIcon className="size-3" />
       </button>
@@ -92,7 +91,7 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
           <div style={{ width: LABEL_W }} className="shrink-0" />
           {visibleDates.map((d, i) => {
             const ds = toDateStr(d);
-            const isSel = selectedEvent?.date === ds;
+            const isSel = selected?.event.date === ds;
             return (
               <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center pt-1 pb-0.5 ${isSel ? "bg-white/[0.04] light:bg-black/[0.04]" : ""}`}>
                 <span className={`text-[10px] ${isSel ? "text-white light:text-gray-900 font-semibold" : visibleEventDates.has(ds) ? "text-gray-400 light:text-gray-600" : "text-gray-700 light:text-gray-300"}`}>{d.getDate()}</span>
@@ -101,36 +100,43 @@ export function TimelineGrid({ app, allDates, dateOffset, onOffsetChange, eventB
           })}
         </div>
 
-        {/* App icon row with update dots */}
-        <div className="flex items-center" style={{ height: 52 }}>
-          <div style={{ width: LABEL_W }} className="shrink-0 flex items-center justify-center">
-            <AppIcon app={app} />
+        {/* One row per app: yours first, then competitors */}
+        {rows.map((row, ri) => (
+          <div
+            key={row.key}
+            className={`flex items-center ${ri > 0 ? "border-t border-white/[0.04] light:border-black/[0.05]" : ""}`}
+            style={{ height: row.isCompetitor ? 44 : 52 }}
+          >
+            <div style={{ width: LABEL_W }} className="shrink-0 flex items-center justify-center">
+              <RowIcon row={row} />
+            </div>
+            {visibleDates.map((d, i) => {
+              const ds = toDateStr(d);
+              const event = row.eventByDate.get(ds);
+              const isSelCol = selected?.event.date === ds;
+              const isSel = isSelCol && selected?.rowKey === row.key;
+              return (
+                <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center h-full ${isSelCol ? "bg-white/[0.04] light:bg-black/[0.04]" : ""}`}>
+                  {event && (
+                    <button
+                      onClick={() => onSelect(isSel ? null : { rowKey: row.key, rowName: row.name, event })}
+                      title={`${row.name}: ${event.fields.length} field${event.fields.length !== 1 ? "s" : ""} updated`}
+                      className="group flex items-center justify-center size-6 rounded-full"
+                    >
+                      <span
+                        className={`size-2.5 rounded-full transition-all duration-150 ${
+                          isSel
+                            ? "bg-teal-300 scale-125 ring-2 ring-teal-400/40"
+                            : "bg-teal-500 group-hover:bg-teal-400 group-hover:scale-110"
+                        }`}
+                      />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          {visibleDates.map((d, i) => {
-            const ds = toDateStr(d);
-            const event = eventByDate.get(ds);
-            const isSel = selectedEvent?.date === ds;
-            return (
-              <div key={i} style={{ width: COL_W }} className={`flex items-center justify-center h-full ${isSel ? "bg-white/[0.04] light:bg-black/[0.04]" : ""}`}>
-                {event && (
-                  <button
-                    onClick={() => onSelectEvent(isSel ? null : event)}
-                    title={`${event.fields.length} field${event.fields.length !== 1 ? "s" : ""} updated`}
-                    className="group flex items-center justify-center size-6 rounded-full"
-                  >
-                    <span
-                      className={`size-2.5 rounded-full transition-all duration-150 ${
-                        isSel
-                          ? "bg-teal-300 scale-125 ring-2 ring-teal-400/40"
-                          : "bg-teal-500 group-hover:bg-teal-400 group-hover:scale-110"
-                      }`}
-                    />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        ))}
       </div>
     </div>
   );

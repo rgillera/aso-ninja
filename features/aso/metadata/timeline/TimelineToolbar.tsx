@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import {
-  ArrowDownTrayIcon,
   CheckIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
@@ -31,7 +30,7 @@ export function TimelineToolbar({ selectedFields, onToggle, onClearAll }: Props)
   const options = ALL_FIELDS.filter(f => f.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="shrink-0 flex items-center justify-between px-6 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
+    <div className="shrink-0 flex items-center px-6 py-3 border-b border-white/[0.07] light:border-black/[0.08]">
       {/* Metadata filter dropdown */}
       <div className="relative" ref={dropRef}>
         <button
@@ -76,19 +75,6 @@ export function TimelineToolbar({ selectedFields, onToggle, onClearAll }: Props)
             </div>
           </div>
         )}
-      </div>
-
-      {/* Legend + download */}
-      <div className="flex items-center gap-5">
-        <span className="flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="size-2 rounded-full bg-teal-400 shrink-0" />Update
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-gray-500">
-          <span className="h-px w-5 bg-orange-400 shrink-0" />Product Page Optimization
-        </span>
-        <button className="flex items-center justify-center rounded-lg bg-[#141417] light:bg-white p-2 text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900 transition-colors">
-          <ArrowDownTrayIcon className="size-4" />
-        </button>
       </div>
     </div>
   );
