@@ -12,10 +12,13 @@ import { TimelineHeader } from "./TimelineHeader";
 import { TimelineToolbar } from "./TimelineToolbar";
 import { TimelineGrid } from "./TimelineGrid";
 import { BeforeAfterPanel } from "./BeforeAfterPanel";
+import { FollowButton } from "@/features/aso/AppHeader";
 
 export default function Timeline({ app }: TimelineProps) {
   const planSlug = usePlanSlug();
   const isLocked = !isPlanAtLeast(planSlug, "pro");
+  // An app opened from search but not followed: nothing is recorded for it.
+  const isUnfollowed = app.id === "__preview__";
   const { start: defStart, end: defEnd } = defaultRange();
 
   const [rangeStart, setRangeStart] = useState(defStart);
@@ -23,7 +26,6 @@ export default function Timeline({ app }: TimelineProps) {
   const [dateOffset, setDateOffset] = useState(0);
   const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set(ALL_FIELDS));
   const [selected, setSelected] = useState<SelectedUpdate | null>(null);
-  const [showDiff, setShowDiff] = useState(true);
   const [events, setEvents] = useState<UpdateEvent[]>([]);
   const [competitors, setCompetitors] = useState<CompetitorTimeline[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function Timeline({ app }: TimelineProps) {
   // Fetch real before/after history — recording today's snapshot and diffing
   // it against prior snapshots happens server-side in the API route.
   useEffect(() => {
-    if (isLocked) return;
+    if (isLocked || isUnfollowed) return;
     const t = setTimeout(() => {
       setLoading(true);
       const params = new URLSearchParams({
@@ -68,7 +70,7 @@ export default function Timeline({ app }: TimelineProps) {
         .finally(() => setLoading(false));
     }, 300);
     return () => clearTimeout(t);
-  }, [app.id, app.workspace_id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked]);
+  }, [app.id, app.workspace_id, app.store, app.country, app.store_id, app.bundle_id, rangeStart, rangeEnd, isLocked, isUnfollowed]);
 
   const rows = useMemo<TimelineRow[]>(() => {
     const byDate = (list: UpdateEvent[]) => new Map(list.map(e => [e.date, e]));
@@ -139,12 +141,17 @@ export default function Timeline({ app }: TimelineProps) {
             event={selected.event}
             appName={selected.rowName}
             selectedFields={selectedFields}
-            showDiff={showDiff}
-            onShowDiffChange={setShowDiff}
           />
         ) : loading && !hasEvents ? (
           <div className="flex-1 flex items-center justify-center">
             <p className="text-xs text-gray-600 light:text-gray-400">Loading update history…</p>
+          </div>
+        ) : isUnfollowed ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <p className="text-xs text-gray-600 light:text-gray-400 text-center max-w-sm leading-relaxed">
+              Follow this app to start tracking its listing. It&apos;s saved once a day, along with its competitors, and changes show up from the day after.
+            </p>
+            <FollowButton app={app} />
           </div>
         ) : !hasEvents ? (
           <div className="flex-1 flex items-center justify-center">

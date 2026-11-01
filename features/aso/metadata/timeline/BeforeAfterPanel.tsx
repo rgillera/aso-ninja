@@ -9,11 +9,9 @@ type Props = {
   // Which app changed: yours or a competitor's.
   appName: string;
   selectedFields: Set<string>;
-  showDiff: boolean;
-  onShowDiffChange: (v: boolean) => void;
 };
 
-export function BeforeAfterPanel({ event, appName, selectedFields, showDiff, onShowDiffChange }: Props) {
+export function BeforeAfterPanel({ event, appName, selectedFields }: Props) {
   const panelFields = event.fields.filter(f => selectedFields.has(f.field));
 
   return (
@@ -28,18 +26,8 @@ export function BeforeAfterPanel({ event, appName, selectedFields, showDiff, onS
             {appName} &middot; {fromDateStr(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
         </div>
-        <div className="flex items-center justify-center gap-4">
-          <span className="text-sm font-semibold text-gray-300 light:text-gray-700">
-            After <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 inline ml-0.5 -mt-0.5" />
-          </span>
-          <label className="flex items-center gap-1.5 cursor-pointer select-none">
-            <span className="relative inline-flex h-4 w-7 shrink-0">
-              <input type="checkbox" className="sr-only peer" checked={showDiff} onChange={e => onShowDiffChange(e.target.checked)} />
-              <span className="rounded-full bg-[#0a0a0c] light:bg-gray-200 w-full peer-checked:bg-teal-600 transition-colors" />
-              <span className="absolute top-0.5 left-0.5 size-3 rounded-full bg-white transition-transform peer-checked:translate-x-3 shadow" />
-            </span>
-            <span className="text-[10px] text-gray-500 whitespace-nowrap">Show changes</span>
-          </label>
+        <div className="text-center text-sm font-semibold text-gray-300 light:text-gray-700">
+          After <InformationCircleIcon className="size-3.5 text-gray-600 light:text-gray-400 inline ml-0.5 -mt-0.5" />
         </div>
       </div>
 
@@ -67,18 +55,17 @@ export function BeforeAfterPanel({ event, appName, selectedFields, showDiff, onS
             ) : (
               <div className="grid grid-cols-3 gap-6 px-8 pb-5">
                 <div className="flex justify-end">
-                  <p className="text-sm text-gray-400 light:text-gray-600 text-right max-w-xs leading-relaxed">
+                  <p className="text-sm text-gray-400 light:text-gray-600 text-right max-w-xs leading-relaxed whitespace-pre-line">
                     {fu.before || <span className="italic text-gray-700 light:text-gray-300">empty</span>}
                   </p>
                 </div>
                 <div />
-                <div className="space-y-1 max-w-xs">
+                <div className="max-w-xs">
                   <p className="text-sm text-white light:text-gray-900 leading-relaxed">
-                    {fu.after || <span className="italic text-gray-700 light:text-gray-300">empty</span>}
+                    {fu.after
+                      ? <WordDiff before={fu.before} after={fu.after} />
+                      : <span className="italic text-gray-700 light:text-gray-300">empty</span>}
                   </p>
-                  {showDiff && fu.before !== fu.after && (
-                    <p className="text-sm"><WordDiff before={fu.before} after={fu.after} /></p>
-                  )}
                 </div>
               </div>
             )}
