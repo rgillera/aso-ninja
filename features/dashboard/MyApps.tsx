@@ -55,9 +55,11 @@ function groupApps(apps: App[]): AppGroup[] {
     if (!map.has(key)) map.set(key, []);
     map.get(key)!.push(app);
   }
+  // Store names are per storefront (a rename can land in US only), so the
+  // card prefers the US row to match what the app header shows by default.
   return [...map.entries()].map(([key, entries]) => ({
     key,
-    primary: entries[0],
+    primary: entries.find((a) => (a.country ?? "US").toUpperCase() === "US") ?? entries[0],
     entries,
   }));
 }
