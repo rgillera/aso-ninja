@@ -29,7 +29,7 @@ import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnToolt
 import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
-import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, formatEstimateRange, POTENTIAL_RANK } from "@/libs/keyword-impressions";
+import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, formatEstimate, POTENTIAL_RANK } from "@/libs/keyword-impressions";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
 import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
@@ -192,16 +192,16 @@ const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", m
 // libs/keyword-impressions.ts for how these are modeled.
 function impressionsTitle(row: Keyword): string {
   if (row.rank === null) return "Est. impressions: none (not ranking)";
-  return `Est. impressions: ${formatEstimateRange(estimateDailyImpressions(row.volume, row.rank))}/day`;
+  return `Est. impressions: ${formatEstimate(estimateDailyImpressions(row.volume, row.rank))}/day`;
 }
 
 // Hover text on the Volume cell: the 0-100 score translated into daily
-// count ranges, which are easier to picture than a log-scaled score. Pro-only,
+// counts, which are easier to picture than a log-scaled score. Pro-only,
 // same as the Keyword Inspector that shows the same estimate.
 function volumeTitle(row: Keyword, searchesLocked: boolean): ReactNode {
   if (searchesLocked) return <ProLockedHint label="Est. searches per day" footer="Click to view volume history" />;
-  const searches = formatEstimateRange(estimateDailySearches(row.volume));
-  const impressions = formatEstimateRange(estimatePotentialImpressions(row.volume, row.rank));
+  const searches = formatEstimate(estimateDailySearches(row.volume));
+  const impressions = formatEstimate(estimatePotentialImpressions(row.volume, row.rank));
   const target = row.rank !== null && row.rank >= 1 && row.rank < POTENTIAL_RANK ? row.rank : POTENTIAL_RANK;
   return `Est. searches: ${searches}/day\nEst. impressions at #${target}: ${impressions}/day\nClick to view volume history`;
 }
@@ -616,7 +616,7 @@ export function KeywordTable({
         downloadsLocked
           ? <LockedCell plan="Pro" title="Potential Impressions requires the Pro plan" />
           : <span className="text-sm text-gray-300 light:text-gray-700 tabular-nums" title={impressionsTitle(row)}>
-              ~{DOWNLOADS_FORMATTER.format(estimatePotentialImpressions(row.volume, row.rank))}
+              {formatEstimate(estimatePotentialImpressions(row.volume, row.rank))}
             </span>
       );
       case "estimatedDownloads": return (

@@ -19,18 +19,22 @@ export function estimateDailySearches(volume: number): number {
   return Math.pow(10, Math.max(0, Math.min(volume, 100)) / 20);
 }
 
-// Daily estimates are shown as a range, not a point: the volume curve is a
-// rough fit and Apple's score is noisy, so a single "~63/day" reads as more
-// precise than it is. The range is half to double the estimate. Below 5/day
-// (volume at or near Apple's floor of 5) a range means nothing, so it's just
-// "<5".
+// Daily estimates are shown as "~N", the same as the Potential Impressions
+// column, so every count in the app reads one way. The tilde and the
+// "ballpark" tooltips carry the uncertainty (the volume curve is a rough fit
+// and Apple's score is noisy). Below 5/day (volume at or near Apple's floor of
+// 5) a number means nothing, so it's just "<5".
 const ESTIMATE_FLOOR = 5;
-const RANGE_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumSignificantDigits: 2 });
+const COUNT_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
 
-export function formatEstimateRange(estimate: number): string {
+// The bare count, for copy that already says "about".
+export function formatEstimateCount(estimate: number): string {
+  return COUNT_FORMATTER.format(Math.round(estimate));
+}
+
+export function formatEstimate(estimate: number): string {
   if (estimate < ESTIMATE_FLOOR) return `<${ESTIMATE_FLOOR}`;
-  // Rounded first so small counts read as whole people ("9", not "8.9").
-  return `${RANGE_FORMATTER.format(Math.round(estimate / 2))}-${RANGE_FORMATTER.format(Math.round(estimate * 2))}`;
+  return `~${formatEstimateCount(estimate)}`;
 }
 
 // Share of searchers who scroll far enough to see the result at each

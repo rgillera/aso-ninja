@@ -26,7 +26,7 @@ import { Toggle } from "@/features/aso/keywords/research/ui";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
-import { formatEstimateRange } from "@/libs/keyword-impressions";
+import { formatEstimate, formatEstimateCount } from "@/libs/keyword-impressions";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountryPicker } from "./CountryPicker";
@@ -1165,7 +1165,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                         tone: dockChance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600",
                         hint: "Your likelihood of ranking for this keyword (0 to 100), same as the Chance column in your table.",
                       }]),
-                      { label: "Est. Searches/day", value: metrics ? formatEstimateRange(metrics.estDailySearches) : "", hint: "A ballpark modeled from Volume, for comparing keywords. Not a store-reported count." },
+                      { label: "Est. Searches/day", value: metrics ? formatEstimate(metrics.estDailySearches) : "", hint: "A ballpark modeled from Volume, for comparing keywords. Not a store-reported count." },
                     ]}
                   />
                   </div>
@@ -1196,7 +1196,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       <ScoreBar value={metrics.difficulty} className={diff.bar} />
                     </StatCard>
                     <StatCard label="Est. daily searches" hint="A ballpark modeled from Volume, for comparing keywords. Not a store-reported count.">
-                      <span className="text-2xl font-semibold text-white light:text-gray-900">{formatEstimateRange(metrics.estDailySearches)}</span>
+                      <span className="text-2xl font-semibold text-white light:text-gray-900">{formatEstimate(metrics.estDailySearches)}</span>
                       <p className="mt-2 text-[11px] text-gray-500">searches per day</p>
                     </StatCard>
                     {showResultsCard && (
@@ -1444,7 +1444,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
         total={TOUR_STEPS.length}
         icon={<ArrowTrendingUpIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={metrics && query && (
-          <>{metrics.estDailySearches < 5 ? "Fewer than" : "Roughly"} <span className="font-semibold text-white light:text-gray-900">{metrics.estDailySearches < 5 ? "5" : formatEstimateRange(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Volume is the demand, and Difficulty is how hard the top spots are to take.</>
+          <>{metrics.estDailySearches < 5 ? "Fewer than" : "About"} <span className="font-semibold text-white light:text-gray-900">{metrics.estDailySearches < 5 ? "5" : formatEstimateCount(metrics.estDailySearches)} people</span> search &ldquo;{query.term}&rdquo; every day. Volume is the demand, and Difficulty is how hard the top spots are to take.</>
         )}
         buttonLabel="Next"
         onAdvance={advanceTour}

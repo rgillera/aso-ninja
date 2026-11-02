@@ -30,7 +30,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { CardHeader } from "@/features/dashboard/CardHeader";
 import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
-import { estimateDailySearches, formatEstimateRange } from "@/libs/keyword-impressions";
+import { estimateDailySearches, formatEstimate } from "@/libs/keyword-impressions";
 import { PerformanceFilters } from "./PerformanceFilters";
 import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
@@ -143,7 +143,7 @@ function VolumeCell({ value, growth, searchesLocked, onClick }: { value: number 
   if (value == null) return <span className="text-sm text-gray-600 light:text-gray-400">-</span>;
   const hint = searchesLocked
     ? <ProLockedHint label="Est. searches per day" footer="Click to view volume history" />
-    : `Est. searches: ${formatEstimateRange(estimateDailySearches(value))}/day\nClick to view volume history`;
+    : `Est. searches: ${formatEstimate(estimateDailySearches(value))}/day\nClick to view volume history`;
   return (
     <HoverTooltip text={hint}>
       <button onClick={onClick} aria-label="View volume history" className="flex items-center gap-2 rounded px-1 -mx-1 py-0.5 hover:bg-white/[0.05] light:hover:bg-black/[0.04] transition-colors">
