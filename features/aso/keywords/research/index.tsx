@@ -209,6 +209,8 @@ export default function KeywordResearchPage() {
   // would skip loading entirely and make a refresh look like the add never
   // saved, even though it did.
   const loadedAppId = useRef<string | undefined>(undefined);
+  // Lowercased terms handleAddKeywords is still adding.
+  const addingTerms = useRef(new Set<string>());
   useEffect(() => {
     const appKey = activeApp?.id ?? activeApp?.bundle_id;
     if (!appKey) return;
@@ -292,11 +294,17 @@ export default function KeywordResearchPage() {
     // Deduplicate against all tracked keywords including those still loading —
     // excluding loading ones caused a second prepend row for keywords that were
     // loaded from DB with loading:true and then passed to handleAddKeywords.
+    // Terms still being reserved count too: the row only appears after the
+    // save round-trip, so a second add in that window (Track clicked twice,
+    // or from the Inspector and the table) would otherwise prepend it again.
     const existing = new Set(keywords.map((k) => k.keyword.toLowerCase()));
-    const fresh = newKeywords.filter((kw) => !existing.has(kw.toLowerCase()));
+    const fresh = newKeywords.filter((kw) => !existing.has(kw.toLowerCase()) && !addingTerms.current.has(kw.toLowerCase()));
     if (!fresh.length) return;
-    newKeywords = fresh;
+    fresh.forEach((kw) => addingTerms.current.add(kw.toLowerCase()));
+    await addKeywords(fresh).finally(() => fresh.forEach((kw) => addingTerms.current.delete(kw.toLowerCase())));
+  }
 
+  async function addKeywords(newKeywords: string[]) {
     const store = activeApp?.store ?? "ios";
     const country = activeApp?.country ?? "us";
 
