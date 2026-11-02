@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   PlusIcon,
   CheckIcon,
+  LockClosedIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -31,10 +32,12 @@ import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountryPicker } from "./CountryPicker";
 import { StatStrip } from "@/features/aso/keywords/StatStrip";
-import { canUseInspector } from "./limits";
+import { trackEvent } from "@/libs/mixpanel";
+import { canUseInspector, canUseInspectorRelevancy, RELEVANCY_APPS_LIMIT } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 import type { KeywordInspection, TrackedRowRefresh } from "@/app/api/keywords/inspect/route";
 import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
+import type { InspectorRelevancy } from "@/app/api/keywords/inspect/relevancy/route";
 import type { AppEstimate } from "@/libs/contracts";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
 import { formatDownloads, formatRevenue } from "@/libs/store/estimateFormat";
@@ -65,14 +68,39 @@ const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 const WEAK_SPOT_RANGE = 10;
 const WEAK_RATING_COUNT = 5_000;
 const WEAK_STARS = 3.5;
+// Pro+: a top-10 app this poor a fit for the keyword (see the relevancy
+// column) ranks on title words or authority, not intent, so a well-matched
+// app can take its spot. Below rule 4's "secondary use case" band.
+const WEAK_RELEVANCY = 40;
+
+// The batch prompt scores a brand 90-100 for its own app and 0-10 for
+// every other (embeddings lift those to roughly 20-30).
+const BRAND_RELEVANCY = 90;
 
 type WeakSpot = { app: AppSearchResult; reasons: string[] };
+
+// A brand search ("myfitnesspal"): one top-10 app scores as the brand's own
+// and every other scored app is off-target. Those others aren't openings
+// worth chasing, since searchers want the brand, so findWeakSpots leaves
+// relevancy out then. Needs a few scored apps, so a sparse reply can't look
+// like one.
+function brandSearchApp(apps: AppSearchResult[], store: Store, relevancy: Record<string, number> | null): AppSearchResult | null {
+  if (!relevancy) return null;
+  const scored = apps.slice(0, WEAK_SPOT_RANGE).flatMap((app) => {
+    const score = relevancy[storeIdOf(app, store)];
+    return score === undefined ? [] : [{ app, score }];
+  });
+  const brand = scored.filter((s) => s.score >= BRAND_RELEVANCY);
+  if (scored.length < 4 || brand.length !== 1) return null;
+  return scored.every((s) => s === brand[0] || s.score < WEAK_RELEVANCY) ? brand[0].app : null;
+}
 
 // A rating count is only trusted when the store actually returned one: App
 // Store results always carry it, but a Google Play row shows 0 when its
 // detail lookup failed (or on the server fallback list), which says nothing.
 // Same for stars: 0 means "not known" (the iOS fallback list has none).
-function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: string): WeakSpot[] {
+// relevancy: the Pro+ scores by store id, null when not loaded or locked.
+function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: string, relevancy?: Record<string, number> | null): WeakSpot[] {
   return apps.slice(0, WEAK_SPOT_RANGE).flatMap((app) => {
     const id = store === "ios" ? String(app.trackId) : app.appId;
     if (excludeStoreId && id === excludeStoreId) return [];
@@ -82,6 +110,8 @@ function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: s
       reasons.push(app.ratingCount === 0 ? "no ratings yet" : `only ${formatCount(app.ratingCount)} ratings`);
     }
     if (app.rating > 0 && app.rating < WEAK_STARS) reasons.push(`rated ${app.rating.toFixed(1)}★`);
+    const score = id ? relevancy?.[id] : undefined;
+    if (score !== undefined && score < WEAK_RELEVANCY) reasons.push("off-target for this keyword");
     return reasons.length ? [{ app, reasons }] : [];
   });
 }
@@ -224,8 +254,36 @@ function EstimateStat({ value, basis, label, format }: {
   );
 }
 
+// The keyword's relevancy to one of the top results, in the same two-line
+// style as the estimates. undefined = still loading, null = no score,
+// "locked" = below Pro+ (the card header has the upgrade link).
+function RelevancyStat({ value }: { value: number | null | undefined | "locked" }) {
+  if (value === "locked") {
+    return (
+      <div className="w-14 shrink-0 pt-1 text-right" title="Relevancy for the top results is a Pro+ feature">
+        <LockClosedIcon className="ml-auto size-3 text-gray-600 light:text-gray-400" aria-label="Locked" />
+        <p className="mt-0.5 text-[11px] text-gray-500">relevancy</p>
+      </div>
+    );
+  }
+  const tone = value == null ? "text-gray-300 light:text-gray-700"
+    : value >= 61 ? "text-emerald-400 light:text-emerald-700"
+    : value >= 41 ? "text-amber-400 light:text-amber-700"
+    : "text-gray-400 light:text-gray-600";
+  return (
+    <div className="w-14 shrink-0 pt-1 text-right" title="How likely someone searching this keyword wants this app (0 to 100)">
+      {value === undefined ? (
+        <div className="ml-auto mt-0.5 h-3 w-8 rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
+      ) : (
+        <p className={`text-xs font-semibold tabular-nums ${tone}`}>{value === null ? "-" : value}</p>
+      )}
+      <p className="text-[11px] text-gray-500">relevancy</p>
+    </div>
+  );
+}
+
 function ResultRow({
-  app, store, country, subtitle, subtitleLoading, term, highlight, isYou, estimate, showEstimates, competitor,
+  app, store, country, subtitle, subtitleLoading, term, highlight, isYou, estimate, showEstimates, relevancy, competitor,
 }: {
   app: AppSearchResult;
   store: Store;
@@ -241,6 +299,9 @@ function ResultRow({
   estimate: AppEstimate | null | undefined;
   // Off when the storefront has no estimate model.
   showEstimates: boolean;
+  // Top RELEVANCY_APPS_LIMIT rows. "locked": below Pro+; "blank": an empty
+  // column so rows past the top 10 stay aligned; null: no score for this app.
+  relevancy: number | null | "loading" | "locked" | "blank";
   // "Add as competitor" for the active app; omitted when the search isn't for
   // its own storefront (competitors are per app and country) or on its own row.
   competitor?: { state: "add" | "adding" | "added"; onAdd: () => void };
@@ -317,6 +378,8 @@ function ResultRow({
           {app.ratingCount ? `${formatCount(app.ratingCount)} ratings` : store === "android" ? "" : "No ratings"}
         </p>
       </div>
+      {relevancy === "blank" ? <div className="w-14 shrink-0" aria-hidden="true" />
+        : <RelevancyStat value={relevancy === "loading" ? undefined : relevancy} />}
       {showEstimates && (
         <>
           <EstimateStat value={estimate === undefined ? undefined : estimate?.downloads ?? null} basis={estimate?.downloadsBasis} label="downloads/mo" format={formatDownloads} />
@@ -474,7 +537,9 @@ export type InspectorDock = {
 export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } = {}) {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
-  const locked = !canUseInspector(usePlanSlug());
+  const planSlug = usePlanSlug();
+  const locked = !canUseInspector(planSlug);
+  const relevancyUnlocked = canUseInspectorRelevancy(planSlug);
   const docked = !!dock;
 
   // The onboarding coach mark's Inspector steps (TOUR_STEPS in
@@ -503,6 +568,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   // Monthly downloads/revenue per result, keyed by store id. null = loading
   // (or not requested yet); supported false = no model for this storefront.
   const [estimates, setEstimates] = useState<KeywordResultEstimates | null>(null);
+  // Pro+: relevancy for the top RELEVANCY_APPS_LIMIT results, keyed by store
+  // id. null while loading (or below Pro+).
+  const [relevancy, setRelevancy] = useState<Record<string, number> | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
@@ -654,6 +722,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     setIosSubtitles({});
     setSubtitlesLoading(false);
     setEstimates(null);
+    setRelevancy(null);
     setAppsError(null);
     setAppsLoading(true);
 
@@ -704,7 +773,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
         setApps(top);
         setAllResults(results);
         if (current.store === "ios") loadIosSubtitles(top, current.country, id);
-        loadEstimates(top, current.store, current.country, id);
+        // Relevancy after estimates: both read the same cached store
+        // listings, so the estimates step warms them first.
+        loadEstimates(top, current.store, current.country, id).then(() => loadRelevancy(top, current, id));
       } catch {
         // Live search failed (usually the store rate-limiting this browser's
         // IP). The server already ran the same search for the scores, so show
@@ -715,7 +786,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
           setApps(inspection.topApps);
           setAllResults(inspection.topApps);
           if (current.store === "ios") loadIosSubtitles(inspection.topApps, current.country, id);
-          loadEstimates(inspection.topApps, current.store, current.country, id);
+          loadEstimates(inspection.topApps, current.store, current.country, id).then(() => loadRelevancy(inspection.topApps, current, id));
         } else setAppsError("Couldn't load search results right now. Try again in a minute.");
       } finally {
         if (id === requestId.current) setAppsLoading(false);
@@ -763,6 +834,27 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
       if (id === requestId.current) setEstimates(data ?? { supported: true, estimates: {} });
     } catch {
       if (id === requestId.current) setEstimates({ supported: true, estimates: {} });
+    }
+  }
+
+  // Pro+ only. A failed request leaves every row on a dash, never an error.
+  async function loadRelevancy(list: AppSearchResult[], q: Recent, id: number) {
+    if (!relevancyUnlocked) return;
+    const ids = list.slice(0, RELEVANCY_APPS_LIMIT).map((a) => storeIdOf(a, q.store)).filter(Boolean);
+    if (!ids.length) {
+      setRelevancy({});
+      return;
+    }
+    try {
+      const res = await fetch("/api/keywords/inspect/relevancy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ term: q.term, store: q.store, country: q.country, workspaceId, ids, appId: activeApp?.id }),
+      });
+      const data = res.ok ? ((await res.json()) as InspectorRelevancy) : null;
+      if (id === requestId.current) setRelevancy(data?.scores ?? {});
+    } catch {
+      if (id === requestId.current) setRelevancy({});
     }
   }
 
@@ -925,7 +1017,12 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     && (!!activeApp.id || (!!activeApp.bundle_id && !!activeApp.store_id));
   const tracked = dock ? dock.trackedTerms : trackedTerms;
   const isTracked = !!query && !!tracked?.has(query.term);
-  const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId) : [];
+  const shownRelevancy = relevancyUnlocked ? relevancy : null;
+  const brandApp = query && apps ? brandSearchApp(apps, query.store, shownRelevancy) : null;
+  const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId, brandApp ? null : shownRelevancy) : [];
+  // Relevancy scores are in (and it isn't a brand search), so the openings
+  // and their copy count fit too.
+  const fitCounted = !brandApp && !!shownRelevancy && Object.keys(shownRelevancy).length > 0;
   const rowSubtitles = query && apps ? apps.map((a) => subtitleFor(a, query.store, iosSubtitles)) : [];
   const hasSubtitles = rowSubtitles.some(Boolean);
   const titleMatches = query && apps ? apps.filter((a) => titleHasKeyword(a.name, query.term)).length : 0;
@@ -954,7 +1051,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
           ? <>Your app isn&apos;t ranking for &ldquo;{query.term}&rdquo; yet.</>
           : null}{" "}
       {weakSpots.length > 0
-        ? <>{weakSpots.length === 1 ? "One app" : `${weakSpots.length} apps`} in the top {WEAK_SPOT_RANGE} {weakSpots.length === 1 ? "has" : "have"} few ratings or low stars, so {weakSpots.length === 1 ? "it's" : "they're"} the <span className="font-semibold text-white light:text-gray-900">easiest spots to take</span>.</>
+        ? <>{weakSpots.length === 1 ? "One app" : `${weakSpots.length} apps`} in the top {WEAK_SPOT_RANGE} {weakSpots.length === 1 ? "has" : "have"} {fitCounted ? "few ratings, low stars or a weak fit for the keyword" : "few ratings or low stars"}, so {weakSpots.length === 1 ? "it's" : "they're"} the <span className="font-semibold text-white light:text-gray-900">easiest spots to take</span>.</>
         : sameStore && yourRankIdx >= 0 && yourRankIdx < WEAK_SPOT_RANGE
           ? <>Every other app in the top {WEAK_SPOT_RANGE} is well established, so this spot is worth holding on to.</>
           : <>Every app in the top {WEAK_SPOT_RANGE} is well established, so a keyword with lower Difficulty may be a better first target.</>}
@@ -1319,7 +1416,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       <>
                         <p className="mt-2 text-xs text-gray-400 light:text-gray-600">
                           <span className="font-semibold text-amber-300 light:text-amber-700">No easy openings.</span>{" "}
-                          Every app here has {formatCount(WEAK_RATING_COUNT)}+ ratings and {WEAK_STARS}+ stars.
+                          Every app here has {formatCount(WEAK_RATING_COUNT)}+ ratings and {WEAK_STARS}+ stars{fitCounted ? ", and fits the keyword" : ""}.
                         </p>
                         {dock?.onLongTail ? (
                           <button
@@ -1339,9 +1436,15 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                         )}
                       </>
                     )}
+                    {brandApp && (
+                      <p className="mt-3 text-[11px] text-gray-500">
+                        {/* The brand part of the title ("MyFitnessPal", not "MyFitnessPal: Calorie Counter"). */}
+                        {`Looks like a search for ${brandApp.name.split(/\s*[:|–—]\s*|\s+-\s+/)[0]} itself, so apps that don't fit the keyword aren't counted as openings: searchers want that one app.`}
+                      </p>
+                    )}
                     {weakSpots.length > 0 && (
                       <p className="mt-3 text-[11px] text-gray-500">
-                        Apps with under {formatCount(WEAK_RATING_COUNT)} ratings or below {WEAK_STARS} stars are the easiest to outrank.
+                        Apps with under {formatCount(WEAK_RATING_COUNT)} ratings{fitCounted ? `, below ${WEAK_STARS} stars, or under ${WEAK_RELEVANCY} relevancy` : ` or below ${WEAK_STARS} stars`} are the easiest to outrank.
                       </p>
                     )}
                   </div>
@@ -1385,7 +1488,20 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                   </div>
                 )}
                 <div className="rounded-2xl bg-[#141417] light:bg-white overflow-hidden ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm">
-                  <CardHeader title="Top ranking apps" count={apps?.length || undefined} />
+                  <CardHeader title="Top ranking apps" count={apps?.length || undefined}>
+                    {!relevancyUnlocked && apps && apps.length > 0 && (
+                      <Link
+                        href="/dashboard/subscription"
+                        onClick={() => { try { trackEvent("Inspector Relevancy Upsell Clicked"); } catch {} }}
+                        title={`See how relevant "${query.term}" is to each of the top ${RELEVANCY_APPS_LIMIT} apps, and which ones are off-target`}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-500 light:text-amber-700 hover:bg-amber-500/20"
+                      >
+                        <LockClosedIcon className="size-3.5" />
+                        Unlock relevancy
+                        <span className="rounded bg-amber-500/15 px-1 text-[10px] font-semibold">Pro+</span>
+                      </Link>
+                    )}
+                  </CardHeader>
                   {appsLoading && (
                     <div className="divide-y divide-white/[0.05] light:divide-black/[0.05]">
                       {Array.from({ length: 6 }).map((_, i) => (
@@ -1422,6 +1538,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                         isYou={!!yourStoreId && (query.store === "ios" ? String(app.trackId) : app.appId) === yourStoreId}
                         estimate={estimates ? estimates.estimates[storeIdOf(app, query.store)] ?? null : undefined}
                         showEstimates={estimates?.supported !== false}
+                        relevancy={app.position > RELEVANCY_APPS_LIMIT ? "blank"
+                          : !relevancyUnlocked ? "locked"
+                          : !relevancy ? "loading"
+                          : relevancy[storeIdOf(app, query.store)] ?? null}
                         competitor={canTrack && !(!!yourStoreId && storeIdOf(app, query.store) === yourStoreId) && storeIdOf(app, query.store) ? {
                           state: addingCompetitor === storeIdOf(app, query.store) ? "adding"
                             : addedCompetitors.has(storeIdOf(app, query.store)) || !!dock?.competitorIds?.has(storeIdOf(app, query.store)) ? "added"

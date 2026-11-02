@@ -15,6 +15,7 @@ import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
 import { KeywordTable } from "./KeywordTable";
 import { useDockedInspector, InspectorSplit } from "@/features/aso/keywords/inspector/InspectorSplit";
 import { getStarred, toggleStarred, starTerms } from "@/libs/starred-keywords";
+import { normalizeTerm } from "@/libs/keyword-term";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import { canUseInspector } from "@/features/aso/keywords/inspector/limits";
 import { useSidebarTour } from "@/features/dashboard/SidebarTourContext";
@@ -243,7 +244,7 @@ export default function KeywordResearchPage() {
         // collapse those here so term-keyed UI doesn't choke on duplicates.
         const seen = new Set<string>();
         const saved = savedRaw.filter((s) => {
-          const key = s.term.toLowerCase();
+          const key = normalizeTerm(s.term);
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
@@ -297,11 +298,13 @@ export default function KeywordResearchPage() {
     // Terms still being reserved count too: the row only appears after the
     // save round-trip, so a second add in that window (Track clicked twice,
     // or from the Inspector and the table) would otherwise prepend it again.
-    const existing = new Set(keywords.map((k) => k.keyword.toLowerCase()));
-    const fresh = newKeywords.filter((kw) => !existing.has(kw.toLowerCase()) && !addingTerms.current.has(kw.toLowerCase()));
+    // Normalized first, so the row, the metrics lookup and the save all use
+    // the stored form (see normalizeTerm).
+    const existing = new Set(keywords.map((k) => normalizeTerm(k.keyword)));
+    const fresh = [...new Set(newKeywords.map(normalizeTerm))].filter((kw) => kw && !existing.has(kw) && !addingTerms.current.has(kw));
     if (!fresh.length) return;
-    fresh.forEach((kw) => addingTerms.current.add(kw.toLowerCase()));
-    await addKeywords(fresh).finally(() => fresh.forEach((kw) => addingTerms.current.delete(kw.toLowerCase())));
+    fresh.forEach((kw) => addingTerms.current.add(kw));
+    await addKeywords(fresh).finally(() => fresh.forEach((kw) => addingTerms.current.delete(kw)));
   }
 
   async function addKeywords(newKeywords: string[]) {

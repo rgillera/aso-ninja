@@ -1,17 +1,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
+import type { PlanSlug } from "@/libs/contracts";
 import { canUseInspector } from "./limits";
 
-// Whether this user gets the Inspector, from the plan of the workspace the
-// page sent. That id comes from the browser, and get_workspace_plan answers
+// The plan of the workspace the page sent, or null when the user isn't a
+// member. That id comes from the browser, and get_workspace_plan answers
 // for any workspace, so it only counts when the user is actually a member.
 // Without this, passing some Pro workspace's id would unlock it.
-export async function inspectorAllowedFor(
+export async function inspectorPlanFor(
   supabase: SupabaseClient,
   userId: string,
   workspaceId: string,
-): Promise<boolean> {
-  if (!workspaceId) return false;
+): Promise<PlanSlug | null> {
+  if (!workspaceId) return null;
 
   const { data: membership } = await supabase
     .from("workspace_members")
@@ -19,8 +20,18 @@ export async function inspectorAllowedFor(
     .eq("workspace_id", workspaceId)
     .eq("user_id", userId)
     .maybeSingle();
-  if (!membership) return false;
+  if (!membership) return null;
 
   const planState = await getWorkspacePlanState(workspaceId);
-  return canUseInspector(planState && !("error" in planState) ? planState.plan.slug : "free");
+  return planState && !("error" in planState) ? planState.plan.slug : "free";
+}
+
+// Whether this user gets the Inspector (see inspectorPlanFor).
+export async function inspectorAllowedFor(
+  supabase: SupabaseClient,
+  userId: string,
+  workspaceId: string,
+): Promise<boolean> {
+  const plan = await inspectorPlanFor(supabase, userId, workspaceId);
+  return !!plan && canUseInspector(plan);
 }

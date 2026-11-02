@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { normalizeTerm } from "@/libs/keyword-term";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { syncAppDownloads } from "@/libs/store-connections/sync";
 import { trackCurrentUserEvent } from "@/libs/analytics/events";
@@ -89,8 +90,10 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Upsert keyword terms
-  const normalised = terms.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  const normalised = [...new Set(terms.map(normalizeTerm).filter(Boolean))];
   if (!normalised.length) return NextResponse.json({ appId });
+  // metrics is keyed by the client's terms, which may predate normalizeTerm.
+  const metricsByTerm = new Map(Object.entries(metrics ?? {}).map(([t, m]) => [normalizeTerm(t), m]));
 
   // DO UPDATE (the default, vs ignoreDuplicates' DO NOTHING) makes every row
   // come back from a single atomic upsert — same TOCTOU race as the apps
@@ -134,9 +137,9 @@ export async function POST(request: NextRequest) {
     // 4. Persist metrics so initial page load skips recomputing
     if (metrics) {
       const metricsRows = keywordRows
-        .filter((kw) => metrics[kw.term])
+        .filter((kw) => metricsByTerm.get(kw.term))
         .map((kw) => {
-          const m = metrics[kw.term];
+          const m = metricsByTerm.get(kw.term)!;
           return {
             app_id:      appId!,
             keyword_id:  kw.id,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { normalizeTerm } from "@/libs/keyword-term";
 
 // POST /api/keywords/remove
 // Body: { appId, terms: string[] }
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   const { terms, workspaceId, bundleId, store, country } = body;
   if (!terms?.length) return NextResponse.json({ ok: true });
 
-  const normalised = terms.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  const normalised = terms.map(normalizeTerm).filter(Boolean);
   if (!normalised.length) return NextResponse.json({ ok: true });
 
   const supabase = await createClient();

@@ -243,6 +243,37 @@ export function isBrandKeyword(keyword: string, appName: string): boolean {
   return false;
 }
 
+// Shared by computeRelevancy and scoreAppsRelevancyBatch, so the Inspector's
+// batch scores use the same formula as a tracked keyword's.
+
+function hasListingContext(subtitle: string | undefined, description: string | undefined): boolean {
+  return (!!description && description.length > 10) || !!subtitle?.trim();
+}
+
+// The keyword plus the top 5 result titles: what the market around it looks like.
+function marketText(keyword: string, topTitles: string[]): string | null {
+  return topTitles.length > 0 ? `${keyword}: ${topTitles.slice(0, 5).join(". ")}` : null;
+}
+
+function similarityScore(a: number[], b: number[]): number {
+  return Math.max(0, Math.min(100, Math.round((cosineSimilarity(a, b) - 0.3) / 0.5 * 100)));
+}
+
+function semanticScoreFor(appEmbedding: number[], kwEmbedding: number[] | null, topEmbedding: number[] | null): number {
+  const kwScore = kwEmbedding ? similarityScore(appEmbedding, kwEmbedding) : 0;
+  const marketScore = topEmbedding ? similarityScore(appEmbedding, topEmbedding) : 0;
+  return Math.round(kwScore * 0.6 + marketScore * 0.4);
+}
+
+function blendRelevancy(hasContext: boolean, descScore: number, semanticScore: number): number {
+  return hasContext ? Math.round(descScore * 0.7 + semanticScore * 0.3) : Math.round(semanticScore);
+}
+
+// The text an app's embedding is made from, in fetchIosAppMeta/fetchAndroidAppMeta too.
+function appEmbeddingText(name: string, subtitle: string, description: string): string {
+  return [name, subtitle, description].filter(Boolean).join(". ");
+}
+
 export async function computeRelevancy(
   keyword: string,
   appName: string,
@@ -269,7 +300,7 @@ export async function computeRelevancy(
   // does, though a keyword is never credited just for appearing in them;
   // that ranking benefit belongs to rank/chance); description just needs to
   // clear a noise floor.
-  const hasContext = (!!appDescription && appDescription.length > 10) || !!appSubtitle?.trim();
+  const hasContext = hasListingContext(appSubtitle, appDescription);
 
   // 1. Name/subtitle/description relevance (70%) — LLM or embedding
   //    keyword-vs-listing-text. Most reliable signal: directly asks "is this
@@ -289,32 +320,101 @@ export async function computeRelevancy(
   //    sharing "tracker" with NutriSnap inflates both direct and context scores).
   let semanticScore = 0;
   if (appEmbedding) {
-    const topText = topTitles.length > 0 ? `${keyword}: ${topTitles.slice(0, 5).join(". ")}` : null;
+    const topText = marketText(keyword, topTitles);
     const texts = topText ? [keyword, topText] : [keyword];
     const [kwEmbedding, topEmbedding] = await getEmbeddings(texts);
-
-    let kwScore = 0;
-    if (kwEmbedding) {
-      const sim = cosineSimilarity(appEmbedding, kwEmbedding);
-      kwScore = Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
-    }
-
-    let marketScore = 0;
-    if (topEmbedding) {
-      const sim = cosineSimilarity(appEmbedding, topEmbedding);
-      marketScore = Math.max(0, Math.min(100, Math.round((sim - 0.3) / 0.5 * 100)));
-    }
-
-    semanticScore = Math.round(kwScore * 0.6 + marketScore * 0.4);
+    semanticScore = semanticScoreFor(appEmbedding, kwEmbedding, topEmbedding);
   } else if (!hasContext) {
     semanticScore = 50;
   }
 
-  const base = hasContext
-    ? Math.round(descScore * 0.7 + semanticScore * 0.3)
-    : Math.round(semanticScore);
+  const base = blendRelevancy(hasContext, descScore, semanticScore);
   console.log(`[relevancy] "${keyword}" → desc=${descScore} semantic=${semanticScore} hasContext=${hasContext} → ${base}`);
   return { score: base, intentThemeId };
+}
+
+// ── Batch relevancy (Keyword Inspector) ──────────────────────────────────────
+
+export type BatchApp = { id: string; name: string; subtitle: string; description: string };
+
+// Enough of a description to say what the app does (the opening paragraph
+// usually does), while keeping ten apps in one prompt cheap.
+const BATCH_DESCRIPTION_CHARS = 800;
+
+// How relevant one keyword is to each of several apps, with a single LLM call
+// and a single batched embedding call: the Inspector's top search results,
+// where per-app computeRelevancy (one LLM call plus embeddings each) would
+// cost ten times as much. Same 70/30 LLM/embedding blend as computeRelevancy;
+// only the LLM part differs (all apps in one prompt, shortened descriptions,
+// no intent themes), so a score can still land a few points off the same
+// app's tracked relevancy. topTitles: the search's top result names, as in
+// computeRelevancy. Unlike computeRelevancy there's no isBrandKeyword
+// shortcut to 100: across competitors it misfires on titles that lead with a
+// generic phrase ("Calorie Counter - MyNetDiary" for "calorie counter"), so
+// the LLM judges brand searches instead (rule 1 below). Returns null when the
+// LLM is unavailable or its reply can't be parsed, so callers can skip
+// caching it; apps the reply leaves out are just missing.
+export async function scoreAppsRelevancyBatch(keyword: string, apps: BatchApp[], topTitles: string[]): Promise<Record<string, number> | null> {
+  const scores: Record<string, number> = {};
+  if (!apps.length) return scores;
+
+  const listings = apps.map((app, i) => {
+    const description = app.description.replace(/\s+/g, " ").trim().slice(0, BATCH_DESCRIPTION_CHARS);
+    const context = [app.name, app.subtitle, description].filter(Boolean).join(". ");
+    return `App ${i + 1}
+Name: "${app.name}"
+Subtitle: "${app.subtitle || "(none)"}"
+Description: "${description || "(none)"}"${collisionNote(findSubstringCollisions(keyword, context))}`;
+  }).join("\n\n");
+
+  const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the app store search bar: "${keyword}". For EACH app below, score the probability (0-100) that they are specifically looking for THAT app. Score each app on its own; several apps can score high or low.
+
+${listings}
+
+Use each app's name, subtitle and description together only to understand what it does. Then judge the keyword purely on whether that app would satisfy the person searching it. Do NOT reward a keyword because its words appear in the name or subtitle, and do NOT penalize one because they don't.
+
+Rules — apply in order, stop at first match:
+1. If the keyword is a brand name: score 90-100 for the app that brand belongs to, 0-10 for every other app. A generic phrase that merely starts an app's title (e.g. "Calorie Counter - MyNetDiary" for "calorie counter") is not a brand.
+2. If the keyword describes a completely unrelated category → score 0-15.
+3. If the keyword is loosely related but the app is unlikely to satisfy the search intent → score 16-40.
+4. If the keyword is a secondary use case the app genuinely supports → score 41-60.
+5. If the keyword directly describes a core feature of the app → score 61-80.
+6. If the keyword is exactly what the app is built for → score 81-100.
+
+Critical: score USER INTENT, not category overlap or word overlap.
+
+Reply with ONLY a JSON object mapping each app number to its integer score, e.g. {"1": 72, "2": 15}. No explanation.`;
+
+  // Keyword, market text, then every app's listing, in one batched call
+  // (getEmbeddings also reuses any this process already has).
+  const topText = marketText(keyword, topTitles);
+  const appTexts = apps.map((app) => appEmbeddingText(app.name, app.subtitle, app.description));
+  const [raw, embeddings] = await Promise.all([
+    generateText(prompt, 0),
+    getEmbeddings([keyword, topText ?? keyword, ...appTexts]),
+  ]);
+  const [kwEmbedding, topEmbedding, ...appEmbeddings] = embeddings;
+
+  const json = raw?.match(/\{[\s\S]*\}/)?.[0];
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json) as Record<string, unknown>;
+    apps.forEach((app, i) => {
+      const num = Number(parsed[String(i + 1)]);
+      if (!Number.isFinite(num)) return;
+      const descScore = Math.max(0, Math.min(100, Math.round(num)));
+      const hasContext = hasListingContext(app.subtitle, app.description);
+      const appEmbedding = appEmbeddings[i];
+      const semanticScore = appEmbedding
+        ? semanticScoreFor(appEmbedding, kwEmbedding, topText ? topEmbedding : null)
+        : hasContext ? 0 : 50;
+      scores[app.id] = blendRelevancy(hasContext, descScore, semanticScore);
+    });
+  } catch {
+    return null;
+  }
+  console.log(`[relevancy-batch] "${keyword}" → ${JSON.stringify(scores)}`);
+  return scores;
 }
 
 // ── App metadata ──────────────────────────────────────────────────────────────
@@ -369,7 +469,7 @@ export async function fetchIosAppMeta(appName: string, country: string, withEmbe
     const category    = (match?.primaryGenreName ?? "") as string;
     const developer   = ((match?.sellerName ?? match?.artistName ?? "") as string);
     const subtitle    = match?.trackId ? await fetchIosSubtitle(String(match.trackId), (match.trackName ?? appName) as string, country) : "";
-    const embText  = [appName, subtitle, description].filter(Boolean).join(". ");
+    const embText  = appEmbeddingText(appName, subtitle, description);
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
     console.log(`[appMeta iOS] "${appName}" → found=${!!match} descLen=${description.length} subtitle="${subtitle}" category="${category}" developer="${developer}"`);
     const meta = { description, subtitle, category, developer, embedding };
@@ -413,7 +513,7 @@ export async function fetchAndroidAppMeta(appName: string, country: string, with
     }
     const category    = (match?.genre ?? "") as string;
     const developer   = ((match?.developer ?? "") as string);
-    const embText  = [appName, subtitle, description].filter(Boolean).join(". ");
+    const embText  = appEmbeddingText(appName, subtitle, description);
     const embedding = withEmbedding && embText ? await getEmbedding(embText) : null;
     console.log(`[appMeta Android] "${appName}" → found=${!!match} descLen=${description.length} subtitle="${subtitle}" category="${category}" developer="${developer}"`);
     const meta = { description, subtitle, category, developer, embedding };
