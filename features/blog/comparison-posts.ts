@@ -22,7 +22,7 @@ const APPASO_PLANS_TABLE = {
   rows: [
     ["Free", "$0", "100", "2 apps or countries", "1 month", "Keyword research, rank tracking, metadata optimization, relevancy scoring for 40 keywords"],
     ["Pro", "$29/mo, or $24/mo billed yearly", "Unlimited", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, AI keyword suggestions, 5 competitors per app, 3 seats"],
-    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), keyword simulator, 8 competitors per app"],
+    ["Pro+", "$99/mo, or $79/mo billed yearly", "Unlimited", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), ranked keywords, keyword simulator, Keyword Inspector relevancy for the top 10 apps, 8 competitors per app"],
     ["Enterprise", "Custom", "Custom", "Unlimited", "Custom", "Custom limits for publishers and agencies"],
   ],
 };
