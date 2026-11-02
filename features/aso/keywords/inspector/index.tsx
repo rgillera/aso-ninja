@@ -261,8 +261,11 @@ function RelevancyStat({ value }: { value: number | null | undefined | "locked" 
   if (value === "locked") {
     return (
       <div className="w-14 shrink-0 pt-1 text-right" title="Relevancy for the top results is a Pro+ feature">
-        <LockClosedIcon className="ml-auto size-3 text-gray-600 light:text-gray-400" aria-label="Locked" />
-        <p className="mt-0.5 text-[11px] text-gray-500">relevancy</p>
+        {/* Inside a text-xs line, like the estimates' numbers, so the labels line up. */}
+        <p className="text-xs">
+          <LockClosedIcon className="inline-block size-4 align-text-bottom text-white light:text-gray-900" aria-label="Locked" />
+        </p>
+        <p className="text-[11px] text-gray-500">relevancy</p>
       </div>
     );
   }
@@ -273,7 +276,9 @@ function RelevancyStat({ value }: { value: number | null | undefined | "locked" 
   return (
     <div className="w-14 shrink-0 pt-1 text-right" title="How likely someone searching this keyword wants this app (0 to 100)">
       {value === undefined ? (
-        <div className="ml-auto mt-0.5 h-3 w-8 rounded bg-white/[0.07] light:bg-black/[0.07] animate-pulse" aria-hidden="true" />
+        <p className="text-xs" aria-hidden="true">
+          <span className="inline-block h-3 w-8 rounded bg-white/[0.07] light:bg-black/[0.07] align-middle animate-pulse" />
+        </p>
       ) : (
         <p className={`text-xs font-semibold tabular-nums ${tone}`}>{value === null ? "-" : value}</p>
       )}
