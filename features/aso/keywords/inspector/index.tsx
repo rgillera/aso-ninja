@@ -258,30 +258,32 @@ function EstimateStat({ value, basis, label, format }: {
 // style as the estimates. undefined = still loading, null = no score,
 // "locked" = below Pro+ (the card header has the upgrade link).
 function RelevancyStat({ value }: { value: number | null | undefined | "locked" }) {
+  // The pill keeps the 18px text-xs line of the other stats' values, so
+  // every label underneath stays on one line.
+  const pill = "inline-block rounded-full px-1.5 align-top text-[11px] font-semibold leading-[18px] tabular-nums";
   if (value === "locked") {
     return (
       <div className="w-14 shrink-0 pt-1 text-right" title="Relevancy for the top results is a Pro+ feature">
-        {/* Inside a text-xs line, like the estimates' numbers, so the labels line up. */}
         <p className="text-xs">
-          <LockClosedIcon className="inline-block size-4 align-text-bottom text-white light:text-gray-900" aria-label="Locked" />
+          <span className={`${pill} bg-white/[0.08] light:bg-black/[0.06]`}>
+            <LockClosedIcon className="inline-block size-3 -mt-px text-white light:text-gray-900" aria-label="Locked" />
+          </span>
         </p>
         <p className="text-[11px] text-gray-500">relevancy</p>
       </div>
     );
   }
-  const tone = value == null ? "text-gray-300 light:text-gray-700"
-    : value >= 61 ? "text-emerald-400 light:text-emerald-700"
-    : value >= 41 ? "text-amber-400 light:text-amber-700"
-    : "text-gray-400 light:text-gray-600";
+  const tone = value == null ? "bg-white/[0.06] text-gray-400 light:bg-black/[0.05] light:text-gray-600"
+    : value >= 61 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700"
+    : value >= 41 ? "bg-amber-500/15 text-amber-400 light:text-amber-700"
+    : "bg-red-500/10 text-red-400 light:text-red-600";
   return (
     <div className="w-14 shrink-0 pt-1 text-right" title="How likely someone searching this keyword wants this app (0 to 100)">
-      {value === undefined ? (
-        <p className="text-xs" aria-hidden="true">
-          <span className="inline-block h-3 w-8 rounded bg-white/[0.07] light:bg-black/[0.07] align-middle animate-pulse" />
-        </p>
-      ) : (
-        <p className={`text-xs font-semibold tabular-nums ${tone}`}>{value === null ? "-" : value}</p>
-      )}
+      <p className="text-xs" aria-hidden={value === undefined}>
+        {value === undefined
+          ? <span className="inline-block h-[18px] w-8 rounded-full bg-white/[0.07] light:bg-black/[0.07] align-top animate-pulse" />
+          : <span className={`${pill} ${tone}`}>{value === null ? "-" : value}</span>}
+      </p>
       <p className="text-[11px] text-gray-500">relevancy</p>
     </div>
   );
@@ -375,7 +377,10 @@ function ResultRow({
           </div>
         )}
       </div>
-      <div className="shrink-0 pt-1 text-right">
+      {relevancy === "blank" ? <div className="w-14 shrink-0" aria-hidden="true" />
+        : <RelevancyStat value={relevancy === "loading" ? undefined : relevancy} />}
+      {/* Fixed width, like the stats beside it, so every column lines up row to row. */}
+      <div className="w-20 shrink-0 pt-1 text-right">
         <p className="text-xs text-gray-300 light:text-gray-700">
           {app.rating ? <><span className="text-amber-400">★</span> {app.rating.toFixed(1)}</> : null}
         </p>
@@ -383,8 +388,6 @@ function ResultRow({
           {app.ratingCount ? `${formatCount(app.ratingCount)} ratings` : store === "android" ? "" : "No ratings"}
         </p>
       </div>
-      {relevancy === "blank" ? <div className="w-14 shrink-0" aria-hidden="true" />
-        : <RelevancyStat value={relevancy === "loading" ? undefined : relevancy} />}
       {showEstimates && (
         <>
           <EstimateStat value={estimate === undefined ? undefined : estimate?.downloads ?? null} basis={estimate?.downloadsBasis} label="downloads/mo" format={formatDownloads} />
