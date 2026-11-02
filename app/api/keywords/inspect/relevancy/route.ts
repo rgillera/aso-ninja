@@ -14,15 +14,16 @@ export type InspectorRelevancy = {
   scores: Record<string, number>;
 };
 
-// One LLM call and one embedding call per keyword, storefront and result set, kept for a day: the
-// top 10 rarely change within one, and a popular keyword gets inspected
-// again and again. Listings come from the same 6h per-app cache the
-// estimates step fills for these rows, so a warm lookup costs no store
-// requests. ids are the results in rank order (their names are the market
-// context, as for a tracked keyword); skip is left out of the scoring.
-// Throws (so nothing is cached) when the LLM gave no usable reply.
+// One LLM call and one embedding call per keyword, storefront and result
+// set, kept for 7 days and shared by every workspace (nothing user-specific
+// is in the key). A score only moves when the keyword or a listing does, and
+// a changed top 10 is a new key, so it's scored fresh anyway. Listings come
+// from the same 6h per-app cache the estimates step fills for these rows, so
+// a warm lookup costs no store requests. ids are the results in rank order
+// (their names are the market context, as for a tracked keyword). Throws (so
+// nothing is cached) when the LLM gave no usable reply.
 const cachedBatchScores = unstable_cache(
-  async (term: string, store: "ios" | "android", country: string, ids: string[], skip: string[]) => {
+  async (term: string, store: "ios" | "android", country: string, ids: string[]) => {
     const listings = await Promise.all(ids.map((id) =>
       fetchStoreData(store, store === "ios" ? id : "", store === "android" ? id : "", country)
     ));
@@ -31,14 +32,14 @@ const cachedBatchScores = unstable_cache(
     listings.forEach((data, i) => {
       if (!data?.name) return;
       topTitles.push(data.name);
-      if (!skip.includes(ids[i])) apps.push({ id: ids[i], name: data.name, subtitle: data.subtitle ?? "", description: data.description ?? "" });
+      apps.push({ id: ids[i], name: data.name, subtitle: data.subtitle ?? "", description: data.description ?? "" });
     });
     const scores = await scoreAppsRelevancyBatch(term, apps, topTitles);
     if (!scores) throw new Error("relevancy batch failed");
     return scores;
   },
   ["inspector-relevancy"],
-  { revalidate: 24 * 60 * 60 },
+  { revalidate: 7 * 24 * 60 * 60 },
 );
 
 // POST /api/keywords/inspect/relevancy
@@ -50,7 +51,8 @@ const cachedBatchScores = unstable_cache(
 //
 // appId: the active app. When it's in the results and tracks this term in
 // this storefront, its row shows its stored Keyword Research relevancy, so
-// the two screens agree, and it's left out of the LLM call.
+// the two screens agree. It's still scored in the shared batch (one more app
+// in the same call), so the cache entry stays the same for everyone.
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const { term: rawTerm, store: rawStore, country: rawCountry, workspaceId, ids: rawIds, appId } = body as {
@@ -97,19 +99,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const toScore = ids.filter((id) => !(id in tracked));
-  let scores: Record<string, number> = {};
-  if (toScore.length) {
-    try {
-      scores = await cachedBatchScores(term, store, country, ids, Object.keys(tracked));
-    } catch {
-      return NextResponse.json({ error: "Couldn't score relevancy right now." }, { status: 502 });
-    }
+  let batch: Record<string, number>;
+  try {
+    batch = await cachedBatchScores(term, store, country, ids);
+  } catch {
+    return NextResponse.json({ error: "Couldn't score relevancy right now." }, { status: 502 });
   }
+  const scores = { ...batch, ...tracked };
 
   if (!(await isImpersonating())) {
-    after(() => trackServerEvent(user.id, "Inspector Relevancy Loaded", { store, country, apps: Object.keys(scores).length + Object.keys(tracked).length }));
+    after(() => trackServerEvent(user.id, "Inspector Relevancy Loaded", { store, country, apps: Object.keys(scores).length }));
   }
 
-  return NextResponse.json({ scores: { ...scores, ...tracked } } satisfies InspectorRelevancy);
+  return NextResponse.json({ scores } satisfies InspectorRelevancy);
 }
