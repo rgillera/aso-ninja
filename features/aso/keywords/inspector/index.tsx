@@ -111,7 +111,7 @@ function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: s
     }
     if (app.rating > 0 && app.rating < WEAK_STARS) reasons.push(`rated ${app.rating.toFixed(1)}★`);
     const score = id ? relevancy?.[id] : undefined;
-    if (score !== undefined && score < WEAK_RELEVANCY) reasons.push("off-target for this keyword");
+    if (score !== undefined && score < WEAK_RELEVANCY) reasons.push("off-target");
     return reasons.length ? [{ app, reasons }] : [];
   });
 }
