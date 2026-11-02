@@ -130,7 +130,7 @@ const TABS: { key: PaneTab; label: string; icon: typeof PuzzlePieceIcon; href: s
 // The table (children) on the left, the pane on the right. Below xl there
 // isn't room for both, so the pane slides over the table instead.
 export function InspectorSplit({
-  inspector, trackedTerms, onTrack, app, keywords, downloadsConnection, competitors, onCompetitorAdded, tourStep, onAdvanceTour, children,
+  inspector, trackedTerms, onTrack, app, keywords, downloadsConnection, competitors, onCompetitorAdded, onRowRefreshed, tourStep, onAdvanceTour, children,
 }: {
   inspector: DockedInspector;
   // For the Performance tab, which reads the keyword's row from the table.
@@ -141,6 +141,8 @@ export function InspectorSplit({
   // Performance tab's visibility chart.
   competitors: CompetitorApp[];
   onCompetitorAdded: (competitor: CompetitorApp) => void;
+  // A tracked row the Inspector just rewrote with fresh numbers.
+  onRowRefreshed?: InspectorDock["onRowRefreshed"];
   // The onboarding tour (owned by Keywords Research): the docked Inspector
   // shows two of its steps, and the Long Tail tab is the one after.
   tourStep: TourStep | null;
@@ -281,6 +283,7 @@ export function InspectorSplit({
                     onLongTail: inspector.openLongTail,
                     competitorIds: new Set(competitors.map((c) => c.storeId)),
                     onCompetitorAdded,
+                    onRowRefreshed,
                     tourStep,
                     onAdvanceTour,
                     chanceFor: (term) => {

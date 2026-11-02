@@ -33,7 +33,7 @@ import { CountryPicker } from "./CountryPicker";
 import { StatStrip } from "@/features/aso/keywords/StatStrip";
 import { canUseInspector } from "./limits";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
-import type { KeywordInspection } from "@/app/api/keywords/inspect/route";
+import type { KeywordInspection, TrackedRowRefresh } from "@/app/api/keywords/inspect/route";
 import type { KeywordResultEstimates } from "@/app/api/keywords/estimates/route";
 import type { AppEstimate } from "@/libs/contracts";
 import type { CompetitorApp } from "@/features/aso/keywords/research/ManageCompetitorsModal";
@@ -462,6 +462,9 @@ export type InspectorDock = {
   // The app's Chance for a term, from Research's table row (the Inspector
   // has no app-specific score of its own); undefined when it isn't there.
   chanceFor?: (term: string) => number | undefined;
+  // The table row this inspection just rewrote (see refreshTrackedRow in
+  // the inspect route), so Research's table shows the same numbers.
+  onRowRefreshed?: (term: string, row: TrackedRowRefresh) => void;
   // The onboarding tour's step, which Keywords Research owns; the
   // Inspector shows "inspectorSearches" and "inspectorRank".
   tourStep?: TourStep | null;
@@ -658,6 +661,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     setRecent((prev) => mergeRecent([current], prev));
 
     const params = new URLSearchParams({ term: normTerm, store: current.store, country: current.country, workspaceId: workspaceId ?? "" });
+    // The route only touches this app's row when it tracks the term in
+    // this same storefront.
+    if (activeApp?.id) params.set("appId", activeApp.id);
     // Resolves to the inspection (or null) so the results list below can
     // fall back to its topApps if the browser's live search fails.
     const metricsPromise = (async (): Promise<KeywordInspection | null> => {
@@ -669,6 +675,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
           return null;
         }
         if (id === requestId.current) setMetrics(data as KeywordInspection);
+        if ((data as KeywordInspection).tracked) dock?.onRowRefreshed?.(normTerm, (data as KeywordInspection).tracked!);
         return data as KeywordInspection;
       } catch {
         if (id === requestId.current) setMetricsError("Couldn't check this keyword right now.");

@@ -656,6 +656,9 @@ export default function KeywordResearchPage() {
         downloadsConnection={downloadsConnection}
         competitors={competitors}
         onCompetitorAdded={handleCompetitorAdded}
+        onRowRefreshed={(term, row) => setKeywords((prev) =>
+          prev.map((k) => k.keyword.toLowerCase() === term ? { ...k, ...row } : k)
+        )}
         tourStep={tourStep}
         onAdvanceTour={advanceTour}
       >

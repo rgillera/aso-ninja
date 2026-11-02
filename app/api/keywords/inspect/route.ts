@@ -4,6 +4,8 @@ import { trackServerEvent } from "@/libs/analytics/events";
 import { inspectorAllowedFor } from "@/features/aso/keywords/inspector/serverAccess";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
+import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { recomputeOpportunity } from "@/libs/keyword-volume";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 
 const TOP_APPS_LIMIT = 20;
@@ -22,12 +24,57 @@ export type KeywordInspection = {
   // the shared search cache stores (name, icon, rating count) — no star
   // rating, developer or price — so the live search stays the primary source.
   topApps: AppSearchResult[];
+  // Set when appId tracks this term in this storefront: that row, rewritten
+  // with this inspection's numbers, so Keyword Research's table matches it.
+  tracked?: TrackedRowRefresh;
 };
+
+export type TrackedRowRefresh = { volume: number; diff: number; chance: number; rank: number | null; opportunity: number | null };
+
+type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
+
+// A fresh inspection is newer than the tracked row's stored metrics, and its
+// persisted snapshot even makes the refresh cron skip the term (see
+// stale_keywords_for_refresh), so the row would keep its old numbers. Rewrite
+// it here with the same math as the cron's refreshKeywordMetrics. An
+// iPad-only app is never in these iPhone results, so it keeps its stored
+// rank; a frozen link (over the plan's keyword limit) is left alone.
+async function refreshTrackedRow(
+  supabase: SupabaseClient, appId: string, term: string, store: string, country: string,
+  volume: number, diff: number, names: string[], ids: (string | number | null | undefined)[]
+): Promise<TrackedRowRefresh | undefined> {
+  const { data: row } = await supabase
+    .from("keyword_metrics")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .select("keyword_id, rank, relevancy, relevancy_scored, opportunity, apps!inner(name, store, country, store_id, ipad_only), keywords!inner(term)" as any)
+    .eq("app_id", appId)
+    .eq("keywords.term", term)
+    .maybeSingle();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r = row as any;
+  if (!r || r.apps.store !== store || (r.apps.country ?? "us").toLowerCase() !== country) return undefined;
+
+  const { data: link } = await supabase
+    .from("app_keywords").select("status").eq("app_id", appId).eq("keyword_id", r.keyword_id).maybeSingle();
+  if (link?.status === "frozen") return undefined;
+
+  const rankIdx = findRankIdx(names, r.apps.name, ids, r.apps.store_id);
+  const rank = store === "ios" && r.apps.ipad_only === true ? r.rank : rankIdx >= 0 ? rankIdx + 1 : null;
+  const chance = computeChance(diff, rank);
+  const opportunity = recomputeOpportunity(r, volume, chance);
+
+  const { error } = await supabase
+    .from("keyword_metrics")
+    .update({ volume, diff, chance, rank, opportunity, updated_at: new Date().toISOString() })
+    .eq("app_id", appId)
+    .eq("keyword_id", r.keyword_id);
+  return error ? undefined : { volume, diff, chance, rank, opportunity };
+}
 
 // Body of the 403 a below-Pro user gets.
 export type InspectorLocked = { error: string; code: "plan_required" };
 
-// GET /api/keywords/inspect?term=calorie+counter&store=ios&country=us&workspaceId=<uuid>
+// GET /api/keywords/inspect?term=calorie+counter&store=ios&country=us&workspaceId=<uuid>[&appId=<uuid>]
 // Keyword Inspector: popularity and difficulty for any keyword in any
 // storefront, with no app involved. Same scoring (and the same shared
 // same-day search cache) as /api/keywords/metrics, so a keyword reads the
@@ -43,6 +90,8 @@ export async function GET(request: NextRequest) {
   const store       = searchParams.get("store") === "android" ? "android" : "ios";
   const country     = (searchParams.get("country") ?? "us").toLowerCase();
   const workspaceId = searchParams.get("workspaceId") ?? "";
+  // The app whose tracked row for this term gets this inspection's numbers.
+  const appId       = searchParams.get("appId") ?? "";
 
   if (!term) return NextResponse.json({ error: "Enter a keyword to inspect." }, { status: 400 });
   if (term.length > 100) return NextResponse.json({ error: "Keyword is too long." }, { status: 400 });
@@ -90,6 +139,20 @@ export async function GET(request: NextRequest) {
 
   if (!impersonating) after(() => trackServerEvent(user.id, "Keyword Inspected", { store, country }));
 
+  const tracked = appId
+    ? await refreshTrackedRow(
+        supabase, appId, term.toLowerCase(), store, country, core.volume, core.diff,
+        store === "ios"
+          ? (core.apps as { trackName: string }[]).map((a) => a.trackName)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          : (core.apps as any[]).map((a) => a.title ?? ""),
+        store === "ios"
+          ? (core.apps as { trackId: number }[]).map((a) => a.trackId)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          : (core.apps as any[]).map((a) => a.appId),
+      ).catch(() => undefined)
+    : undefined;
+
   return NextResponse.json({
     term,
     store,
@@ -116,5 +179,6 @@ export async function GET(request: NextRequest) {
           price: a.free ? "Free" : typeof a.price === "number" ? `$${a.price.toFixed(2)}` : "",
           inAppPurchases: false, screenshotUrls: [],
         })),
+    tracked,
   } satisfies KeywordInspection);
 }
