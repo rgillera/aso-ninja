@@ -3,6 +3,85 @@ import Stripe from "stripe";
 import { createStripeClient } from "@/libs/stripe/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { recordUserEvent } from "@/libs/analytics/events";
+import { getResendClient } from "@/libs/resend";
+import {
+  growthStarterAlertSubject,
+  renderGrowthStarterAlertHtml,
+  renderGrowthStarterAlertText,
+  type GrowthStarterPurchase,
+} from "@/libs/email/growth-starter-alert";
+import {
+  growthStarterWelcomeSubject,
+  renderGrowthStarterWelcomeHtml,
+  renderGrowthStarterWelcomeText,
+} from "@/libs/email/growth-starter-welcome";
+
+const FROM = "AppASO <hello@appaso.io>";
+const ALERT_TO = "hello@appaso.io";
+
+const YEAR_SECONDS = 365 * 24 * 60 * 60;
+
+// The Growth Starter is paid once, so its year of Pro is a Pro yearly
+// subscription in a 12-month trial that cancels when the trial ends: no card
+// on file, nothing ever charged, and expiry comes through the usual
+// customer.subscription.deleted. Keyed on the session so a webhook retry
+// returns the same subscription instead of creating a second one.
+async function grantGrowthStarterPro(
+  stripe: Stripe,
+  admin: ReturnType<typeof createAdminClient>,
+  session: Stripe.Checkout.Session
+) {
+  const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
+  if (!customerId) throw new Error(`Growth Starter session ${session.id} has no customer`);
+
+  const { data: pro } = await admin.from("plans").select("stripe_price_id_yearly").eq("slug", "pro").single();
+  if (!pro?.stripe_price_id_yearly) throw new Error("Pro plan has no yearly Stripe price");
+
+  return stripe.subscriptions.create(
+    {
+      customer: customerId,
+      items: [{ price: pro.stripe_price_id_yearly }],
+      trial_end: session.created + YEAR_SECONDS,
+      trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+      cancel_at_period_end: true,
+      metadata: { offer: "growth_starter", checkout_session: session.id },
+    },
+    { idempotencyKey: `growth-starter-${session.id}` }
+  );
+}
+
+// After a Growth Starter purchase: the buyer gets the onboarding booking
+// link, and the team gets an alert. Runs in after(); a failed send is
+// logged, never fails the webhook.
+async function sendGrowthStarterEmails(purchase: GrowthStarterPurchase) {
+  const resend = getResendClient();
+  const sends = [
+    resend.emails.send({
+      from: FROM,
+      to: ALERT_TO,
+      replyTo: purchase.email ?? undefined,
+      subject: growthStarterAlertSubject(purchase),
+      html: renderGrowthStarterAlertHtml(purchase),
+      text: renderGrowthStarterAlertText(purchase),
+    }),
+  ];
+  if (purchase.email) {
+    sends.push(
+      resend.emails.send({
+        from: FROM,
+        to: purchase.email,
+        subject: growthStarterWelcomeSubject,
+        html: renderGrowthStarterWelcomeHtml(purchase.name),
+        text: renderGrowthStarterWelcomeText(purchase.name),
+      })
+    );
+  }
+
+  for (const result of await Promise.allSettled(sends)) {
+    if (result.status === "rejected") console.error("Growth Starter email failed:", result.reason);
+    else if (result.value.error) console.error("Growth Starter email failed:", result.value.error);
+  }
+}
 
 const RELEVANT_EVENTS = new Set([
   "checkout.session.completed",
@@ -100,7 +179,26 @@ export async function POST(request: NextRequest) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
-      if (session.subscription && userId) {
+      if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && userId) {
+        if (session.payment_status !== "paid") break;
+        const subscription = await grantGrowthStarterPro(stripe, admin, session);
+        await upsertFromStripeSubscription(admin, subscription, userId);
+        after(() =>
+          sendGrowthStarterEmails({
+            email: session.customer_details?.email ?? session.customer_email ?? null,
+            name: session.customer_details?.name ?? null,
+            amountCents: session.amount_total,
+            currency: session.currency,
+            sessionId: session.id,
+          })
+        );
+        after(() =>
+          recordUserEvent(userId, "checkout_completed", {
+            props: { plan_id: null, billing: null, offer: "growth_starter" },
+            ref: session.id,
+          })
+        );
+      } else if (session.subscription && userId) {
         const subscription = await stripe.subscriptions.retrieve(
           typeof session.subscription === "string"
             ? session.subscription

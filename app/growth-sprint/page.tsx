@@ -390,11 +390,15 @@ export default async function GrowthSprintPage() {
                 Talk to us
               </PortalButton>
               <p className="mt-6 text-sm text-gray-500">
-                Prefer to DIY?{" "}
+                Not ready for a Sprint?{" "}
+                <Link href="/growth-starter" className="font-medium text-indigo-600 hover:underline">
+                  See the Growth Starter
+                </Link>
+                , a plan you run yourself, or{" "}
                 <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">
-                  Check our self-serve plans
-                </Link>{" "}
-                instead.
+                  check our self-serve plans
+                </Link>
+                .
               </p>
             </PortalCtaCard>
           </div>
