@@ -1,46 +1,12 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
 import { runQuickAuditAction } from "@/features/admin/actions";
 import type { AuditFinding, QuickAuditResult } from "@/libs/admin/quick-audit";
 import { COUNTRIES, countryFlag } from "@/libs/countries";
 
-// Calendly link + signature are the same on every email, so they're
-// remembered per browser. In-memory fallback when storage is blocked.
-const SETTINGS_KEY = "admin-quick-audit-settings";
-type Settings = { calendly: string; signature: string };
-const EMPTY_SETTINGS: Settings = { calendly: "", signature: "" };
-const settingsListeners = new Set<() => void>();
-let settingsMemory: Settings = EMPTY_SETTINGS;
-let settingsRaw: string | null = null;
-
-function readSettings(): Settings {
-  try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw === null) return settingsMemory;
-    // Same object for the same stored string, as useSyncExternalStore requires.
-    if (raw !== settingsRaw) {
-      settingsRaw = raw;
-      const parsed = JSON.parse(raw);
-      settingsMemory = { calendly: String(parsed.calendly ?? ""), signature: String(parsed.signature ?? "") };
-    }
-    return settingsMemory;
-  } catch {
-    return settingsMemory;
-  }
-}
-
-function writeSettings(next: Settings) {
-  settingsMemory = next;
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(next)); } catch { /* memory covers this page view */ }
-  settingsListeners.forEach((l) => l());
-}
-
-function subscribeSettings(listener: () => void) {
-  settingsListeners.add(listener);
-  return () => { settingsListeners.delete(listener); };
-}
+const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
 
 const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   keywords: "Keywords",
@@ -50,7 +16,7 @@ const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   metadata: "Metadata",
 };
 
-function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, signature: string) {
+function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string) {
   // Only the first keyword finding carries the free-tool line, so the email
   // doesn't repeat the same nudge twice.
   let toolUsed = false;
@@ -60,7 +26,7 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     return `${i + 1}. ${f.text}${withTool ? `\n   ${f.toolLine}` : ""}`;
   });
   return [
-    `Hi ${firstName.trim() || "{{FIRST_NAME}}"},`,
+    firstName.trim() ? `Hi ${firstName.trim()},` : "Hi there!",
     "",
     `Thanks for getting back to me. Here's the quick audit for ${r.shortName}:`,
     "",
@@ -68,11 +34,9 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     "",
     "Fixing these in the right order usually moves both rankings and conversion within a few weeks.",
     "",
-    `Happy to walk you through how we'd approach it. Would a 15-minute call this week work? You can grab a time here: ${calendly.trim() || "{{CALENDLY_LINK}}"}`,
+    `Happy to walk you through how we'd approach it. Would a 15-minute call this week work? You can grab a time here: ${calendly.trim() || DEFAULT_CALENDLY}`,
     "",
     "P.S. Want a senior growth specialist in your corner to help you scale? Our Growth Starter includes a full funnel review, a live strategy session, 2 months of support, and a year of AppASO Pro: https://www.appaso.io/growth-starter",
-    "",
-    signature.trim() || "{{SENDER_SIGNATURE}}",
   ].join("\n");
 }
 
@@ -80,10 +44,7 @@ export default function AdminQuickAuditPage() {
   const [url, setUrl] = useState("");
   const [country, setCountry] = useState("");
   const [firstName, setFirstName] = useState("");
-  const settings = useSyncExternalStore(subscribeSettings, readSettings, () => EMPTY_SETTINGS);
-  const { calendly, signature } = settings;
-  const setCalendly = (v: string) => writeSettings({ ...settings, calendly: v });
-  const setSignature = (v: string) => writeSettings({ ...settings, signature: v });
+  const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +70,7 @@ export default function AdminQuickAuditPage() {
     () => result ? selected.map((id) => result.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
     [result, selected],
   );
-  const email = result ? buildEmail(result, picked, firstName, calendly, signature) : "";
+  const email = result ? buildEmail(result, picked, firstName, calendly) : "";
 
   async function copy() {
     try {
@@ -146,10 +107,9 @@ export default function AdminQuickAuditPage() {
           </button>
         </form>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
           <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className={inputCls} />
           <input value={calendly} onChange={(e) => setCalendly(e.target.value)} placeholder="Calendly link" className={inputCls} />
-          <textarea value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Signature" rows={1} className={`${inputCls} resize-y`} />
         </div>
 
         {pending && <p className="text-sm text-gray-500 mb-6">Reading the listing, searching competitors, scoring keywords and reviewing screenshots. This usually takes 30 to 90 seconds.</p>}
