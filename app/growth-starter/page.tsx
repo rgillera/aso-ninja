@@ -178,7 +178,6 @@ const goodFit = [
 
 const notFit = [
   "You want someone to do the work for you",
-  "You need paid ads or creative production",
   "You only need the software",
 ];
 
