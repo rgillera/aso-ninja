@@ -61,8 +61,9 @@ export default function GrowthStarterTermsPage() {
             and your priorities.
           </li>
           <li>
-            <strong>Email support:</strong> answers by email to questions about your strategy for 60 days
-            after the strategy session, usually within 2 working days.
+            <strong>Specialist support:</strong> for 2 months after the strategy session, the specialist who
+            prepared your analysis answers your questions about your strategy by email, usually within 2
+            working days. If they are unavailable, another member of our team answers instead.
           </li>
         </ul>
         <p>

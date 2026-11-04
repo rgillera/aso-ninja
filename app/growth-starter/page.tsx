@@ -56,7 +56,7 @@ const ctaLabel = "Get started for $500";
 const stats = [
   { label: "Price", value: "$500", note: "one payment" },
   { label: "Expert time", value: "90 min", note: "live, 1-on-1" },
-  { label: "Support", value: "60 days", note: "by email" },
+  { label: "Specialist", value: "2 months", note: "your partner" },
   { label: "AppASO Pro", value: "12 months", note: "$288 value" },
 ];
 
@@ -104,12 +104,12 @@ const steps = [
     milestone: "You know exactly what to change first",
   },
   {
-    n: "The next 60 days",
+    n: "The next 2 months",
     title: "Ship it",
-    description: "You make the changes. We're one email away when you get stuck.",
+    description: "You make the changes, with your specialist one email away when you get stuck.",
     items: [
       "Work through your plan at your own pace",
-      "Email us any question, for 60 days",
+      "Ask your specialist anything, for 2 months",
       "Watch each change move your rankings in Pro",
     ],
     milestone: "Your first changes are live",
@@ -154,8 +154,8 @@ const deliverables = [
     icon: FireIcon,
   },
   {
-    name: "60 days of email support",
-    description: "Stuck on a step or unsure about a result? Email us and get an answer from the person who built your plan.",
+    name: "2 months with your specialist",
+    description: "The specialist who researched your app stays on as your growth partner. Stuck on a step or unsure about a result? Ask them, and get an answer from someone who already knows your app.",
     icon: EnvelopeIcon,
   },
 ];
@@ -166,7 +166,7 @@ const starterIncludes = [
   "Expert review of your full funnel, from store listing to purchase, done before the call",
   "60-minute call: a live roast of your app and a strategy to grow it",
   "Keyword opportunities and competitor gaps, walked through on the call",
-  "60 days of email support",
+  "2 months of support from the specialist who researched your app",
 ];
 
 const goodFit = [
@@ -193,7 +193,7 @@ const faqs = [
   },
   {
     q: "Do I get a written report?",
-    a: "No. Everything is walked through live, so you can ask questions as we go. Record the call and you'll have every point to come back to, and 60 days of email support if anything is unclear.",
+    a: "No. Everything is walked through live, so you can ask questions as we go. Record the call and you'll have every point to come back to, and your specialist is there for 2 months if anything is unclear.",
   },
   {
     q: "What do you need from me?",
@@ -277,8 +277,9 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
-              A growth expert reviews your whole funnel, roasts it live with you, and leaves you with a plan, plus a year of AppASO Pro to{" "}
-              <span className="font-semibold text-indigo-600">run it yourself.</span>
+              In 90 minutes, a growth expert walks your whole funnel with you, from search to paywall, and hands you a
+              ranked list of fixes. Then you get the same specialist stays on as your growth partner for 2 months, plus you get a full year of AppASO Pro to{" "}
+              <span className="font-semibold text-indigo-600">ship them yourself.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
               {ctaLabel}
