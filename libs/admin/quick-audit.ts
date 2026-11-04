@@ -311,7 +311,7 @@ async function keywordFindings(
       category: "keywords",
       severity: 96,
       text: kind === "hard"
-        ? `Your ${field} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`
+        ? `Your ${field} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null && rank <= 20 ? ` You're at #${rank}, just off the first page, where most of the taps happen.` : rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`
         : `Your ${field} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`,
       toolLine: toolLine(k.term),
       evidence: `Targeted in ${field} · ${metricsLine(k, rank)}`,
@@ -701,8 +701,13 @@ function pickDefault(findings: AuditFinding[]): string[] {
 
 // ── Entry point ─────────────────────────────────────────────────────────────
 
+// `full` adds the non-keyword angles: Gemini screenshot review, category
+// benchmark (screenshot count, video, ratings, update cadence) and the
+// localization check. Off by default, since the email carries two keyword
+// findings; skipping them drops the Gemini vision call and roughly 40% of
+// the store requests.
 export async function runQuickAudit(
-  admin: SupabaseClient, input: { store: AuditStore; storeId: string; country: string },
+  admin: SupabaseClient, input: { store: AuditStore; storeId: string; country: string }, { full = false }: { full?: boolean } = {},
 ): Promise<QuickAuditResult> {
   const { store, storeId, country } = input;
   const data = await fetchStoreData(store, storeId, storeId, country);
@@ -712,13 +717,15 @@ export async function runQuickAudit(
   const shortName = titleBrand(data.name ?? "");
 
   const [bench, kw, shots] = await Promise.all([
-    loadCategoryBenchmark(store, storeId, storeId, country, data),
+    full ? loadCategoryBenchmark(store, storeId, storeId, country, data) : Promise.resolve(null),
     keywordFindings(admin, store, storeId, country, data, shortName, notes),
-    screenshotFinding(store, data, notes),
+    full ? screenshotFinding(store, data, notes) : Promise.resolve(null),
   ]);
-  if (!bench) notes.push("Category benchmark unavailable; benchmark-based findings skipped.");
-  const l10n = await localizationFinding(store, storeId, country, data, kw.competitors).catch(() => null);
+  if (full && !bench) notes.push("Category benchmark unavailable; benchmark-based findings skipped.");
+  const l10n = full ? await localizationFinding(store, storeId, country, data, kw.competitors).catch(() => null) : null;
 
+  // Metadata checks that need no benchmark (empty/short subtitle, brand-only
+  // title) cost no requests, so they're always in as keyword-space alternates.
   const findings = [
     ...kw.findings,
     ...(shots ? [shots] : []),

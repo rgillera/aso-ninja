@@ -502,7 +502,7 @@ function toRecord(row: any): QuickAuditRecord {
 
 // Live store reads + the Keyword Inspector's keyword checks for a
 // cold-outreach audit (see libs/admin/quick-audit.ts), saved to history.
-export async function runQuickAuditAction(url: string, country?: string): Promise<QuickAuditActionResult> {
+export async function runQuickAuditAction(url: string, country?: string, full = false): Promise<QuickAuditActionResult> {
   const user = await requireSuperAdmin();
   const { parseAppInput, runQuickAudit } = await import("@/libs/admin/quick-audit");
   const input = parseAppInput(url, country);
@@ -510,7 +510,7 @@ export async function runQuickAuditAction(url: string, country?: string): Promis
   const admin = createAdminClient();
   let result: QuickAuditResult;
   try {
-    result = await runQuickAudit(admin, input);
+    result = await runQuickAudit(admin, input, { full });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Audit failed." };
   }

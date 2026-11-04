@@ -88,6 +88,7 @@ function formatWhen(iso: string) {
 export default function AdminQuickAuditPage({ initialHistory }: { initialHistory: QuickAuditSummary[] }) {
   const [url, setUrl] = useState("");
   const [country, setCountry] = useState("");
+  const [fullAudit, setFullAudit] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
@@ -104,7 +105,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     if (!url.trim() || pending) return;
     setError(null);
     startTransition(async () => {
-      const res = await runQuickAuditAction(url, country || undefined);
+      const res = await runQuickAuditAction(url, country || undefined, fullAudit);
       if (!res.ok) { setError(res.error); setResult(null); setAuditId(""); return; }
       const { record } = res;
       setResult(record.result);
@@ -214,12 +215,22 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
               </button>
             </form>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
               <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className={inputCls} />
               <input value={calendly} onChange={(e) => setCalendly(e.target.value)} placeholder="Calendly link" className={inputCls} />
             </div>
 
-            {pending && !loadingId && <p className="text-sm text-gray-500 mb-6">Reading the listing, searching competitors, checking keywords and reviewing screenshots. This usually takes 30 to 90 seconds.</p>}
+            <label className="flex items-start gap-2 mb-6 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
+              <input type="checkbox" checked={fullAudit} onChange={(e) => setFullAudit(e.target.checked)} className="mt-0.5 accent-indigo-500" />
+              <span>
+                Full audit
+                <span className="text-gray-500"> · also reviews screenshots (Gemini), localization and category benchmarks as extra findings. Slower, and uses more store requests.</span>
+              </span>
+            </label>
+
+            {pending && !loadingId && <p className="text-sm text-gray-500 mb-6">{fullAudit
+              ? "Reading the listing, checking keywords, reviewing screenshots and comparing against the category. This usually takes 30 to 90 seconds."
+              : "Reading the listing, finding competitors and checking keywords. This usually takes 10 to 60 seconds."}</p>}
             {error && <div className="rounded-lg bg-red-500/10 text-red-400 light:text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
             {result && !(pending && !loadingId) && (
