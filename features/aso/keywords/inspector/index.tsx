@@ -68,7 +68,7 @@ const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
 const WEAK_SPOT_RANGE = 10;
 const WEAK_RATING_COUNT = 5_000;
 const WEAK_STARS = 3.5;
-// Pro+: a top-10 app this poor a fit for the keyword (see the relevancy
+// Pro: a top-10 app this poor a fit for the keyword (see the relevancy
 // column) ranks on title words or authority, not intent, so a well-matched
 // app can take its spot. Below rule 4's "secondary use case" band.
 const WEAK_RELEVANCY = 40;
@@ -99,7 +99,7 @@ function brandSearchApp(apps: AppSearchResult[], store: Store, relevancy: Record
 // Store results always carry it, but a Google Play row shows 0 when its
 // detail lookup failed (or on the server fallback list), which says nothing.
 // Same for stars: 0 means "not known" (the iOS fallback list has none).
-// relevancy: the Pro+ scores by store id, null when not loaded or locked.
+// relevancy: the Pro scores by store id, null when not loaded or locked.
 function findWeakSpots(apps: AppSearchResult[], store: Store, excludeStoreId?: string, relevancy?: Record<string, number> | null): WeakSpot[] {
   return apps.slice(0, WEAK_SPOT_RANGE).flatMap((app) => {
     const id = store === "ios" ? String(app.trackId) : app.appId;
@@ -256,14 +256,14 @@ function EstimateStat({ value, basis, label, format }: {
 
 // The keyword's relevancy to one of the top results, in the same two-line
 // style as the estimates. undefined = still loading, null = no score,
-// "locked" = below Pro+ (the card header has the upgrade link).
+// "locked" = below Pro (the card header has the upgrade link).
 function RelevancyStat({ value }: { value: number | null | undefined | "locked" }) {
   // The pill keeps the 18px text-xs line of the other stats' values, so
   // every label underneath stays on one line.
   const pill = "inline-block rounded-full px-1.5 align-top text-[11px] font-semibold leading-[18px] tabular-nums";
   if (value === "locked") {
     return (
-      <div className="w-14 shrink-0 pt-1 text-right" title="Relevancy for the top results is a Pro+ feature">
+      <div className="w-14 shrink-0 pt-1 text-right" title="Relevancy for the top results is a Pro feature">
         <p className="text-xs">
           <span className={`${pill} bg-white/[0.08] light:bg-black/[0.06]`}>
             <LockClosedIcon className="inline-block size-3 -mt-px text-white light:text-gray-900" aria-label="Locked" />
@@ -306,7 +306,7 @@ function ResultRow({
   estimate: AppEstimate | null | undefined;
   // Off when the storefront has no estimate model.
   showEstimates: boolean;
-  // Top RELEVANCY_APPS_LIMIT rows. "locked": below Pro+; "blank": an empty
+  // Top RELEVANCY_APPS_LIMIT rows. "locked": below Pro; "blank": an empty
   // column so rows past the top 10 stay aligned; null: no score for this app.
   relevancy: number | null | "loading" | "locked" | "blank";
   // "Add as competitor" for the active app; omitted when the search isn't for
@@ -576,8 +576,8 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   // Monthly downloads/revenue per result, keyed by store id. null = loading
   // (or not requested yet); supported false = no model for this storefront.
   const [estimates, setEstimates] = useState<KeywordResultEstimates | null>(null);
-  // Pro+: relevancy for the top RELEVANCY_APPS_LIMIT results, keyed by store
-  // id. null while loading (or below Pro+).
+  // Pro: relevancy for the top RELEVANCY_APPS_LIMIT results, keyed by store
+  // id. null while loading (or below Pro).
   const [relevancy, setRelevancy] = useState<Record<string, number> | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
@@ -845,7 +845,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     }
   }
 
-  // Pro+ only. A failed request leaves every row on a dash, never an error.
+  // Pro and above. A failed request leaves every row on a dash, never an error.
   async function loadRelevancy(list: AppSearchResult[], q: Recent, id: number) {
     if (!relevancyUnlocked) return;
     const ids = list.slice(0, RELEVANCY_APPS_LIMIT).map((a) => storeIdOf(a, q.store)).filter(Boolean);
@@ -1506,7 +1506,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       >
                         <LockClosedIcon className="size-3.5" />
                         Unlock relevancy
-                        <span className="rounded bg-amber-500/15 px-1 text-[10px] font-semibold">Pro+</span>
+                        <span className="rounded bg-amber-500/15 px-1 text-[10px] font-semibold">Pro</span>
                       </Link>
                     )}
                   </CardHeader>

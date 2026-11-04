@@ -45,7 +45,7 @@ const cachedBatchScores = unstable_cache(
 // POST /api/keywords/inspect/relevancy
 // body: { term, store, country, workspaceId, ids: string[], appId? }
 // Keyword Inspector's relevancy column: how well the keyword fits each of
-// the top 10 results, loaded after the list renders. Pro+ and above (see
+// the top 10 results, loaded after the list renders. Pro and above (see
 // canUseInspectorRelevancy). It doesn't draw from the plan's relevancy pool:
 // it scores other people's apps, nothing gets tracked.
 //
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   const plan = await inspectorPlanFor(supabase, user.id, workspaceId ?? "");
   if (!plan || !canUseInspectorRelevancy(plan)) {
     return NextResponse.json({
-      error: "Relevancy for top results is a Pro+ feature.",
+      error: "Relevancy for top results is a Pro feature.",
       code: "plan_required",
     } satisfies InspectorLocked, { status: 403 });
   }
