@@ -54,6 +54,7 @@ export function isImpersonationLive(imp: Impersonation): boolean {
 const READ_ONLY_POST_ROUTES = new Set([
   "/api/keywords/search",
   "/api/keywords/estimates",
+  "/api/keywords/inspect/relevancy",
   "/api/keywords/subtitles",
   "/api/keywords/performance-report",
   "/api/keywords/translate",
