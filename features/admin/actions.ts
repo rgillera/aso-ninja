@@ -468,20 +468,85 @@ export async function stopImpersonationAction(): Promise<void> {
 
 // ── Quick audit ───────────────────────────────────────────────────────────────
 
+type QuickAuditResult = import("@/libs/admin/quick-audit").QuickAuditResult;
+
+export type QuickAuditRecord = {
+  id: string;
+  url: string;
+  createdAt: string;
+  result: QuickAuditResult;
+  selected: string[];
+  firstName: string;
+  calendly: string;
+};
+
+export type QuickAuditSummary = {
+  id: string;
+  appName: string;
+  store: "ios" | "android";
+  country: string;
+  createdAt: string;
+};
+
 export type QuickAuditActionResult =
-  | { ok: true; result: import("@/libs/admin/quick-audit").QuickAuditResult }
+  | { ok: true; record: QuickAuditRecord }
   | { ok: false; error: string };
 
-// Live store reads + autocomplete volume (cached in the shared table) for a
-// cold-outreach audit; see libs/admin/quick-audit.ts.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toRecord(row: any): QuickAuditRecord {
+  return {
+    id: row.id, url: row.url, createdAt: row.created_at, result: row.result,
+    selected: row.selected ?? [], firstName: row.first_name ?? "", calendly: row.calendly ?? "",
+  };
+}
+
+// Live store reads + the Keyword Inspector's keyword checks for a
+// cold-outreach audit (see libs/admin/quick-audit.ts), saved to history.
 export async function runQuickAuditAction(url: string, country?: string): Promise<QuickAuditActionResult> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
   const { parseAppInput, runQuickAudit } = await import("@/libs/admin/quick-audit");
   const input = parseAppInput(url, country);
   if (!input) return { ok: false, error: "Paste an App Store or Google Play URL (or an app id / package name)." };
+  const admin = createAdminClient();
+  let result: QuickAuditResult;
   try {
-    return { ok: true, result: await runQuickAudit(createAdminClient(), input) };
+    result = await runQuickAudit(admin, input);
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Audit failed." };
   }
+  const { data, error } = await admin.from("quick_audits").insert({
+    created_by: user.id, url: url.trim(), store: result.store, store_id: result.storeId,
+    country: result.country, app_name: result.appName, result, selected: result.defaultSelection,
+  }).select("*").single();
+  // History is a convenience: a failed save still returns the audit.
+  if (error || !data) {
+    return { ok: true, record: { id: "", url: url.trim(), createdAt: new Date().toISOString(), result, selected: result.defaultSelection, firstName: "", calendly: "" } };
+  }
+  return { ok: true, record: toRecord(data) };
+}
+
+export async function listQuickAuditsAction(): Promise<QuickAuditSummary[]> {
+  await requireSuperAdmin();
+  const { data } = await createAdminClient()
+    .from("quick_audits")
+    .select("id, app_name, store, country, created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  return (data ?? []).map((r) => ({ id: r.id, appName: r.app_name, store: r.store, country: r.country, createdAt: r.created_at }));
+}
+
+export async function getQuickAuditAction(id: string): Promise<QuickAuditRecord | null> {
+  await requireSuperAdmin();
+  const { data } = await createAdminClient().from("quick_audits").select("*").eq("id", id).maybeSingle();
+  return data ? toRecord(data) : null;
+}
+
+// Saves the picks + name + link behind the email, so history rebuilds the
+// exact email that was copied.
+export async function saveQuickAuditEmailAction(id: string, selected: string[], firstName: string, calendly: string): Promise<void> {
+  await requireSuperAdmin();
+  if (!id) return;
+  await createAdminClient().from("quick_audits")
+    .update({ selected: selected.slice(0, 3), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
+    .eq("id", id);
 }
