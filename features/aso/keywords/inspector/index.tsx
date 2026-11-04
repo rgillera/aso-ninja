@@ -985,13 +985,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   // Inspector isn't tied to an app (any keyword, store and country), and an
   // app header would imply the form follows it. The active app (sidebar
   // switcher) still drives "Your app", its rank, competitors and tracking, so
-  // a small chip on the right names it, and says when the searched storefront
-  // isn't the app's (those parts then stay hidden).
+  // a small chip on the right names it and its country.
   // Docked, Keyword Research's pane has its own tab bar (InspectorSplit) and
   // the app is already in that page's header.
   const appCountry = (activeApp?.country ?? "us").toLowerCase();
-  const appStoreLabel = activeApp?.store === "android" ? "Google Play" : "App Store";
-  const otherStorefront = !!activeApp && !!query && (activeApp.store !== query.store || appCountry !== query.country);
   const header = dock ? null : (
     <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
       <div className="size-8 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
@@ -1004,13 +1001,13 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
       {activeApp ? (
         <div
           className="hidden @2xl:flex shrink-0 max-w-[45%] items-center gap-2.5 rounded-xl bg-white/[0.04] light:bg-black/[0.03] ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] px-3 py-1.5"
-          title={otherStorefront ? `Your app's rank, competitors and tracking only show when you search ${appStoreLabel} in ${COUNTRY_MAP[appCountry.toUpperCase()] ?? appCountry.toUpperCase()}` : "The app selected in the sidebar"}
+          title="The app selected in the sidebar"
         >
           {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-7 shrink-0 rounded-lg object-cover" />}
           <div className="min-w-0">
             <p className="truncate text-xs font-medium text-white light:text-gray-900 leading-tight">{activeApp.name}</p>
-            <p className={`truncate text-[11px] leading-tight ${otherStorefront ? "text-amber-500 light:text-amber-700" : "text-gray-500"}`}>
-              {otherStorefront ? "Rank and tracking need " : ""}{appStoreLabel} · {countryFlag(appCountry)} {appCountry.toUpperCase()}
+            <p className="truncate text-[11px] leading-tight text-gray-500">
+              {countryFlag(appCountry)} {COUNTRY_MAP[appCountry.toUpperCase()] ?? appCountry.toUpperCase()}
             </p>
           </div>
         </div>
@@ -1340,7 +1337,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
               {apps && apps.length > 0 && (
                 <section
                   ref={insightsRef}
-                  className={`grid gap-3 rounded-2xl transition-all ${sameStore ? "@3xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]" : ""} ${
+                  className={`grid gap-3 rounded-2xl transition-all ${
                     tourStep === "inspectorRank" ? "ring-2 ring-offset-4 ring-offset-[#0e0e10] light:ring-offset-[#f7f7f8] ring-indigo-400/70" : ""
                   }`}
                 >
@@ -1356,12 +1353,14 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                     </div>
                   )}
                   {!docked && sameStore && activeApp && allResults && (
-                    <div className="rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm p-4">
-                      <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                    // One row under Beatable spots: it's a single number, so
+                    // it shouldn't stretch to that card's height.
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl bg-[#141417] light:bg-white ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] light:shadow-sm px-4 py-3">
+                      <p className="flex shrink-0 items-center gap-1.5 text-xs font-medium text-gray-500">
                         <TrophyIcon className="size-3.5" />
                         Your app&apos;s rank
                       </p>
-                      <div className="mt-2 flex items-center gap-2.5">
+                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
                         {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-8 shrink-0 rounded-xl object-cover" />}
                         <div className="min-w-0">
                           {yourRankIdx >= 0 ? (
@@ -1382,7 +1381,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
                         </div>
                       </div>
-                      <p className="mt-2 text-[11px] text-gray-500">
+                      <p className="text-[11px] text-gray-500">
                         {yourRankIdx >= RESULTS_DISPLAY_LIMIT
                           ? `Below the top ${RESULTS_DISPLAY_LIMIT} shown here`
                           : yourRankIdx >= 0
@@ -1394,10 +1393,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                     </div>
                   )}
                   {/* The page's most actionable finding, so it's the one card
-                      that stands out (green = an opening), and comes first
-                      when the cards stack in a narrow pane. With no openings
+                      that stands out (green = an opening), and comes first,
+                      above the rank row. With no openings
                       it stays a plain card, since there's nothing to act on. */}
-                  <div className={`order-first @3xl:order-none rounded-2xl p-4 ring-1 ${
+                  <div className={`order-first rounded-2xl p-4 ring-1 ${
                     weakSpots.length > 0
                       ? "bg-emerald-500/[0.07] ring-emerald-500/30 light:bg-emerald-50/70 light:ring-emerald-600/25"
                       : "bg-amber-500/[0.06] ring-amber-500/25 light:bg-amber-50/70 light:ring-amber-600/20"
