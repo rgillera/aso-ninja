@@ -983,18 +983,40 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
 
   // A plain title bar, not the app header the other Keywords pages use: the
   // Inspector isn't tied to an app (any keyword, store and country), and an
-  // app header would imply the form follows it. The active app only feeds
-  // the "Your app's rank" card, which names the app itself.
-  // Docked, Keyword Research's pane has its own tab bar (InspectorSplit).
+  // app header would imply the form follows it. The active app (sidebar
+  // switcher) still drives "Your app", its rank, competitors and tracking, so
+  // a small chip on the right names it, and says when the searched storefront
+  // isn't the app's (those parts then stay hidden).
+  // Docked, Keyword Research's pane has its own tab bar (InspectorSplit) and
+  // the app is already in that page's header.
+  const appCountry = (activeApp?.country ?? "us").toLowerCase();
+  const appStoreLabel = activeApp?.store === "android" ? "Google Play" : "App Store";
+  const otherStorefront = !!activeApp && !!query && (activeApp.store !== query.store || appCountry !== query.country);
   const header = dock ? null : (
     <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b border-white/[0.07] light:border-black/[0.08]">
       <div className="size-8 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
         <DocumentMagnifyingGlassIcon className="size-4 text-indigo-400 light:text-indigo-600" />
       </div>
-      <div>
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white light:text-gray-900 leading-tight">Keyword Inspector</p>
         <p className="text-xs text-gray-500 leading-tight">Volume, difficulty, daily searches and live results for any keyword, and whether you can rank for it</p>
       </div>
+      {activeApp ? (
+        <div
+          className="hidden @2xl:flex shrink-0 max-w-[45%] items-center gap-2.5 rounded-xl bg-white/[0.04] light:bg-black/[0.03] ring-1 ring-white/[0.06] light:ring-gray-950/[0.07] px-3 py-1.5"
+          title={otherStorefront ? `Your app's rank, competitors and tracking only show when you search ${appStoreLabel} in ${COUNTRY_MAP[appCountry.toUpperCase()] ?? appCountry.toUpperCase()}` : "The app selected in the sidebar"}
+        >
+          {activeApp.icon_url && <img src={activeApp.icon_url} alt="" className="size-7 shrink-0 rounded-lg object-cover" />}
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-white light:text-gray-900 leading-tight">{activeApp.name}</p>
+            <p className={`truncate text-[11px] leading-tight ${otherStorefront ? "text-amber-500 light:text-amber-700" : "text-gray-500"}`}>
+              {otherStorefront ? "Rank and tracking need " : ""}{appStoreLabel} · {countryFlag(appCountry)} {appCountry.toUpperCase()}
+            </p>
+          </div>
+        </div>
+      ) : (
+        <p className="hidden @2xl:block shrink-0 text-xs text-gray-500">No app selected</p>
+      )}
     </div>
   );
 
