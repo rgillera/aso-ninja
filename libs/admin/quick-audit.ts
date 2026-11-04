@@ -360,6 +360,17 @@ async function keywordFindings(
   const picks = (strong.length ? strong : viable).slice(0, 2);
   if (picks.length) {
     const describe = ({ k }: (typeof picks)[number]) => `"${k.term}" (${perDay(k)}, difficulty ${k.difficulty}/100)`;
+    // Where to put it: a long tail like "food tracker protein" reads oddly as
+    // a title. iOS combines words across title, subtitle and the keyword
+    // field, so naming the missing words is the concrete advice; Play has no
+    // keyword field and indexes the descriptions instead.
+    const first = picks[0].k.term;
+    const missing = words(first).filter((w) => !ownWords.has(w));
+    const placement = store === "ios"
+      ? missing.length && missing.length < words(first).length
+        ? ` You don't need the exact phrase in your title: the App Store combines words from your title, subtitle and keyword field, so adding "${missing.join(" ")}" to your subtitle or keyword field lets you compete for "${first}".`
+        : " You don't need these as exact phrases in your title: the App Store combines words from your title, subtitle and keyword field, so spreading the words across your subtitle and keyword field is enough."
+      : " They don't belong in your title as-is: work them naturally into your short description and full description, which Google Play indexes for search.";
     findings.push({
       id: "kw-longtail",
       category: "keywords",
@@ -369,7 +380,7 @@ async function keywordFindings(
       // right before it would contradict.
       text: `The sweet spot for you is long-tail keywords with real search volume and weaker competition, like ${picks.map(describe).join(" and ")}. ${Math.max(...picks.map(({ k }) => k.popularity)) >= 40
         ? "Ranking for just one long-tail keyword like these can bring hundreds to thousands of impressions a day."
-        : "Each one you rank for adds steady daily impressions you're not getting today, and they're less contested than the big head terms."}`,
+        : "Each one you rank for adds steady daily impressions you're not getting today, and they're less contested than the big head terms."}${placement}`,
       toolLine: toolLine(picks[0].k.term),
       evidence: picks.map(({ k, rank }) => `${k.term}: ${metricsLine(k, rank)}`).join(" | "),
     });
