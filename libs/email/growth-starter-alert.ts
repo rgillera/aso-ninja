@@ -31,7 +31,7 @@ export function growthStarterAlertSubject(p: GrowthStarterPurchase): string {
 export function renderGrowthStarterAlertHtml(p: GrowthStarterPurchase): string {
   const email = p.email ? escapeHtml(p.email) : null;
   return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; line-height: 1.6; color: #111827;">
-  <p>Someone just bought the Growth Starter. Send them a link to book their onboarding call.</p>
+  <p>Someone just bought the Growth Starter. Email them to schedule their onboarding call. They were told to expect your email within 3 days.</p>
   <ul>
     <li><strong>Name:</strong> ${p.name ? escapeHtml(p.name) : "not given"}</li>
     <li><strong>Email:</strong> ${email ? `<a href="mailto:${email}">${email}</a>` : "not given"}</li>
@@ -42,7 +42,7 @@ export function renderGrowthStarterAlertHtml(p: GrowthStarterPurchase): string {
 }
 
 export function renderGrowthStarterAlertText(p: GrowthStarterPurchase): string {
-  return `Someone just bought the Growth Starter. Send them a link to book their onboarding call.
+  return `Someone just bought the Growth Starter. Email them to schedule their onboarding call. They were told to expect your email within 3 days.
 
 Name: ${p.name ?? "not given"}
 Email: ${p.email ?? "not given"}

@@ -51,7 +51,7 @@ export default function GrowthStarterTermsPage() {
             purchase.
           </li>
           <li>
-            <strong>Onboarding:</strong> one 30-minute video call showing you how to use AppASO Pro.
+            <strong>Onboarding:</strong> one 30-minute video call covering ASO basics and how to use AppASO Pro.
           </li>
           <li>
             <strong>Strategy session:</strong> one 60-minute video call in which we go through a keyword
@@ -61,7 +61,7 @@ export default function GrowthStarterTermsPage() {
             and your priorities.
           </li>
           <li>
-            <strong>Email support:</strong> answers by email to questions about your strategy for 30 days
+            <strong>Email support:</strong> answers by email to questions about your strategy for 60 days
             after the strategy session, usually within 2 working days.
           </li>
         </ul>
@@ -81,11 +81,11 @@ export default function GrowthStarterTermsPage() {
         <h2>Scheduling</h2>
         <ul>
           <li>
-            You book your onboarding call after purchase. We schedule the strategy session within 7 working
+            After purchase, we email you to schedule your onboarding call. We schedule the strategy session within 7 working
             days of onboarding, once your analysis is ready.
           </li>
           <li>
-            Both calls must take place within 60 days of purchase. Calls not booked by then expire and are
+            Both calls must take place within 60 days of purchase. Calls not scheduled by then expire and are
             not refunded, unless the delay was on our side.
           </li>
           <li>
@@ -130,7 +130,7 @@ export default function GrowthStarterTermsPage() {
             If reaching your paywall or purchase flow needs an account, invite code, or paid download, give us
             access before the strategy session.
           </li>
-          <li>Attend the calls you book, or reschedule them in time.</li>
+          <li>Reply to our scheduling emails, attend the calls you schedule, or reschedule them in time.</li>
           <li>Decide which recommendations to apply, and keep your app compliant with store policies.</li>
         </ul>
       </section>

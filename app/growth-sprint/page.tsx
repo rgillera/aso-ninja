@@ -53,7 +53,7 @@ const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
 const stats = [
   { label: "Duration", value: "90 days", note: "hands-on in Slack" },
   { label: "Pricing", value: "$1,700/mo", note: "or $4,800 upfront" },
-  { label: "Bonus", value: "1 yr Pro ($348)", note: "included free" },
+  { label: "Bonus", value: "1 yr Pro ($288)", note: "included free" },
 ];
 
 const phases = [
@@ -177,7 +177,7 @@ const sprintIncludes = [
   "Regular reports on rankings, conversion, and campaigns",
   "Hands-on collaboration with our team in a shared Slack channel",
   "A handoff playbook you keep after day 90",
-  "1 year of AppASO Pro included ($348 value), yours to keep even if you cancel",
+  "1 year of AppASO Pro included ($288 value), yours to keep even if you cancel",
 ];
 
 export default async function GrowthSprintPage() {
