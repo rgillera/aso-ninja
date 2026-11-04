@@ -9,6 +9,9 @@ import {
 import type { AuditFinding, QuickAuditResult } from "@/libs/admin/quick-audit";
 import { COUNTRIES, countryFlag } from "@/libs/countries";
 
+// The email carries two findings (see pickDefault in libs/admin/quick-audit.ts).
+const MAX_PICKS = 2;
+
 const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
 
 const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
@@ -149,7 +152,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   }
 
   function toggle(id: string) {
-    const next = selected.includes(id) ? selected.filter((x) => x !== id) : selected.length >= 3 ? selected : [...selected, id];
+    const next = selected.includes(id) ? selected.filter((x) => x !== id) : selected.length >= MAX_PICKS ? selected : [...selected, id];
     setSelected(next);
     if (auditId) saveQuickAuditEmailAction(auditId, next, firstName, calendly).catch(() => {});
   }
@@ -189,7 +192,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Quick Audit</h1>
-            <p className="text-xs text-gray-500">Paste an app URL to get 3 ASO findings for the outreach reply</p>
+            <p className="text-xs text-gray-500">Paste an app URL to get 2 keyword findings for the outreach reply</p>
           </div>
           <button type="button" onClick={reset} disabled={pending} className={ghostBtn}>
             <ArrowPathIcon className="size-3.5" />
@@ -251,7 +254,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-white light:text-gray-900">Findings</h3>
-                    <span className="text-xs text-gray-500">{selected.length}/3 selected, in email order</span>
+                    <span className="text-xs text-gray-500">{selected.length}/{MAX_PICKS} selected, in email order</span>
                   </div>
                   {result.findings.length === 0 ? (
                     <div className="rounded-2xl bg-[#141417] light:bg-white px-5 py-8 text-center text-sm text-gray-500">No findings came out of this listing. It may be in good shape, or the store requests failed.</div>
@@ -259,7 +262,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                     <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden">
                       {result.findings.map((f) => {
                         const pos = selected.indexOf(f.id);
-                        const disabled = pos < 0 && selected.length >= 3;
+                        const disabled = pos < 0 && selected.length >= MAX_PICKS;
                         return (
                           <label key={f.id} className={`flex gap-3 px-5 py-3.5 cursor-pointer hover:bg-white/[0.03] light:hover:bg-black/[0.02] ${disabled ? "opacity-50" : ""}`}>
                             <input type="checkbox" checked={pos >= 0} disabled={disabled} onChange={() => toggle(f.id)} className="mt-1 accent-indigo-500" />

@@ -4,7 +4,12 @@
 // stores. The only writes are the ones a Keyword Inspector lookup makes anyway
 // (shared search/popularity caches and today's keyword snapshots).
 //
-// Findings come from five angles, each phrased for the email as-is:
+// The email leads with two keyword findings (see pickDefault):
+//   kw-target     a keyword the title/subtitle targets that isn't paying off,
+//                 either popular but very hard, or barely searched
+//   kw-longtail   long-tail sweet spots from the store's own autocomplete:
+//                 decent volume, weaker competition
+// Everything else is an alternate the admin can swap in:
 //   keywords      competitor title/subtitle terms the app's own title/subtitle
 //                 lacks, checked through the Keyword Inspector's own pipeline
 //                 (popularity, difficulty, rank all match appaso.io)
@@ -21,6 +26,8 @@ import type { StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import { itunesFetch } from "@/libs/store/appstore";
 import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
+import { fetchStoreSuggestions } from "@/libs/keyword-autocomplete";
+import { generateCombinations } from "@/libs/keyword-combinations";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
 import { findRankIdx } from "@/libs/keyword-rank-match";
 import { generateText, generateTextWithImages, type InlineImage } from "@/libs/gemini";
@@ -232,87 +239,241 @@ async function keywordFindings(
   const appName = data.name ?? "";
   const seeds = await seedTerms(data, country, notes);
 
+  // Every keyword check goes through the Inspector pipeline once per term.
+  const checked = new Map<string, KeywordCheck | null>();
+  const check = async (terms: string[]) => {
+    const todo = [...new Set(terms.map((t) => t.toLowerCase().trim()))].filter((t) => t && !checked.has(t));
+    for (const [t, r] of await checkKeywords(admin, store, todo, country, notes)) checked.set(t, r);
+  };
+  const got = (t: string) => checked.get(t.toLowerCase().trim()) ?? null;
+
   // Competitors: apps that show up most (and highest) across the seed searches.
-  const seedChecks = await checkKeywords(admin, store, seeds, country, notes);
-  if (seeds.every((s) => !seedChecks.get(s))) notes.push("Store search failed for every seed term; keyword findings skipped.");
+  await check(seeds);
+  if (seeds.every((s) => !got(s))) notes.push("Store search failed for every seed term; keyword findings skipped.");
   const score = new Map<string, number>();
   for (const s of seeds) {
-    (seedChecks.get(s)?.hits ?? []).filter((h) => h.id !== storeId).slice(0, 10)
+    (got(s)?.hits ?? []).filter((h) => h.id !== storeId).slice(0, 10)
       .forEach((h, i) => score.set(h.id, (score.get(h.id) ?? 0) + (10 - i)));
   }
   const competitorIds = [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
   const competitors = (await Promise.all(competitorIds.map(async (id) => ({ id, data: await fetchStoreData(store, id, id, country) }))))
     .filter((c): c is Competitor => !!c.data);
 
-  // Candidate terms: competitor title/subtitle terms our title/subtitle lacks.
   const ownText = `${appName} ${data.subtitle}`.toLowerCase();
   const ownWords = new Set(words(ownText));
+  // One-word brands only: a multi-word title head like "Water Reminder" is
+  // a generic phrase, not a name to keep out of keyword ideas.
+  const oneWordBrand = (name: string) => { const b = words(titleBrand(name)); return b.length === 1 ? b : []; };
   const brandWords = new Set([
-    ...words(titleBrand(appName)),
-    ...competitors.flatMap((c) => { const b = words(titleBrand(c.data.name ?? "")); return b.length === 1 ? b : []; }),
+    ...oneWordBrand(appName),
+    ...competitors.flatMap((c) => oneWordBrand(c.data.name ?? "")),
   ]);
-  const usedBy = new Map<string, string[]>();
-  for (const c of competitors) {
-    for (const t of extractTerms(`${c.data.name} ${c.data.subtitle}`)) {
-      if (t.split(" ").some((w) => brandWords.has(w))) continue;
-      usedBy.set(t, [...(usedBy.get(t) ?? []), titleBrand(c.data.name ?? c.id)]);
+  const hasBrand = (t: string) => words(t).some((w) => brandWords.has(w));
+
+  const findings: AuditFinding[] = [];
+  const subField = store === "ios" ? "subtitle" : "short description";
+  const fieldPhrase = store === "ios" ? "subtitle" : "title and short description";
+  const fieldVerb = store === "ios" ? "doesn't" : "don't";
+  // Play sometimes returns only a dozen results; missing from those says
+  // nothing about rank.
+  const deep = (k: KeywordCheck) => k.hits.length >= 50;
+  const rankSentence = (rank: number | null, k: KeywordCheck) => rank == null
+    ? deep(k) ? " You don't rank for it at all right now." : ""
+    : rank > 10 ? ` You currently rank #${rank} for it.` : "";
+  const volumeWord = (v: number) => v >= 55 ? "high-volume" : v >= 35 ? "popular" : "relevant";
+  const toolLine = (kw: string) => `You can check this yourself for free in our tool: ${TOOL_URL} (just search ${shortName} and look up "${kw}")`;
+  const perDay = (k: KeywordCheck) => `~${k.estDailySearches.toLocaleString("en-US")} searches a day`;
+
+  // ── 1. A keyword the listing targets that isn't paying off: popular but
+  // dominated by apps with huge rating counts, or barely searched at all.
+  const targeted = targetedTerms(appName, data.subtitle, brandWords);
+  await check(targeted);
+  type Target = { k: KeywordCheck; rank: number | null; kind: "hard" | "low"; field: string };
+  const targets: Target[] = [];
+  for (const t of targeted) {
+    const k = got(t);
+    if (!k) continue;
+    const rank = rankIn(k.hits, appName, storeId);
+    const field = covers(new Set(words(appName)), t, appName.toLowerCase()) ? "title" : subField;
+    if (k.popularity >= 45 && k.difficulty >= 65 && (rank == null || rank > 10)) targets.push({ k, rank, kind: "hard", field });
+    else if (k.popularity <= 20) targets.push({ k, rank, kind: "low", field });
+  }
+  // A hard keyword with real volume is the stronger story; among low ones,
+  // the least searched.
+  targets.sort((a, b) => a.kind !== b.kind ? (a.kind === "hard" ? -1 : 1)
+    : a.kind === "hard" ? (b.k.popularity + b.k.difficulty) - (a.k.popularity + a.k.difficulty) : a.k.popularity - b.k.popularity);
+  const target = targets[0];
+  if (target) {
+    const { k, rank, kind, field } = target;
+    const leaders = k.hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
+    findings.push({
+      id: "kw-target",
+      category: "keywords",
+      severity: 96,
+      text: kind === "hard"
+        ? `Your ${field} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`
+        : `Your ${field} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`,
+      toolLine: toolLine(k.term),
+      evidence: `Targeted in ${field} · ${metricsLine(k, rank)}`,
+    });
+  }
+
+  // ── 2. Long-tail sweet spots: real autocomplete searches around the app's
+  // core terms with decent volume and weaker competition.
+  // Autocomplete mixes app names in with real searches ("granola note
+  // taker", "notee: ai note taker"). A word that is some search result's
+  // one-word brand, and not part of this app's own vocabulary, marks one.
+  const vocab = new Set([...ownWords, ...seeds.flatMap((t) => words(t))]);
+  const resultBrands = new Set<string>();
+  for (const k of checked.values()) {
+    for (const h of (k?.hits ?? []).slice(0, 60)) {
+      const b = words(titleBrand(h.name));
+      if (b.length === 1 && !vocab.has(b[0])) resultBrands.add(b[0]);
     }
   }
-  const shared = [...usedBy.entries()].filter(([t, names]) => names.length >= 2 && !covers(ownWords, t, ownText));
+  const notASearch = (t: string) => hasBrand(t) || /[:™®&|]/.test(t) || words(t).some((w) => resultBrands.has(w) || FILLER.has(w));
+
+  const longTailSeeds = [...new Set([...seeds, ...targeted.filter((t) => t.includes(" "))])].slice(0, 4);
+  const suggestions = (await longTailCandidates(store, country, longTailSeeds, notASearch))
+    .filter((t) => !targeted.includes(t) && !seeds.includes(t));
+  await check(suggestions.slice(0, 8));
+  const sweet = suggestions
+    .map((t) => got(t))
+    .filter((k): k is KeywordCheck => !!k && k.popularity >= 30)
+    // Name check against the suggestion's own results, as topBrandRatings in
+    // libs/keyword-autocomplete.ts does: a word only one or two result titles
+    // use, and that a top result's title starts with, is an app name
+    // ("meettrail" in "meettrail meeting recorder"); generic words show up in many.
+    .filter((k) => !words(k.term).some((w) => !vocab.has(w)
+      && k.hits.slice(0, 30).filter((h) => words(h.name).includes(w)).length <= 2
+      && k.hits.slice(0, 3).some((h) => words(h.name)[0] === w)))
+    .map((k) => ({ k, rank: rankIn(k.hits, appName, storeId) }))
+    .filter(({ rank }) => rank == null || rank > 10);
+  // "Weaker competition" is relative: in a crowded niche every keyword's top
+  // results are big apps, so the bar is the hard keyword above (or 60).
+  const maxDiff = Math.max(60, target?.kind === "hard" ? target.k.difficulty - 3 : 0);
+  // Prefer ~100+ searches a day (popularity 40); thinner ones only when
+  // nothing better exists.
+  const viable = sweet.filter(({ k }) => k.difficulty <= maxDiff)
+    .sort((a, b) => (b.k.popularity - 0.8 * b.k.difficulty) - (a.k.popularity - 0.8 * a.k.difficulty));
+  const strong = viable.filter(({ k }) => k.popularity >= 40);
+  const picks = (strong.length ? strong : viable).slice(0, 2);
+  if (picks.length) {
+    const describe = ({ k }: (typeof picks)[number]) => `"${k.term}" (${perDay(k)}, difficulty ${k.difficulty}/100)`;
+    findings.push({
+      id: "kw-longtail",
+      category: "keywords",
+      severity: 94,
+      // The "hundreds to thousands" line only when the best pick backs it up
+      // (popularity 40 is ~100 searches a day); otherwise a claim the numbers
+      // right before it would contradict.
+      text: `The sweet spot for you is long-tail keywords with real search volume and weaker competition, like ${picks.map(describe).join(" and ")}. ${Math.max(...picks.map(({ k }) => k.popularity)) >= 40
+        ? "Ranking for just one long-tail keyword like these can bring hundreds to thousands of impressions a day."
+        : "Each one you rank for adds steady daily impressions you're not getting today, and they're less contested than the big head terms."}`,
+      toolLine: toolLine(picks[0].k.term),
+      evidence: picks.map(({ k, rank }) => `${k.term}: ${metricsLine(k, rank)}`).join(" | "),
+    });
+  }
+
+  // ── Alternates: competitor terms the listing lacks, and core searches the
+  // app barely ranks for.
+  const shared = (() => {
+    const usedBy = new Map<string, string[]>();
+    for (const c of competitors) {
+      for (const t of extractTerms(`${c.data.name} ${c.data.subtitle}`)) {
+        if (hasBrand(t)) continue;
+        usedBy.set(t, [...(usedBy.get(t) ?? []), titleBrand(c.data.name ?? c.id)]);
+      }
+    }
+    return [...usedBy.entries()].filter(([t, names]) => names.length >= 2 && !covers(ownWords, t, ownText));
+  })();
   // A word that only rides along inside a shared phrase ("relief" in
   // "anxiety relief") is pitched as the phrase, not the bare word.
   const gaps = shared
     .filter(([t, names]) => t.includes(" ") || !shared.some(([p, pn]) => p.includes(" ") && p.split(" ").includes(t) && pn.length >= names.length))
     .sort((a, b) => b[1].length - a[1].length || b[0].split(" ").length - a[0].split(" ").length)
     .filter(([t]) => !seeds.includes(t))
-    .slice(0, 8);
-  const gapChecks = await checkKeywords(admin, store, gaps.map(([t]) => t), country, notes);
+    .slice(0, 3);
+  await check(gaps.map(([t]) => t));
 
-  const findings: AuditFinding[] = [];
-  const fieldPhrase = store === "ios" ? "subtitle" : "title and short description";
-  const fieldVerb = store === "ios" ? "doesn't" : "don't";
-  const rankSentence = (rank: number | null) => rank == null
-    ? " You don't rank for it at all right now."
-    : rank > 10 ? ` You currently rank #${rank} for it.` : "";
-  const volumeWord = (v: number) => v >= 55 ? "high-volume" : v >= 35 ? "popular" : "relevant";
-  const toolLine = (kw: string) => `You can check this yourself for free in our tool: ${TOOL_URL} (just search ${shortName} and look up "${kw}")`;
-
-  // Gap keywords, most popular first.
   const rankedGaps = gaps
-    .map(([t, names]) => ({ names, check: gapChecks.get(t) }))
-    .filter((g): g is { names: string[]; check: KeywordCheck } => !!g.check && g.check.popularity > 15)
-    .sort((a, b) => b.check.popularity - a.check.popularity || b.names.length - a.names.length)
+    .map(([t, names]) => ({ names, k: got(t) }))
+    .filter((g): g is { names: string[]; k: KeywordCheck } => !!g.k && g.k.popularity > 15)
+    // Already top 10 without it in the listing: nothing to pitch.
+    .filter(({ k }) => { const r = rankIn(k.hits, appName, storeId); return r == null || r > 10; })
+    .sort((a, b) => b.k.popularity - a.k.popularity || b.names.length - a.names.length)
     .slice(0, 2);
-  for (const [i, { names, check }] of rankedGaps.entries()) {
-    const rank = rankIn(check.hits, appName, storeId);
+  for (const [i, { names, k }] of rankedGaps.entries()) {
+    const rank = rankIn(k.hits, appName, storeId);
     findings.push({
       id: `kw-gap-${i}`,
       category: "keywords",
-      severity: Math.min(98, Math.round(45 + check.popularity * 0.45 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
-      text: `Your ${fieldPhrase} ${fieldVerb} include "${check.term}", a ${volumeWord(check.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank)}`,
-      toolLine: toolLine(check.term),
-      evidence: `${metricsLine(check, rank)} · used by ${names.join(", ")}`,
+      severity: Math.min(90, Math.round(45 + k.popularity * 0.4 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
+      text: `Your ${fieldPhrase} ${fieldVerb} include "${k.term}", a ${volumeWord(k.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank, k)}`,
+      toolLine: toolLine(k.term),
+      evidence: `${metricsLine(k, rank)} · used by ${names.join(", ")}`,
     });
   }
 
-  // Core searches: a seed term the app should own but barely ranks for.
   for (const [i, seed] of seeds.entries()) {
-    const check = seedChecks.get(seed);
-    if (!check || check.popularity < 35) continue;
-    const rank = rankIn(check.hits, appName, storeId);
+    const k = got(seed);
+    if (!k || k.popularity < 35) continue;
+    const rank = rankIn(k.hits, appName, storeId);
     if (rank != null && rank <= 15) continue;
-    const leaders = check.hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
+    if (rank == null && !deep(k)) continue;
+    const leaders = k.hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
     findings.push({
       id: `kw-core-${i}`,
       category: "keywords",
-      severity: Math.min(95, Math.round(40 + check.popularity * 0.45 + (rank == null ? 10 : 0))),
-      text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${check.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
-      toolLine: toolLine(check.term),
-      evidence: `Core search · ${metricsLine(check, rank)}`,
+      severity: Math.min(88, Math.round(40 + k.popularity * 0.4 + (rank == null ? 10 : 0))),
+      text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${k.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
+      toolLine: toolLine(k.term),
+      evidence: `Core search · ${metricsLine(k, rank)}`,
     });
   }
 
   return { findings, competitors };
+}
+
+// The keywords a listing is visibly going after: phrases from its title and
+// subtitle, split at punctuation so "Note Taker, Summary" never yields
+// "taker summary". Phrases first; a single word only when no phrase covers it.
+function targetedTerms(title: string, subtitle: string, brandWords: Set<string>): string[] {
+  const chunks = `${title}|${subtitle}`.split(/[|,:;&+–—\-/()]+/).map((c) => c.trim()).filter(Boolean);
+  const phrases: string[] = [], singles: string[] = [];
+  for (const chunk of chunks) {
+    for (const t of extractTerms(chunk)) {
+      if (words(t).some((w) => brandWords.has(w))) continue;
+      (t.includes(" ") || NO_SPACE_SCRIPT.test(t) && t.length > 2 ? phrases : singles).push(t);
+    }
+  }
+  const uniq = [...new Set(phrases)];
+  const loose = [...new Set(singles)].filter((w) => w.length >= 3 && !uniq.some((p) => p.split(" ").includes(w)));
+  return [...uniq, ...loose].slice(0, 4);
+}
+
+// Long-tail ideas straight from the store's autocomplete: what people
+// actually type after each core term, most-suggested first. Gemini
+// combinations only fill in when autocomplete has little to offer.
+async function longTailCandidates(store: AuditStore, country: string, seeds: string[], notASearch: (t: string) => boolean): Promise<string[]> {
+  const out: string[] = [];
+  const add = (t: string, seed: string) => {
+    const n = t.toLowerCase().trim().replace(/\s+/g, " ");
+    const len = n.split(" ").length;
+    if (n === seed || len < 2 || len > 4 || notASearch(n) || out.includes(n)) return;
+    if (!seed.split(" ").some((w) => n.split(" ").includes(w))) return;
+    out.push(n);
+  };
+  const lists = await Promise.all(seeds.map(async (seed) => {
+    const [a, b] = await Promise.all([fetchStoreSuggestions(`${seed} `, country, store), fetchStoreSuggestions(seed, country, store)]);
+    return { seed, hints: [...(a ?? []), ...(b ?? [])] };
+  }));
+  // Interleave seeds so one seed's suggestions don't crowd out the rest.
+  for (let i = 0; i < 10; i++) for (const { seed, hints } of lists) if (hints[i]) add(hints[i], seed);
+  if (out.length < 4 && seeds[0]) {
+    for (const t of await generateCombinations(seeds[0], 6, "", "").catch(() => [] as string[])) add(t, seeds[0]);
+  }
+  return out;
 }
 
 // ── Creative findings ───────────────────────────────────────────────────────
@@ -527,16 +688,15 @@ function metadataFindings(store: AuditStore, data: NonNullable<StoreData>, bench
 
 // ── Selection ───────────────────────────────────────────────────────────────
 
-// Strongest finding from each angle first (three different angles read better
-// than three keyword nits), then the next strongest overall; keyword findings
-// lead the email since that's where the tool link fits.
+export const MAX_PICKS = 2;
+
+// Keyword-first: the targeted-keyword problem, then the long-tail sweet
+// spot. Any slot those can't fill goes to the next strongest finding.
 function pickDefault(findings: AuditFinding[]): string[] {
-  const sorted = [...findings].sort((a, b) => b.severity - a.severity);
-  const picked: AuditFinding[] = [];
-  const seen = new Set<AuditCategory>();
-  for (const f of sorted) if (picked.length < 3 && !seen.has(f.category)) { picked.push(f); seen.add(f.category); }
-  for (const f of sorted) if (picked.length < 3 && !picked.includes(f)) picked.push(f);
-  return picked.sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || b.severity - a.severity).map((f) => f.id);
+  const preferred = ["kw-target", "kw-longtail"].filter((id) => findings.some((f) => f.id === id));
+  const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || b.severity - a.severity)
+    .map((f) => f.id).filter((id) => !preferred.includes(id));
+  return [...preferred, ...rest].slice(0, MAX_PICKS);
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────

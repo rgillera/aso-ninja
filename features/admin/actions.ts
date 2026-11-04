@@ -547,6 +547,6 @@ export async function saveQuickAuditEmailAction(id: string, selected: string[], 
   await requireSuperAdmin();
   if (!id) return;
   await createAdminClient().from("quick_audits")
-    .update({ selected: selected.slice(0, 3), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
+    .update({ selected: selected.slice(0, 2), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
     .eq("id", id);
 }

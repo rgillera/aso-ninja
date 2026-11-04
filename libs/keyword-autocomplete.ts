@@ -144,6 +144,17 @@ async function fetchPlayHints(prefix: string, country: string): Promise<string[]
   }
 }
 
+// The store's own autocomplete suggestions for a prefix (real searches people
+// type), through the same cached, rate-limited fetchers the popularity walk
+// uses. null = unsupported storefront or a failed request.
+export async function fetchStoreSuggestions(prefix: string, country: string, store: Store = "ios"): Promise<string[] | null> {
+  const kw = normalize(prefix);
+  if (!kw) return null;
+  if (store === "android") return fetchPlayHints(kw, country.toLowerCase());
+  const storefront = STOREFRONTS[country.toUpperCase()];
+  return storefront ? fetchAppleHints(kw, storefront) : null;
+}
+
 function decodeXmlEntities(s: string) {
   return s
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
