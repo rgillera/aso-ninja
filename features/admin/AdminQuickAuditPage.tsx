@@ -40,9 +40,7 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     "",
     "Fixing these in the right order usually moves both rankings and conversion within a few weeks.",
     "",
-    `Happy to walk you through how we'd approach it. Would a 15-minute call this week work? You can grab a time here: ${calendly.trim() || DEFAULT_CALENDLY}`,
-    "",
-    "P.S. Want a senior growth specialist in your corner to help you scale? Our Growth Starter includes a full funnel review, a live strategy session, 2 months of support, and a year of AppASO Pro: https://www.appaso.io/growth-starter",
+    `Happy to walk you through how we'd approach it on a free 15-minute call, no commitment. Does sometime this week work? You can grab a time here: ${calendly.trim() || DEFAULT_CALENDLY}`,
   ].join("\n");
 }
 
