@@ -277,8 +277,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
-              In 90 minutes, a growth expert walks your whole funnel with you, from search to paywall, and hands you a
-              ranked list of fixes. Then you get the same specialist stays on as your growth partner for 2 months, plus you get a full year of AppASO Pro to{" "}
+              A growth expert walks your funnel with you and ranks your fixes, then stays on as your partner for 2
+              months. Plus a year of AppASO Pro to{" "}
               <span className="font-semibold text-indigo-600">ship them yourself.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
