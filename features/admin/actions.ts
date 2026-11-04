@@ -465,3 +465,23 @@ export async function stopImpersonationAction(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(IMPERSONATION_COOKIE);
 }
+
+// ── Quick audit ───────────────────────────────────────────────────────────────
+
+export type QuickAuditActionResult =
+  | { ok: true; result: import("@/libs/admin/quick-audit").QuickAuditResult }
+  | { ok: false; error: string };
+
+// Live store reads + autocomplete volume (cached in the shared table) for a
+// cold-outreach audit; see libs/admin/quick-audit.ts.
+export async function runQuickAuditAction(url: string, country?: string): Promise<QuickAuditActionResult> {
+  await requireSuperAdmin();
+  const { parseAppInput, runQuickAudit } = await import("@/libs/admin/quick-audit");
+  const input = parseAppInput(url, country);
+  if (!input) return { ok: false, error: "Paste an App Store or Google Play URL (or an app id / package name)." };
+  try {
+    return { ok: true, result: await runQuickAudit(createAdminClient(), input) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Audit failed." };
+  }
+}

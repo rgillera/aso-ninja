@@ -98,6 +98,33 @@ export async function generateText(prompt: string, temperature = 0): Promise<str
   }
 }
 
+export type InlineImage = { mimeType: string; data: string }; // data is base64
+
+// Same as generateText, with images attached after the prompt (e.g. store
+// screenshots). `json` asks the model for a JSON-only reply.
+export async function generateTextWithImages(
+  prompt: string, images: InlineImage[], { temperature = 0, json = false }: { temperature?: number; json?: boolean } = {}
+): Promise<string | null> {
+  if (!GEMINI_API_KEY) return null;
+  try {
+    const res = await enqueueGeminiRequest(() => fetchWithRetry(`${BASE_URL}/models/${GEMINI_LLM_MODEL}:generateContent`, {
+      method: "POST",
+      headers: geminiHeaders(),
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }, ...images.map((img) => ({ inlineData: { mimeType: img.mimeType, data: img.data } }))] }],
+        generationConfig: { temperature, ...(json ? { responseMimeType: "application/json" } : {}) },
+      }),
+    }));
+    if (!res.ok) return null;
+    const data = await res.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const text = (data as any)?.candidates?.[0]?.content?.parts?.[0]?.text;
+    return typeof text === "string" ? text : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function embedText(text: string): Promise<number[] | null> {
   try {
     const res = await enqueueGeminiRequest(() => fetchWithRetry(`${BASE_URL}/models/${GEMINI_EMBED_MODEL}:embedContent`, {

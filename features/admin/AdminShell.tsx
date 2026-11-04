@@ -12,6 +12,7 @@ import {
   AcademicCapIcon,
   ArrowLeftIcon,
   ChartBarIcon,
+  ClipboardDocumentCheckIcon,
 } from "@heroicons/react/24/outline";
 
 const adminLinks: { label: string; href: string; icon: typeof UsersIcon }[] = [
@@ -20,6 +21,7 @@ const adminLinks: { label: string; href: string; icon: typeof UsersIcon }[] = [
   { label: "Keywords", href: "/admin/keywords", icon: MagnifyingGlassIcon },
   { label: "Cancellations", href: "/admin/cancellations", icon: ChatBubbleLeftRightIcon },
   { label: "Certifications", href: "/admin/certifications", icon: AcademicCapIcon },
+  { label: "Quick Audit", href: "/admin/quick-audit", icon: ClipboardDocumentCheckIcon },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
