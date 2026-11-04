@@ -37,6 +37,8 @@ export async function createGrowthStarterCheckoutAction(): Promise<{ url: string
   }
 
   const stripe = createStripeClient();
+  // A Stripe error (say, a test-mode price under the live key) would
+  // otherwise surface as a bare 500 from the checkout route.
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     customer: subscription?.stripe_customer_id ?? undefined,
@@ -51,9 +53,12 @@ export async function createGrowthStarterCheckoutAction(): Promise<{ url: string
     metadata: { user_id: user.id, offer: "growth_starter" },
     success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter?purchased=1`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter`,
+  }).catch((err: unknown) => {
+    console.error("Growth Starter checkout failed:", err);
+    return null;
   });
 
-  if (!session.url) return { error: "Failed to create checkout session." };
+  if (!session?.url) return { error: "Failed to create checkout session." };
   after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: "pro", offer: "growth_starter" }, ref: session.id }));
   return { url: session.url };
 }
