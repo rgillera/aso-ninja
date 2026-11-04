@@ -1,12 +1,13 @@
 // Quick ASO audit for cold outreach (Super Admin → Quick Audit): paste a
 // store URL, get a pool of concrete findings ranked by severity, three of
 // which drop into the reply template. Everything is read live from the public
-// stores; nothing is written except the shared autocomplete-volume cache.
+// stores. The only writes are the ones a Keyword Inspector lookup makes anyway
+// (shared search/popularity caches and today's keyword snapshots).
 //
 // Findings come from five angles, each phrased for the email as-is:
 //   keywords      competitor title/subtitle terms the app's own title/subtitle
-//                 lacks, scored with the same autocomplete volume the product
-//                 uses, plus the app's live rank for each
+//                 lacks, checked through the Keyword Inspector's own pipeline
+//                 (popularity, difficulty, rank all match appaso.io)
 //   creatives     Gemini vision on the first screenshots; screenshot count and
 //                 preview video vs the category's top apps
 //   localization  big markets where the app still shows its default-language
@@ -19,8 +20,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { StoreData, CategoryBenchmark } from "@/libs/contracts";
 import { fetchStoreData, loadCategoryBenchmark } from "@/libs/store/load-benchmark";
 import { itunesFetch } from "@/libs/store/appstore";
-import { searchIosLive } from "@/libs/keyword-relevancy";
-import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
+import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-core-metrics";
+import { estimateDailySearches } from "@/libs/keyword-impressions";
 import { findRankIdx } from "@/libs/keyword-rank-match";
 import { generateText, generateTextWithImages, type InlineImage } from "@/libs/gemini";
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
@@ -144,20 +145,45 @@ async function gplay() {
   return (mod.default ?? mod) as any;
 }
 
-async function searchStore(store: AuditStore, term: string, country: string): Promise<SearchHit[] | null> {
-  if (store === "ios") {
-    const res = await searchIosLive(term, country);
-    if (!Array.isArray(res)) return null;
-    return res.map((a) => ({ id: String(a.trackId), name: a.trackName }));
-  }
-  try {
-    const api = await gplay();
+// A keyword check exactly as the Keyword Inspector runs it
+// (libs/keyword-core-metrics.ts): same shared same-day search cache, same
+// popularity/difficulty scoring, same snapshot writes. So every number in a
+// finding is what the prospect sees when they look the keyword up on
+// appaso.io, and the rank comes from that same result list.
+type KeywordCheck = {
+  term: string;
+  popularity: number;
+  difficulty: number;
+  estDailySearches: number;
+  hits: SearchHit[];
+};
+
+async function checkKeyword(admin: SupabaseClient, store: AuditStore, term: string, country: string): Promise<KeywordCheck | "rate_limited" | null> {
+  const norm = term.toLowerCase().trim();
+  // The core-metrics helpers are typed for the request-scoped client; the
+  // admin client has the same query surface.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const client = admin as any;
+  const core = store === "ios" ? await fetchIosCoreMetrics(client, norm, country) : await fetchAndroidCoreMetrics(client, norm, country);
+  if (core === "rate_limited" || core === null) return core;
+  const hits: SearchHit[] = store === "ios"
+    ? (core.apps as { trackId: number; trackName: string }[]).map((a) => ({ id: String(a.trackId), name: a.trackName }))
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const res: any[] = await api.search({ term, country, num: 100 });
-    return res.map((a) => ({ id: String(a.appId), name: String(a.title ?? "") }));
-  } catch {
-    return null;
-  }
+    : (core.apps as any[]).map((a) => ({ id: String(a.appId ?? ""), name: String(a.title ?? "") }));
+  return { term: norm, popularity: core.volume, difficulty: core.diff, estDailySearches: Math.round(estimateDailySearches(core.volume)), hits };
+}
+
+// iOS searches stay serial for Apple's per-IP limit (see fetchIosCoreMetrics);
+// Play has no such limit.
+async function checkKeywords(admin: SupabaseClient, store: AuditStore, terms: string[], country: string, notes: string[]) {
+  let rateLimited = false;
+  const results = await mapLimit(terms, store === "ios" ? 1 : 4, async (t) => {
+    const r = await checkKeyword(admin, store, t, country).catch(() => null);
+    if (r === "rate_limited") { rateLimited = true; return null; }
+    return r;
+  });
+  if (rateLimited) notes.push("The App Store rate-limited some keyword checks; those keywords were skipped. Try again in a minute.");
+  return new Map(terms.map((t, i) => [t, results[i]] as const));
 }
 
 function rankIn(hits: SearchHit[], appName: string, storeId: string): number | null {
@@ -165,7 +191,9 @@ function rankIn(hits: SearchHit[], appName: string, storeId: string): number | n
   return idx >= 0 ? idx + 1 : null;
 }
 
-const SEARCH_DEPTH: Record<AuditStore, number> = { ios: 200, android: 100 };
+function metricsLine(k: KeywordCheck, rank: number | null) {
+  return `Popularity ${k.popularity}/100 · difficulty ${k.difficulty}/100 · ~${k.estDailySearches.toLocaleString("en-US")} searches/day · rank ${rank ?? `not in the ${k.hits.length} results`}`;
+}
 
 // ── Seeds: the generic searches this app should show up for ─────────────────
 
@@ -205,11 +233,13 @@ async function keywordFindings(
   const seeds = await seedTerms(data, country, notes);
 
   // Competitors: apps that show up most (and highest) across the seed searches.
-  const seedHits = await Promise.all(seeds.map((s) => searchStore(store, s, country)));
-  if (seedHits.every((h) => h === null)) notes.push("Store search failed (likely rate-limited); keyword findings skipped.");
+  const seedChecks = await checkKeywords(admin, store, seeds, country, notes);
+  if (seeds.every((s) => !seedChecks.get(s))) notes.push("Store search failed for every seed term; keyword findings skipped.");
   const score = new Map<string, number>();
-  seedHits.forEach((hits) => (hits ?? []).filter((h) => h.id !== storeId).slice(0, 10)
-    .forEach((h, i) => score.set(h.id, (score.get(h.id) ?? 0) + (10 - i))));
+  for (const s of seeds) {
+    (seedChecks.get(s)?.hits ?? []).filter((h) => h.id !== storeId).slice(0, 10)
+      .forEach((h, i) => score.set(h.id, (score.get(h.id) ?? 0) + (10 - i)));
+  }
   const competitorIds = [...score.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id]) => id);
   const competitors = (await Promise.all(competitorIds.map(async (id) => ({ id, data: await fetchStoreData(store, id, id, country) }))))
     .filter((c): c is Competitor => !!c.data);
@@ -234,60 +264,51 @@ async function keywordFindings(
   const gaps = shared
     .filter(([t, names]) => t.includes(" ") || !shared.some(([p, pn]) => p.includes(" ") && p.split(" ").includes(t) && pn.length >= names.length))
     .sort((a, b) => b[1].length - a[1].length || b[0].split(" ").length - a[0].split(" ").length)
-    .slice(0, 10);
-  const seedCandidates = seeds.filter((s) => !gaps.some(([t]) => t === s));
-
-  const volumeOf = (term: string) => store === "ios"
-    ? resolveIosVolume(admin, term, country, 0)
-    : resolveAndroidVolume(admin, term, country, 0);
-  const allTerms = [...gaps.map(([t]) => t), ...seedCandidates];
-  const volumes = new Map(await Promise.all(allTerms.map(async (t) => [t, await volumeOf(t).catch(() => 0)] as const)));
+    .filter(([t]) => !seeds.includes(t))
+    .slice(0, 8);
+  const gapChecks = await checkKeywords(admin, store, gaps.map(([t]) => t), country, notes);
 
   const findings: AuditFinding[] = [];
   const fieldPhrase = store === "ios" ? "subtitle" : "title and short description";
   const fieldVerb = store === "ios" ? "doesn't" : "don't";
-  const depth = SEARCH_DEPTH[store];
   const rankSentence = (rank: number | null) => rank == null
-    ? ` You don't rank in the top ${depth} for it right now.`
+    ? " You don't rank for it at all right now."
     : rank > 10 ? ` You currently rank #${rank} for it.` : "";
   const volumeWord = (v: number) => v >= 55 ? "high-volume" : v >= 35 ? "popular" : "relevant";
   const toolLine = (kw: string) => `You can check this yourself for free in our tool: ${TOOL_URL} (just search ${shortName} and look up "${kw}")`;
 
-  // Gap keywords, best volume first; live rank for the top two.
+  // Gap keywords, most popular first.
   const rankedGaps = gaps
-    .map(([t, names]) => ({ term: t, names, volume: volumes.get(t) ?? 0 }))
-    .filter((g) => g.volume > 15)
-    .sort((a, b) => b.volume - a.volume || b.names.length - a.names.length)
+    .map(([t, names]) => ({ names, check: gapChecks.get(t) }))
+    .filter((g): g is { names: string[]; check: KeywordCheck } => !!g.check && g.check.popularity > 15)
+    .sort((a, b) => b.check.popularity - a.check.popularity || b.names.length - a.names.length)
     .slice(0, 2);
-  for (const [i, g] of rankedGaps.entries()) {
-    const hits = await searchStore(store, g.term, country);
-    const rank = hits ? rankIn(hits, appName, storeId) : null;
+  for (const [i, { names, check }] of rankedGaps.entries()) {
+    const rank = rankIn(check.hits, appName, storeId);
     findings.push({
       id: `kw-gap-${i}`,
       category: "keywords",
-      severity: Math.min(98, Math.round(45 + g.volume * 0.45 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
-      text: `Your ${fieldPhrase} ${fieldVerb} include "${g.term}", a ${volumeWord(g.volume)} term ${g.names.length} of your top ${competitors.length} competitors (${listNames(g.names)}) use in theirs.${hits ? rankSentence(rank) : ""}`,
-      toolLine: toolLine(g.term),
-      evidence: `Volume ${g.volume}/100 · rank ${rank ?? `none in top ${depth}`}${hits ? "" : " (search failed)"} · used by ${g.names.join(", ")}`,
+      severity: Math.min(98, Math.round(45 + check.popularity * 0.45 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
+      text: `Your ${fieldPhrase} ${fieldVerb} include "${check.term}", a ${volumeWord(check.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank)}`,
+      toolLine: toolLine(check.term),
+      evidence: `${metricsLine(check, rank)} · used by ${names.join(", ")}`,
     });
   }
 
   // Core searches: a seed term the app should own but barely ranks for.
   for (const [i, seed] of seeds.entries()) {
-    const volume = volumes.get(seed) ?? await volumeOf(seed).catch(() => 0);
-    if (volume < 35) continue;
-    const hits = seedHits[i];
-    if (!hits) continue;
-    const rank = rankIn(hits, appName, storeId);
+    const check = seedChecks.get(seed);
+    if (!check || check.popularity < 35) continue;
+    const rank = rankIn(check.hits, appName, storeId);
     if (rank != null && rank <= 15) continue;
-    const leaders = hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
+    const leaders = check.hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
     findings.push({
       id: `kw-core-${i}`,
       category: "keywords",
-      severity: Math.min(95, Math.round(40 + volume * 0.45 + (rank == null ? 10 : 0))),
-      text: `${rank == null ? `You don't show up in the top ${depth} results` : `You're only ranking #${rank}`} for "${seed}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
-      toolLine: toolLine(seed),
-      evidence: `Seed term · volume ${volume}/100 · rank ${rank ?? `none in top ${depth}`}`,
+      severity: Math.min(95, Math.round(40 + check.popularity * 0.45 + (rank == null ? 10 : 0))),
+      text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${check.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
+      toolLine: toolLine(check.term),
+      evidence: `Core search · ${metricsLine(check, rank)}`,
     });
   }
 
