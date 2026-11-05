@@ -5,14 +5,20 @@ import { createClient, isImpersonating } from "@/libs/supabase/server";
 import { VIEW_ONLY_ERROR } from "@/libs/admin/impersonation";
 import { createStripeClient } from "@/libs/stripe/server";
 import { recordUserEvent } from "@/libs/analytics/events";
+import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer";
 
-// The Growth Starter ($500, 12 months of Pro plus onboarding and a strategy
-// session) is a one-time payment, so checkout shows no "billed annually".
-// After payment the webhook gives the buyer a Pro subscription in a 12-month
-// trial that cancels at its end. That keeps plan expiry on the usual webhook
-// path instead of a separate end date.
-// Errors "signed_out" and "subscribed" are codes the checkout route redirects on.
-export async function createGrowthStarterCheckoutAction(): Promise<{ url: string } | { error: string }> {
+// The Growth Starter ($500, onboarding plus a strategy session) is a
+// one-time payment, so checkout shows no "billed annually". It comes with
+// 2 months of Pro, or 12 months when bought through a Pro bonus link before
+// its deadline (libs/stripe/growth-starter-offer.ts). The webhook gives the
+// buyer a Pro subscription in a trial of that length that cancels at its
+// end, which keeps plan expiry on the usual webhook path instead of a
+// separate end date. pro_days in the session metadata says how long.
+// Errors "signed_out", "subscribed" and "offer_expired" are codes the
+// checkout route redirects on.
+export async function createGrowthStarterCheckoutAction(
+  offerToken?: string | null
+): Promise<{ url: string } | { error: string }> {
   if (await isImpersonating()) return { error: VIEW_ONLY_ERROR };
   const supabase = await createClient();
   const {
@@ -20,6 +26,15 @@ export async function createGrowthStarterCheckoutAction(): Promise<{ url: string
   } = await supabase.auth.getUser();
 
   if (!user) return { error: "signed_out" };
+
+  // A link that came with a token but no longer grants Pro sends the buyer
+  // back to the page rather than charging them for less than they were shown.
+  let proBonus = false;
+  if (offerToken) {
+    const check = checkGrowthStarterOfferToken(offerToken);
+    if (check.status !== "valid") return { error: "offer_expired" };
+    proBonus = true;
+  }
 
   const priceId = process.env.STRIPE_GROWTH_STARTER_PRICE_ID;
   if (!priceId) return { error: "unavailable" };
@@ -30,11 +45,12 @@ export async function createGrowthStarterCheckoutAction(): Promise<{ url: string
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // A second Stripe subscription would overwrite this one's row while it
-  // keeps billing, so paid subscribers are handled by hand for now.
-  if (subscription?.stripe_subscription_id && subscription.status !== "canceled") {
-    return { error: "subscribed" };
-  }
+  // A granted Pro subscription would overwrite a paid one's row while that
+  // keeps billing. Paid subscribers already have Pro, so they buy the calls
+  // alone, and get the bonus year by hand for now.
+  const isPaid = !!subscription?.stripe_subscription_id && subscription.status !== "canceled";
+  if (proBonus && isPaid) return { error: "subscribed" };
+  const proDays = proBonus ? 365 : isPaid ? 0 : 60;
 
   const stripe = createStripeClient();
   // A Stripe error (say, a test-mode price under the live key) would
@@ -50,15 +66,22 @@ export async function createGrowthStarterCheckoutAction(): Promise<{ url: string
     // No promo code box: the Starter is sold on a call, and Pro's codes
     // would otherwise apply to it too.
     line_items: [{ price: priceId, quantity: 1 }],
-    metadata: { user_id: user.id, offer: "growth_starter" },
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter?purchased=1`,
-    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter`,
+    // pro_days is always set, so the webhook can tell these from sessions
+    // created before it existed (those were sold with 12 months).
+    metadata: {
+      user_id: user.id,
+      offer: "growth_starter",
+      pro_bonus: proBonus ? "1" : "0",
+      pro_days: String(proDays),
+    },
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter?purchased=1${proDays ? "&pro=1" : ""}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter${proBonus ? `?offer=${encodeURIComponent(offerToken!)}` : ""}`,
   }).catch((err: unknown) => {
     console.error("Growth Starter checkout failed:", err);
     return null;
   });
 
   if (!session?.url) return { error: "Failed to create checkout session." };
-  after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: "pro", offer: "growth_starter" }, ref: session.id }));
+  after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: "pro", offer: "growth_starter", pro_bonus: proBonus, pro_days: proDays }, ref: session.id }));
   return { url: session.url };
 }

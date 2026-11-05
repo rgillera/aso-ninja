@@ -3,14 +3,24 @@ import { greetingHtml, greetingText } from "./greeting";
 // Sent to the buyer from the Stripe webhook right after a Growth Starter
 // purchase. Onboarding isn't self-booked: their specialist emails them to
 // schedule it, so this sets that expectation and gives a fallback contact.
+// proDays: Pro the purchase granted (365 bonus link, 60, or 0 when the buyer
+// is already on a paid plan and has Pro anyway).
 
 export const growthStarterWelcomeSubject = "You're in! Welcome to the Growth Starter";
 
-export function renderGrowthStarterWelcomeHtml(fullName?: string | null) {
+function proLength(proDays: number): string | null {
+  if (proDays === 365) return "12 months";
+  if (proDays === 60) return "2 months";
+  if (proDays > 0) return `${proDays} days`;
+  return null;
+}
+
+export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays = 0) {
+  const length = proLength(proDays);
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
   <p>${greetingHtml(fullName)}</p>
-  <p>Thanks for getting the Growth Starter! &#127881; Your <strong>AppASO Pro</strong> access is active now and runs for 12 months.</p>
+  <p>Thanks for getting the Growth Starter! &#127881;${length ? ` Your <strong>AppASO Pro</strong> access is active now and runs for ${length}.` : ""}</p>
   <p>Your assigned growth specialist will <strong>email you to schedule your 30-minute onboarding call</strong>, where we cover ASO basics and show you how to use AppASO Pro.</p>
   <p><strong>What happens next</strong></p>
   <ol style="padding-left: 20px;">
@@ -24,10 +34,11 @@ export function renderGrowthStarterWelcomeHtml(fullName?: string | null) {
 </div>`.trim();
 }
 
-export function renderGrowthStarterWelcomeText(fullName?: string | null) {
+export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays = 0) {
+  const length = proLength(proDays);
   return `${greetingText(fullName)}
 
-Thanks for getting the Growth Starter! Your AppASO Pro access is active now and runs for 12 months.
+Thanks for getting the Growth Starter!${length ? ` Your AppASO Pro access is active now and runs for ${length}.` : ""}
 
 Your assigned growth specialist will email you to schedule your 30-minute onboarding call, where we cover ASO basics and show you how to use AppASO Pro.
 

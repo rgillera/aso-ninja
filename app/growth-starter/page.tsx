@@ -13,6 +13,8 @@ import {
   ArrowRightIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  GiftIcon,
+  FunnelIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
@@ -23,13 +25,17 @@ import PortalButton from "@/features/portal/PortalButton";
 import PortalCtaCard from "@/features/portal/PortalCtaCard";
 import PortalGridBackdrop from "@/features/portal/PortalGridBackdrop";
 import PortalSectionHeading from "@/features/portal/PortalSectionHeading";
+import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer";
 
 // Mostly sent as a link after the free audit call. Linked in the footer but
 // kept out of the sitemap and search until the offer is proven.
+// Every Starter comes with 2 months of Pro. 12 months is a bonus offered on
+// the call: with a valid ?offer token (libs/stripe/growth-starter-offer.ts)
+// the page shows it and its deadline, and checkout grants it.
 export const metadata: Metadata = {
   title: "ASO Growth Starter",
   description:
-    "Stop guessing how to grow your app. A growth expert reviews your full funnel and roasts it live with you, plus 12 months of AppASO Pro. $500, one payment.",
+    "Stop guessing how to grow your app. A growth expert reviews your full funnel, roasts it live with you, and stays on as your partner for 2 months. $500, one payment.",
   alternates: {
     canonical: "/growth-starter",
   },
@@ -38,27 +44,28 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 12 months of AppASO Pro. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 2 months with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 12 months of AppASO Pro. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 2 months with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
 };
 
 const calendlyUrl = process.env.NEXT_PUBLIC_MANAGED_ASO_CALENDLY_URL;
-const checkoutHref = "/growth-starter/checkout";
+const baseCheckoutHref = "/growth-starter/checkout";
 const ctaLabel = "Get started for $500";
 
-const stats = [
+const baseStats = [
   { label: "Price", value: "$500", note: "one payment" },
   { label: "Expert time", value: "90 min", note: "live, 1-on-1" },
   { label: "Specialist", value: "2 months", note: "your partner" },
-  { label: "AppASO Pro", value: "12 months", note: "$288 value" },
 ];
+const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
+const proMonthStat = { label: "AppASO Pro", value: "2 months", note: "included" };
 
 const pains = [
   {
@@ -78,7 +85,8 @@ const pains = [
   },
 ];
 
-const steps = [
+// withPro: the page was opened from a valid Pro bonus link.
+const stepsFor = (withPro: boolean) => [
   {
     n: "After checkout",
     title: "Learn the tool",
@@ -114,7 +122,7 @@ const steps = [
     ],
     milestone: "Your first changes are live",
   },
-  {
+  ...(withPro ? [{
     n: "Months 3–12",
     title: "Keep growing",
     description: "Your AppASO Pro keeps running all year, so you can keep improving on your own.",
@@ -124,15 +132,17 @@ const steps = [
       "Test new metadata and see what moves",
     ],
     milestone: "12 months of Pro, no renewal",
-  },
+  }] : []),
 ];
 
-const deliverables = [
-  {
-    name: "12 months of AppASO Pro",
-    description: "The tool to act on everything you learn: unlimited keywords, the Keyword Inspector, est. downloads per keyword, AI suggestions, and competitor tracking.",
-    icon: KeyIcon,
-  },
+const proDeliverable = {
+  name: "12 months of AppASO Pro",
+  description: "The tool to act on everything you learn: unlimited keywords, the Keyword Inspector, est. downloads per keyword, AI suggestions, and competitor tracking.",
+  icon: KeyIcon,
+};
+
+const deliverablesFor = (withPro: boolean) => [
+  ...(withPro ? [proDeliverable] : []),
   {
     name: "Personal onboarding",
     description: "A 30-minute call on ASO basics and how to use AppASO Pro, so you know which tools to reach for and why.",
@@ -148,6 +158,12 @@ const deliverables = [
     description: "What your closest competitors rank for, how their listings are built, and where they leave gaps you can take.",
     icon: UsersIcon,
   },
+  // Takes the Pro card's place, so the grid stays at 6 either way.
+  ...(withPro ? [] : [{
+    name: "Full-funnel review",
+    description: "We go through your app the way a new user does, from store listing to onboarding to paywall, and find where people drop off. Done before the call.",
+    icon: FunnelIcon,
+  }]),
   {
     name: "60-minute roast & strategy call",
     description: "No fluff, no sugarcoating. We tell you what's holding your app back, from listing to paywall, then agree what to change first. Record it and keep every point.",
@@ -160,8 +176,8 @@ const deliverables = [
   },
 ];
 
-const starterIncludes = [
-  "12 months of AppASO Pro ($288 value)",
+const starterIncludesFor = (withPro: boolean) => [
+  withPro ? "12 months of AppASO Pro ($288 value)" : "2 months of AppASO Pro",
   "30-minute personal onboarding",
   "Expert review of your full funnel, from store listing to purchase, done before the call",
   "60-minute call: a live roast of your app and a strategy to grow it",
@@ -181,10 +197,12 @@ const notFit = [
   "You only need the software",
 ];
 
-const faqs = [
+const faqsFor = (withPro: boolean) => [
   {
     q: "Is this a subscription?",
-    a: "No. You pay $500 once. Your Pro access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again.",
+    a: withPro
+      ? "No. You pay $500 once. Your Pro access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again."
+      : "No. You pay $500 once. Your 2 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
   },
   {
     q: "What if it's not what I expected?",
@@ -200,11 +218,13 @@ const faqs = [
   },
   {
     q: "I'm already on a paid AppASO plan. Can I buy it?",
-    a: (
+    a: withPro ? (
       <>
         Yes. Email us at <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>{" "}
         and we&apos;ll set it up so you aren&apos;t charged twice for Pro.
       </>
+    ) : (
+      "Yes. You already have Pro, so your current plan keeps running as it is and you get the calls and support."
     ),
   },
   {
@@ -217,14 +237,24 @@ const faqs = [
   },
 ];
 
-type PageProps = { searchParams: Promise<{ purchased?: string; error?: string }> };
+type PageProps = { searchParams: Promise<{ purchased?: string; pro?: string; error?: string; offer?: string }> };
 
 export default async function GrowthStarterPage({ searchParams }: PageProps) {
-  const { purchased, error } = await searchParams;
+  const { purchased, pro, error, offer: offerToken } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
   const bookHref = calendlyUrl ?? "mailto:hello@appaso.io";
+
+  const offerCheck = offerToken ? checkGrowthStarterOfferToken(offerToken) : null;
+  const offer = offerCheck?.status === "valid" ? offerCheck.offer : null;
+  const withPro = !!offer;
+  const checkoutHref = offer ? `${baseCheckoutHref}?offer=${encodeURIComponent(offer.token)}` : baseCheckoutHref;
+  const stats = [...baseStats, withPro ? proStat : proMonthStat];
+  const steps = stepsFor(withPro);
+  const deliverables = deliverablesFor(withPro);
+  const starterIncludes = starterIncludesFor(withPro);
+  const faqs = faqsFor(withPro);
 
   return (
     <div className="bg-white min-h-screen">
@@ -242,7 +272,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   <div>
                     <p className="font-semibold text-gray-950">You&apos;re in. Welcome to the Growth Starter.</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
-                      Your AppASO Pro access is active. Your assigned growth specialist will email you to
+                      {pro === "1" && "Your AppASO Pro access is active. "}Your assigned growth specialist will email you to
                       schedule your onboarding call. Haven&apos;t heard from them within 3 days? Email{" "}
                       <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>.
                     </p>
@@ -251,6 +281,31 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {offer && purchased !== "1" && (
+              <div className="mx-auto mb-12 max-w-2xl rounded-2xl bg-indigo-50 p-6 text-left ring-1 ring-indigo-200">
+                <div className="flex items-start gap-3">
+                  <GiftIcon className="mt-0.5 size-6 shrink-0 text-indigo-600" aria-hidden="true" />
+                  <div>
+                    <p className="font-semibold text-gray-950">Your bonus: 12 months of AppASO Pro, free</p>
+                    <p className="mt-1 text-sm leading-6 text-gray-600">
+                      Buy the Growth Starter by <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
+                      and you get 12 months of AppASO Pro ($288 value) instead of 2 months. Your Pro access starts the moment you check out.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {offerCheck?.status === "expired" && purchased !== "1" && (
+              <div className="mx-auto mb-12 flex max-w-2xl items-start gap-3 rounded-2xl bg-amber-50 p-6 text-left ring-1 ring-amber-200">
+                <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-600" aria-hidden="true" />
+                <p className="text-sm leading-6 text-gray-700">
+                  The Pro bonus offer ended on {offerCheck.deadlineLabel}. You can still get the Growth Starter below,
+                  with 2 months of Pro instead of 12 months.
+                </p>
               </div>
             )}
 
@@ -277,7 +332,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
               A growth expert walks your funnel with you and ranks your fixes, then stays on as your partner for 2
-              months. Plus a year of AppASO Pro to{" "}
+              months{withPro ? <>. Plus a year of AppASO Pro to{" "}</> : <> while you{" "}</>}
               <span className="font-semibold text-indigo-600">ship them yourself.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
@@ -341,8 +396,12 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalSectionHeading
               eyebrow="How it works"
               title="One week to a plan."
-              highlight="A year to run it."
-              description="Learn the tool, get your app roasted by an expert, then ship the changes with Pro running all year."
+              highlight={withPro ? "A year to run it." : "Two months of backup."}
+              description={
+                withPro
+                  ? "Learn the tool, get your app roasted by an expert, then ship the changes with Pro running all year."
+                  : "Learn the tool, get your app roasted by an expert, then ship the changes with your specialist on call."
+              }
             />
 
             {/* Same numbered rail as the Growth Sprint phases. */}
@@ -351,7 +410,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                 aria-hidden="true"
                 className="absolute left-5 right-0 top-5 hidden h-px bg-gradient-to-r from-indigo-300 via-violet-200 to-transparent lg:block"
               />
-              <ol className="grid grid-cols-1 gap-12 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
+              <ol className={`grid grid-cols-1 gap-12 sm:gap-x-8 ${withPro ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
                 {steps.map((step, i) => (
                   <li key={step.title} className="relative flex flex-col">
                     <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm ring-4 ring-white">
@@ -412,9 +471,13 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   <span className="text-5xl font-semibold tracking-tight text-gray-950">$500</span>
                   <span className="text-sm font-medium text-gray-500">one payment</span>
                 </p>
-                <p className="mt-2 text-sm text-gray-500">
-                  Pro alone is <span className="font-semibold text-gray-950">$288/year</span>. For $212 more, a growth expert works on your app with you.
-                </p>
+                {withPro ? (
+                  <p className="mt-2 text-sm text-gray-500">
+                    Pro alone is <span className="font-semibold text-gray-950">$288/year</span>. For $212 more, a growth expert works on your app with you.
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500">90 minutes of expert time and 2 months of support, for one payment.</p>
+                )}
                 <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {starterIncludes.map((item) => (
                     <li key={item} className="flex items-start gap-3">
@@ -503,7 +566,11 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               eyebrow="Get started"
               title="Stop guessing."
               highlight="Start growing."
-              description={<>Get an expert&apos;s eyes on your app this week, and a year of Pro to act on what you learn.</>}
+              description={
+                withPro
+                  ? <>Get an expert&apos;s eyes on your app this week, and a year of Pro to act on what you learn.</>
+                  : <>Get an expert&apos;s eyes on your app this week, and a specialist to back you while you act on it.</>
+              }
             >
               <PortalButton href={checkoutHref} className="mt-8">
                 {ctaLabel}

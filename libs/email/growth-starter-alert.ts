@@ -8,7 +8,17 @@ export type GrowthStarterPurchase = {
   amountCents: number | null;
   currency: string | null;
   sessionId: string;
+  // Days of Pro the webhook granted: 365 (bonus link), 60, or 0 (already
+  // on a paid plan).
+  proDays: number;
 };
+
+function proLabel(days: number): string {
+  if (days === 365) return "12 months (bonus link)";
+  if (days === 60) return "2 months";
+  if (days > 0) return `${days} days`;
+  return "none, already on a paid plan";
+}
 
 function escapeHtml(value: string): string {
   return value
@@ -36,6 +46,7 @@ export function renderGrowthStarterAlertHtml(p: GrowthStarterPurchase): string {
     <li><strong>Name:</strong> ${p.name ? escapeHtml(p.name) : "not given"}</li>
     <li><strong>Email:</strong> ${email ? `<a href="mailto:${email}">${email}</a>` : "not given"}</li>
     <li><strong>Paid:</strong> ${formatAmount(p)}</li>
+    <li><strong>Pro granted:</strong> ${proLabel(p.proDays)}</li>
     <li><strong>Checkout session:</strong> ${escapeHtml(p.sessionId)}</li>
   </ul>
 </div>`;
@@ -47,5 +58,6 @@ export function renderGrowthStarterAlertText(p: GrowthStarterPurchase): string {
 Name: ${p.name ?? "not given"}
 Email: ${p.email ?? "not given"}
 Paid: ${formatAmount(p)}
+Pro granted: ${proLabel(p.proDays)}
 Checkout session: ${p.sessionId}`;
 }

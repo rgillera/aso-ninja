@@ -12,18 +12,18 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter/terms",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, AppASO Pro access, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, support, and refunds.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, AppASO Pro access, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, support, and refunds.",
     images: ["/opengraph-image"],
   },
 };
 
-const LAST_UPDATED = "November 4, 2026";
+const LAST_UPDATED = "November 6, 2026";
 
 export default function GrowthStarterTermsPage() {
   return (
@@ -47,8 +47,9 @@ export default function GrowthStarterTermsPage() {
         <p>The Starter covers one app and includes:</p>
         <ul>
           <li>
-            <strong>AppASO Pro:</strong> 12 months of access to the AppASO Pro plan, starting on the date of
-            purchase.
+            <strong>AppASO Pro:</strong> 2 months of access to the AppASO Pro plan, starting on the date of
+            purchase. If you already have a paid AppASO subscription, it keeps running instead and no
+            separate Pro access is added.
           </li>
           <li>
             <strong>Onboarding:</strong> one 30-minute video call covering ASO basics and how to use AppASO Pro.
@@ -97,15 +98,22 @@ export default function GrowthStarterTermsPage() {
       </section>
 
       <section>
-        <h2>AppASO Pro Access</h2>
+        <h2>AppASO Pro Access and Bonus</h2>
         <p>
-          Your Pro access ends 12 months after purchase and does not renew automatically. When it ends, your
-          account moves to the Free plan, under the same rules as any other plan change. You can subscribe
-          to a paid plan at any time to keep Pro features.
+          We may offer you a bonus that extends your Pro access to 12 months if you buy the Starter by a
+          deadline we give you. The bonus applies only to a purchase made through the bonus link we send you,
+          before the end of the deadline date in any time zone. It cannot be added to a purchase made without
+          that link or after the deadline.
         </p>
         <p>
-          If you already have a paid AppASO subscription, contact us before buying the Starter and we will
-          arrange it so you are not charged twice for Pro.
+          Pro access from the Starter, with or without the bonus, starts on the date of purchase and does not
+          renew automatically. When it ends, your account moves to the Free plan, under the same rules as any
+          other plan change. You can subscribe to a paid plan at any time to keep Pro features. Pro access
+          from the Starter has no cash value, and a refund of the Starter also ends it.
+        </p>
+        <p>
+          If you already have a paid AppASO subscription, contact us before buying the Starter with a bonus
+          and we will arrange it so you are not charged twice for Pro.
         </p>
       </section>
 

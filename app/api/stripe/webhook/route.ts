@@ -19,17 +19,28 @@ import {
 const FROM = "AppASO <hello@appaso.io>";
 const ALERT_TO = "hello@appaso.io";
 
-const YEAR_SECONDS = 365 * 24 * 60 * 60;
+const DAY_SECONDS = 24 * 60 * 60;
 
-// The Growth Starter is paid once, so its year of Pro is a Pro yearly
-// subscription in a 12-month trial that cancels when the trial ends: no card
+// Days of Pro a Growth Starter session grants: 60, 365 with a bonus link,
+// 0 for buyers already on a paid plan. Sessions from before pro_days have
+// none, and were sold with 12 months.
+function growthStarterProDays(session: Stripe.Checkout.Session): number {
+  const raw = session.metadata?.pro_days;
+  if (raw === undefined) return 365;
+  const days = Number(raw);
+  return days === 60 || days === 365 ? days : 0;
+}
+
+// The Growth Starter is paid once, so its Pro is a Pro yearly subscription
+// in a trial of proDays that cancels when the trial ends: no card
 // on file, nothing ever charged, and expiry comes through the usual
 // customer.subscription.deleted. Keyed on the session so a webhook retry
 // returns the same subscription instead of creating a second one.
 async function grantGrowthStarterPro(
   stripe: Stripe,
   admin: ReturnType<typeof createAdminClient>,
-  session: Stripe.Checkout.Session
+  session: Stripe.Checkout.Session,
+  proDays: number
 ) {
   const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
   if (!customerId) throw new Error(`Growth Starter session ${session.id} has no customer`);
@@ -41,7 +52,7 @@ async function grantGrowthStarterPro(
     {
       customer: customerId,
       items: [{ price: pro.stripe_price_id_yearly }],
-      trial_end: session.created + YEAR_SECONDS,
+      trial_end: session.created + proDays * DAY_SECONDS,
       trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
       cancel_at_period_end: true,
       metadata: { offer: "growth_starter", checkout_session: session.id },
@@ -71,8 +82,8 @@ async function sendGrowthStarterEmails(purchase: GrowthStarterPurchase) {
         from: FROM,
         to: purchase.email,
         subject: growthStarterWelcomeSubject,
-        html: renderGrowthStarterWelcomeHtml(purchase.name),
-        text: renderGrowthStarterWelcomeText(purchase.name),
+        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays),
+        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays),
       })
     );
   }
@@ -181,8 +192,11 @@ export async function POST(request: NextRequest) {
       const userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
       if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && userId) {
         if (session.payment_status !== "paid") break;
-        const subscription = await grantGrowthStarterPro(stripe, admin, session);
-        await upsertFromStripeSubscription(admin, subscription, userId);
+        const proDays = growthStarterProDays(session);
+        if (proDays > 0) {
+          const subscription = await grantGrowthStarterPro(stripe, admin, session, proDays);
+          await upsertFromStripeSubscription(admin, subscription, userId);
+        }
         after(() =>
           sendGrowthStarterEmails({
             email: session.customer_details?.email ?? session.customer_email ?? null,
@@ -190,11 +204,12 @@ export async function POST(request: NextRequest) {
             amountCents: session.amount_total,
             currency: session.currency,
             sessionId: session.id,
+            proDays,
           })
         );
         after(() =>
           recordUserEvent(userId, "checkout_completed", {
-            props: { plan_id: null, billing: null, offer: "growth_starter" },
+            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays },
             ref: session.id,
           })
         );
