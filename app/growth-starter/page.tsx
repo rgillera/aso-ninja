@@ -205,10 +205,6 @@ const faqsFor = (withPro: boolean) => [
       : "No. You pay $500 once. Your 2 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
   },
   {
-    q: "What if it's not what I expected?",
-    a: "Ask within 7 days of purchase, before your strategy call happens, and we'll refund you in full.",
-  },
-  {
     q: "Do I get a written report?",
     a: "No. Everything is walked through live, so you can ask questions as we go. Record the call and you'll have every point to come back to, and your specialist is there for 2 months if anything is unclear.",
   },
@@ -338,7 +334,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalButton href={checkoutHref} className="mt-9">
               {ctaLabel}
             </PortalButton>
-            <p className="mt-4 text-sm text-gray-500">One payment · No renewal · 7-day refund</p>
+            <p className="mt-4 text-sm text-gray-500">One payment · No renewal</p>
             <p className="mt-2 text-sm text-gray-500">
               Have questions first?{" "}
               <a
@@ -490,7 +486,6 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   {ctaLabel}
                 </PortalButton>
                 <p className="mt-4 text-xs text-gray-500">
-                  Full refund within 7 days if your strategy call hasn&apos;t happened yet.{" "}
                   <Link href="/growth-starter/terms" className="font-medium text-indigo-600 hover:underline">
                     See the terms
                   </Link>

@@ -124,8 +124,7 @@ export default function GrowthStarterTermsPage() {
           taxes, which you are responsible for where applicable.
         </p>
         <p>
-          You may ask for a full refund within 7 days of purchase, as long as your strategy session has not
-          yet taken place. After that, the Starter is non-refundable, except where required by law. If we
+          The Starter is non-refundable, except where required by law. If we
           cannot deliver a call for reasons on our side, we will refund the value of the
           undelivered part.
         </p>

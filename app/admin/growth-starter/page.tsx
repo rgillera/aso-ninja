@@ -46,7 +46,7 @@ Here's what's included:
 
 Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 2 months.
 
-It's $500, one payment, with a full refund within 7 days if your strategy call hasn't happened yet.
+It's $500, one payment.
 
 Here's your link: ${link}
 
