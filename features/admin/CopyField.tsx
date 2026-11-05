@@ -32,7 +32,7 @@ export function CopyField({ label, value, multiline = false }: { label: string; 
         </button>
       </div>
       {multiline ? (
-        <textarea readOnly value={value} rows={7} className={`${fieldClass} resize-y font-sans`} onFocus={(e) => e.target.select()} />
+        <textarea readOnly value={value} rows={20} className={`${fieldClass} resize-y font-sans`} onFocus={(e) => e.target.select()} />
       ) : (
         <input readOnly value={value} className={`${fieldClass} font-mono`} onFocus={(e) => e.target.select()} />
       )}

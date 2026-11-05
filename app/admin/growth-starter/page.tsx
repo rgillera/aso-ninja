@@ -30,11 +30,29 @@ export default async function Page({ searchParams }: PageProps) {
     : null;
 
   const email = result && "token" in result && link
-    ? `Great talking with you today. As promised, if you get the Growth Starter by ${result.deadlineLabel}, you'll also get 12 months of AppASO Pro ($288 value) included, free.
+    ? `Thanks for your time today and for sharing more about your app and your current growth efforts.
+
+Based on our conversation, I understand that [BLANK].
+
+I believe our Growth Starter is a good fit for where you are right now.
+
+Here's what's included:
+
+- Expert review of your full funnel, from store listing to purchase, done before our call
+- 60-minute strategy call: a live review of your app, the opportunities you're missing, and a clear plan to grow it
+- Keyword opportunities and competitor gaps, walked through with you on the call
+- 30-minute onboarding on ASO basics and how to set up AppASO Pro, so you can start with confidence
+- 2 months of support from the same specialist who researched your app
+
+Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 2 months.
+
+It's $500, one payment, with a full refund within 7 days if your strategy call hasn't happened yet.
 
 Here's your link: ${link}
 
-The bonus ends after ${result.deadlineLabel}.`
+The goal is simple: find what's holding your app back, show you what you're missing, and give you a plan to get more users and grow your revenue.
+
+The bonus ends after ${result.deadlineLabel}. Any questions, just reply to this email.`
     : null;
 
   return (
