@@ -121,7 +121,7 @@ const stepsFor = (withPro: boolean) => [
     description: "You make the changes, with your specialist one email away when you get stuck.",
     items: [
       "Work through your plan at your own pace",
-      "Ask your specialist anything, for 2 months",
+      "Email your specialist anything, for 2 months",
       "Two 30-minute check-in calls, at month 1 and month 2",
       "Watch each change move your rankings in Pro",
     ],
@@ -185,8 +185,8 @@ const deliverablesFor = (withPro: boolean) => [
     icon: CalendarDaysIcon,
   },
   {
-    name: "2 months with your specialist",
-    description: "The specialist who researched your app stays on as your growth partner. Stuck on a step or unsure about a result? Ask them, and get an answer from someone who already knows your app.",
+    name: "2 months of email support",
+    description: "The specialist who researched your app stays on as your growth partner. Stuck on a step or unsure about a result? Email them, and get an answer within 2 working days from someone who already knows your app.",
     icon: EnvelopeIcon,
   },
 ];
@@ -199,7 +199,7 @@ const starterIncludesFor = (withPro: boolean) => [
   "Keyword opportunities and competitor gaps, walked through on the call",
   "A one-page action plan with every fix ranked by impact",
   "Two 30-minute check-in calls, at month 1 and month 2",
-  "2 months of support from the specialist who researched your app",
+  "2 months of email support from the specialist who researched your app",
   "$500 credit toward the Growth Sprint if you upgrade within 2 months of your strategy call",
 ];
 
@@ -418,7 +418,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               description={
                 withPro
                   ? "Learn the tool, get your app roasted by an expert, then ship the changes with Pro running all year."
-                  : "Learn the tool, get your app roasted by an expert, then ship the changes with your specialist on call."
+                  : "Learn the tool, get your app roasted by an expert, then ship the changes with a specialist to email when you get stuck."
               }
             />
 
