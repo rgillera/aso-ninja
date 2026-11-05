@@ -41,8 +41,11 @@ Here's what's included:
 - Expert review of your full funnel, from store listing to purchase, done before our call
 - 60-minute strategy call: a live review of your app, the opportunities you're missing, and a clear plan to grow it
 - Keyword opportunities and competitor gaps, walked through with you on the call
+- A one-page action plan with every fix ranked by impact
 - 30-minute onboarding on ASO basics and how to set up AppASO Pro, so you can start with confidence
+- Two 30-minute check-in calls, at month 1 and month 2, to review what moved and what's next
 - 2 months of support from the same specialist who researched your app
+- If you later want us to do the work, the full $500 comes off the Growth Sprint when you upgrade within 2 months of the strategy call
 
 Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 2 months.
 

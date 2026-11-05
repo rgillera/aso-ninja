@@ -15,6 +15,9 @@ import {
   ExclamationTriangleIcon,
   GiftIcon,
   FunnelIcon,
+  ClipboardDocumentListIcon,
+  CalendarDaysIcon,
+  ReceiptPercentIcon,
 } from "@heroicons/react/24/outline";
 import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
@@ -44,13 +47,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 2 months with your specialist. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and 2 months with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, and 2 months with your specialist. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and 2 months with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
 };
@@ -61,7 +64,7 @@ const ctaLabel = "Get started for $500";
 
 const baseStats = [
   { label: "Price", value: "$500", note: "one payment" },
-  { label: "Expert time", value: "90 min", note: "live, 1-on-1" },
+  { label: "Expert time", value: "2.5 hours", note: "4 live calls" },
   { label: "Specialist", value: "2 months", note: "your partner" },
 ];
 const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
@@ -108,6 +111,7 @@ const stepsFor = (withPro: boolean) => [
       "What competitors rank for, and the gaps they leave",
       "An honest roast of your listing, onboarding, and paywall",
       "Your next moves, in order of impact",
+      "Then, within 2 working days: a one-page action plan, in writing",
     ],
     milestone: "You know exactly what to change first",
   },
@@ -118,6 +122,7 @@ const stepsFor = (withPro: boolean) => [
     items: [
       "Work through your plan at your own pace",
       "Ask your specialist anything, for 2 months",
+      "Two 30-minute check-in calls, at month 1 and month 2",
       "Watch each change move your rankings in Pro",
     ],
     milestone: "Your first changes are live",
@@ -158,7 +163,7 @@ const deliverablesFor = (withPro: boolean) => [
     description: "What your closest competitors rank for, how their listings are built, and where they leave gaps you can take.",
     icon: UsersIcon,
   },
-  // Takes the Pro card's place, so the grid stays at 6 either way.
+  // Takes the Pro card's place, so the grid stays at 8 (2 rows of 4) either way.
   ...(withPro ? [] : [{
     name: "Full-funnel review",
     description: "We go through your app the way a new user does, from store listing to onboarding to paywall, and find where people drop off. Done before the call.",
@@ -168,6 +173,16 @@ const deliverablesFor = (withPro: boolean) => [
     name: "60-minute roast & strategy call",
     description: "No fluff, no sugarcoating. We tell you what's holding your app back, from listing to paywall, then agree what to change first. Record it and keep every point.",
     icon: FireIcon,
+  },
+  {
+    name: "One-page action plan",
+    description: "Every fix from the call, ranked by impact, in writing. Sent within 2 working days of the call, so you always know what to do next.",
+    icon: ClipboardDocumentListIcon,
+  },
+  {
+    name: "2 monthly check-in calls",
+    description: "30 minutes at month 1 and again at month 2. We look at what you shipped, what moved, and what to do next.",
+    icon: CalendarDaysIcon,
   },
   {
     name: "2 months with your specialist",
@@ -182,7 +197,10 @@ const starterIncludesFor = (withPro: boolean) => [
   "Expert review of your full funnel, from store listing to purchase, done before the call",
   "60-minute call: a live roast of your app and a strategy to grow it",
   "Keyword opportunities and competitor gaps, walked through on the call",
+  "A one-page action plan with every fix ranked by impact",
+  "Two 30-minute check-in calls, at month 1 and month 2",
   "2 months of support from the specialist who researched your app",
+  "$500 credit toward the Growth Sprint if you upgrade within 2 months of your strategy call",
 ];
 
 const goodFit = [
@@ -205,8 +223,8 @@ const faqsFor = (withPro: boolean) => [
       : "No. You pay $500 once. Your 2 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
   },
   {
-    q: "Do I get a written report?",
-    a: "No. Everything is walked through live, so you can ask questions as we go. Record the call and you'll have every point to come back to, and your specialist is there for 2 months if anything is unclear.",
+    q: "Do I get anything in writing?",
+    a: "Yes. Within 2 working days of the strategy call, you get a one-page action plan with every fix ranked by impact. The detail behind it is walked through live, so record the call to keep every point.",
   },
   {
     q: "What do you need from me?",
@@ -229,7 +247,11 @@ const faqsFor = (withPro: boolean) => [
   },
   {
     q: "Will you change my store listing for me?",
-    a: "No, you make the changes. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
+    a: "No, you make the changes, with your specialist and two check-in calls to keep you on track. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
+  },
+  {
+    q: "What if I decide I want you to do the work?",
+    a: "Upgrade to the Growth Sprint within 2 months of your strategy call and the $500 you paid comes off your first Sprint payment. The Starter is never wasted money.",
   },
 ];
 
@@ -442,7 +464,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               description="Agencies charge thousands to do this for you. Here, you get the same expert review and learn to do the work yourself."
             />
 
-            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:mt-20 md:grid-cols-2 lg:max-w-none lg:grid-cols-3">
+            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:mt-20 md:grid-cols-2 lg:max-w-none lg:grid-cols-4">
               {deliverables.map((d) => (
                 <div key={d.name} className="flex flex-col bg-white p-8 sm:p-10">
                   <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
@@ -472,7 +494,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     Pro alone is <span className="font-semibold text-gray-950">$288/year</span>. For $212 more, a growth expert works on your app with you.
                   </p>
                 ) : (
-                  <p className="mt-2 text-sm text-gray-500">90 minutes of expert time and 2 months of support, for one payment.</p>
+                  <p className="mt-2 text-sm text-gray-500">A written plan, 4 live calls, and 2 months of expert backup, for one payment.</p>
                 )}
                 <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {starterIncludes.map((item) => (
@@ -524,10 +546,14 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
 
             <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:flex-row sm:items-center sm:justify-between sm:p-10">
               <div className="max-w-2xl">
-                <h3 className="text-lg font-semibold text-gray-950">Rather we do the work?</h3>
+                <div className="flex items-center gap-2">
+                  <ReceiptPercentIcon className="size-5 text-indigo-600" aria-hidden="true" />
+                  <h3 className="text-lg font-semibold text-gray-950">Rather we do the work? Your $500 carries over.</h3>
+                </div>
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   In the 90-Day Growth Sprint, our team runs the audit, rewrites your listing, tests your
-                  creatives, and manages your ads, with a year of Pro included.
+                  creatives, and manages your ads, with a year of Pro included. Upgrade within 2 months of your
+                  strategy call and the full $500 comes off your first Sprint payment.
                 </p>
               </div>
               <Link

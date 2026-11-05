@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter/terms",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, support, and refunds.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, support, and refunds.",
     images: ["/opengraph-image"],
   },
 };
@@ -62,18 +62,27 @@ export default function GrowthStarterTermsPage() {
             and your priorities.
           </li>
           <li>
+            <strong>Action plan:</strong> within 2 working days of the strategy session, we email you a
+            one-page action plan listing the agreed changes in order of priority.
+          </li>
+          <li>
+            <strong>Check-in calls:</strong> two 30-minute video calls, about 1 month and 2 months after the
+            strategy session, to review the changes you have made and your next steps.
+          </li>
+          <li>
             <strong>Specialist support:</strong> for 2 months after the strategy session, the specialist who
             prepared your analysis answers your questions about your strategy by email, usually within 2
             working days. If they are unavailable, another member of our team answers instead.
           </li>
         </ul>
         <p>
-          The analysis, app roast, and strategy are presented live on the call. We do not deliver a written
-          report, analysis, or roadmap. You may record the call, and you may take your own notes.
+          The analysis, app roast, and strategy are presented live on the call. Apart from the action
+          plan above, we do not deliver a written report, analysis, or roadmap. You may record the
+          calls, and you may take your own notes.
         </p>
         <p>
-          The Starter is guidance only. App roast feedback is advice, not design or development work. You make the changes to your store listing yourself. We do not edit
-          your listing, run A/B tests, produce creatives, or manage ads as part of the Starter. Anything not
+          The Starter is guidance only. App roast feedback is advice, not design or development work. You make the
+          changes to your store listing yourself. We do not write or edit your metadata or listing, run A/B tests, produce creatives, or manage ads as part of the Starter. Anything not
           listed above is out of scope unless we agree to it in writing, which may involve an additional
           fee.
         </p>
@@ -87,8 +96,9 @@ export default function GrowthStarterTermsPage() {
             days of onboarding, once your analysis is ready.
           </li>
           <li>
-            Both calls must take place within 60 days of purchase. Calls not scheduled by then expire and are
-            not refunded, unless the delay was on our side.
+            The onboarding call and strategy session must take place within 60 days of purchase, and the
+            check-in calls within 120 days of purchase. Calls not held by then expire and are not refunded,
+            unless the delay was on our side.
           </li>
           <li>
             You may reschedule each call once with at least 24 hours&apos; notice. A call you miss without
@@ -114,6 +124,17 @@ export default function GrowthStarterTermsPage() {
         <p>
           If you already have a paid AppASO subscription, contact us before buying the Starter with a bonus
           and we will arrange it so you are not charged twice for Pro.
+        </p>
+      </section>
+
+      <section>
+        <h2>Growth Sprint Credit</h2>
+        <p>
+          If you sign up for the 90-Day Growth Sprint within 2 months of your strategy session, we credit the
+          amount you paid for the Starter, excluding taxes, against your first Sprint payment. The credit
+          applies once, to the same app and account, has no cash value, and cannot be transferred or combined
+          with another Sprint discount unless we agree in writing. It expires if not used within that 2-month
+          window.
         </p>
       </section>
 
