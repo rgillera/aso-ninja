@@ -14,6 +14,7 @@ import { recomputeOpportunity, computeAndroidTitleVolume, difficultyFromRatings 
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { persistIpadRank } from "@/libs/store/ipad-only";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
+import { createStripeClient } from "@/libs/stripe/server";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -549,4 +550,54 @@ export async function saveQuickAuditEmailAction(id: string, selected: string[], 
   await createAdminClient().from("quick_audits")
     .update({ selected: selected.slice(0, 2), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
     .eq("id", id);
+}
+
+// For a Growth Starter buyer who was offered the 12-month bonus but bought
+// without the bonus link: stretches their Starter Pro subscription's trial
+// from 2 months to 12, counted from when it started. Only touches a
+// subscription the Starter created (metadata.offer), so a paid plan is never
+// changed here. The subscriptions row follows via customer.subscription.updated.
+export async function extendGrowthStarterProAction(
+  email: string
+): Promise<{ ok: true; endsAt: string } | { ok: false; error: string }> {
+  await requireSuperAdmin();
+  const admin = createAdminClient();
+
+  const { data: userId } = await admin.rpc("get_user_id_by_email", { p_email: email });
+  if (!userId) return { ok: false, error: "No account with that email." };
+
+  const { data: row } = await admin
+    .from("subscriptions")
+    .select("stripe_subscription_id")
+    .eq("user_id", userId as string)
+    .maybeSingle();
+  if (!row?.stripe_subscription_id) return { ok: false, error: "That account has no Growth Starter Pro to extend." };
+
+  const stripe = createStripeClient();
+  const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id).catch(() => null);
+  if (!sub || sub.metadata?.offer !== "growth_starter") {
+    return { ok: false, error: "That account's subscription isn't a Growth Starter one (maybe a paid plan). Handle it by hand." };
+  }
+  if (sub.status !== "trialing") return { ok: false, error: `Their Starter Pro is ${sub.status}, not running. Handle it by hand.` };
+
+  const target = sub.start_date + 365 * 24 * 60 * 60;
+  if (sub.trial_end && sub.trial_end >= target) {
+    return { ok: false, error: `Already runs to ${new Date(sub.trial_end * 1000).toDateString()}.` };
+  }
+
+  const updated = await stripe.subscriptions
+    .update(sub.id, {
+      trial_end: target,
+      // Restated so the subscription still ends with the new trial.
+      cancel_at_period_end: true,
+      proration_behavior: "none",
+      metadata: { ...sub.metadata, extended_to_12_months: new Date().toISOString() },
+    })
+    .catch((err: unknown) => {
+      console.error("Extending Growth Starter Pro failed:", err);
+      return null;
+    });
+  if (!updated) return { ok: false, error: "Stripe refused the change. Check the logs." };
+
+  return { ok: true, endsAt: new Date(target * 1000).toISOString() };
 }

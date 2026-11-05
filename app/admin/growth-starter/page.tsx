@@ -4,6 +4,7 @@ import { createRealUserClient } from "@/libs/supabase/server";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { createGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer";
 import { CopyField } from "@/features/admin/CopyField";
+import { ExtendStarterProForm } from "@/features/admin/ExtendStarterProForm";
 
 // Makes Growth Starter Pro bonus links: pick a deadline, get one link to send
 // everyone offered the bonus for that deadline. A plain GET form, so nothing
@@ -80,6 +81,8 @@ The bonus ends after ${result.deadlineLabel}.`
             <CopyField label="Follow-up email" value={email} multiline />
           </div>
         )}
+
+        <ExtendStarterProForm />
       </div>
     </div>
   );
