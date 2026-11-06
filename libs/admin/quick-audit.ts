@@ -43,6 +43,7 @@ export type AuditFinding = {
   severity: number; // 0-100, higher = more worth leading with
   text: string; // the sentence that replaces {{FINDING_n}}
   toolLine?: string; // optional second line (the free-tool nudge)
+  oneWord?: boolean; // pitches a single word ("sell"): only emailed if nothing better exists
   evidence: string; // admin-only context, never goes in the email
 };
 
@@ -96,6 +97,10 @@ function words(text: string): string[] {
   const out: string[] = [];
   for (const { segment, isWordLike } of segmenter.segment(text.toLowerCase())) if (isWordLike) out.push(segment);
   return out;
+}
+
+function isOneWord(term: string) {
+  return words(term).length < 2;
 }
 
 function isKeywordWord(w: string) {
@@ -211,7 +216,7 @@ Subtitle / short description: ${data.subtitle}
 Category: ${data.primaryGenreName}
 Description (excerpt): ${data.description.slice(0, 900)}
 
-List the 3 generic search terms (1 to 3 words each, lowercase, in the language people in that store search in) that someone who doesn't know this app would type to find an app like it. No brand names, no app names.
+List the 3 generic search terms (2 words each, lowercase, in the language people in that store search in) that someone who doesn't know this app would type to find an app like it. No brand names, no app names.
 Reply with JSON only: {"terms": ["...", "...", "..."]}`;
   const raw = await generateText(prompt);
   try {
@@ -298,10 +303,10 @@ async function keywordFindings(
     if (k.popularity >= 45 && k.difficulty >= 65 && (rank == null || rank > 10)) targets.push({ k, rank, kind: "hard", field });
     else if (k.popularity <= 20) targets.push({ k, rank, kind: "low", field });
   }
-  // A hard keyword with real volume is the stronger story; among low ones,
-  // the least searched.
-  targets.sort((a, b) => a.kind !== b.kind ? (a.kind === "hard" ? -1 : 1)
-    : a.kind === "hard" ? (b.k.popularity + b.k.difficulty) - (a.k.popularity + a.k.difficulty) : a.k.popularity - b.k.popularity);
+  // Phrases before single words. Then a hard keyword with real volume is the
+  // stronger story; among low ones, the least searched.
+  targets.sort((a, b) => Number(isOneWord(a.k.term)) - Number(isOneWord(b.k.term)) || (a.kind !== b.kind ? (a.kind === "hard" ? -1 : 1)
+    : a.kind === "hard" ? (b.k.popularity + b.k.difficulty) - (a.k.popularity + a.k.difficulty) : a.k.popularity - b.k.popularity));
   const target = targets[0];
   if (target) {
     const { k, rank, kind, field } = target;
@@ -314,6 +319,7 @@ async function keywordFindings(
         ? `Your ${field} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null && rank <= 20 ? ` You're at #${rank}, just off the first page, where most of the taps happen.` : rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`
         : `Your ${field} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`,
       toolLine: toolLine(k.term),
+      oneWord: isOneWord(k.term),
       evidence: `Targeted in ${field} · ${metricsLine(k, rank)}`,
     });
   }
@@ -408,7 +414,7 @@ async function keywordFindings(
   // "anxiety relief") is pitched as the phrase, not the bare word.
   const gaps = shared
     .filter(([t, names]) => t.includes(" ") || !shared.some(([p, pn]) => p.includes(" ") && p.split(" ").includes(t) && pn.length >= names.length))
-    .sort((a, b) => b[1].length - a[1].length || b[0].split(" ").length - a[0].split(" ").length)
+    .sort((a, b) => Number(isOneWord(a[0])) - Number(isOneWord(b[0])) || b[1].length - a[1].length || b[0].split(" ").length - a[0].split(" ").length)
     .filter(([t]) => !seeds.includes(t))
     .slice(0, 3);
   await check(gaps.map(([t]) => t));
@@ -418,7 +424,7 @@ async function keywordFindings(
     .filter((g): g is { names: string[]; k: KeywordCheck } => !!g.k && g.k.popularity > 15)
     // Already top 10 without it in the listing: nothing to pitch.
     .filter(({ k }) => { const r = rankIn(k.hits, appName, storeId); return r == null || r > 10; })
-    .sort((a, b) => b.k.popularity - a.k.popularity || b.names.length - a.names.length)
+    .sort((a, b) => Number(isOneWord(a.k.term)) - Number(isOneWord(b.k.term)) || b.k.popularity - a.k.popularity || b.names.length - a.names.length)
     .slice(0, 2);
   for (const [i, { names, k }] of rankedGaps.entries()) {
     const rank = rankIn(k.hits, appName, storeId);
@@ -428,6 +434,7 @@ async function keywordFindings(
       severity: Math.min(90, Math.round(45 + k.popularity * 0.4 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
       text: `Your ${fieldPhrase} ${fieldVerb} include "${k.term}", a ${volumeWord(k.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank, k)}`,
       toolLine: toolLine(k.term),
+      oneWord: isOneWord(k.term),
       evidence: `${metricsLine(k, rank)} · used by ${names.join(", ")}`,
     });
   }
@@ -445,6 +452,7 @@ async function keywordFindings(
       severity: Math.min(88, Math.round(40 + k.popularity * 0.4 + (rank == null ? 10 : 0))),
       text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${k.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
       toolLine: toolLine(k.term),
+      oneWord: isOneWord(k.term),
       evidence: `Core search · ${metricsLine(k, rank)}`,
     });
   }
@@ -710,8 +718,8 @@ export const MAX_PICKS = 2;
 // Keyword-first: the targeted-keyword problem, then the long-tail sweet
 // spot. Any slot those can't fill goes to the next strongest finding.
 function pickDefault(findings: AuditFinding[]): string[] {
-  const preferred = ["kw-target", "kw-longtail"].filter((id) => findings.some((f) => f.id === id));
-  const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || b.severity - a.severity)
+  const preferred = ["kw-target", "kw-longtail"].filter((id) => findings.some((f) => f.id === id && !f.oneWord));
+  const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || Number(!!a.oneWord) - Number(!!b.oneWord) || b.severity - a.severity)
     .map((f) => f.id).filter((id) => !preferred.includes(id));
   return [...preferred, ...rest].slice(0, MAX_PICKS);
 }
