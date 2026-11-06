@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
 } from "recharts";
 import { ChartBarIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { SERIES_COLORS, type VisibilityHistoryResult } from "./types";
 
 export type ChartApp = { id: string; name: string; icon: string };
@@ -73,6 +74,7 @@ function dayTicks(min: number, max: number): number[] {
 }
 
 export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = false }: Props) {
+  const planSlug = usePlanSlug();
   const rows = useMemo(() => mergeSeries(apps, data), [apps, data]);
   // apps[0] is always the user's own app; the rest are competitors.
   const ownId = apps[0]?.id;
@@ -98,7 +100,9 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
         <ChartBarIcon className="size-8 text-gray-700 light:text-gray-300 mb-3" />
         <p className="text-sm font-medium text-gray-400 light:text-gray-600">No visibility data yet</p>
         <p className="mt-1 text-xs text-gray-600 light:text-gray-400 max-w-xs">
-          Run a Live Search on a tracked keyword to start capturing rank history for this date range.
+          {planSlug === "free"
+            ? "Rank history builds automatically as your keywords are checked."
+            : "Run a Live Search on a tracked keyword to start capturing rank history for this date range."}
         </p>
       </div>
     );

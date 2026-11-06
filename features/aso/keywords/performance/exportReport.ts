@@ -99,6 +99,8 @@ export async function exportPerformanceReport(
   const trackedSinceMonth = appTrackedSince ? appTrackedSince.slice(0, 7) : null;
   const showDownloads = !!downloadsAccess;
   const lastCol = showDownloads ? "E" : "D";
+  // Same gate as the in-app Change column (PerformanceTable.tsx).
+  const changeLocked = planSlug === "free";
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "ASO Ninja";
@@ -197,12 +199,12 @@ export async function exportPerformanceReport(
       const stats: MonthlyKeywordStats | undefined = report[term]?.[month];
       const prev: MonthlyKeywordStats | undefined = report[term]?.[prevMonth];
       const noData = !stats;
-      const rawChange = !noData && typeof prev?.bestRank === "number" && typeof stats?.bestRank === "number"
+      const rawChange = !changeLocked && !noData && typeof prev?.bestRank === "number" && typeof stats?.bestRank === "number"
         ? prev.bestRank - stats.bestRank
         : null;
       // A real number (shown as "+3"/"-2" via numFmt) so the column sorts
       // numerically; "-" (no previous rank) stays text and sorts last.
-      const changeValue = rawChange === null ? "-" : rawChange;
+      const changeValue = changeLocked ? "Pro plan" : rawChange === null ? "-" : rawChange;
 
       const row = sheet.addRow({
         keyword: term,
@@ -224,6 +226,10 @@ export async function exportPerformanceReport(
         cell.border = { bottom: { style: "thin", color: { argb: BORDER_COLOR } } };
         if (rowIndex % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ROW_ALT_FILL } };
       });
+
+      if (changeLocked) {
+        row.getCell("change").font = { italic: true, color: { argb: MUTED_TEXT } };
+      }
 
       if (noData) {
         const emptyCells = [row.getCell("volume"), row.getCell("ranking")];

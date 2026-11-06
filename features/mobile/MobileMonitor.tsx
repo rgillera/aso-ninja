@@ -18,6 +18,7 @@ export function MobileMonitor({
   store,
   storeId,
   country,
+  changeLocked,
 }: {
   workspaceId: string;
   appId: string;
@@ -26,6 +27,7 @@ export function MobileMonitor({
   store: string;
   storeId: string | null;
   country: string | null;
+  changeLocked: boolean;
 }) {
   const [keywords, setKeywords] = useState<SavedKeyword[] | null>(null);
   const [snapshots, setSnapshots] = useState<PerformanceSnapshotResult>({});
@@ -89,7 +91,7 @@ export function MobileMonitor({
         {keywords === null ? (
           <p className="px-4 py-8 text-center text-sm text-gray-500">Loading…</p>
         ) : (
-          <RankingList key={appId} keywords={keywords} snapshots={snapshots} store={store} />
+          <RankingList key={appId} keywords={keywords} snapshots={snapshots} store={store} changeLocked={changeLocked} />
         )}
       </PullToRefresh>
     </main>

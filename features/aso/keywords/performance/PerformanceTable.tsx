@@ -124,6 +124,20 @@ function GrowthCell({ value }: { value: number | null }) {
   );
 }
 
+// Free plan: the rank stays visible, the movement behind it is Pro.
+function LockedChangeCell() {
+  return (
+    <Link
+      href="/dashboard/subscription"
+      title="Rank change requires the Pro plan"
+      className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 light:text-violet-700 transition-opacity hover:opacity-75"
+    >
+      <LockClosedIcon className="size-2.5" />
+      Pro
+    </Link>
+  );
+}
+
 function RankCell({ value, date, store, onClick }: { value: TermSnapshot["rankPrev"] | undefined; date?: string | null; store: string; onClick: () => void }) {
   const label = formatRank(value, store);
   const muted = typeof value !== "number";
@@ -218,6 +232,7 @@ export function PerformanceTable({
   // Only the manual per-row button. Background rank checks for new or stuck
   // keywords share the same search and must keep running on Free.
   const liveSearchLocked = planSlug === "free";
+  const changeLocked = planSlug === "free";
   const [input, setInput] = useState("");
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -492,9 +507,12 @@ export function PerformanceTable({
                   </button>
                 </th>
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 whitespace-nowrap">
-                  <button onClick={() => handleSort("change")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "change" ? "text-gray-300 light:text-gray-700" : ""}`}>
-                    Change <SortIcon active={sortKey === "change"} dir={sortDir} />
-                  </button>
+                  {/* Sorting a locked column would still reveal its values through row order. */}
+                  {changeLocked ? "Change" : (
+                    <button onClick={() => handleSort("change")} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === "change" ? "text-gray-300 light:text-gray-700" : ""}`}>
+                      Change <SortIcon active={sortKey === "change"} dir={sortDir} />
+                    </button>
+                  )}
                 </th>
                 {competitors.map((c) => {
                   const rankKey: SortKey = `rank:${c.storeId}`;
@@ -507,9 +525,11 @@ export function PerformanceTable({
                         </button>
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 whitespace-nowrap">
-                        <button onClick={() => handleSort(changeKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === changeKey ? "text-gray-300 light:text-gray-700" : ""}`}>
-                          Change <SortIcon active={sortKey === changeKey} dir={sortDir} />
-                        </button>
+                        {changeLocked ? "Change" : (
+                          <button onClick={() => handleSort(changeKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === changeKey ? "text-gray-300 light:text-gray-700" : ""}`}>
+                            Change <SortIcon active={sortKey === changeKey} dir={sortDir} />
+                          </button>
+                        )}
                       </th>
                     </Fragment>
                   );
@@ -581,7 +601,7 @@ export function PerformanceTable({
                             onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
                           />
                         </td>
-                        <td className="px-3 py-3"><GrowthCell value={rankGrowth(s?.rankPrev, s?.rankLatest)} /></td>
+                        <td className="px-3 py-3">{changeLocked ? <LockedChangeCell /> : <GrowthCell value={rankGrowth(s?.rankPrev, s?.rankLatest)} />}</td>
                         {competitors.map((c) => {
                           const cs = s?.competitors?.[c.storeId];
                           return (
@@ -589,7 +609,7 @@ export function PerformanceTable({
                               <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]">
                                 <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} store={activeApp.store} onClick={() => onViewRankHistory(k.term, c.storeId)} />
                               </td>
-                              <td className="px-3 py-3"><GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} /></td>
+                              <td className="px-3 py-3">{changeLocked ? <LockedChangeCell /> : <GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} />}</td>
                             </Fragment>
                           );
                         })}

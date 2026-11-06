@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
+import { LockClosedIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import type { SavedKeyword } from "@/app/api/keywords/list/route";
 import type { PerformanceSnapshotResult } from "@/app/api/keywords/performance-snapshots/route";
 import { effectiveRank, formatRank, rankGrowth } from "@/features/aso/keywords/performance/types";
@@ -29,14 +30,29 @@ function GrowthBadge({ value }: { value: number | null }) {
   );
 }
 
+function LockedGrowthBadge() {
+  return (
+    <Link
+      href="/dashboard/subscription"
+      aria-label="Rank change requires the Pro plan"
+      className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-semibold text-violet-400"
+    >
+      <LockClosedIcon className="size-3" />
+      Pro
+    </Link>
+  );
+}
+
 export function RankingList({
   keywords,
   snapshots,
   store,
+  changeLocked,
 }: {
   keywords: SavedKeyword[];
   snapshots: PerformanceSnapshotResult;
   store: string;
+  changeLocked: boolean;
 }) {
   // Caller passes key={appId} on this component, so switching apps remounts
   // it fresh (search/sort/page all reset) instead of carrying over stale state.
@@ -58,7 +74,7 @@ export function RankingList({
     return {
       keyword,
       rank: effectiveRank(snapshot?.rankLatest, keyword.rank),
-      growth: rankGrowth(snapshot?.rankPrev, snapshot?.rankLatest),
+      growth: changeLocked ? null : rankGrowth(snapshot?.rankPrev, snapshot?.rankLatest),
     };
   });
 
@@ -100,6 +116,8 @@ export function RankingList({
   }
 
   const SORT_LABELS: Record<SortKey, string> = { rank: "Rank", volume: "Volume", growth: "Growth" };
+  // Sorting by growth would reveal the locked values through row order.
+  const sortKeys = (Object.keys(SORT_LABELS) as SortKey[]).filter((key) => !changeLocked || key !== "growth");
 
   return (
     <>
@@ -119,7 +137,7 @@ export function RankingList({
       </div>
 
       <div className="flex items-center gap-1 border-b border-white/[0.06] px-2 pb-2 text-sm text-gray-500">
-        {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+        {sortKeys.map((key) => (
           <button
             key={key}
             onClick={() => toggleSort(key)}
@@ -144,7 +162,7 @@ export function RankingList({
                 <p className="mt-0.5 text-sm text-gray-600">Volume {keyword.volume}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <GrowthBadge value={growth} />
+                {changeLocked ? <LockedGrowthBadge /> : <GrowthBadge value={growth} />}
                 <span className={`text-base font-medium tabular-nums ${rank === "unranked" ? "text-gray-600" : "text-gray-200"}`}>
                   {formatRank(rank, store)}
                 </span>
