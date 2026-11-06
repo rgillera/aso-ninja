@@ -91,6 +91,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
   const [auditId, setAuditId] = useState("");
+  const [auditUrl, setAuditUrl] = useState("");
   const [auditedAt, setAuditedAt] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -99,16 +100,17 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  function run() {
-    if (!url.trim() || pending) return;
+  function run(targetUrl = url, targetCountry = country) {
+    if (!targetUrl.trim() || pending) return;
     setError(null);
     startTransition(async () => {
-      const res = await runQuickAuditAction(url, country || undefined, fullAudit);
+      const res = await runQuickAuditAction(targetUrl, targetCountry || undefined, fullAudit);
       if (!res.ok) { setError(res.error); setResult(null); setAuditId(""); return; }
       const { record } = res;
       setResult(record.result);
       setSelected(record.selected);
       setAuditId(record.id);
+      setAuditUrl(record.url);
       setAuditedAt(record.createdAt);
       if (record.id) {
         setHistory((prev) => [{
@@ -130,6 +132,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setResult(record.result);
       setSelected(record.selected);
       setAuditId(record.id);
+      setAuditUrl(record.url);
       setAuditedAt(record.createdAt);
       setUrl(record.url);
       setCountry("");
@@ -145,6 +148,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     setCalendly(DEFAULT_CALENDLY);
     setResult(null);
     setAuditId("");
+    setAuditUrl("");
     setAuditedAt("");
     setSelected([]);
     setError(null);
@@ -240,6 +244,11 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       {result.store === "ios" ? "App Store" : "Google Play"} · {countryFlag(result.country)} {result.country.toUpperCase()} · {result.category}
                       {auditedAt && <> · audited {formatWhen(auditedAt)}</>}
                     </span>
+                    {/* Same app and store country as this audit, whatever the form now holds. */}
+                    <button type="button" onClick={() => run(auditUrl, result.country.toLowerCase())} disabled={pending || !auditUrl} className={`${ghostBtn} ml-auto self-center`}>
+                      <ArrowPathIcon className="size-3.5" />
+                      Re-run
+                    </button>
                   </div>
                   {result.competitors.length > 0 && (
                     <p className="mt-1 text-xs text-gray-500">Competitors found: {result.competitors.join(", ")}</p>
