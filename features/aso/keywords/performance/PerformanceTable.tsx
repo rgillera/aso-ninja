@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import {
   PlusIcon,
   XMarkIcon,
@@ -214,6 +215,9 @@ export function PerformanceTable({
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
+  // Only the manual per-row button. Background rank checks for new or stuck
+  // keywords share the same search and must keep running on Free.
+  const liveSearchLocked = planSlug === "free";
   const [input, setInput] = useState("");
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -593,13 +597,25 @@ export function PerformanceTable({
                     )}
                     <td className="sticky right-0 z-10 bg-[#141417] light:bg-white group-hover:bg-[#19191c] light:group-hover:bg-gray-50 border-l border-white/[0.04] light:border-black/[0.05] pr-4 py-3">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100">
-                        <button
-                          onClick={() => onLiveSearch(k.term)}
-                          title="Live search"
-                          className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
-                        >
-                          <MagnifyingGlassIcon className="size-3" />
-                        </button>
+                        {liveSearchLocked ? (
+                          <Link
+                            href="/dashboard/subscription"
+                            title="Live search requires the Pro plan"
+                            aria-label="Live search requires the Pro plan"
+                            className="flex items-center justify-center gap-1 rounded px-2 py-1 text-[10px] font-medium bg-violet-500/10 text-violet-400 light:text-violet-700 transition-opacity hover:opacity-75"
+                          >
+                            <MagnifyingGlassIcon className="size-3" />
+                            <LockClosedIcon className="size-2.5" />
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={() => onLiveSearch(k.term)}
+                            title="Live search"
+                            className="flex items-center justify-center rounded px-2 py-1 text-[10px] font-medium bg-[#0a0a0c] light:bg-gray-100 text-gray-400 light:text-gray-700 hover:text-white light:hover:text-gray-900 transition-colors"
+                          >
+                            <MagnifyingGlassIcon className="size-3" />
+                          </button>
+                        )}
                         <button
                           onClick={() => onRemoveKeyword(k.term)}
                           title="Remove keyword"
