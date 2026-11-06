@@ -38,7 +38,7 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     "",
     items.join("\n\n"),
     "",
-    "Fixing these in the right order usually moves both rankings and conversion within a few weeks.",
+    "Fixing these in the right order usually moves rankings within a few weeks.",
     "",
     `Happy to walk you through how we'd approach it on a free 15-minute call, no commitment. Does sometime this week work? You can grab a time here: ${calendly.trim() || DEFAULT_CALENDLY}`,
   ].join("\n");

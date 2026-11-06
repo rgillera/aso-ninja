@@ -334,8 +334,11 @@ async function keywordFindings(
   const notASearch = (t: string) => hasBrand(t) || /[:™®&|]/.test(t) || words(t).some((w) => resultBrands.has(w) || FILLER.has(w));
 
   const longTailSeeds = [...new Set([...seeds, ...targeted.filter((t) => t.includes(" "))])].slice(0, 4);
+  // Two-word terms go first so they survive the cap on keyword checks below.
+  const isTwoWords = (t: string) => words(t).length === 2;
   const suggestions = (await longTailCandidates(store, country, longTailSeeds, notASearch))
-    .filter((t) => !targeted.includes(t) && !seeds.includes(t));
+    .filter((t) => !targeted.includes(t) && !seeds.includes(t))
+    .sort((a, b) => Number(isTwoWords(b)) - Number(isTwoWords(a)));
   await check(suggestions.slice(0, 8));
   const sweet = suggestions
     .map((t) => got(t))
@@ -357,7 +360,10 @@ async function keywordFindings(
   const viable = sweet.filter(({ k }) => k.difficulty <= maxDiff)
     .sort((a, b) => (b.k.popularity - 0.8 * b.k.difficulty) - (a.k.popularity - 0.8 * a.k.difficulty));
   const strong = viable.filter(({ k }) => k.popularity >= 40);
-  const picks = (strong.length ? strong : viable).slice(0, 2);
+  // Within that pool, two-word terms read best in the email; longer ones only
+  // fill the slots two-word terms can't.
+  const pool = strong.length ? strong : viable;
+  const picks = [...pool.filter(({ k }) => isTwoWords(k.term)), ...pool.filter(({ k }) => !isTwoWords(k.term))].slice(0, 2);
   if (picks.length) {
     const describe = ({ k }: (typeof picks)[number]) => `"${k.term}" (${perDay(k)}, difficulty ${k.difficulty}/100)`;
     // Where to put it: a long tail like "food tracker protein" reads oddly as
