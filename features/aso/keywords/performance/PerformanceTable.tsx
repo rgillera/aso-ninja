@@ -78,7 +78,9 @@ const CHECKBOX_COL_W = 40; // w-10
 const VOLUME_COL_W = 208; // w-52
 const DOWNLOADS_COL_W = 144; // w-36
 const RANK_GROUP_W = 288; // w-40 + w-32
-const ACTIONS_COL_W = 80; // w-20
+const ACTIONS_COL_W = 80;
+// The locked live search button carries a second icon, so it needs more room.
+const ACTIONS_COL_W_LOCKED = 96;
 const KEYWORD_MIN_W = 320; // w-80
 
 const DOWNLOADS_FORMATTER = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
@@ -124,12 +126,12 @@ function GrowthCell({ value }: { value: number | null }) {
   );
 }
 
-// Free plan: the rank stays visible, the movement behind it is Pro.
-function LockedChangeCell() {
+// Free plan: your own rank stays visible; rank movement and competitor ranks are Pro.
+function LockedProCell({ title }: { title: string }) {
   return (
     <Link
       href="/dashboard/subscription"
-      title="Rank change requires the Pro plan"
+      title={title}
       className="inline-flex items-center gap-1 shrink-0 rounded-full bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold text-violet-400 light:text-violet-700 transition-opacity hover:opacity-75"
     >
       <LockClosedIcon className="size-2.5" />
@@ -233,6 +235,8 @@ export function PerformanceTable({
   // keywords share the same search and must keep running on Free.
   const liveSearchLocked = planSlug === "free";
   const changeLocked = planSlug === "free";
+  // Includes competitors added during a Pro trial, which stay listed after it ends.
+  const competitorRankLocked = planSlug === "free";
   const [input, setInput] = useState("");
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
@@ -336,7 +340,8 @@ export function PerformanceTable({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-  const otherColsWidth = CHECKBOX_COL_W + VOLUME_COL_W + DOWNLOADS_COL_W + RANK_GROUP_W * (1 + competitors.length) + ACTIONS_COL_W;
+  const actionsColWidth = liveSearchLocked ? ACTIONS_COL_W_LOCKED : ACTIONS_COL_W;
+  const otherColsWidth = CHECKBOX_COL_W + VOLUME_COL_W + DOWNLOADS_COL_W + RANK_GROUP_W * (1 + competitors.length) + actionsColWidth;
   const keywordWidth = Math.max(KEYWORD_MIN_W, containerWidth - otherColsWidth);
 
   function handleAdd() {
@@ -455,7 +460,7 @@ export function PerformanceTable({
                   <col className="w-32" />
                 </Fragment>
               ))}
-              <col className="w-20" />
+              <col style={{ width: actionsColWidth }} />
             </colgroup>
             <thead>
               <tr className="border-b border-white/[0.04] light:border-black/[0.05]">
@@ -498,7 +503,7 @@ export function PerformanceTable({
                     </div>
                   </th>
                 ))}
-                <th rowSpan={2} className="sticky right-0 z-20 bg-[#141417] light:bg-white border-l border-white/[0.07] light:border-black/[0.08] w-20 pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">Actions</th>
+                <th rowSpan={2} className="sticky right-0 z-20 bg-[#141417] light:bg-white border-l border-white/[0.07] light:border-black/[0.08] pr-4 py-2 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-600 light:text-gray-400 align-bottom whitespace-nowrap">Actions</th>
               </tr>
               <tr className="border-b border-white/[0.07] light:border-black/[0.08]">
                 <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
@@ -520,9 +525,11 @@ export function PerformanceTable({
                   return (
                     <Fragment key={c.storeId}>
                       <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 border-l border-white/[0.07] light:border-black/[0.08] whitespace-nowrap">
-                        <button onClick={() => handleSort(rankKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === rankKey ? "text-gray-300 light:text-gray-700" : ""}`}>
-                          Rank <SortIcon active={sortKey === rankKey} dir={sortDir} />
-                        </button>
+                        {competitorRankLocked ? "Rank" : (
+                          <button onClick={() => handleSort(rankKey)} className={`flex items-center gap-1 hover:text-gray-400 light:hover:text-gray-600 transition-colors ${sortKey === rankKey ? "text-gray-300 light:text-gray-700" : ""}`}>
+                            Rank <SortIcon active={sortKey === rankKey} dir={sortDir} />
+                          </button>
+                        )}
                       </th>
                       <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-600 light:text-gray-400 whitespace-nowrap">
                         {changeLocked ? "Change" : (
@@ -601,15 +608,17 @@ export function PerformanceTable({
                             onClick={() => onViewRankHistory(k.term, activeApp.store_id ?? "")}
                           />
                         </td>
-                        <td className="px-3 py-3">{changeLocked ? <LockedChangeCell /> : <GrowthCell value={rankGrowth(s?.rankPrev, s?.rankLatest)} />}</td>
+                        <td className="px-3 py-3">{changeLocked ? <LockedProCell title="Rank change requires the Pro plan" /> : <GrowthCell value={rankGrowth(s?.rankPrev, s?.rankLatest)} />}</td>
                         {competitors.map((c) => {
                           const cs = s?.competitors?.[c.storeId];
                           return (
                             <Fragment key={c.storeId}>
                               <td className="px-3 py-3 border-l border-white/[0.04] light:border-black/[0.05]">
-                                <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} store={activeApp.store} onClick={() => onViewRankHistory(k.term, c.storeId)} />
+                                {competitorRankLocked
+                                  ? <LockedProCell title="Competitor rank requires the Pro plan" />
+                                  : <RankCell value={cs?.rankLatest} date={cs?.rankLatestDate} store={activeApp.store} onClick={() => onViewRankHistory(k.term, c.storeId)} />}
                               </td>
-                              <td className="px-3 py-3">{changeLocked ? <LockedChangeCell /> : <GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} />}</td>
+                              <td className="px-3 py-3">{changeLocked ? <LockedProCell title="Rank change requires the Pro plan" /> : <GrowthCell value={rankGrowth(cs?.rankPrev, cs?.rankLatest)} />}</td>
                             </Fragment>
                           );
                         })}

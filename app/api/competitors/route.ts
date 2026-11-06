@@ -87,21 +87,37 @@ export async function GET(request: NextRequest) {
 
   if (!appId) return NextResponse.json({ appId: null, competitors: [] });
 
-  const [{ data: appRow }, { data: rows }] = await Promise.all([
-    supabase.from("apps").select("store, country").eq("id", appId).maybeSingle(),
+  const [{ data: appRow }, { data: allRows }] = await Promise.all([
+    supabase.from("apps").select("store, country, workspace_id").eq("id", appId).maybeSingle(),
     supabase
       .from("app_competitors")
-      .select("store_id, name, icon_url, developer")
+      .select("store_id, name, icon_url, developer, status")
       .eq("app_id", appId)
       .order("created_at", { ascending: true }),
   ]);
 
+  // Free only sees what its limit allows, so competitors left over from a Pro
+  // trial or a paid plan stay hidden (and come back on upgrade). The slice
+  // covers the gap between a trial ending and the cron freezing the extras.
+  // A failed plan lookup leaves the list as is rather than hiding a paying
+  // user's competitors.
+  let rows = allRows ?? [];
+  if (appRow?.workspace_id) {
+    const { data: plan } = await supabase
+      .rpc("get_workspace_plan", { p_workspace_id: appRow.workspace_id })
+      .single();
+    const { slug, competitor_limit: limit } = (plan ?? {}) as { slug?: string; competitor_limit?: number | null };
+    if (slug === "free") {
+      rows = rows.filter((row) => row.status === "active").slice(0, limit ?? undefined);
+    }
+  }
+
   if (!appRow?.store) {
-    return NextResponse.json({ appId, competitors: (rows ?? []).map(toCompetitorApp) });
+    return NextResponse.json({ appId, competitors: rows.map(toCompetitorApp) });
   }
 
   const competitors = await Promise.all(
-    (rows ?? []).map((row) => withScore(row, appRow.store, appRow.country ?? "us"))
+    rows.map((row) => withScore(row, appRow.store, appRow.country ?? "us"))
   );
 
   return NextResponse.json({ appId, competitors });

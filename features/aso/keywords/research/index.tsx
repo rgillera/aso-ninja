@@ -166,13 +166,18 @@ export default function KeywordResearchPage() {
     const additions = updated.filter((u) => !previous.some((p) => p.storeId === u.storeId));
     const removals = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
 
-    for (const removed of removals) {
-      if (!competitorsAppId.current) continue;
-      fetch("/api/competitors", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appId: competitorsAppId.current, storeId: removed.storeId }),
-      }).catch(() => {});
+    // Awaited so a swap's removal frees the slot before its addition is checked
+    // against the plan limit.
+    if (competitorsAppId.current) {
+      await Promise.all(
+        removals.map((removed) =>
+          fetch("/api/competitors", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appId: competitorsAppId.current, storeId: removed.storeId }),
+          }).catch(() => {})
+        )
+      );
     }
 
     for (const added of additions) {

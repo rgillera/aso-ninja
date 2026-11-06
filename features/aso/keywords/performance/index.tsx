@@ -140,13 +140,18 @@ export default function KeywordPerformancePage() {
     const additions = updated.filter((u) => !previous.some((p) => p.storeId === u.storeId));
     const removals = previous.filter((p) => !updated.some((u) => u.storeId === p.storeId));
 
-    for (const removed of removals) {
-      if (!competitorsAppId.current) continue;
-      fetch("/api/competitors", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appId: competitorsAppId.current, storeId: removed.storeId }),
-      }).catch(() => {});
+    // Awaited so a swap's removal frees the slot before its addition is checked
+    // against the plan limit.
+    if (competitorsAppId.current) {
+      await Promise.all(
+        removals.map((removed) =>
+          fetch("/api/competitors", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appId: competitorsAppId.current, storeId: removed.storeId }),
+          }).catch(() => {})
+        )
+      );
     }
 
     for (const added of additions) {
@@ -668,9 +673,10 @@ export default function KeywordPerformancePage() {
     if (!ourId) return [];
     return [
       { id: ourId, name: activeApp.name, icon: activeApp.icon_url ?? "" },
-      ...competitors.map((c) => ({ id: c.storeId, name: c.name, icon: c.icon })),
+      // Free doesn't request competitor visibility at all, so there's nothing to blur.
+      ...(planSlug === "free" ? [] : competitors.map((c) => ({ id: c.storeId, name: c.name, icon: c.icon }))),
     ];
-  }, [activeApp, competitors]);
+  }, [activeApp, competitors, planSlug]);
 
   // What the chart last loaded for, minus snapshotsRefreshKey. A change here
   // (another app, keyword list or competitor set) is a fresh load; a change
@@ -792,7 +798,7 @@ export default function KeywordPerformancePage() {
           <CardHeader
             title="Search Visibility"
             subtitle="Est. impressions per day"
-            info="Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for. Add competitors to see their visibility on the same keywords and compare."
+            info={`Estimated times a day your app is shown in search results, across your tracked keywords. It goes up when you rank higher, especially for keywords more people search for.${planSlug === "free" ? "" : " Add competitors to see their visibility on the same keywords and compare."}`}
             divider={chartOpen}
           >
             <button

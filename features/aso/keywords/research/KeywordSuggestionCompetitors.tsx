@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { PlusIcon, CheckIcon, MinusIcon, ArrowPathIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, CheckIcon, MinusIcon, ArrowPathIcon, UsersIcon, LockClosedIcon } from "@heroicons/react/24/outline";
 import type { ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { Keyword } from "./types";
 import type { CompetitorKeywordsResult, CompetitorKeyword, GapBucket } from "@/app/api/keywords/competitor-keywords/route";
@@ -252,6 +252,8 @@ export function KeywordSuggestionCompetitors({
   activeApp, trackedKeywords, competitors, onCompetitorsChange, onAddKeyword, onAddKeywords, onRemoveKeyword, translateToggle, active,
 }: Props) {
   const planSlug = usePlanSlug();
+  // Free sees how many keywords fall in each group, not which ones.
+  const gapLocked = planSlug === "free";
   const [data, setData] = useState<CompetitorKeywordsResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchKey, setFetchKey] = useState<string | null>(null);
@@ -320,7 +322,7 @@ export function KeywordSuggestionCompetitors({
       .finally(() => { if (latestKeyRef.current === key) setLoading(false); });
   }, [active, activeApp?.store_id, activeApp?.country, competitors, fetchKey, refreshCount]);
 
-  const selectedKeywords = data?.keywords.filter((k) => k.bucket === selected) ?? [];
+  const selectedKeywords = gapLocked ? [] : data?.keywords.filter((k) => k.bucket === selected) ?? [];
   const visible = selectedKeywords.slice(0, visibleCount);
   const visibleTermsKey = visible.map((k) => k.term).join("\n");
 
@@ -456,6 +458,7 @@ export function KeywordSuggestionCompetitors({
             <button
               key={b.key}
               onClick={() => select(b.key)}
+              disabled={gapLocked}
               className={`group text-left rounded-xl px-3.5 py-3 ring-1 transition-all ${
                 b.key === "unchecked" ? "col-span-2 md:col-span-1" : ""
               } ${
@@ -502,7 +505,23 @@ export function KeywordSuggestionCompetitors({
         </div>
       )}
 
-      {/* Selected bucket */}
+      {gapLocked ? (
+        <div className="mt-3 pt-5 pb-2 border-t border-white/[0.05] light:border-black/[0.04] flex flex-col items-center text-center">
+          <span className="mb-2 flex size-8 items-center justify-center rounded-lg bg-violet-500/10">
+            <LockClosedIcon className="size-4 text-violet-400 light:text-violet-700" />
+          </span>
+          <p className="text-sm font-medium text-gray-200 light:text-gray-800">See the keywords behind these numbers</p>
+          <p className="mt-1 max-w-sm text-xs text-gray-500">
+            Upgrade to Pro to see which keywords your competitors rank for, where you&apos;re losing to them, and add the gaps to your list.
+          </p>
+          <Link
+            href="/dashboard/subscription"
+            className="mt-3 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500"
+          >
+            See plans
+          </Link>
+        </div>
+      ) : (
       <div className="mt-3 pt-3 border-t border-white/[0.05] light:border-black/[0.04]">
         <div className="flex items-start justify-between gap-3 mb-2.5">
           <p className="text-xs text-gray-500 leading-relaxed">
@@ -542,6 +561,7 @@ export function KeywordSuggestionCompetitors({
           </>
         )}
       </div>
+      )}
     </div>
   );
 }

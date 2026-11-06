@@ -117,7 +117,7 @@ export function VisibilityScoreChart({ apps, data, loading, competitorsLocked = 
             {app.name}
           </div>
         ))}
-        {locked && (
+        {competitorsLocked && (
           <Link
             href="/dashboard/subscription"
             className="ml-auto flex items-center gap-1.5 text-xs font-medium text-violet-400 light:text-violet-700 hover:underline"
