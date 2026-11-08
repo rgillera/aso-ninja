@@ -3,13 +3,14 @@ import { greetingHtml, greetingText } from "./greeting";
 // Sent to the buyer from the Stripe webhook right after a Growth Starter
 // purchase. Onboarding isn't self-booked: their specialist emails them to
 // schedule it, so this sets that expectation and gives a fallback contact.
-// proDays: Pro the purchase granted (365 bonus link, 60, or 0 when the buyer
+// proDays: Pro the purchase granted (365 bonus link, 90, or 0 when the buyer
 // is already on a paid plan and has Pro anyway).
 
 export const growthStarterWelcomeSubject = "You're in! Welcome to the Growth Starter";
 
 function proLength(proDays: number): string | null {
   if (proDays === 365) return "12 months";
+  if (proDays === 90) return "3 months";
   if (proDays === 60) return "2 months";
   if (proDays > 0) return `${proDays} days`;
   return null;

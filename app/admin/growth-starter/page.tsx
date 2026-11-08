@@ -47,7 +47,7 @@ Here's what's included:
 - 1 month of email support from the same specialist who researched your app
 - If you later want us to do the work, the full $500 comes off the Growth Sprint when you upgrade within 2 months of the strategy call
 
-Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 2 months.
+Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
 
 It's $500, one payment.
 

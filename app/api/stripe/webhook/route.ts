@@ -21,14 +21,14 @@ const ALERT_TO = "hello@appaso.io";
 
 const DAY_SECONDS = 24 * 60 * 60;
 
-// Days of Pro a Growth Starter session grants: 60, 365 with a bonus link,
-// 0 for buyers already on a paid plan. Sessions from before pro_days have
+// Days of Pro a Growth Starter session grants: 90 (60 for sessions from
+// before 2026-11-08), 365 with a bonus link, 0 for buyers already on a paid plan. Sessions from before pro_days have
 // none, and were sold with 12 months.
 function growthStarterProDays(session: Stripe.Checkout.Session): number {
   const raw = session.metadata?.pro_days;
   if (raw === undefined) return 365;
   const days = Number(raw);
-  return days === 60 || days === 365 ? days : 0;
+  return days === 60 || days === 90 || days === 365 ? days : 0;
 }
 
 // The Growth Starter is paid once, so its Pro is a Pro yearly subscription

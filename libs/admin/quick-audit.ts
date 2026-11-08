@@ -5,10 +5,14 @@
 // (shared search/popularity caches and today's keyword snapshots).
 //
 // The email leads with two keyword findings (see pickDefault):
-//   kw-target     a keyword the title/subtitle targets that isn't paying off,
-//                 either popular but very hard, or barely searched
+//   kw-target     a keyword the owner is going after (Gemini reads the title,
+//                 subtitle and description), looked up like the Keyword
+//                 Inspector does (popularity, difficulty, rank, relevancy):
+//                 a relevant, beatable one they're not top 10 for yet, one
+//                 that's popular but very hard, or one barely searched.
+//                 kw-target-2 is the next one, as an alternate
 //   kw-longtail   long-tail sweet spots from the store's own autocomplete:
-//                 decent volume, weaker competition
+//                 decent volume, weaker competition, relevant to the app
 // Everything else is an alternate the admin can swap in:
 //   keywords      competitor title/subtitle terms the app's own title/subtitle
 //                 lacks, checked through the Keyword Inspector's own pipeline
@@ -31,6 +35,7 @@ import { generateCombinations } from "@/libs/keyword-combinations";
 import { estimateDailySearches } from "@/libs/keyword-impressions";
 import { findRankIdx } from "@/libs/keyword-rank-match";
 import { generateText, generateTextWithImages, type InlineImage } from "@/libs/gemini";
+import { scoreAppsRelevancyBatch } from "@/libs/keyword-relevancy";
 import { ALL_STOP_WORDS } from "@/libs/stopWords";
 import { COUNTRY_MAP } from "@/libs/countries";
 
@@ -203,34 +208,68 @@ function rankIn(hits: SearchHit[], appName: string, storeId: string): number | n
   return idx >= 0 ? idx + 1 : null;
 }
 
-function metricsLine(k: KeywordCheck, rank: number | null) {
-  return `Popularity ${k.popularity}/100 · difficulty ${k.difficulty}/100 · ~${k.estDailySearches.toLocaleString("en-US")} searches/day · rank ${rank ?? `not in the ${k.hits.length} results`}`;
+function metricsLine(k: KeywordCheck, rank: number | null, relevancy?: number | null) {
+  return `Popularity ${k.popularity}/100 · difficulty ${k.difficulty}/100 · ~${k.estDailySearches.toLocaleString("en-US")} searches/day · rank ${rank ?? `not in the ${k.hits.length} results`}${relevancy != null ? ` · relevancy ${relevancy}/100` : ""}`;
+}
+
+// Relevancy as the Keyword Inspector's column scores it (same LLM rules and
+// embedding blend), for this one app against the keyword's top results as
+// market context. Scoring the app alone rather than in the Inspector's
+// top-10 batch can land a few points off what appaso.io shows. null when the
+// LLM gave no usable reply.
+async function relevancyFor(k: KeywordCheck, storeId: string, data: NonNullable<StoreData>): Promise<number | null> {
+  const scores = await scoreAppsRelevancyBatch(
+    k.term,
+    [{ id: storeId, name: data.name ?? "", subtitle: data.subtitle ?? "", description: data.description ?? "" }],
+    k.hits.slice(0, 10).map((h) => h.name),
+  ).catch(() => null);
+  return scores?.[storeId] ?? null;
 }
 
 // ── Seeds: the generic searches this app should show up for ─────────────────
 
-async function seedTerms(data: NonNullable<StoreData>, country: string, notes: string[]): Promise<string[]> {
+// One Gemini read of the listing for two lists:
+//   targeted  what the owner is clearly trying to rank for, judged from the
+//             title, subtitle and description together and phrased as a
+//             search ("SMS Spam Text Blocker" → "spam text blocker", not the
+//             "text blocker" a word split would give)
+//   seeds     the generic searches someone who doesn't know the app would type
+// Without Gemini, targeted falls back to splitting the title/subtitle and
+// seeds to the subtitle's own words.
+async function analyzeListing(
+  data: NonNullable<StoreData>, country: string, brandWords: Set<string>, notes: string[],
+): Promise<{ seeds: string[]; targeted: string[] }> {
+  const appName = data.name ?? "";
+  const fallbackTargeted = () => targetedTerms(appName, data.subtitle, brandWords);
   const prompt = `You are an App Store Optimization expert. Below is an app listing in the ${COUNTRY_MAP[country.toUpperCase()] ?? country.toUpperCase()} store.
 Title: ${data.name}
 Subtitle / short description: ${data.subtitle}
 Category: ${data.primaryGenreName}
-Description (excerpt): ${data.description.slice(0, 900)}
+Description (excerpt): ${data.description.slice(0, 1500)}
 
-List the 3 generic search terms (2 words each, lowercase, in the language people in that store search in) that someone who doesn't know this app would type to find an app like it. No brand names, no app names.
-Reply with JSON only: {"terms": ["...", "...", "..."]}`;
+1. "targeted": the 4 search keywords the developer is clearly trying to rank for, judging from which words they put in the title and subtitle and what the description keeps coming back to. Phrase each the way a person types it into store search (2 or 3 words, lowercase), combining words across the title and subtitle where that's the real search (e.g. title "SMS Spam Text Blocker" → "spam text blocker", "sms blocker"). Most important first. No brand or app names.
+2. "seeds": the 3 generic search terms (2 words each, lowercase) that someone who doesn't know this app would type to find an app like it. No brand names, no app names.
+All terms in the language people in that store search in.
+Reply with JSON only: {"targeted": ["...", "...", "...", "..."], "seeds": ["...", "...", "..."]}`;
   const raw = await generateText(prompt);
+  const clean = (v: unknown) => (Array.isArray(v) ? v : [])
+    .filter((t): t is string => typeof t === "string" && !!t.trim())
+    .map((t) => t.toLowerCase().trim().replace(/\s+/g, " "));
   try {
     const parsed = JSON.parse((raw ?? "").replace(/^```(?:json)?\s*|\s*```$/g, ""));
-    const terms = (parsed.terms as unknown[]).filter((t): t is string => typeof t === "string" && !!t.trim()).map((t) => t.toLowerCase().trim());
-    if (terms.length) return terms.slice(0, 3);
+    const seeds = [...new Set(clean(parsed.seeds))].slice(0, 3);
+    const targeted = [...new Set(clean(parsed.targeted))]
+      .filter((t) => words(t).length >= 1 && words(t).length <= 4 && !words(t).some((w) => brandWords.has(w)))
+      .slice(0, 4);
+    if (seeds.length) return { seeds, targeted: targeted.length ? targeted : fallbackTargeted() };
   } catch { /* fallback below */ }
 
-  notes.push("Gemini unavailable for seed terms; used the subtitle's own words instead.");
-  const brand = new Set(words(titleBrand(data.name ?? "")));
-  const fromListing = extractTerms(`${data.name} ${data.subtitle}`).filter((t) => !t.split(" ").some((w) => brand.has(w)));
+  notes.push("Gemini unavailable for the listing analysis; used the title and subtitle's own words instead.");
+  const brand = new Set(words(titleBrand(appName)));
+  const fromListing = extractTerms(`${appName} ${data.subtitle}`).filter((t) => !t.split(" ").some((w) => brand.has(w)));
   const bigrams = fromListing.filter((t) => t.includes(" "));
   const seeds = [...bigrams.slice(0, 2), ...fromListing.filter((t) => !t.includes(" ")).slice(0, 1)];
-  return seeds.length ? seeds : [data.primaryGenreName.toLowerCase()];
+  return { seeds: seeds.length ? seeds : [data.primaryGenreName.toLowerCase()], targeted: fallbackTargeted() };
 }
 
 // ── Keyword findings ────────────────────────────────────────────────────────
@@ -242,7 +281,10 @@ async function keywordFindings(
   data: NonNullable<StoreData>, shortName: string, notes: string[],
 ): Promise<{ findings: AuditFinding[]; competitors: Competitor[] }> {
   const appName = data.name ?? "";
-  const seeds = await seedTerms(data, country, notes);
+  // One-word brands only: a multi-word title head like "Water Reminder" is
+  // a generic phrase, not a name to keep out of keyword ideas.
+  const oneWordBrand = (name: string) => { const b = words(titleBrand(name)); return b.length === 1 ? b : []; };
+  const { seeds, targeted: aiTargeted } = await analyzeListing(data, country, new Set(oneWordBrand(appName)), notes);
 
   // Every keyword check goes through the Inspector pipeline once per term.
   const checked = new Map<string, KeywordCheck | null>();
@@ -266,9 +308,6 @@ async function keywordFindings(
 
   const ownText = `${appName} ${data.subtitle}`.toLowerCase();
   const ownWords = new Set(words(ownText));
-  // One-word brands only: a multi-word title head like "Water Reminder" is
-  // a generic phrase, not a name to keep out of keyword ideas.
-  const oneWordBrand = (name: string) => { const b = words(titleBrand(name)); return b.length === 1 ? b : []; };
   const brandWords = new Set([
     ...oneWordBrand(appName),
     ...competitors.flatMap((c) => oneWordBrand(c.data.name ?? "")),
@@ -289,38 +328,81 @@ async function keywordFindings(
   const toolLine = (kw: string) => `You can check this yourself for free in our tool: ${TOOL_URL} (just search ${shortName} and look up "${kw}")`;
   const perDay = (k: KeywordCheck) => `~${k.estDailySearches.toLocaleString("en-US")} searches a day`;
 
-  // ── 1. A keyword the listing targets that isn't paying off: popular but
-  // dominated by apps with huge rating counts, or barely searched at all.
-  const targeted = targetedTerms(appName, data.subtitle, brandWords);
+  // Relevancy per keyword, scored once and only for terms that could make a
+  // finding (each is an LLM call). Unknown (LLM down) never filters a term out.
+  const relevancy = new Map<string, number | null>();
+  let relevancyMissed = false;
+  const scoreRelevancy = async (ks: KeywordCheck[]) => {
+    await mapLimit(ks.filter((k) => !relevancy.has(k.term)), 4, async (k) => {
+      const r = await relevancyFor(k, storeId, data);
+      if (r == null) relevancyMissed = true;
+      relevancy.set(k.term, r);
+    });
+  };
+  const rel = (k: KeywordCheck) => relevancy.get(k.term) ?? null;
+  const relevantEnough = (k: KeywordCheck, min: number) => { const r = rel(k); return r == null || r >= min; };
+
+  // ── 1. The keywords the owner is going after (Gemini's read of the
+  // listing), each looked up like the Keyword Inspector does. Three stories:
+  //   opportunity  relevant, real volume, beatable, but not top 10 yet
+  //   hard         popular but dominated by big apps, not top 10
+  //   low          barely searched, so the space it takes is wasted
+  const targeted = aiTargeted.filter((t) => !hasBrand(t));
   await check(targeted);
-  type Target = { k: KeywordCheck; rank: number | null; kind: "hard" | "low"; field: string };
+  const targetChecks = targeted.map((t) => got(t)).filter((k): k is KeywordCheck => !!k);
+  await scoreRelevancy(targetChecks);
+  const titleWords = new Set(words(appName));
+  // Where the keyword lives in the listing. Gemini can name a phrase the
+  // listing only describes; on iOS the description isn't indexed, which is
+  // its own point to make.
+  const whereIs = (t: string): "title" | "subtitle" | "listing" | "description" =>
+    covers(titleWords, t, appName.toLowerCase()) ? "title"
+      : covers(new Set(words(data.subtitle ?? "")), t, (data.subtitle ?? "").toLowerCase()) ? "subtitle"
+      : covers(ownWords, t, ownText) ? "listing" : "description";
+  type Target = { k: KeywordCheck; rank: number | null; kind: "opportunity" | "hard" | "low"; where: ReturnType<typeof whereIs>; order: number };
   const targets: Target[] = [];
-  for (const t of targeted) {
-    const k = got(t);
-    if (!k) continue;
+  for (const [order, k] of targetChecks.entries()) {
     const rank = rankIn(k.hits, appName, storeId);
-    const field = covers(new Set(words(appName)), t, appName.toLowerCase()) ? "title" : subField;
-    if (k.popularity >= 45 && k.difficulty >= 65 && (rank == null || rank > 10)) targets.push({ k, rank, kind: "hard", field });
-    else if (k.popularity <= 20) targets.push({ k, rank, kind: "low", field });
+    const where = whereIs(k.term);
+    const top10 = rank != null && rank <= 10;
+    const r = rel(k);
+    if (!top10 && (r == null || r >= 60) && k.popularity >= 30 && k.difficulty <= 60 && (rank != null || deep(k))) targets.push({ k, rank, kind: "opportunity", where, order });
+    else if (!top10 && k.popularity >= 45 && k.difficulty >= 65) targets.push({ k, rank, kind: "hard", where, order });
+    // A term only the description mentions takes no title/subtitle space.
+    else if (k.popularity <= 20 && where !== "description") targets.push({ k, rank, kind: "low", where, order });
   }
-  // Phrases before single words. Then a hard keyword with real volume is the
-  // stronger story; among low ones, the least searched.
-  targets.sort((a, b) => Number(isOneWord(a.k.term)) - Number(isOneWord(b.k.term)) || (a.kind !== b.kind ? (a.kind === "hard" ? -1 : 1)
-    : a.kind === "hard" ? (b.k.popularity + b.k.difficulty) - (a.k.popularity + a.k.difficulty) : a.k.popularity - b.k.popularity));
-  const target = targets[0];
-  if (target) {
-    const { k, rank, kind, field } = target;
+  // Phrases before single words, then opportunity → hard → low. Within a
+  // kind: the term Gemini ranked as more important to the owner first.
+  const kindOrder = { opportunity: 0, hard: 1, low: 2 } as const;
+  targets.sort((a, b) => Number(isOneWord(a.k.term)) - Number(isOneWord(b.k.term)) || kindOrder[a.kind] - kindOrder[b.kind] || a.order - b.order);
+  const fieldName = (w: Target["where"]) => w === "title" ? "title" : w === "subtitle" ? subField : w === "listing" ? `title and ${subField}` : "description";
+  const targetText = ({ k, rank, kind, where }: Target) => {
     const leaders = k.hits.filter((h) => h.id !== storeId).slice(0, 3).map((h) => titleBrand(h.name));
+    const r = rel(k);
+    const fit = r != null && r >= 80 ? "exactly what your app does" : "a strong fit for your app";
+    if (kind === "opportunity") {
+      const standing = rank == null ? "but you don't rank for it at all right now" : `but you're only at #${rank}`;
+      const fix = where === "description" && store === "ios"
+        ? ` It's only in your description, which the App Store doesn't index for search, so putting it in your ${subField} or keyword field is the fastest win.`
+        : " The top 10 is realistic here with the right metadata.";
+      const competition = k.difficulty < 10 ? "almost no competition" : `beatable competition (difficulty ${k.difficulty}/100)`;
+      return `Your listing goes after "${k.term}", ${fit}, with ${perDay(k)} and ${competition}, ${standing}.${fix}`;
+    }
+    if (kind === "hard") {
+      return `Your ${fieldName(where)} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null && rank <= 20 ? ` You're at #${rank}, just off the first page, where most of the taps happen.` : rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`;
+    }
+    return `Your ${fieldName(where)} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`;
+  };
+  const target = targets[0];
+  for (const [i, t] of targets.slice(0, 2).entries()) {
     findings.push({
-      id: "kw-target",
+      id: i === 0 ? "kw-target" : "kw-target-2",
       category: "keywords",
-      severity: 96,
-      text: kind === "hard"
-        ? `Your ${field} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null && rank <= 20 ? ` You're at #${rank}, just off the first page, where most of the taps happen.` : rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`
-        : `Your ${field} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`,
-      toolLine: toolLine(k.term),
-      oneWord: isOneWord(k.term),
-      evidence: `Targeted in ${field} · ${metricsLine(k, rank)}`,
+      severity: 96 - i * 6,
+      text: targetText(t),
+      toolLine: toolLine(t.k.term),
+      oneWord: isOneWord(t.k.term),
+      evidence: `Targeted (${t.kind}, in ${fieldName(t.where)}) · ${metricsLine(t.k, t.rank, rel(t.k))}`,
     });
   }
 
@@ -361,9 +443,13 @@ async function keywordFindings(
   // "Weaker competition" is relative: in a crowded niche every keyword's top
   // results are big apps, so the bar is the hard keyword above (or 60).
   const maxDiff = Math.max(60, target?.kind === "hard" ? target.k.difficulty - 3 : 0);
+  // Only what the app actually does: autocomplete around "spam blocker"
+  // happily offers "unknown call blocker" to an SMS-only app.
+  const inReach = sweet.filter(({ k }) => k.difficulty <= maxDiff);
+  await scoreRelevancy(inReach.map(({ k }) => k));
   // Prefer ~100+ searches a day (popularity 40); thinner ones only when
   // nothing better exists.
-  const viable = sweet.filter(({ k }) => k.difficulty <= maxDiff)
+  const viable = inReach.filter(({ k }) => relevantEnough(k, 50))
     .sort((a, b) => (b.k.popularity - 0.8 * b.k.difficulty) - (a.k.popularity - 0.8 * a.k.difficulty));
   const strong = viable.filter(({ k }) => k.popularity >= 40);
   // Within that pool, two-word terms read best in the email; longer ones only
@@ -394,7 +480,7 @@ async function keywordFindings(
         ? "Ranking for just one long-tail keyword like these can bring hundreds to thousands of impressions a day."
         : "Each one you rank for adds steady daily impressions you're not getting today, and they're less contested than the big head terms."}${placement}`,
       toolLine: toolLine(picks[0].k.term),
-      evidence: picks.map(({ k, rank }) => `${k.term}: ${metricsLine(k, rank)}`).join(" | "),
+      evidence: picks.map(({ k, rank }) => `${k.term}: ${metricsLine(k, rank, rel(k))}`).join(" | "),
     });
   }
 
@@ -418,10 +504,11 @@ async function keywordFindings(
     .filter(([t]) => !seeds.includes(t))
     .slice(0, 3);
   await check(gaps.map(([t]) => t));
+  await scoreRelevancy(gaps.map(([t]) => got(t)).filter((k): k is KeywordCheck => !!k && k.popularity > 15));
 
   const rankedGaps = gaps
     .map(([t, names]) => ({ names, k: got(t) }))
-    .filter((g): g is { names: string[]; k: KeywordCheck } => !!g.k && g.k.popularity > 15)
+    .filter((g): g is { names: string[]; k: KeywordCheck } => !!g.k && g.k.popularity > 15 && relevantEnough(g.k, 40))
     // Already top 10 without it in the listing: nothing to pitch.
     .filter(({ k }) => { const r = rankIn(k.hits, appName, storeId); return r == null || r > 10; })
     .sort((a, b) => Number(isOneWord(a.k.term)) - Number(isOneWord(b.k.term)) || b.k.popularity - a.k.popularity || b.names.length - a.names.length)
@@ -435,13 +522,16 @@ async function keywordFindings(
       text: `Your ${fieldPhrase} ${fieldVerb} include "${k.term}", a ${volumeWord(k.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank, k)}`,
       toolLine: toolLine(k.term),
       oneWord: isOneWord(k.term),
-      evidence: `${metricsLine(k, rank)} · used by ${names.join(", ")}`,
+      evidence: `${metricsLine(k, rank, rel(k))} · used by ${names.join(", ")}`,
     });
   }
 
+  await scoreRelevancy(seeds.map((t) => got(t)).filter((k): k is KeywordCheck => !!k && k.popularity >= 35));
   for (const [i, seed] of seeds.entries()) {
     const k = got(seed);
-    if (!k || k.popularity < 35) continue;
+    if (!k || k.popularity < 35 || !relevantEnough(k, 40)) continue;
+    // Already pitched as a targeted keyword.
+    if (targets.slice(0, 2).some((t) => t.k.term === k.term)) continue;
     const rank = rankIn(k.hits, appName, storeId);
     if (rank != null && rank <= 15) continue;
     if (rank == null && !deep(k)) continue;
@@ -453,9 +543,10 @@ async function keywordFindings(
       text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${k.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
       toolLine: toolLine(k.term),
       oneWord: isOneWord(k.term),
-      evidence: `Core search · ${metricsLine(k, rank)}`,
+      evidence: `Core search · ${metricsLine(k, rank, rel(k))}`,
     });
   }
+  if (relevancyMissed) notes.push("Gemini couldn't score relevancy for some keywords; those weren't filtered on relevancy.");
 
   return { findings, competitors };
 }
@@ -715,10 +806,11 @@ function metadataFindings(store: AuditStore, data: NonNullable<StoreData>, bench
 
 export const MAX_PICKS = 2;
 
-// Keyword-first: the targeted-keyword problem, then the long-tail sweet
-// spot. Any slot those can't fill goes to the next strongest finding.
+// Keyword-first: the targeted-keyword finding, then the long-tail sweet
+// spot (or the second targeted keyword when there's no long tail). Any slot
+// those can't fill goes to the next strongest finding.
 function pickDefault(findings: AuditFinding[]): string[] {
-  const preferred = ["kw-target", "kw-longtail"].filter((id) => findings.some((f) => f.id === id && !f.oneWord));
+  const preferred = ["kw-target", "kw-longtail", "kw-target-2"].filter((id) => findings.some((f) => f.id === id && !f.oneWord));
   const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || Number(!!a.oneWord) - Number(!!b.oneWord) || b.severity - a.severity)
     .map((f) => f.id).filter((id) => !preferred.includes(id));
   return [...preferred, ...rest].slice(0, MAX_PICKS);

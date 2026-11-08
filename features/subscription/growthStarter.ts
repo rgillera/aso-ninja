@@ -9,7 +9,7 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 
 // The Growth Starter ($500, onboarding plus a strategy session) is a
 // one-time payment, so checkout shows no "billed annually". It comes with
-// 2 months of Pro, or 12 months when bought through a Pro bonus link before
+// 3 months of Pro, or 12 months when bought through a Pro bonus link before
 // its deadline (libs/stripe/growth-starter-offer.ts). The webhook gives the
 // buyer a Pro subscription in a trial of that length that cancels at its
 // end, which keeps plan expiry on the usual webhook path instead of a
@@ -50,7 +50,7 @@ export async function createGrowthStarterCheckoutAction(
   // alone, and get the bonus year by hand for now.
   const isPaid = !!subscription?.stripe_subscription_id && subscription.status !== "canceled";
   if (proBonus && isPaid) return { error: "subscribed" };
-  const proDays = proBonus ? 365 : isPaid ? 0 : 60;
+  const proDays = proBonus ? 365 : isPaid ? 0 : 90;
 
   const stripe = createStripeClient();
   // A Stripe error (say, a test-mode price under the live key) would

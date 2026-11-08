@@ -554,7 +554,7 @@ export async function saveQuickAuditEmailAction(id: string, selected: string[], 
 
 // For a Growth Starter buyer who was offered the 12-month bonus but bought
 // without the bonus link: stretches their Starter Pro subscription's trial
-// from 2 months to 12, counted from when it started. Only touches a
+// from 3 months to 12, counted from when it started. Only touches a
 // subscription the Starter created (metadata.offer), so a paid plan is never
 // changed here. The subscriptions row follows via customer.subscription.updated.
 export async function extendGrowthStarterProAction(

@@ -47,7 +47,7 @@ export default function GrowthStarterTermsPage() {
         <p>The Starter covers one app and includes:</p>
         <ul>
           <li>
-            <strong>AppASO Pro:</strong> 2 months of access to the AppASO Pro plan, starting on the date of
+            <strong>AppASO Pro:</strong> 3 months of access to the AppASO Pro plan, starting on the date of
             purchase. If you already have a paid AppASO subscription, it keeps running instead and no
             separate Pro access is added.
           </li>

@@ -32,7 +32,7 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 
 // Mostly sent as a link after the free audit call. Linked in the footer but
 // kept out of the sitemap and search until the offer is proven.
-// Every Starter comes with 2 months of Pro. 12 months is a bonus offered on
+// Every Starter comes with 3 months of Pro. 12 months is a bonus offered on
 // the call: with a valid ?offer token (libs/stripe/growth-starter-offer.ts)
 // the page shows it and its deadline, and checkout grants it.
 export const metadata: Metadata = {
@@ -68,7 +68,7 @@ const baseStats = [
   { label: "Specialist", value: "1 month", note: "your partner" },
 ];
 const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
-const proMonthStat = { label: "AppASO Pro", value: "2 months", note: "included" };
+const proMonthStat = { label: "AppASO Pro", value: "3 months", note: "included" };
 
 const pains = [
   {
@@ -107,8 +107,7 @@ const stepsFor = (withPro: boolean) => [
     title: "Get roasted",
     description: "A growth expert studies your full funnel, from store listing to purchase, and your competitors. Then we go through all of it with you, live, for 60 minutes.",
     items: [
-      "Keywords you could rank for but don't",
-      "What competitors rank for, and the gaps they leave",
+      "An ASO strategy for your app: keywords you're missing and gaps your competitors leave",
       "An honest roast of your listing, onboarding, and paywall",
       "Your next moves, in order of impact",
       "Then, within 2 working days: a one-page action plan, in writing",
@@ -192,11 +191,12 @@ const deliverablesFor = (withPro: boolean) => [
 ];
 
 const starterIncludesFor = (withPro: boolean) => [
-  withPro ? "12 months of AppASO Pro ($288 value)" : "2 months of AppASO Pro",
+  withPro ? "12 months of AppASO Pro ($288 value)" : "3 months of AppASO Pro",
   "30-minute personal onboarding",
   "Expert review of your full funnel, from store listing to purchase, done before the call",
   "60-minute call: a live roast of your app and a strategy to grow it",
   "Keyword opportunities and competitor gaps, walked through on the call",
+  "An ASO strategy tailored to your app",
   "A one-page action plan with every fix ranked by impact",
   "A 30-minute check-in call at month 1",
   "1 month of email support from the specialist who researched your app",
@@ -220,7 +220,7 @@ const faqsFor = (withPro: boolean) => [
     q: "Is this a subscription?",
     a: withPro
       ? "No. You pay $500 once. Your Pro access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again."
-      : "No. You pay $500 once. Your 2 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
+      : "No. You pay $500 once. Your 3 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
   },
   {
     q: "Do I get anything in writing?",
@@ -310,7 +310,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     <p className="font-semibold text-gray-950">Your bonus: 12 months of AppASO Pro, free</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
                       Buy the Growth Starter by <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
-                      and you get 12 months of AppASO Pro ($288 value) instead of 2 months. Your Pro access starts the moment you check out.
+                      and you get 12 months of AppASO Pro ($288 value) instead of 3 months. Your Pro access starts the moment you check out.
                     </p>
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                 <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-600" aria-hidden="true" />
                 <p className="text-sm leading-6 text-gray-700">
                   The Pro bonus offer ended on {offerCheck.deadlineLabel}. You can still get the Growth Starter below,
-                  with 2 months of Pro instead of 12 months.
+                  with 3 months of Pro instead of 12 months.
                 </p>
               </div>
             )}
@@ -349,8 +349,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
-              A growth expert walks your funnel with you and ranks your fixes, then stays on as your partner for 2
-              months{withPro ? <>. Plus a year of AppASO Pro to{" "}</> : <> while you{" "}</>}
+              A growth expert walks your funnel with you and ranks your fixes, then stays on as your partner for a
+              month{withPro ? <>. Plus a year of AppASO Pro to{" "}</> : <> while you{" "}</>}
               <span className="font-semibold text-indigo-600">ship them yourself.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
@@ -414,11 +414,11 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalSectionHeading
               eyebrow="How it works"
               title="One week to a plan."
-              highlight={withPro ? "A year to run it." : "Two months of backup."}
+              highlight={withPro ? "A year to run it." : "A month of backup."}
               description={
                 withPro
-                  ? "Learn the tool, get your app roasted by an expert, then ship the changes with Pro running all year."
-                  : "Learn the tool, get your app roasted by an expert, then ship the changes with a specialist to email when you get stuck."
+                  ? "Learn the tool, get your app roasted by an expert, build your ASO strategy, then ship the changes with Pro running all year."
+                  : "Learn the tool, get your app roasted by an expert, build your ASO strategy, then ship the changes with a specialist to email when you get stuck."
               }
             />
 

@@ -31,7 +31,7 @@ export function ExtendStarterProForm() {
     <div className="mt-10 rounded-xl bg-[#141417] light:bg-white p-4 ring-1 ring-white/[0.06] light:ring-black/[0.08]">
       <h2 className="text-sm font-semibold text-white light:text-gray-900">Bought without the bonus link?</h2>
       <p className="mt-1 text-xs text-gray-500">
-        Extends a Growth Starter buyer&apos;s Pro from 2 months to 12, counted from their purchase.
+        Extends a Growth Starter buyer&apos;s Pro from 3 months to 12, counted from their purchase.
       </p>
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-center gap-3">
         <input

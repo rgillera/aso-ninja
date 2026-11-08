@@ -8,13 +8,14 @@ export type GrowthStarterPurchase = {
   amountCents: number | null;
   currency: string | null;
   sessionId: string;
-  // Days of Pro the webhook granted: 365 (bonus link), 60, or 0 (already
+  // Days of Pro the webhook granted: 365 (bonus link), 90, or 0 (already
   // on a paid plan).
   proDays: number;
 };
 
 function proLabel(days: number): string {
   if (days === 365) return "12 months (bonus link)";
+  if (days === 90) return "3 months";
   if (days === 60) return "2 months";
   if (days > 0) return `${days} days`;
   return "none, already on a paid plan";
