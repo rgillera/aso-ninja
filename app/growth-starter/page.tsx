@@ -38,7 +38,7 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 export const metadata: Metadata = {
   title: "ASO Growth Starter",
   description:
-    "Stop guessing how to grow your app. A growth expert reviews your full funnel, roasts it live with you, and stays on as your partner for 2 months. $500, one payment.",
+    "Stop guessing how to grow your app. A growth expert reviews your full funnel, roasts it live with you, and stays on as your partner for a month. $500, one payment.",
   alternates: {
     canonical: "/growth-starter",
   },
@@ -47,13 +47,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and 2 months with your specialist. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and 2 months with your specialist. $500, one payment.",
+    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
 };
@@ -64,8 +64,8 @@ const ctaLabel = "Get started for $500";
 
 const baseStats = [
   { label: "Price", value: "$500", note: "one payment" },
-  { label: "Expert time", value: "2.5 hours", note: "4 live calls" },
-  { label: "Specialist", value: "2 months", note: "your partner" },
+  { label: "Expert time", value: "2 hours", note: "3 live calls" },
+  { label: "Specialist", value: "1 month", note: "your partner" },
 ];
 const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
 const proMonthStat = { label: "AppASO Pro", value: "2 months", note: "included" };
@@ -116,13 +116,13 @@ const stepsFor = (withPro: boolean) => [
     milestone: "You know exactly what to change first",
   },
   {
-    n: "The next 2 months",
+    n: "The next month",
     title: "Ship it",
     description: "You make the changes, with your specialist one email away when you get stuck.",
     items: [
       "Work through your plan at your own pace",
-      "Email your specialist anything, for 2 months",
-      "Two 30-minute check-in calls, at month 1 and month 2",
+      "Email your specialist anything, for a month",
+      "A 30-minute check-in call at month 1",
       "Watch each change move your rankings in Pro",
     ],
     milestone: "Your first changes are live",
@@ -180,12 +180,12 @@ const deliverablesFor = (withPro: boolean) => [
     icon: ClipboardDocumentListIcon,
   },
   {
-    name: "2 monthly check-in calls",
-    description: "30 minutes at month 1 and again at month 2. We look at what you shipped, what moved, and what to do next.",
+    name: "Month-1 check-in call",
+    description: "30 minutes, about a month after your strategy call. We look at what you shipped, what moved, and what to do next.",
     icon: CalendarDaysIcon,
   },
   {
-    name: "2 months of email support",
+    name: "1 month of email support",
     description: "The specialist who researched your app stays on as your growth partner. Stuck on a step or unsure about a result? Email them, and get an answer within 2 working days from someone who already knows your app.",
     icon: EnvelopeIcon,
   },
@@ -198,8 +198,8 @@ const starterIncludesFor = (withPro: boolean) => [
   "60-minute call: a live roast of your app and a strategy to grow it",
   "Keyword opportunities and competitor gaps, walked through on the call",
   "A one-page action plan with every fix ranked by impact",
-  "Two 30-minute check-in calls, at month 1 and month 2",
-  "2 months of email support from the specialist who researched your app",
+  "A 30-minute check-in call at month 1",
+  "1 month of email support from the specialist who researched your app",
   "$500 credit toward the Growth Sprint if you upgrade within 2 months of your strategy call",
 ];
 
@@ -247,7 +247,7 @@ const faqsFor = (withPro: boolean) => [
   },
   {
     q: "Will you change my store listing for me?",
-    a: "No, you make the changes, with your specialist and two check-in calls to keep you on track. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
+    a: "No, you make the changes, with your specialist and a check-in call to keep you on track. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
   },
   {
     q: "What if I decide I want you to do the work?",
@@ -494,7 +494,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     Pro alone is <span className="font-semibold text-gray-950">$288/year</span>. For $212 more, a growth expert works on your app with you.
                   </p>
                 ) : (
-                  <p className="mt-2 text-sm text-gray-500">A written plan, 4 live calls, and 2 months of expert backup, for one payment.</p>
+                  <p className="mt-2 text-sm text-gray-500">A written plan, 3 live calls, and a month of expert backup, for one payment.</p>
                 )}
                 <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
                   {starterIncludes.map((item) => (

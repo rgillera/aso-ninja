@@ -66,11 +66,11 @@ export default function GrowthStarterTermsPage() {
             one-page action plan listing the agreed changes in order of priority.
           </li>
           <li>
-            <strong>Check-in calls:</strong> two 30-minute video calls, about 1 month and 2 months after the
+            <strong>Check-in call:</strong> one 30-minute video call, about 1 month after the
             strategy session, to review the changes you have made and your next steps.
           </li>
           <li>
-            <strong>Specialist support:</strong> for 2 months after the strategy session, the specialist who
+            <strong>Specialist support:</strong> for 1 month after the strategy session, the specialist who
             prepared your analysis answers your questions about your strategy by email, usually within 2
             working days. If they are unavailable, another member of our team answers instead.
           </li>
@@ -97,7 +97,7 @@ export default function GrowthStarterTermsPage() {
           </li>
           <li>
             The onboarding call and strategy session must take place within 60 days of purchase, and the
-            check-in calls within 120 days of purchase. Calls not held by then expire and are not refunded,
+            check-in call within 90 days of purchase. Calls not held by then expire and are not refunded,
             unless the delay was on our side.
           </li>
           <li>

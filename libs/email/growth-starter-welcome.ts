@@ -26,8 +26,8 @@ export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays
   <ol style="padding-left: 20px;">
     <li>Onboarding call: ASO basics and a guided tour of AppASO Pro.</li>
     <li>Within 7 working days: your 60-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.</li>
-    <li>At month 1 and month 2: a 30-minute check-in call to review what moved.</li>
-    <li>60 days of email support while you put the plan to work and see the results.</li>
+    <li>At month 1: a 30-minute check-in call to review what moved.</li>
+    <li>30 days of email support while you put the plan to work.</li>
   </ol>
   <p>To get a head start, reply to this email with your App Store or Google Play link.</p>
   <p>If you haven't heard from your specialist within 3 days, email us at <a href="mailto:hello@appaso.io" style="color: #4f46e5;">hello@appaso.io</a>.</p>
@@ -46,8 +46,8 @@ Your assigned growth specialist will email you to schedule your 30-minute onboar
 What happens next:
 1. Onboarding call: ASO basics and a guided tour of AppASO Pro.
 2. Within 7 working days: your 60-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.
-3. At month 1 and month 2: a 30-minute check-in call to review what moved.
-4. 60 days of email support while you put the plan to work and see the results.
+3. At month 1: a 30-minute check-in call to review what moved.
+4. 30 days of email support while you put the plan to work.
 
 To get a head start, reply to this email with your App Store or Google Play link.
 
