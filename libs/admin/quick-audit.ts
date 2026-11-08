@@ -546,9 +546,49 @@ async function keywordFindings(
       evidence: `Core search · ${metricsLine(k, rank, rel(k))}`,
     });
   }
+  // ── 3. The title's tagline ("Finelo: Master Trading" → "Master Trading")
+  // as a search: when barely anyone types it, the most valuable 30
+  // characters of the listing aren't earning impressions. An optional third
+  // email finding, only made when the numbers back it up.
+  const tagline = titleTagline(appName);
+  const taglineTerm = tagline.toLowerCase().replace(/\s+/g, " ");
+  const alreadyLow = targets.slice(0, 2).some((t) => t.kind === "low" && t.k.term === taglineTerm);
+  if (tagline && !alreadyLow && words(tagline).length >= 2 && words(tagline).length <= 4 && !hasBrand(taglineTerm)) {
+    await check([taglineTerm]);
+    const k = got(taglineTerm);
+    if (k && k.popularity <= 20) {
+      const rank = rankIn(k.hits, appName, storeId);
+      // A better use of the space: the highest-volume relevant keyword the
+      // audit already looked up that the title doesn't hold.
+      const better = [...checked.values()]
+        .filter((c): c is KeywordCheck => !!c && c.term !== taglineTerm && !isOneWord(c.term) && !hasBrand(c.term))
+        .filter((c) => c.popularity >= 35 && (rel(c) ?? 0) >= 60 && !covers(titleWords, c.term, appName.toLowerCase()))
+        .sort((a, b) => b.popularity - a.popularity)
+        .slice(0, 2);
+      const instead = better.length
+        ? `, like ${better.map((c) => `"${c.term}" (${perDay(c)})`).join(" or ")},`
+        : "";
+      findings.push({
+        id: "kw-title-low",
+        category: "keywords",
+        severity: 90,
+        text: `"${tagline}" in your title has low search volume (${perDay(k)}), so it's not generating many impressions${rank != null && rank <= 3 ? `, even though you rank #${rank} for it` : ""}. Targeting more relevant keywords with higher search volume${instead} would put ${shortName} in front of a lot more people searching for apps like yours.`,
+        toolLine: toolLine(taglineTerm),
+        evidence: `Title tagline · ${metricsLine(k, rank, rel(k))}${better.length ? ` · alternatives: ${better.map((c) => `${c.term} (pop ${c.popularity}, rel ${rel(c)})`).join(", ")}` : ""}`,
+      });
+    }
+  }
+
   if (relevancyMissed) notes.push("Gemini couldn't score relevancy for some keywords; those weren't filtered on relevancy.");
 
   return { findings, competitors };
+}
+
+// The words after the brand in a title, as written: "Finelo: Master
+// Trading" → "Master Trading". Empty when the title has no tagline.
+function titleTagline(name: string) {
+  const parts = name.split(/\s*[:|–—]\s*|\s+-\s+/).map((p) => p.trim()).filter(Boolean);
+  return parts.length >= 2 ? parts.slice(1).join(" ") : "";
 }
 
 // The keywords a listing is visibly going after: phrases from its title and
@@ -804,16 +844,20 @@ function metadataFindings(store: AuditStore, data: NonNullable<StoreData>, bench
 
 // ── Selection ───────────────────────────────────────────────────────────────
 
-export const MAX_PICKS = 2;
+export const MAX_PICKS = 3;
 
 // Keyword-first: the targeted-keyword finding, then the long-tail sweet
 // spot (or the second targeted keyword when there's no long tail). Any slot
-// those can't fill goes to the next strongest finding.
+// those can't fill goes to the next strongest finding. A third finding only
+// when the title's tagline barely gets searched (kw-title-low); otherwise the
+// email stays at two.
 function pickDefault(findings: AuditFinding[]): string[] {
-  const preferred = ["kw-target", "kw-longtail", "kw-target-2"].filter((id) => findings.some((f) => f.id === id && !f.oneWord));
+  const has = (id: string) => findings.some((f) => f.id === id && !f.oneWord);
+  const preferred = ["kw-target", "kw-longtail", "kw-target-2"].filter((id) => has(id) && id !== "kw-title-low");
   const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || Number(!!a.oneWord) - Number(!!b.oneWord) || b.severity - a.severity)
-    .map((f) => f.id).filter((id) => !preferred.includes(id));
-  return [...preferred, ...rest].slice(0, MAX_PICKS);
+    .map((f) => f.id).filter((id) => !preferred.includes(id) && id !== "kw-title-low");
+  const two = [...preferred, ...rest].slice(0, 2);
+  return has("kw-title-low") ? [...two, "kw-title-low"] : two;
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
