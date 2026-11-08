@@ -38,9 +38,14 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     "",
     items.join("\n\n"),
     "",
-    "Fixing these in the right order usually moves rankings within a few weeks.",
+    "If your app isn't ranking in the top 10 for relevant keywords, those search impressions and downloads are going to your competitors instead.",
     "",
-    `Happy to walk you through how we'd approach it on a free 15-minute call, no commitment. Does sometime this week work? You can grab a time here: ${calendly.trim() || DEFAULT_CALENDLY}`,
+    `I'd be happy to walk you through how we'd get ${r.shortName} into the top 10 for your target keywords.`,
+    "",
+    "Open to a free 15-minute call this week? No commitment.",
+    "",
+    "Book a time here:",
+    calendly.trim() || DEFAULT_CALENDLY,
   ].join("\n");
 }
 
