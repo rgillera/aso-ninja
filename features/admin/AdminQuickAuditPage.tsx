@@ -9,8 +9,8 @@ import {
 import type { AuditFinding, QuickAuditResult } from "@/libs/admin/quick-audit";
 import { COUNTRIES, countryFlag } from "@/libs/countries";
 
-// The email carries two findings, three when the title's tagline barely
-// gets searched (see pickDefault in libs/admin/quick-audit.ts).
+// The email carries two findings by default, title first then long tail
+// (see pickDefault in libs/admin/quick-audit.ts); a third can be ticked.
 const MAX_PICKS = 3;
 
 const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
@@ -224,7 +224,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Quick Audit</h1>
-            <p className="text-xs text-gray-500">Paste an app URL to get 2 or 3 keyword findings for the outreach reply</p>
+            <p className="text-xs text-gray-500">Paste an app URL to get a title finding and a long-tail finding for the outreach reply</p>
           </div>
           <button type="button" onClick={reset} disabled={pending} className={ghostBtn}>
             <ArrowPathIcon className="size-3.5" />

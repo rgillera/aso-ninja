@@ -4,7 +4,9 @@
 // stores. The only writes are the ones a Keyword Inspector lookup makes anyway
 // (shared search/popularity caches and today's keyword snapshots).
 //
-// The email leads with two keyword findings (see pickDefault):
+// The email leads with two keyword findings (see pickDefault): first one
+// about the app title, then the long tail. Title candidates:
+//   kw-title-low  the title's tagline barely gets searched ("Master Trading")
 //   kw-target     a keyword the owner is going after (Gemini reads the title,
 //                 subtitle and description), looked up like the Keyword
 //                 Inspector does (popularity, difficulty, rank, relevancy):
@@ -49,6 +51,7 @@ export type AuditFinding = {
   text: string; // the sentence that replaces {{FINDING_n}}
   toolLine?: string; // optional second line (the free-tool nudge)
   oneWord?: boolean; // pitches a single word ("sell"): only emailed if nothing better exists
+  focus?: "title"; // about the app title: candidates for the email's first slot
   evidence: string; // admin-only context, never goes in the email
 };
 
@@ -347,7 +350,12 @@ async function keywordFindings(
   //   opportunity  relevant, real volume, beatable, but not top 10 yet
   //   hard         popular but dominated by big apps, not top 10
   //   low          barely searched, so the space it takes is wasted
-  const targeted = aiTargeted.filter((t) => !hasBrand(t));
+  // The title's tagline ("Finelo: Master Trading" → "Master Trading") is
+  // always checked as a search too, since the email leads with the title.
+  const tagline = titleTagline(appName);
+  const taglineTerm = tagline.toLowerCase().replace(/\s+/g, " ");
+  const taglineOk = !!tagline && words(tagline).length >= 2 && words(tagline).length <= 4 && !hasBrand(taglineTerm);
+  const targeted = [...new Set([...aiTargeted.filter((t) => !hasBrand(t)), ...(taglineOk ? [taglineTerm] : [])])];
   await check(targeted);
   const targetChecks = targeted.map((t) => got(t)).filter((k): k is KeywordCheck => !!k);
   await scoreRelevancy(targetChecks);
@@ -369,7 +377,8 @@ async function keywordFindings(
     if (!top10 && (r == null || r >= 60) && k.popularity >= 30 && k.difficulty <= 60 && (rank != null || deep(k))) targets.push({ k, rank, kind: "opportunity", where, order });
     else if (!top10 && k.popularity >= 45 && k.difficulty >= 65) targets.push({ k, rank, kind: "hard", where, order });
     // A term only the description mentions takes no title/subtitle space.
-    else if (k.popularity <= 20 && where !== "description") targets.push({ k, rank, kind: "low", where, order });
+    // A barely searched tagline is kw-title-low's story (section 3).
+    else if (k.popularity <= 20 && where !== "description" && k.term !== taglineTerm) targets.push({ k, rank, kind: "low", where, order });
   }
   // Phrases before single words, then opportunity → hard → low. Within a
   // kind: the term Gemini ranked as more important to the owner first.
@@ -386,7 +395,7 @@ async function keywordFindings(
         ? ` It's only in your description, which the App Store doesn't index for search, so putting it in your ${subField} or keyword field is the fastest win.`
         : " The top 10 is realistic here with the right metadata.";
       const competition = k.difficulty < 10 ? "almost no competition" : `beatable competition (difficulty ${k.difficulty}/100)`;
-      return `Your listing goes after "${k.term}", ${fit}, with ${perDay(k)} and ${competition}, ${standing}.${fix}`;
+      return `Your ${where === "title" ? "title" : "listing"} goes after "${k.term}", ${fit}, with ${perDay(k)} and ${competition}, ${standing}.${fix}`;
     }
     if (kind === "hard") {
       return `Your ${fieldName(where)} targets "${k.term}", which gets ${perDay(k)} but has a difficulty of ${k.difficulty}/100, with ${listNames(leaders)} holding the top spots.${rank != null && rank <= 20 ? ` You're at #${rank}, just off the first page, where most of the taps happen.` : rank != null ? ` You're at #${rank}, so that keyword space isn't bringing you much traffic yet.` : deep(k) ? " You don't rank for it at all right now, so that keyword space isn't bringing you much traffic yet." : " That's a tough keyword to win traffic from right now."}`;
@@ -394,9 +403,15 @@ async function keywordFindings(
     return `Your ${fieldName(where)} spends space on "${k.term}", which barely gets searched (${perDay(k)}, popularity ${k.popularity}/100). Those characters could be working a lot harder for you.`;
   };
   const target = targets[0];
-  for (const [i, t] of targets.slice(0, 2).entries()) {
+  // The top two, plus the best title keyword when neither of those is one,
+  // so the title slot has a candidate.
+  const shownTargets = targets.slice(0, 2);
+  const titleTarget = targets.find((t) => t.where === "title");
+  if (titleTarget && !shownTargets.includes(titleTarget)) shownTargets.push(titleTarget);
+  for (const [i, t] of shownTargets.entries()) {
     findings.push({
-      id: i === 0 ? "kw-target" : "kw-target-2",
+      id: ["kw-target", "kw-target-2", "kw-target-title"][i],
+      ...(t.where === "title" ? { focus: "title" as const } : {}),
       category: "keywords",
       severity: 96 - i * 6,
       text: targetText(t),
@@ -550,19 +565,22 @@ async function keywordFindings(
   // as a search: when barely anyone types it, the most valuable 30
   // characters of the listing aren't earning impressions. An optional third
   // email finding, only made when the numbers back it up.
-  const tagline = titleTagline(appName);
-  const taglineTerm = tagline.toLowerCase().replace(/\s+/g, " ");
-  const alreadyLow = targets.slice(0, 2).some((t) => t.kind === "low" && t.k.term === taglineTerm);
-  if (tagline && !alreadyLow && words(tagline).length >= 2 && words(tagline).length <= 4 && !hasBrand(taglineTerm)) {
-    await check([taglineTerm]);
+  if (taglineOk) {
     const k = got(taglineTerm);
-    if (k && k.popularity <= 20) {
+    // A long tagline is rarely typed whole ("SMS Spam Text Blocker"), so it
+    // only counts as low when no keyword the title covers gets real volume
+    // ("spam text blocker", ~100 a day, is the title doing its job).
+    const titleEarns = [...checked.values()].some((c) => !!c && c.term !== taglineTerm && !isOneWord(c.term)
+      && c.popularity >= 30 && covers(titleWords, c.term, appName.toLowerCase()));
+    if (k && k.popularity <= 20 && !titleEarns) {
       const rank = rankIn(k.hits, appName, storeId);
       // A better use of the space: the highest-volume relevant keyword the
       // audit already looked up that the title doesn't hold.
       const better = [...checked.values()]
         .filter((c): c is KeywordCheck => !!c && c.term !== taglineTerm && !isOneWord(c.term) && !hasBrand(c.term))
         .filter((c) => c.popularity >= 35 && (rel(c) ?? 0) >= 60 && !covers(titleWords, c.term, appName.toLowerCase()))
+        // The long-tail finding already pitches its picks.
+        .filter((c) => !picks.some((p) => p.k.term === c.term))
         .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 2);
       const instead = better.length
@@ -571,6 +589,7 @@ async function keywordFindings(
       findings.push({
         id: "kw-title-low",
         category: "keywords",
+        focus: "title",
         severity: 90,
         text: `"${tagline}" in your title has low search volume (${perDay(k)}), so it's not generating many impressions${rank != null && rank <= 3 ? `, even though you rank #${rank} for it` : ""}. Targeting more relevant keywords with higher search volume${instead} would put ${shortName} in front of a lot more people searching for apps like yours.`,
         toolLine: toolLine(taglineTerm),
@@ -819,7 +838,7 @@ function metadataFindings(store: AuditStore, data: NonNullable<StoreData>, bench
   }
   if (name.length <= 14 && titleBrand(name) === name.trim()) {
     out.push({
-      id: "title-brand", category: "metadata", severity: 60,
+      id: "title-brand", category: "metadata", severity: 60, focus: "title",
       text: `Your title is just your brand name ("${name}"), using ${name.length} of 30 characters. Adding your main keyword after it is usually the single biggest ranking lever.`,
       evidence: `${name.length} chars, no keyword after the brand`,
     });
@@ -846,18 +865,21 @@ function metadataFindings(store: AuditStore, data: NonNullable<StoreData>, bench
 
 export const MAX_PICKS = 3;
 
-// Keyword-first: the targeted-keyword finding, then the long-tail sweet
-// spot (or the second targeted keyword when there's no long tail). Any slot
-// those can't fill goes to the next strongest finding. A third finding only
-// when the title's tagline barely gets searched (kw-title-low); otherwise the
-// email stays at two.
+// Two slots by default (the admin can tick a third):
+//   1. the app title: a barely searched tagline (kw-title-low), else a title
+//      keyword's numbers (kw-target*), else a brand-only title
+//   2. the long-tail sweet spot (kw-longtail)
+// A slot with no candidate goes to the next strongest keyword finding.
 function pickDefault(findings: AuditFinding[]): string[] {
-  const has = (id: string) => findings.some((f) => f.id === id && !f.oneWord);
-  const preferred = ["kw-target", "kw-longtail", "kw-target-2"].filter((id) => has(id) && id !== "kw-title-low");
+  const ok = (f: AuditFinding) => !f.oneWord;
+  const titleOrder = ["kw-title-low", "kw-target", "kw-target-2", "kw-target-title", "title-brand"];
+  const title = titleOrder.map((id) => findings.find((f) => f.id === id && f.focus === "title" && ok(f))).find(Boolean);
+  const preferred = [title?.id, findings.some((f) => f.id === "kw-longtail" && ok(f)) ? "kw-longtail" : undefined]
+    .filter((id): id is string => !!id);
+  const fallback = ["kw-target", "kw-target-2"].filter((id) => findings.some((f) => f.id === id && ok(f)));
   const rest = [...findings].sort((a, b) => Number(b.category === "keywords") - Number(a.category === "keywords") || Number(!!a.oneWord) - Number(!!b.oneWord) || b.severity - a.severity)
-    .map((f) => f.id).filter((id) => !preferred.includes(id) && id !== "kw-title-low");
-  const two = [...preferred, ...rest].slice(0, 2);
-  return has("kw-title-low") ? [...two, "kw-title-low"] : two;
+    .map((f) => f.id);
+  return [...new Set([...preferred, ...fallback, ...rest])].slice(0, 2);
 }
 
 // ── Entry point ─────────────────────────────────────────────────────────────
