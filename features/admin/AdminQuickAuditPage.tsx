@@ -22,7 +22,7 @@ const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   metadata: "Metadata",
 };
 
-function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string) {
+function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, uninterested: boolean) {
   // Only the first keyword finding carries the free-tool line, so the email
   // doesn't repeat the same nudge twice.
   let toolUsed = false;
@@ -31,8 +31,28 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     if (withTool) toolUsed = true;
     return `${i + 1}. ${f.text}${withTool ? `\n   ${f.toolLine}` : ""}`;
   });
+  const greeting = firstName.trim() ? `Hi ${firstName.trim()},` : "Hi there!";
+  const link = calendly.trim() || DEFAULT_CALENDLY;
+  // They said no: still hand over the audit as a free gift, no ask this
+  // week, and leave the door open for later.
+  if (uninterested) {
+    return [
+      greeting,
+      "",
+      `Thanks for letting me know, totally understand. I'd already put together a quick audit for ${r.shortName}, so here it is, free, in case it's useful:`,
+      "",
+      items.join("\n\n"),
+      "",
+      "No strings attached. Feel free to use these however you like.",
+      "",
+      "If you ever decide to put more into ASO down the road, I'd be happy to help. You can book a free 15-minute call anytime here:",
+      link,
+      "",
+      `Wishing you all the best with ${r.shortName}!`,
+    ].join("\n");
+  }
   return [
-    firstName.trim() ? `Hi ${firstName.trim()},` : "Hi there!",
+    greeting,
     "",
     `Thanks for getting back to me. Here's the quick audit for ${r.shortName}:`,
     "",
@@ -45,7 +65,7 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
     "Open to a free 15-minute call this week? No commitment.",
     "",
     "Book a time here:",
-    calendly.trim() || DEFAULT_CALENDLY,
+    link,
   ].join("\n");
 }
 
@@ -94,6 +114,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [fullAudit, setFullAudit] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
+  const [uninterested, setUninterested] = useState(false);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
   const [auditId, setAuditId] = useState("");
   const [auditUrl, setAuditUrl] = useState("");
@@ -143,6 +164,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setCountry("");
       setFirstName(record.firstName);
       setCalendly(record.calendly || DEFAULT_CALENDLY);
+      setUninterested(false);
     });
   }
 
@@ -151,6 +173,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     setCountry("");
     setFirstName("");
     setCalendly(DEFAULT_CALENDLY);
+    setUninterested(false);
     setResult(null);
     setAuditId("");
     setAuditUrl("");
@@ -169,7 +192,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     () => result ? selected.map((id) => result.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
     [result, selected],
   );
-  const email = result ? buildEmail(result, picked, firstName, calendly) : "";
+  const email = result ? buildEmail(result, picked, firstName, calendly, uninterested) : "";
 
   async function copy() {
     try {
@@ -264,6 +287,10 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-white light:text-gray-900">Email</h3>
+                    <label className="ml-auto mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
+                      <input type="checkbox" checked={uninterested} onChange={(e) => setUninterested(e.target.checked)} className="accent-indigo-500" />
+                      Not interested
+                    </label>
                     <button onClick={copy} disabled={!picked.length} className={ghostBtn}>
                       {copied ? <CheckIcon className="size-3.5" /> : <ClipboardDocumentIcon className="size-3.5" />}
                       {copied ? "Copied" : "Copy email"}
