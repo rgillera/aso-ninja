@@ -84,13 +84,15 @@ function emailToHtml(text: string) {
   const body = text.split("\n").map((line) => {
     let out = "", last = 0;
     for (const m of line.matchAll(URL_RE)) {
-      out += escapeHtml(line.slice(last, m.index)) + `<a href="${escapeHtml(m[0])}">${escapeHtml(m[0])}</a>`;
+      out += escapeHtml(line.slice(last, m.index)) + `<a href="${escapeHtml(m[0])}" target="_blank" style="color: #1155cc; text-decoration: underline;">${escapeHtml(m[0])}</a>`;
       last = m.index! + m[0].length;
     }
     out += escapeHtml(line.slice(last));
     return out.replace(/^ +/, (sp) => "&nbsp;".repeat(sp.length));
   }).join("<br>");
-  return `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;">${body}</div>`;
+  // A full document with fragment markers: some mail clients (Outlook, Apple
+  // Mail) drop the links from a bare HTML snippet on paste and keep only text.
+  return `<html><body><!--StartFragment--><div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;">${body}</div><!--EndFragment--></body></html>`;
 }
 
 function LinkifiedText({ text }: { text: string }) {
