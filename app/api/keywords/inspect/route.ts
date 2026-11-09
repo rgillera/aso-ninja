@@ -27,6 +27,10 @@ export type KeywordInspection = {
   // Set when appId tracks this term in this storefront: that row, rewritten
   // with this inspection's numbers, so Keyword Research's table matches it.
   tracked?: TrackedRowRefresh;
+  // appId's stored relevancy for this term in this storefront (scored rows
+  // only), so the Inspector can show it beside the rank without waiting on
+  // the relevancy route's top-10 scoring.
+  trackedRelevancy?: number;
 };
 
 export type TrackedRowRefresh = { volume: number; diff: number; chance: number; rank: number | null; opportunity: number | null };
@@ -42,7 +46,7 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 async function refreshTrackedRow(
   supabase: SupabaseClient, appId: string, term: string, store: string, country: string,
   volume: number, diff: number, names: string[], ids: (string | number | null | undefined)[]
-): Promise<TrackedRowRefresh | undefined> {
+): Promise<{ row?: TrackedRowRefresh; relevancy?: number } | undefined> {
   const { data: row } = await supabase
     .from("keyword_metrics")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,10 +57,11 @@ async function refreshTrackedRow(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const r = row as any;
   if (!r || r.apps.store !== store || (r.apps.country ?? "us").toLowerCase() !== country) return undefined;
+  const relevancy = r.relevancy_scored && typeof r.relevancy === "number" ? r.relevancy as number : undefined;
 
   const { data: link } = await supabase
     .from("app_keywords").select("status").eq("app_id", appId).eq("keyword_id", r.keyword_id).maybeSingle();
-  if (link?.status === "frozen") return undefined;
+  if (link?.status === "frozen") return { relevancy };
 
   const rankIdx = findRankIdx(names, r.apps.name, ids, r.apps.store_id);
   const rank = store === "ios" && r.apps.ipad_only === true ? r.rank : rankIdx >= 0 ? rankIdx + 1 : null;
@@ -68,7 +73,7 @@ async function refreshTrackedRow(
     .update({ volume, diff, chance, rank, opportunity, updated_at: new Date().toISOString() })
     .eq("app_id", appId)
     .eq("keyword_id", r.keyword_id);
-  return error ? undefined : { volume, diff, chance, rank, opportunity };
+  return { row: error ? undefined : { volume, diff, chance, rank, opportunity }, relevancy };
 }
 
 // Body of the 403 a below-Pro user gets.
@@ -139,7 +144,7 @@ export async function GET(request: NextRequest) {
 
   if (!impersonating) after(() => trackServerEvent(user.id, "Keyword Inspected", { store, country }));
 
-  const tracked = appId
+  const refreshed = appId
     ? await refreshTrackedRow(
         supabase, appId, term.toLowerCase(), store, country, core.volume, core.diff,
         store === "ios"
@@ -179,6 +184,7 @@ export async function GET(request: NextRequest) {
           price: a.free ? "Free" : typeof a.price === "number" ? `$${a.price.toFixed(2)}` : "",
           inAppPurchases: false, screenshotUrls: [],
         })),
-    tracked,
+    tracked: refreshed?.row,
+    trackedRelevancy: refreshed?.relevancy,
   } satisfies KeywordInspection);
 }

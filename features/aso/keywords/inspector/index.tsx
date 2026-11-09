@@ -554,6 +554,9 @@ export type InspectorDock = {
   // The app's Chance for a term, from Research's table row (the Inspector
   // has no app-specific score of its own); undefined when it isn't there.
   chanceFor?: (term: string) => number | undefined;
+  // The app's stored relevancy for a term from the same row, shown beside
+  // the rank right away instead of waiting on the relevancy request.
+  relevancyFor?: (term: string) => number | undefined;
   // The table row this inspection just rewrote (see refreshTrackedRow in
   // the inspect route), so Research's table shows the same numbers.
   onRowRefreshed?: (term: string, row: TrackedRowRefresh) => void;
@@ -777,7 +780,11 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
           if (id === requestId.current) setMetricsError(data.error ?? "Couldn't check this keyword right now.");
           return null;
         }
-        if (id === requestId.current) setMetrics(data as KeywordInspection);
+        if (id === requestId.current) {
+          setMetrics(data as KeywordInspection);
+          const stored = (data as KeywordInspection).trackedRelevancy;
+          if (stored !== undefined && activeApp?.store_id) setYourRelevancy({ storeId: activeApp.store_id, score: stored });
+        }
         if ((data as KeywordInspection).tracked) dock?.onRowRefreshed?.(normTerm, (data as KeywordInspection).tracked!);
         return data as KeywordInspection;
       } catch {
@@ -880,7 +887,8 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
       return;
     }
     const yourId = activeApp && activeApp.store === q.store && activeApp.store_id ? activeApp.store_id : undefined;
-    if (yourId) setYourRelevancy({ storeId: yourId, score: null });
+    // Keep a stored score the inspect request already filled in.
+    if (yourId) setYourRelevancy((prev) => prev?.storeId === yourId && typeof prev.score === "number" ? prev : { storeId: yourId, score: null });
     try {
       const res = await fetch("/api/keywords/inspect/relevancy", {
         method: "POST",
@@ -894,7 +902,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     } catch {
       if (id !== requestId.current) return;
       setRelevancy({});
-      if (yourId) setYourRelevancy({ storeId: yourId, score: undefined });
+      if (yourId) setYourRelevancy((prev) => prev?.storeId === yourId && typeof prev.score === "number" ? prev : { storeId: yourId, score: undefined });
     }
   }
 
@@ -1078,8 +1086,13 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const isTracked = !!query && !!tracked?.has(query.term);
   const shownRelevancy = relevancyUnlocked ? relevancy : null;
   // null = loading, undefined = nothing to show (below Pro, other store, no score).
-  const yourScore = relevancyUnlocked && yourRelevancy && yourRelevancy.storeId === yourStoreId
-    ? yourRelevancy.score : undefined;
+  // Docked, Keyword Research's row has it already (same storefront only:
+  // a tracked row is always for the app's own country).
+  const rowRelevancy = sameStore && query && (activeApp?.country ?? "us").toLowerCase() === query.country
+    ? dock?.relevancyFor?.(query.term) : undefined;
+  const yourScore = !relevancyUnlocked ? undefined
+    : rowRelevancy !== undefined ? rowRelevancy
+    : yourRelevancy && yourRelevancy.storeId === yourStoreId ? yourRelevancy.score : undefined;
   const brandApp = query && apps ? brandSearchApp(apps, query.store, shownRelevancy) : null;
   const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId, brandApp ? null : shownRelevancy) : [];
   // Relevancy scores are in (and it isn't a brand search), so the openings

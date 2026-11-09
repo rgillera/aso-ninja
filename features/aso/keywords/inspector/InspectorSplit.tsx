@@ -290,6 +290,10 @@ export function InspectorSplit({
                       const row = keywords.find((k) => k.keyword.toLowerCase() === term.toLowerCase());
                       return row && !row.loading ? row.chance : undefined;
                     },
+                    relevancyFor: (term) => {
+                      const row = keywords.find((k) => k.keyword.toLowerCase() === term.toLowerCase());
+                      return row && !row.loading && typeof row.relevancy === "number" ? row.relevancy : undefined;
+                    },
                   }}
                 />
               </div>
