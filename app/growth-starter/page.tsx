@@ -6,7 +6,6 @@ import {
   QuestionMarkCircleIcon,
   ArrowTrendingDownIcon,
   CreditCardIcon,
-  UsersIcon,
   AcademicCapIcon,
   EnvelopeIcon,
   KeyIcon,
@@ -18,8 +17,9 @@ import {
   ClipboardDocumentListIcon,
   CalendarDaysIcon,
   ReceiptPercentIcon,
+  BookOpenIcon,
 } from "@heroicons/react/24/outline";
-import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
+import { CheckIcon, XMarkIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
@@ -68,7 +68,9 @@ const baseStats = [
   { label: "Specialist", value: "1 month", note: "your partner" },
 ];
 const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
-const proMonthStat = { label: "AppASO Pro", value: "3 months", note: "included" };
+const proMonthStat = { label: "AppASO Pro", value: "3 months", note: "$87 value" };
+type Stat = { label: string; value: string; note?: string; href?: string };
+const kitStat: Stat = { label: "Growth Kit", value: "Free", note: "$149 value", href: "https://appgrowthkit.app" };
 
 const pains = [
   {
@@ -119,7 +121,7 @@ const stepsFor = (withPro: boolean) => [
     title: "Ship it",
     description: "You make the changes, with your specialist one email away when you get stuck.",
     items: [
-      "Work through your plan at your own pace",
+      "Work through your plan, with the App Growth Kit beside you",
       "Email your specialist anything, for a month",
       "A 30-minute check-in call at month 1",
       "Watch each change move your rankings in Pro",
@@ -153,14 +155,14 @@ const deliverablesFor = (withPro: boolean) => [
     icon: AcademicCapIcon,
   },
   {
-    name: "Keyword opportunities",
-    description: "The keywords your app could realistically rank for but doesn't, with search volume, difficulty, and relevancy. Walked through on the call.",
+    name: "Keyword & competitor gaps",
+    description: "The keywords you could realistically rank for but don't, and where your closest competitors leave gaps you can take. Walked through on the call.",
     icon: MagnifyingGlassIcon,
   },
   {
-    name: "Competitor breakdown",
-    description: "What your closest competitors rank for, how their listings are built, and where they leave gaps you can take.",
-    icon: UsersIcon,
+    name: "Free App Growth Kit",
+    description: "Lifetime access to our growth playbook, 30 ready-to-run experiments, templates, and calculators. $149 value, free: your specialist sends you a code for full access after checkout.",
+    icon: BookOpenIcon,
   },
   // Takes the Pro card's place, so the grid stays at 8 (2 rows of 4) either way.
   ...(withPro ? [] : [{
@@ -192,6 +194,7 @@ const deliverablesFor = (withPro: boolean) => [
 
 const starterIncludesFor = (withPro: boolean) => [
   withPro ? "12 months of AppASO Pro ($288 value)" : "3 months of AppASO Pro",
+  "Lifetime access to the App Growth Kit, free ($149 value)",
   "30-minute personal onboarding",
   "Expert review of your full funnel, from store listing to purchase, done before the call",
   "60-minute call: a live roast of your app and a strategy to grow it",
@@ -221,6 +224,19 @@ const faqsFor = (withPro: boolean) => [
     a: withPro
       ? "No. You pay $500 once. Your Pro access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again."
       : "No. You pay $500 once. Your 3 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
+  },
+  {
+    q: "What's the App Growth Kit?",
+    a: (
+      <>
+        Our growth playbook, experiment library, templates, and calculators for app developers, normally $149.{" "}
+        <a href="https://appgrowthkit.app" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
+          App Growth Kit
+        </a>{" "}
+        is included free with the Growth Starter, with lifetime access, so you have the playbook beside you while you ship your plan.
+        After checkout, your specialist sends you a code that unlocks it at no cost.
+      </>
+    ),
   },
   {
     q: "Do I get anything in writing?",
@@ -268,7 +284,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
   const offer = offerCheck?.status === "valid" ? offerCheck.offer : null;
   const withPro = !!offer;
   const checkoutHref = offer ? `${baseCheckoutHref}?offer=${encodeURIComponent(offer.token)}` : baseCheckoutHref;
-  const stats = [...baseStats, withPro ? proStat : proMonthStat];
+  const stats: Stat[] = [...baseStats, withPro ? proStat : proMonthStat, kitStat];
   const steps = stepsFor(withPro);
   const deliverables = deliverablesFor(withPro);
   const starterIncludes = starterIncludesFor(withPro);
@@ -309,7 +325,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   <div>
                     <p className="font-semibold text-gray-950">Your bonus: 12 months of AppASO Pro, free</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
-                      Buy the Growth Starter by <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
+                      {offer.kind === "call" ? <>This bonus is only for our call: buy the Growth Starter in </> : <>Buy the Growth Starter by </>}
+                      <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
                       and you get 12 months of AppASO Pro ($288 value) instead of 3 months. Your Pro access starts the moment you check out.
                     </p>
                   </div>
@@ -321,7 +338,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               <div className="mx-auto mb-12 flex max-w-2xl items-start gap-3 rounded-2xl bg-amber-50 p-6 text-left ring-1 ring-amber-200">
                 <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-600" aria-hidden="true" />
                 <p className="text-sm leading-6 text-gray-700">
-                  The Pro bonus offer ended on {offerCheck.deadlineLabel}. You can still get the Growth Starter below,
+                  {offerCheck.kind === "call" ? "The Pro bonus from our call has ended." : `The Pro bonus offer ended on ${offerCheck.deadlineLabel}.`} You can still get the Growth Starter below,
                   with 3 months of Pro instead of 12 months.
                 </p>
               </div>
@@ -356,7 +373,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalButton href={checkoutHref} className="mt-9">
               {ctaLabel}
             </PortalButton>
-            <p className="mt-4 text-sm text-gray-500">One payment · No renewal</p>
+            <p className="mt-4 text-sm text-gray-500">One payment · No renewal · Free App Growth Kit ($149 value)</p>
             <p className="mt-2 text-sm text-gray-500">
               Have questions first?{" "}
               <a
@@ -369,10 +386,26 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               </a>
             </p>
 
-            <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:grid-cols-4">
+            {/* 5 cells: one row on large screens; below that, 2 columns with the last cell spanning both. */}
+            <dl className="mx-auto mt-16 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10 lg:grid-cols-5">
               {stats.map((stat) => (
-                <div key={stat.label} className="bg-white px-3 py-5">
-                  <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">{stat.label}</dt>
+                <div key={stat.label} className="bg-white px-3 py-5 last:col-span-2 lg:last:col-span-1">
+                  <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">
+                    {stat.href ? (
+                      <a
+                        href={stat.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 hover:text-indigo-600"
+                        aria-label={`${stat.label} (opens in a new tab)`}
+                      >
+                        {stat.label}
+                        <ArrowTopRightOnSquareIcon className="size-3.5" aria-hidden="true" />
+                      </a>
+                    ) : (
+                      stat.label
+                    )}
+                  </dt>
                   <dd className="mt-1.5 whitespace-nowrap text-sm font-semibold text-gray-950 sm:text-lg">{stat.value}</dd>
                   {stat.note && <dd className="mt-0.5 whitespace-nowrap text-xs text-gray-500">{stat.note}</dd>}
                 </div>
