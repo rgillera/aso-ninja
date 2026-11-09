@@ -120,7 +120,7 @@ export function KeywordPerformancePane({
           { label: "Volume", value: String(row.volume) },
           { label: "Difficulty", value: String(row.diff) },
           { label: "Chance", value: String(row.chance) },
-          { label: "Opportunity", value: row.opportunity == null ? "-" : String(row.opportunity) },
+          { label: "Opportunity", value: planSlug === "free" ? "Pro" : row.opportunity == null ? "-" : String(row.opportunity) },
           // Same split as Keyword Research's column: an unconnected app has no
           // download data at all, a connected one just none for this keyword.
           !downloadsConnection?.connected

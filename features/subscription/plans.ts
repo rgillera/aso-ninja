@@ -31,7 +31,6 @@ export const PLANS: Plan[] = [
       "1 workspace, 1 seat",
       "2 apps or countries (iOS & Android)",
       "100 tracked keywords",
-      "Relevancy & opportunity scoring (40 keywords)",
       "Metadata editor",
       "Keyword translations",
     ],

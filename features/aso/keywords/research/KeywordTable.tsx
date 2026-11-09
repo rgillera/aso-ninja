@@ -36,9 +36,8 @@ import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { Keyword, DownloadsConnection } from "./types";
 import { unrankedLabel } from "@/features/aso/keywords/performance/types";
 
-// Every plan (Free included) now gets some relevancy/opportunity pool, so
-// the only things left gated behind a hard plan-tier lock are Est. Downloads
-// and Potential Impressions (Pro and up) — same emerald/violet tier coloring as nameColor() in
+// Hard plan-tier lock: Est. Downloads, Potential Impressions, and (on Free,
+// which has no scoring pool) Relevancy & Opportunity all need Pro — same emerald/violet tier coloring as nameColor() in
 // features/subscription/SubscriptionPage.tsx, just down to the one variant
 // still in use.
 function LockedCell({ plan, title }: { plan: "Pro"; title: string }) {
@@ -248,6 +247,9 @@ export function KeywordTable({
 }: Props) {
   const planSlug = usePlanSlug();
   const downloadsLocked = !isPlanAtLeast(planSlug, "pro");
+  // Free has no relevancy pool (plans.relevancy_limit = 0). Retired Basic
+  // still has one, so this is a Free check rather than a below-Pro one.
+  const scoresLocked = planSlug === "free";
   const [keywordInput, setKeywordInput] = useState("");
   const [pendingBulkAdd, setPendingBulkAdd] = useState<string[] | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
@@ -578,7 +580,9 @@ export function KeywordTable({
         </span>
       );
       case "opportunity": return (
-        row.aiDown && row.opportunity == null
+        scoresLocked
+          ? <LockedCell plan="Pro" title="Opportunity scoring requires the Pro plan" />
+          : row.aiDown && row.opportunity == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400 light:text-red-600">Error</span>
           : row.opportunity === null
           ? <PoolLimitCell />
@@ -631,7 +635,9 @@ export function KeywordTable({
           : <span className="text-sm text-gray-600 light:text-gray-400">—</span>
       );
       case "relevancy": return (
-        row.aiDown && row.relevancy == null
+        scoresLocked
+          ? <LockedCell plan="Pro" title="Relevancy scoring requires the Pro plan" />
+          : row.aiDown && row.relevancy == null
           ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums bg-red-500/15 text-red-400 light:text-red-600">Error</span>
           : row.relevancy === null
           ? <PoolLimitCell />
@@ -685,7 +691,8 @@ export function KeywordTable({
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
 
-        {/* Relevancy filter — every plan has some relevancy pool now, so this is never locked */}
+        {/* Relevancy filter — hidden on Free, which has no scores to filter by */}
+        {!scoresLocked && (
         <button
           onClick={(e) => toggleFilterDropdown("relevancy", e)}
           className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs ring-1 transition-colors ${relevancyFilter !== "any" ? "bg-indigo-500/10 ring-indigo-500/40 text-indigo-300 light:text-indigo-600" : openFilter === "relevancy" ? "bg-[#0a0a0c] light:bg-gray-50 ring-indigo-500/40 text-white light:text-gray-900" : "bg-[#0a0a0c] light:bg-gray-50 ring-white/[0.08] light:ring-black/[0.08] text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
@@ -694,6 +701,7 @@ export function KeywordTable({
           {relevancyFilter !== "any" ? `Relevancy: ${relevancyFilter.charAt(0).toUpperCase() + relevancyFilter.slice(1)}` : "Relevancy"}
           <ChevronDownIcon className="size-3 text-gray-600 light:text-gray-400" />
         </button>
+        )}
 
         {/* All / checked / starred segment */}
         <div className="flex items-center rounded-lg bg-[#0a0a0c] light:bg-gray-50 p-0.5">

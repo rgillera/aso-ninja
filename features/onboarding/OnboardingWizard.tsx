@@ -37,11 +37,10 @@ type SelectedApp = {
   country: string;
 };
 
-// The Free plan's whole relevancy budget is 40, pooled across every workspace
-// the subscriber owns — a wall of 30 tap-to-add suggestions would let a
-// first-timer burn most of that pool before ever reaching the real
-// Keywords Research page, leaving them almost nothing to score there and
-// a paywall soon after. Capped well under it instead.
+// New users onboard on the signup Pro trial, whose relevancy pool is 200,
+// pooled across every workspace the subscriber owns — a wall of 30
+// tap-to-add suggestions would let a first-timer burn a big slice of it
+// before ever reaching the real Keywords Research page. Capped well under.
 const MAX_SUGGESTIONS = 12;
 
 // Most onboarding drop-off happens on this step: picking keywords cold,

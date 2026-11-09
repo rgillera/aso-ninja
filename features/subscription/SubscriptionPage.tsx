@@ -343,7 +343,10 @@ export default function SubscriptionPage({
                     {usage.keyword_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Keywords" used={usage.keyword_count} limit={usage.keyword_limit} frozen={usage.keyword_frozen_count} />
                     )}
-                    <UsageBar onColor={tone !== "default"} label="Keywords scored" hint={isTrialPlan ? "Goes up to 1,000 when you upgrade" : undefined} used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
+                    {/* Free has no scoring pool (limit 0), so a "0 / 0" bar would only read as broken. */}
+                    {usage.relevancy_limit !== 0 && (
+                      <UsageBar onColor={tone !== "default"} label="Keywords scored" hint={isTrialPlan ? "Goes up to 1,000 when you upgrade" : undefined} used={usage.relevancy_scored_count - usage.relevancy_frozen_count} limit={usage.relevancy_limit} frozen={usage.relevancy_frozen_count} />
+                    )}
                     {usage.app_limit !== null && (
                       <UsageBar onColor={tone !== "default"} label="Apps" used={usage.app_count} limit={usage.app_limit} frozen={usage.app_frozen_count} />
                     )}

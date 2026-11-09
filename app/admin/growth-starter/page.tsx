@@ -12,6 +12,17 @@ import { ExtendStarterProForm } from "@/features/admin/ExtendStarterProForm";
 // link valid for CALL_OFFER_HOURS from the moment it's made, to share on the
 // strategy call: a new link each time.
 
+// Shared by the follow-up email and the call chat message.
+const INCLUDED = `- Expert review of your full funnel, from store listing to purchase, done before our call
+- 60-minute strategy call: a live review of your app, the opportunities you're missing, and a clear plan to grow it
+- Keyword opportunities and competitor gaps, walked through with you on the call
+- A one-page action plan with every fix ranked by impact
+- 30-minute onboarding on ASO basics and how to set up AppASO Pro, so you can start with confidence
+- A 30-minute check-in call at month 1 to review what moved and what's next
+- 1 month of email support from the same specialist who researched your app
+- Lifetime access to the App Growth Kit ($149 value): our growth playbook, experiment library, templates, and calculators
+- If you later want us to do the work, the full $500 comes off the Growth Sprint when you upgrade within 2 months of the strategy call`;
+
 type PageProps = { searchParams: Promise<{ deadline?: string; call?: string }> };
 
 function defaultDeadline(): string {
@@ -34,9 +45,23 @@ export default async function Page({ searchParams }: PageProps) {
 
   // Pasted into the call's chat while still on the call.
   const callMessage = isCall && link
-    ? `Here's your link for the Growth Starter ($500, one payment): ${link}
+    ? `Thanks for your time today and for walking me through your app and your current growth efforts.
 
-Since we're on the call, it includes a bonus: 12 months of AppASO Pro ($288 value) instead of the usual 3 months, plus lifetime access to the App Growth Kit ($149 value). This bonus is only for our call, so the link works for the next ${CALL_OFFER_HOURS} hours.`
+Based on what we discussed, I believe our Growth Starter is a good fit for where you are right now.
+
+Here's what's included:
+
+${INCLUDED}
+
+Your bonus, since we're on the call: get the Growth Starter within the next ${CALL_OFFER_HOURS} hours and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
+
+It's $500, one payment.
+
+Here's your link: ${link}
+
+The goal is simple: find what's holding your app back, show you what you're missing, and give you a plan to get more users and grow your revenue.
+
+This bonus is only for our call, so the link stops working after that. Any questions, just ask me here.`
     : null;
 
   const email = !isCall && result && "token" in result && link
@@ -48,15 +73,7 @@ I believe our Growth Starter is a good fit for where you are right now.
 
 Here's what's included:
 
-- Expert review of your full funnel, from store listing to purchase, done before our call
-- 60-minute strategy call: a live review of your app, the opportunities you're missing, and a clear plan to grow it
-- Keyword opportunities and competitor gaps, walked through with you on the call
-- A one-page action plan with every fix ranked by impact
-- 30-minute onboarding on ASO basics and how to set up AppASO Pro, so you can start with confidence
-- A 30-minute check-in call at month 1 to review what moved and what's next
-- 1 month of email support from the same specialist who researched your app
-- Lifetime access to the App Growth Kit ($149 value): our growth playbook, experiment library, templates, and calculators
-- If you later want us to do the work, the full $500 comes off the Growth Sprint when you upgrade within 2 months of the strategy call
+${INCLUDED}
 
 Your bonus: get the Growth Starter by ${result.deadlineLabel} and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
 
