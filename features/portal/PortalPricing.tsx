@@ -7,6 +7,20 @@ import PortalEyebrow from "./PortalEyebrow";
 
 type Variant = "default" | "featured" | "premium";
 
+// The signup/opt-in Pro trial (7 days, no card), as it applies to the viewer:
+// "available" for a signed-out visitor or a user still eligible for it,
+// "active" while they're on it, "none" once used or on a paid plan.
+export type ProTrialState =
+  | { kind: "none" }
+  | { kind: "available" }
+  | { kind: "active"; endsAt: string };
+
+const PRO_TRIAL_DAYS = 7;
+
+function daysLeft(iso: string) {
+  return Math.max(1, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+}
+
 const variantByPlan: Record<PlanId, Variant> = {
   free: "default",
   basic: "default",
@@ -108,7 +122,7 @@ const cardStyles: Record<Variant, {
   },
 };
 
-export default function PortalPricing({ isAuthenticated }: { isAuthenticated: boolean }) {
+export default function PortalPricing({ isAuthenticated, proTrial = { kind: "none" } }: { isAuthenticated: boolean; proTrial?: ProTrialState }) {
   // Yearly first: the per-month price is the lower anchor visitors see.
   const [yearly, setYearly] = useState(true);
 
@@ -171,10 +185,22 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
             const billing = yearly ? plan.yearly : plan.monthly;
             const s = cardStyles[plan.variant];
             const isFree = plan.name === "Free";
+            const isPro = plan.id === "pro";
+            const offersTrial = isPro && proTrial.kind === "available";
+            const pill = isPro && proTrial.kind === "active"
+              ? `Pro trial · ${daysLeft(proTrial.endsAt)}d left`
+              : offersTrial
+              ? `${PRO_TRIAL_DAYS}-day free trial`
+              : plan.badge;
             // Enterprise is priced per deal, so it books a call instead of
             // signing up (UpgradeButton.tsx does the same in the dashboard).
+            // A trial CTA never goes to checkout: signed out it's signup
+            // (which starts the trial), signed in it's the subscription page's
+            // Start free trial button.
             const href = plan.contactSales
               ? salesUrl ?? "mailto:hello@appaso.io"
+              : offersTrial
+              ? isAuthenticated ? "/dashboard/subscription" : "/signup"
               : isAuthenticated
               ? isFree
                 ? "/dashboard"
@@ -182,6 +208,8 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
               : billing.signupHref;
             const cta = plan.contactSales
               ? "Talk to us"
+              : offersTrial
+              ? "Start free trial"
               : isAuthenticated
               ? isFree
                 ? "Go to dashboard"
@@ -214,9 +242,9 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
 
                 <div className="flex items-center justify-between gap-2">
                   <h3 className={`text-lg font-semibold ${s.title}`}>{plan.name}</h3>
-                  {plan.badge && (
+                  {pill && (
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${s.badge}`}>
-                      {plan.badge}
+                      {pill}
                     </span>
                   )}
                 </div>
@@ -231,6 +259,10 @@ export default function PortalPricing({ isAuthenticated }: { isAuthenticated: bo
                   )}
                 </div>
                 <p className={`mt-2 text-xs font-medium ${s.subtitle}`}>{priceNote}</p>
+                {/* Same height either way, so the CTAs stay aligned across cards. */}
+                <p className={`mt-1 min-h-4 text-xs font-medium ${s.subtitle}`}>
+                  {offersTrial ? "No credit card required" : ""}
+                </p>
 
                 <a
                   href={href}

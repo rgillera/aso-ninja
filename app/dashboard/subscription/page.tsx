@@ -51,6 +51,7 @@ export default async function Page({ searchParams }: PageProps) {
         // still on Free, so Pro's card has to offer the upgrade.
         currentPlanId={"error" in state || trialEndsAt ? "free" : state.plan.slug}
         trialEndsAt={trialEndsAt}
+        canStartTrial={"error" in state ? false : state.canStartTrial}
         workspaceId={activeWorkspaceId}
         usage={"error" in state ? undefined : state.usage}
         pendingCancellation={"error" in state ? null : state.pendingCancellation}

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckIcon, SparklesIcon } from "@heroicons/react/20/solid";
 import { PLANS, SELLABLE_PLANS, type PlanId } from "./plans";
 import { UpgradeButton, type CardTone } from "./UpgradeButton";
+import { StartTrialButton } from "./StartTrialButton";
 import type { WorkspaceUsage } from "@/libs/contracts";
 import { freeAuditLink } from "./freeAudit";
 import { trialDaysLeft } from "@/features/dashboard/PlanContext";
@@ -66,6 +67,9 @@ type Props = {
   usage?: WorkspaceUsage;
   pendingCancellation?: { currentPeriodEnd: string | null } | null;
   trialEndsAt?: string | null;
+  // Free owner who never had a Pro trial: Pro's card offers it instead of
+  // going straight to checkout.
+  canStartTrial?: boolean;
 };
 
 type Billing = "monthly" | "yearly";
@@ -179,6 +183,7 @@ export default function SubscriptionPage({
   usage,
   pendingCancellation,
   trialEndsAt,
+  canStartTrial = false,
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
@@ -271,6 +276,7 @@ export default function SubscriptionPage({
             // Free's card shows what they'll drop to.
             const isTrialPlan = !!trialEndsAt && plan.id === "pro";
             const showsUsage = trialEndsAt ? isTrialPlan : isCurrent;
+            const offersTrial = canStartTrial && !trialEndsAt && plan.id === "pro";
             const isPopular = plan.id === "pro";
             const isDowngrade = PLANS.indexOf(plan) < currentPlanIndex;
             const isFree = plan.priceMonthlyCents === 0;
@@ -304,6 +310,10 @@ export default function SubscriptionPage({
                   {isTrialPlan ? (
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
                       Pro trial · {trialDaysLeft(trialEndsAt)}d left
+                    </span>
+                  ) : offersTrial ? (
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
+                      7-day free trial
                     </span>
                   ) : plan.badge && (
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-medium ${c.badge}`}>
@@ -368,6 +378,9 @@ export default function SubscriptionPage({
                   </p>
                 )}
 
+                {offersTrial ? (
+                  <StartTrialButton workspaceId={workspaceId} billing={billing} />
+                ) : (
                 <UpgradeButton
                   planSlug={plan.id}
                   workspaceId={workspaceId}
@@ -381,6 +394,7 @@ export default function SubscriptionPage({
                     plan.id === "free" ? (pendingCancellation ? pendingCancellation.currentPeriodEnd : undefined) : undefined
                   }
                 />
+                )}
               </div>
             );
           })}
