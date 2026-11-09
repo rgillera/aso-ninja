@@ -12,6 +12,9 @@ export type InspectorRelevancy = {
   // Keyed by store id: App Store track id, or Google Play package name.
   // An app missing here has no score (listing or LLM reply left it out).
   scores: Record<string, number>;
+  // The active app's score (yourId), wherever it ranks: from scores when
+  // it's in the top 10, else scored on its own. Missing = no score.
+  yours?: number;
 };
 
 // One LLM call and one embedding call per keyword, storefront and result
@@ -43,8 +46,31 @@ const cachedBatchScores = unstable_cache(
   { revalidate: 7 * 24 * 60 * 60 },
 );
 
+// The active app when it ranks below the top 10 (or not at all): scored on
+// its own with the same rules, the top results' names as market context, so
+// it never changes the shared top-10 batch key. Same 7-day cache, keyed by
+// the app too.
+const cachedSingleScore = unstable_cache(
+  async (term: string, store: "ios" | "android", country: string, yourId: string, topIds: string[]) => {
+    const fetch1 = (id: string) => fetchStoreData(store, store === "ios" ? id : "", store === "android" ? id : "", country);
+    const [data, ...top] = await Promise.all([fetch1(yourId), ...topIds.map(fetch1)]);
+    if (!data?.name) return null;
+    const topTitles = top.map((d) => d?.name).filter((n): n is string => !!n);
+    const scores = await scoreAppsRelevancyBatch(
+      term,
+      [{ id: yourId, name: data.name, subtitle: data.subtitle ?? "", description: data.description ?? "" }],
+      topTitles,
+      country,
+    );
+    if (!scores) throw new Error("relevancy failed");
+    return scores[yourId] ?? null;
+  },
+  ["inspector-relevancy-yours-v1"],
+  { revalidate: 7 * 24 * 60 * 60 },
+);
+
 // POST /api/keywords/inspect/relevancy
-// body: { term, store, country, workspaceId, ids: string[], appId? }
+// body: { term, store, country, workspaceId, ids: string[], appId?, yourId? }
 // Keyword Inspector's relevancy column: how well the keyword fits each of
 // the top 10 results, loaded after the list renders. Pro and above (see
 // canUseInspectorRelevancy). It doesn't draw from the plan's relevancy pool:
@@ -54,10 +80,14 @@ const cachedBatchScores = unstable_cache(
 // this storefront, its row shows its stored Keyword Research relevancy, so
 // the two screens agree. It's still scored in the shared batch (one more app
 // in the same call), so the cache entry stays the same for everyone.
+//
+// yourId: the active app's store id, for the score beside "Your app ranks".
+// Outside the top 10 it's the tracked relevancy when there is one, else
+// scored on its own (cachedSingleScore).
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
-  const { term: rawTerm, store: rawStore, country: rawCountry, workspaceId, ids: rawIds, appId } = body as {
-    term?: string; store?: string; country?: string; workspaceId?: string; ids?: unknown[]; appId?: string;
+  const { term: rawTerm, store: rawStore, country: rawCountry, workspaceId, ids: rawIds, appId, yourId: rawYourId } = body as {
+    term?: string; store?: string; country?: string; workspaceId?: string; ids?: unknown[]; appId?: string; yourId?: unknown;
   };
   const term = (rawTerm ?? "").trim().toLowerCase();
   const store = rawStore === "android" ? "android" : "ios";
@@ -65,10 +95,11 @@ export async function POST(request: NextRequest) {
   if (!term || term.length > 100) return NextResponse.json({ error: "Invalid keyword." }, { status: 400 });
   if (!/^[a-z]{2}$/.test(country)) return NextResponse.json({ error: "Invalid country." }, { status: 400 });
 
-  const ids = [...new Set((Array.isArray(rawIds) ? rawIds : [])
-    .filter((id): id is string => typeof id === "string" && id.length > 0 && id.length <= 200)
-    .filter((id) => store === "android" || /^\d+$/.test(id)))]
+  const validId = (id: unknown): id is string => typeof id === "string" && id.length > 0 && id.length <= 200
+    && (store === "android" || /^\d+$/.test(id));
+  const ids = [...new Set((Array.isArray(rawIds) ? rawIds : []).filter(validId))]
     .slice(0, RELEVANCY_APPS_LIMIT);
+  const yourId = validId(rawYourId) ? rawYourId : undefined;
   if (!ids.length) return NextResponse.json({ scores: {} } satisfies InspectorRelevancy);
 
   const supabase = await createClient();
@@ -95,7 +126,7 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const r = row as any;
     if (r?.relevancy_scored && r.relevancy !== null && r.apps.store === store
-      && (r.apps.country ?? "us").toLowerCase() === country && ids.includes(String(r.apps.store_id))) {
+      && (r.apps.country ?? "us").toLowerCase() === country) {
       tracked[String(r.apps.store_id)] = r.relevancy;
     }
   }
@@ -106,11 +137,21 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Couldn't score relevancy right now." }, { status: 502 });
   }
-  const scores = { ...batch, ...tracked };
+  const scores: Record<string, number> = { ...batch };
+  for (const [id, score] of Object.entries(tracked)) if (ids.includes(id)) scores[id] = score;
+
+  let yours: number | undefined;
+  if (yourId) {
+    yours = scores[yourId] ?? tracked[yourId];
+    if (yours === undefined && !ids.includes(yourId)) {
+      // A failure here only loses this one score, not the column.
+      yours = (await cachedSingleScore(term, store, country, yourId, ids.slice(0, 5)).catch(() => null)) ?? undefined;
+    }
+  }
 
   if (!(await isImpersonating())) {
     after(() => trackServerEvent(user.id, "Inspector Relevancy Loaded", { store, country, apps: Object.keys(scores).length }));
   }
 
-  return NextResponse.json({ scores } satisfies InspectorRelevancy);
+  return NextResponse.json({ scores, ...(yours !== undefined ? { yours } : {}) } satisfies InspectorRelevancy);
 }

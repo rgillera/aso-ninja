@@ -254,6 +254,27 @@ function EstimateStat({ value, basis, label, format }: {
   );
 }
 
+// The active app's relevancy beside its rank: "Relevancy 72", colored like
+// the column. null = loading, undefined = render nothing.
+function YourRelevancyPill({ score, className = "" }: { score: number | null | undefined; className?: string }) {
+  if (score === undefined) return null;
+  const tone = score === null ? "bg-white/[0.07] light:bg-black/[0.07] animate-pulse text-transparent"
+    : score >= 61 ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700"
+    : score >= 41 ? "bg-amber-500/15 text-amber-400 light:text-amber-700"
+    : "bg-red-500/10 text-red-400 light:text-red-600";
+  return (
+    <p
+      className={`flex shrink-0 items-center gap-1.5 text-xs text-gray-500 ${className}`}
+      title="How likely someone searching this keyword wants your app (0 to 100)"
+    >
+      Relevancy
+      <span className={`inline-block min-w-8 rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
+        {score === null ? "00" : score}
+      </span>
+    </p>
+  );
+}
+
 // The keyword's relevancy to one of the top results, in the same two-line
 // style as the estimates. undefined = still loading, null = no score,
 // "locked" = below Pro (the card header has the upgrade link).
@@ -579,6 +600,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   // Pro: relevancy for the top RELEVANCY_APPS_LIMIT results, keyed by store
   // id. null while loading (or below Pro).
   const [relevancy, setRelevancy] = useState<Record<string, number> | null>(null);
+  // Pro: the active app's own relevancy, wherever it ranks (the column stops
+  // at the top 10). Tagged with its store id so switching apps can't show
+  // the last app's score; score null = loading, undefined = none.
+  const [yourRelevancy, setYourRelevancy] = useState<{ storeId: string; score: number | null | undefined } | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
@@ -731,6 +756,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     setSubtitlesLoading(false);
     setEstimates(null);
     setRelevancy(null);
+    setYourRelevancy(null);
     setAppsError(null);
     setAppsLoading(true);
 
@@ -853,16 +879,22 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
       setRelevancy({});
       return;
     }
+    const yourId = activeApp && activeApp.store === q.store && activeApp.store_id ? activeApp.store_id : undefined;
+    if (yourId) setYourRelevancy({ storeId: yourId, score: null });
     try {
       const res = await fetch("/api/keywords/inspect/relevancy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ term: q.term, store: q.store, country: q.country, workspaceId, ids, appId: activeApp?.id }),
+        body: JSON.stringify({ term: q.term, store: q.store, country: q.country, workspaceId, ids, appId: activeApp?.id, yourId }),
       });
       const data = res.ok ? ((await res.json()) as InspectorRelevancy) : null;
-      if (id === requestId.current) setRelevancy(data?.scores ?? {});
+      if (id !== requestId.current) return;
+      setRelevancy(data?.scores ?? {});
+      if (yourId) setYourRelevancy({ storeId: yourId, score: data?.yours });
     } catch {
-      if (id === requestId.current) setRelevancy({});
+      if (id !== requestId.current) return;
+      setRelevancy({});
+      if (yourId) setYourRelevancy({ storeId: yourId, score: undefined });
     }
   }
 
@@ -1045,6 +1077,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const tracked = dock ? dock.trackedTerms : trackedTerms;
   const isTracked = !!query && !!tracked?.has(query.term);
   const shownRelevancy = relevancyUnlocked ? relevancy : null;
+  // null = loading, undefined = nothing to show (below Pro, other store, no score).
+  const yourScore = relevancyUnlocked && yourRelevancy && yourRelevancy.storeId === yourStoreId
+    ? yourRelevancy.score : undefined;
   const brandApp = query && apps ? brandSearchApp(apps, query.store, shownRelevancy) : null;
   const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId, brandApp ? null : shownRelevancy) : [];
   // Relevancy scores are in (and it isn't a brand search), so the openings
@@ -1350,6 +1385,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           ? <>Your app ranks <span className="font-semibold text-white light:text-gray-900">#{yourRankIdx + 1}</span> for this keyword</>
                           : <>Your app isn&apos;t in the top {allResults.length} yet</>}
                       </p>
+                      <YourRelevancyPill score={yourScore} className="ml-auto" />
                     </div>
                   )}
                   {!docked && sameStore && activeApp && allResults && (
@@ -1381,6 +1417,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
                         </div>
                       </div>
+                      <YourRelevancyPill score={yourScore} />
                       <p className="text-[11px] text-gray-500">
                         {yourRankIdx >= RESULTS_DISPLAY_LIMIT
                           ? `Below the top ${RESULTS_DISPLAY_LIMIT} shown here`
