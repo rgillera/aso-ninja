@@ -34,11 +34,12 @@ const cachedBatchScores = unstable_cache(
       topTitles.push(data.name);
       apps.push({ id: ids[i], name: data.name, subtitle: data.subtitle ?? "", description: data.description ?? "" });
     });
-    const scores = await scoreAppsRelevancyBatch(term, apps, topTitles);
+    const scores = await scoreAppsRelevancyBatch(term, apps, topTitles, country);
     if (!scores) throw new Error("relevancy batch failed");
     return scores;
   },
-  ["inspector-relevancy"],
+  // v2: storefront-aware prompt + whole-title match; drops week-old v1 scores.
+  ["inspector-relevancy-v2"],
   { revalidate: 7 * 24 * 60 * 60 },
 );
 

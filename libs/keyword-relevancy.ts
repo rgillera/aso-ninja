@@ -335,6 +335,22 @@ export async function computeRelevancy(
 
 // ── Batch relevancy (Keyword Inspector) ──────────────────────────────────────
 
+// Letters and digits only, any script, so "Nachrichten" / "nachrichten" and
+// "日本語" compare equal to themselves (an ASCII-only strip would empty them).
+function titleKey(s: string): string {
+  return s.normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+// " The search was made on the App Store/Google Play in Germany (DE)." — or ""
+// for the US/unknown, where English is the default the prompt already assumes.
+function storefrontLine(country?: string): string {
+  const code = (country ?? "").toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code) || code === "US") return "";
+  let name = code;
+  try { name = new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code; } catch { /* keep the code */ }
+  return ` The search was made in the ${name} (${code}) storefront: read the keyword in that market's language(s) and weigh every common meaning it has there.`;
+}
+
 export type BatchApp = { id: string; name: string; subtitle: string; description: string };
 
 // Enough of a description to say what the app does (the opening paragraph
@@ -354,9 +370,20 @@ const BATCH_DESCRIPTION_CHARS = 800;
 // the LLM judges brand searches instead (rule 1 below). Returns null when the
 // LLM is unavailable or its reply can't be parsed, so callers can skip
 // caching it; apps the reply leaves out are just missing.
-export async function scoreAppsRelevancyBatch(keyword: string, apps: BatchApp[], topTitles: string[]): Promise<Record<string, number> | null> {
+//
+// Two guards for non-English storefronts: the prompt names the storefront so
+// the LLM reads the keyword in that market's language with all its meanings,
+// and a keyword equal to an app's whole title scores 100 (as isBrandKeyword's
+// exact match does for a tracked keyword). Without them a homonym loses to
+// the market around it: in Germany "nachrichten" is both "news" and Apple's
+// Messages app, and with 19 news apps beside it Messages scored 27 at #1.
+// A whole-title match can't misfire the way the prefix brand shortcut did.
+export async function scoreAppsRelevancyBatch(keyword: string, apps: BatchApp[], topTitles: string[], country?: string): Promise<Record<string, number> | null> {
   const scores: Record<string, number> = {};
   if (!apps.length) return scores;
+
+  const storefront = storefrontLine(country);
+  const kwTitle = titleKey(keyword);
 
   const listings = apps.map((app, i) => {
     const description = app.description.replace(/\s+/g, " ").trim().slice(0, BATCH_DESCRIPTION_CHARS);
@@ -367,7 +394,7 @@ Subtitle: "${app.subtitle || "(none)"}"
 Description: "${description || "(none)"}"${collisionNote(findSubstringCollisions(keyword, context))}`;
   }).join("\n\n");
 
-  const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the app store search bar: "${keyword}". For EACH app below, score the probability (0-100) that they are specifically looking for THAT app. Score each app on its own; several apps can score high or low.
+  const prompt = `You are an ASO expert scoring keyword intent. A user typed this keyword in the app store search bar: "${keyword}".${storefront} For EACH app below, score the probability (0-100) that they are specifically looking for THAT app. Score each app on its own; several apps can score high or low.
 
 ${listings}
 
@@ -408,7 +435,9 @@ Reply with ONLY a JSON object mapping each app number to its integer score, e.g.
       const semanticScore = appEmbedding
         ? semanticScoreFor(appEmbedding, kwEmbedding, topText ? topEmbedding : null)
         : hasContext ? 0 : 50;
-      scores[app.id] = blendRelevancy(hasContext, descScore, semanticScore);
+      scores[app.id] = kwTitle && titleKey(app.name) === kwTitle
+        ? 100
+        : blendRelevancy(hasContext, descScore, semanticScore);
     });
   } catch {
     return null;

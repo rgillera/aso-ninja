@@ -220,11 +220,12 @@ function metricsLine(k: KeywordCheck, rank: number | null, relevancy?: number | 
 // market context. Scoring the app alone rather than in the Inspector's
 // top-10 batch can land a few points off what appaso.io shows. null when the
 // LLM gave no usable reply.
-async function relevancyFor(k: KeywordCheck, storeId: string, data: NonNullable<StoreData>): Promise<number | null> {
+async function relevancyFor(k: KeywordCheck, storeId: string, data: NonNullable<StoreData>, country: string): Promise<number | null> {
   const scores = await scoreAppsRelevancyBatch(
     k.term,
     [{ id: storeId, name: data.name ?? "", subtitle: data.subtitle ?? "", description: data.description ?? "" }],
     k.hits.slice(0, 10).map((h) => h.name),
+    country,
   ).catch(() => null);
   return scores?.[storeId] ?? null;
 }
@@ -337,7 +338,7 @@ async function keywordFindings(
   let relevancyMissed = false;
   const scoreRelevancy = async (ks: KeywordCheck[]) => {
     await mapLimit(ks.filter((k) => !relevancy.has(k.term)), 4, async (k) => {
-      const r = await relevancyFor(k, storeId, data);
+      const r = await relevancyFor(k, storeId, data, country);
       if (r == null) relevancyMissed = true;
       relevancy.set(k.term, r);
     });
