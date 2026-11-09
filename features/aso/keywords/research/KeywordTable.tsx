@@ -434,7 +434,8 @@ export function KeywordTable({
   // Sorting a Pro-locked column would still reveal its values through the
   // row order, so those headers aren't sortable below Pro.
   function isSortLocked(key: string) {
-    return downloadsLocked && (key === "potentialImpressions" || key === "estimatedDownloads");
+    return (downloadsLocked && (key === "potentialImpressions" || key === "estimatedDownloads"))
+      || (scoresLocked && (key === "relevancy" || key === "opportunity"));
   }
 
   function handleSort(key: string) {

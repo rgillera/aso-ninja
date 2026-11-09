@@ -2,6 +2,9 @@
 // show the ring color through). Keyword Research's side pane uses it for
 // both the Inspector and Performance tabs, in place of a grid of separate
 // stat cards, so a keyword's numbers read at a glance in a narrow pane.
+import Link from "next/link";
+import { LockClosedIcon } from "@heroicons/react/24/outline";
+
 export type StatStripItem = {
   label: string;
   value: string;
@@ -16,6 +19,9 @@ export type StatStripItem = {
   // A status rather than a number ("Unranked", "Not connected"): smaller
   // and grey, so it doesn't read as a value.
   muted?: boolean;
+  // Plan-gated: shows a "Pro" badge linking to the subscription page
+  // instead of the value (same style as Keyword Research's locked cells).
+  locked?: boolean;
 };
 
 export function StatStrip({ items, columns, loading = false }: {
@@ -34,6 +40,17 @@ export function StatStrip({ items, columns, loading = false }: {
           <p className="text-[11px] leading-tight text-gray-500">{item.label}</p>
           {loading ? (
             <div className="mt-1.5 h-5 w-10 rounded bg-white/[0.06] light:bg-black/[0.05] animate-pulse" />
+          ) : item.locked ? (
+            <div className="mt-1 flex h-7 items-center">
+              <Link
+                href="/dashboard/subscription"
+                title={`${item.label} requires the Pro plan`}
+                className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-semibold text-violet-400 light:text-violet-700 transition-opacity hover:opacity-75"
+              >
+                <LockClosedIcon className="size-3" />
+                Pro
+              </Link>
+            </div>
           ) : (
             <p className={`mt-0.5 flex flex-wrap items-baseline gap-x-1 ${item.muted ? "text-gray-500" : item.tone ?? "text-white light:text-gray-900"}`}>
               <span className={item.muted ? "text-xs leading-7" : "text-lg font-semibold tabular-nums"}>{item.value}</span>
