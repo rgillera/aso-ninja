@@ -9,12 +9,19 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //   "<YYYYMMDD>.<signature>"  a deadline day, lasting until that day ends in
 //                             the last time zone on Earth (UTC-12), so the
 //                             date in the email holds wherever the buyer is.
-//   "h<unix seconds>.<signature>"  a call-only offer: made on the strategy
-//                             call, valid for CALL_OFFER_HOURS from then.
+//   "h<unix seconds>.<signature>"  a timed offer, valid for one of
+//                             TIMED_OFFER_HOURS from when it's made: 24 hours
+//                             for a follow-up email, 2 for the call only.
 //                             Signed under a different prefix, so a day
 //                             token's signature can't be reused for one.
 
-export const CALL_OFFER_HOURS = 24;
+export const TIMED_OFFER_HOURS = [24, 2] as const;
+export type TimedOfferHours = (typeof TIMED_OFFER_HOURS)[number];
+
+export function parseTimedOfferHours(value: string | undefined): TimedOfferHours | null {
+  const n = Number(value);
+  return (TIMED_OFFER_HOURS as readonly number[]).includes(n) ? (n as TimedOfferHours) : null;
+}
 const TIMED_RE = /^h(\d{9,11})$/;
 
 const DAY_RE = /^(\d{4})(\d{2})(\d{2})$/;
@@ -60,11 +67,11 @@ function hoursLeftLabel(end: Date): string {
   return hours === 1 ? "the next hour" : `the next ${hours} hours`;
 }
 
-// A call-only bonus link, valid for CALL_OFFER_HOURS from now.
-export function createGrowthStarterCallOfferToken(): GrowthStarterOffer | { error: string } {
+// A timed bonus link, valid for `hours` from now.
+export function createGrowthStarterTimedOfferToken(hours: TimedOfferHours): GrowthStarterOffer | { error: string } {
   const key = secret();
   if (!key) return { error: "GROWTH_STARTER_OFFER_SECRET is not set." };
-  const end = new Date(Date.now() + CALL_OFFER_HOURS * 3_600_000);
+  const end = new Date(Date.now() + hours * 3_600_000);
   const stamp = `h${Math.floor(end.getTime() / 1000)}`;
   return { token: `${stamp}.${signTimed(stamp, key)}`, kind: "call", deadlineLabel: hoursLeftLabel(end), expiresAt: end };
 }
