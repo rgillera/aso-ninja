@@ -5,6 +5,7 @@ import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { createGrowthStarterOfferToken, createGrowthStarterTimedOfferToken, parseTimedOfferHours } from "@/libs/stripe/growth-starter-offer";
 import { CopyField } from "@/features/admin/CopyField";
 import { ExtendStarterProForm } from "@/features/admin/ExtendStarterProForm";
+import { BonusLinkForm } from "@/features/admin/BonusLinkForm";
 
 // Makes Growth Starter Pro bonus links: pick a deadline, get one link to send
 // everyone offered the bonus for that deadline. A plain GET form, so nothing
@@ -82,10 +83,6 @@ This bonus is only for our call, so the link stops working after that. Any quest
   const email = !isCall && result && "token" in result && link
     ? `Thanks for your time today and for sharing more about your app and your current growth efforts.
 
-Based on our conversation, I understand that [BLANK].
-
-I believe our Growth Starter is a good fit for where you are right now.
-
 ${INCLUDED}
 
 Your bonus: get the Growth Starter ${bonusBy} and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
@@ -114,43 +111,12 @@ The bonus ends ${bonusEnds}. Any questions, just reply to this email.`
           </div>
         </div>
 
-        <form method="get" className="flex flex-wrap items-end gap-3 rounded-xl bg-[#141417] light:bg-white p-4 ring-1 ring-white/[0.06] light:ring-black/[0.08]">
-          <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-gray-400 light:text-gray-600">Buy by</span>
-            <input
-              type="date"
-              name="deadline"
-              defaultValue={deadline ?? defaultDeadline()}
-              required
-              className="rounded-lg bg-black/30 light:bg-gray-50 px-3 py-2 text-sm text-white light:text-gray-900 ring-1 ring-white/10 light:ring-black/10 outline-none"
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
-          >
-            Make link
-          </button>
-          <span className="self-center text-xs text-gray-500">or</span>
-          <button
-            type="submit"
-            name="hours"
-            value="24"
-            formNoValidate
-            className="rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-4 py-2 text-sm font-semibold text-gray-200 light:text-gray-800 hover:bg-white/[0.10] light:hover:bg-black/[0.08]"
-          >
-            24 hours
-          </button>
-          <button
-            type="submit"
-            name="hours"
-            value="2"
-            formNoValidate
-            className="rounded-lg bg-white/[0.06] light:bg-black/[0.05] px-4 py-2 text-sm font-semibold text-gray-200 light:text-gray-800 hover:bg-white/[0.10] light:hover:bg-black/[0.08]"
-          >
-            Call only (2 hours)
-          </button>
-        </form>
+        <BonusLinkForm
+          key={`${hoursParam ?? ""}|${deadline ?? ""}`}
+          initialMode={hours === 24 ? "24" : hours === 2 ? "2" : "date"}
+          initialDeadline={deadline ?? defaultDeadline()}
+          showReset={Boolean(hoursParam || deadline)}
+        />
 
         {result && "error" in result && (
           <p className="mt-4 text-sm text-amber-400 light:text-amber-700">{result.error}</p>
