@@ -113,7 +113,7 @@ The bonus ends ${bonusEnds}. Any questions, just reply to this email.`
 
         <BonusLinkForm
           key={`${hoursParam ?? ""}|${deadline ?? ""}`}
-          initialMode={hours === 24 ? "24" : hours === 2 ? "2" : "date"}
+          initialMode={hours === 24 ? "24" : deadline ? "date" : "2"}
           initialDeadline={deadline ?? defaultDeadline()}
           showReset={Boolean(hoursParam || deadline)}
         />
