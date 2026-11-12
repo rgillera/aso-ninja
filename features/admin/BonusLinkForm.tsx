@@ -9,8 +9,8 @@ import Link from "next/link";
 export type BonusLinkMode = "date" | "24" | "2";
 
 const MODES: { value: BonusLinkMode; label: string }[] = [
-  { value: "24", label: "24 hours" },
   { value: "2", label: "Call only (2 hours)" },
+  { value: "24", label: "24 hours" },
   { value: "date", label: "Deadline date" },
 ];
 
