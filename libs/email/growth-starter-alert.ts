@@ -11,6 +11,12 @@ export type GrowthStarterPurchase = {
   // Days of Pro the webhook granted: 365 (bonus link), 90, or 0 (already
   // on a paid plan).
   proDays: number;
+  // Bought through a bonus link, but already on a paid plan: the 12 months
+  // weren't granted and need setting up by hand.
+  proBonusSkipped?: boolean;
+  // Checked out without being logged in.
+  guest?: boolean;
+  account: import("./growth-starter-welcome").GrowthStarterAccount;
 };
 
 function proLabel(days: number): string {
@@ -19,6 +25,12 @@ function proLabel(days: number): string {
   if (days === 60) return "2 months";
   if (days > 0) return `${days} days`;
   return "none, already on a paid plan";
+}
+
+function accountLabel(p: GrowthStarterPurchase): string {
+  if (p.account.kind === "new") return "new, created at checkout (setup link sent)";
+  if (p.account.kind === "existing") return "existing, bought as a guest";
+  return "existing, bought while logged in";
 }
 
 function escapeHtml(value: string): string {
@@ -47,7 +59,8 @@ export function renderGrowthStarterAlertHtml(p: GrowthStarterPurchase): string {
     <li><strong>Name:</strong> ${p.name ? escapeHtml(p.name) : "not given"}</li>
     <li><strong>Email:</strong> ${email ? `<a href="mailto:${email}">${email}</a>` : "not given"}</li>
     <li><strong>Paid:</strong> ${formatAmount(p)}</li>
-    <li><strong>Pro granted:</strong> ${proLabel(p.proDays)}</li>
+    <li><strong>Pro granted:</strong> ${proLabel(p.proDays)}${p.proBonusSkipped ? " <strong>(bought with the 12-month bonus: set it up by hand)</strong>" : ""}</li>
+    <li><strong>Account:</strong> ${accountLabel(p)}</li>
     <li><strong>Checkout session:</strong> ${escapeHtml(p.sessionId)}</li>
   </ul>
 </div>`;
@@ -59,6 +72,7 @@ export function renderGrowthStarterAlertText(p: GrowthStarterPurchase): string {
 Name: ${p.name ?? "not given"}
 Email: ${p.email ?? "not given"}
 Paid: ${formatAmount(p)}
-Pro granted: ${proLabel(p.proDays)}
+Pro granted: ${proLabel(p.proDays)}${p.proBonusSkipped ? " (bought with the 12-month bonus: set it up by hand)" : ""}
+Account: ${accountLabel(p)}
 Checkout session: ${p.sessionId}`;
 }

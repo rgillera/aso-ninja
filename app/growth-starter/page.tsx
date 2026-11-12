@@ -279,10 +279,10 @@ const faqsFor = (withPro: boolean) => [
   },
 ];
 
-type PageProps = { searchParams: Promise<{ purchased?: string; pro?: string; error?: string; offer?: string }> };
+type PageProps = { searchParams: Promise<{ purchased?: string; pro?: string; guest?: string; error?: string; offer?: string }> };
 
 export default async function GrowthStarterPage({ searchParams }: PageProps) {
-  const { purchased, pro, error, offer: offerToken } = await searchParams;
+  const { purchased, pro, guest, error, offer: offerToken } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;
@@ -314,13 +314,18 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   <div>
                     <p className="font-semibold text-gray-950">You&apos;re in. Welcome to the Growth Starter.</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
-                      {pro === "1" && "Your AppASO Pro access is active. "}Your assigned growth specialist will email you to
+                      {guest === "1" && !isAuthenticated
+                        ? "Check your inbox: we've emailed you a link to get into your AppASO account. "
+                        : pro === "1" && "Your AppASO Pro access is active. "}
+                      Your assigned growth specialist will email you to
                       schedule your deep-dive call. Haven&apos;t heard from them within 3 days? Email{" "}
                       <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>.
                     </p>
-                    <div className="mt-4">
-                      <PortalButton href="/dashboard">Go to your dashboard</PortalButton>
-                    </div>
+                    {isAuthenticated && (
+                      <div className="mt-4">
+                        <PortalButton href="/dashboard">Go to your dashboard</PortalButton>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

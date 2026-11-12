@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createGrowthStarterCheckoutAction } from "@/features/subscription/growthStarter";
 
-// The Growth Starter page's buy button. Sends the user to Stripe checkout;
-// signed-out visitors sign up first and come back here via ?next. A Pro
-// bonus link's ?offer token rides along the whole way.
+// The Growth Starter page's buy button. Sends everyone, signed in or not,
+// straight to Stripe checkout. A Pro bonus link's ?offer token rides along.
+// "signed_out" is no longer returned; its branch stays as a fallback.
 export async function GET(req: Request) {
   const offer = new URL(req.url).searchParams.get("offer");
   const offerQuery = offer ? `?offer=${encodeURIComponent(offer)}` : "";

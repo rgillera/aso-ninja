@@ -14,6 +14,7 @@ import {
   growthStarterWelcomeSubject,
   renderGrowthStarterWelcomeHtml,
   renderGrowthStarterWelcomeText,
+  type GrowthStarterAccount,
 } from "@/libs/email/growth-starter-welcome";
 
 const FROM = "AppASO <hello@appaso.io>";
@@ -61,6 +62,37 @@ async function grantGrowthStarterPro(
   );
 }
 
+// A guest Growth Starter checkout has no user_id, only the email typed into
+// Stripe. A new email gets an account through an invite link (not emailed by
+// Supabase: the link goes in our welcome email, and lands on /auth/invite to
+// set a name and password). A known email reuses its account; generating a
+// magic link is just how to read its id, and that link is thrown away.
+// Webhook retries land on the "already registered" path, so they never
+// create a second account.
+async function resolveGrowthStarterBuyer(
+  admin: ReturnType<typeof createAdminClient>,
+  email: string,
+  name: string | null
+): Promise<{ userId: string; setupUrl: string | null }> {
+  const invite = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/invite`,
+      data: { invite_pending: true, ...(name ? { full_name: name } : {}) },
+    },
+  });
+  if (!invite.error && invite.data.user) {
+    return { userId: invite.data.user.id, setupUrl: invite.data.properties.action_link };
+  }
+
+  const existing = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  if (existing.error || !existing.data.user) {
+    throw new Error(`Growth Starter buyer ${email}: ${invite.error?.message ?? ""} / ${existing.error?.message ?? "no user"}`);
+  }
+  return { userId: existing.data.user.id, setupUrl: null };
+}
+
 // After a Growth Starter purchase: the buyer gets the onboarding booking
 // link, and the team gets an alert. Runs in after(); a failed send is
 // logged, never fails the webhook.
@@ -82,8 +114,8 @@ async function sendGrowthStarterEmails(purchase: GrowthStarterPurchase) {
         from: FROM,
         to: purchase.email,
         subject: growthStarterWelcomeSubject,
-        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays),
-        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays),
+        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays, purchase.account),
+        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays, purchase.account),
       })
     );
   }
@@ -189,27 +221,55 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
-      if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && userId) {
+      let userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
+      const buyerEmail = session.customer_details?.email ?? session.customer_email ?? null;
+      const isGuestStarter =
+        session.mode === "payment" && session.metadata?.offer === "growth_starter" && !userId && !!buyerEmail;
+      if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && (userId || isGuestStarter)) {
         if (session.payment_status !== "paid") break;
-        const proDays = growthStarterProDays(session);
+        let proDays = growthStarterProDays(session);
+        // "signed_in": bought while logged in. "existing": guest checkout with
+        // an email that already has an account. Else the new account's
+        // setup link.
+        let account: GrowthStarterAccount = { kind: "signed_in" };
+        let proBonusSkipped = false;
+        if (isGuestStarter) {
+          const buyer = await resolveGrowthStarterBuyer(admin, buyerEmail!, session.customer_details?.name ?? null);
+          userId = buyer.userId;
+          account = buyer.setupUrl ? { kind: "new", setupUrl: buyer.setupUrl } : { kind: "existing" };
+          // Checkout couldn't check a guest's plan. A paying subscriber keeps
+          // their subscription: granting Pro would overwrite its row.
+          const { data: current } = await admin
+            .from("subscriptions")
+            .select("stripe_subscription_id, status")
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (current?.stripe_subscription_id && current.status !== "canceled") {
+            proBonusSkipped = session.metadata?.pro_bonus === "1";
+            proDays = 0;
+          }
+        }
+        const starterUserId = userId!;
         if (proDays > 0) {
           const subscription = await grantGrowthStarterPro(stripe, admin, session, proDays);
-          await upsertFromStripeSubscription(admin, subscription, userId);
+          await upsertFromStripeSubscription(admin, subscription, starterUserId);
         }
         after(() =>
           sendGrowthStarterEmails({
-            email: session.customer_details?.email ?? session.customer_email ?? null,
+            email: buyerEmail,
             name: session.customer_details?.name ?? null,
             amountCents: session.amount_total,
             currency: session.currency,
             sessionId: session.id,
             proDays,
+            proBonusSkipped,
+            guest: isGuestStarter,
+            account,
           })
         );
         after(() =>
-          recordUserEvent(userId, "checkout_completed", {
-            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays },
+          recordUserEvent(starterUserId, "checkout_completed", {
+            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays, guest: isGuestStarter },
             ref: session.id,
           })
         );
@@ -219,9 +279,10 @@ export async function POST(request: NextRequest) {
             ? session.subscription
             : session.subscription.id
         );
-        await upsertFromStripeSubscription(admin, subscription, userId);
+        const subscriberId = userId;
+        await upsertFromStripeSubscription(admin, subscription, subscriberId);
         after(() =>
-          recordUserEvent(userId, "checkout_completed", {
+          recordUserEvent(subscriberId, "checkout_completed", {
             props: { plan_id: session.metadata?.plan_id ?? null, billing: session.metadata?.billing ?? null },
             ref: session.id,
           })

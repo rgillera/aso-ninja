@@ -6,6 +6,35 @@ import { greetingHtml, greetingText } from "./greeting";
 // proDays: Pro the purchase granted (365 bonus link, 90, or 0 when the buyer
 // is already on a paid plan and has Pro anyway).
 
+// How the buyer's account came about, which decides how they get in.
+export type GrowthStarterAccount =
+  | { kind: "signed_in" }
+  | { kind: "existing" }
+  | { kind: "new"; setupUrl: string };
+
+const loginUrl = () => `${process.env.NEXT_PUBLIC_SITE_URL}/login`;
+const forgotUrl = () => `${process.env.NEXT_PUBLIC_SITE_URL}/forgot-password`;
+
+function accountHtml(account: GrowthStarterAccount): string {
+  if (account.kind === "new") {
+    return `<p>We made your AppASO account with this email. <a href="${account.setupUrl}" style="color: #4f46e5; font-weight: 600;">Set your password</a> to get in. Link expired? <a href="${forgotUrl()}" style="color: #4f46e5;">Reset your password</a> with this email instead.</p>`;
+  }
+  if (account.kind === "existing") {
+    return `<p>It's on your existing AppASO account for this email. <a href="${loginUrl()}" style="color: #4f46e5;">Log in</a> as usual.</p>`;
+  }
+  return "";
+}
+
+function accountText(account: GrowthStarterAccount): string {
+  if (account.kind === "new") {
+    return `\nWe made your AppASO account with this email. Set your password to get in: ${account.setupUrl}\nLink expired? Reset your password with this email instead: ${forgotUrl()}\n`;
+  }
+  if (account.kind === "existing") {
+    return `\nIt's on your existing AppASO account for this email. Log in as usual: ${loginUrl()}\n`;
+  }
+  return "";
+}
+
 export const growthStarterWelcomeSubject = "You're in! Welcome to the Growth Starter";
 
 function proLength(proDays: number): string | null {
@@ -16,12 +45,13 @@ function proLength(proDays: number): string | null {
   return null;
 }
 
-export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays = 0) {
+export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }) {
   const length = proLength(proDays);
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
   <p>${greetingHtml(fullName)}</p>
   <p>Thanks for getting the Growth Starter! &#127881;${length ? ` Your <strong>AppASO Pro</strong> access is active now and runs for ${length}.` : ""}</p>
+  ${accountHtml(account)}
   <p>Your assigned growth specialist will <strong>email you to schedule your 30-minute deep-dive call</strong>, where we learn about your app, your goals, and your numbers.</p>
   <p><strong>What happens next</strong></p>
   <ol style="padding-left: 20px;">
@@ -36,12 +66,12 @@ export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays
 </div>`.trim();
 }
 
-export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays = 0) {
+export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }) {
   const length = proLength(proDays);
   return `${greetingText(fullName)}
 
 Thanks for getting the Growth Starter!${length ? ` Your AppASO Pro access is active now and runs for ${length}.` : ""}
-
+${accountText(account)}
 Your assigned growth specialist will email you to schedule your 30-minute deep-dive call, where we learn about your app, your goals, and your numbers.
 
 What happens next:
