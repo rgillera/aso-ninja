@@ -12,18 +12,18 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter/terms",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, listing reviews, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, support, and refunds.",
+    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, listing reviews, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
 };
 
-const LAST_UPDATED = "November 6, 2026";
+const LAST_UPDATED = "November 12, 2026";
 
 export default function GrowthStarterTermsPage() {
   return (
@@ -52,7 +52,8 @@ export default function GrowthStarterTermsPage() {
             separate Pro access is added.
           </li>
           <li>
-            <strong>Onboarding:</strong> one 30-minute video call covering ASO basics and how to use AppASO Pro.
+            <strong>Deep-dive call:</strong> one 30-minute video call in which we learn about your app, goals,
+            metrics, users, and past growth efforts, and set your app up in AppASO Pro.
           </li>
           <li>
             <strong>Strategy session:</strong> one 60-minute video call in which we go through a keyword
@@ -70,9 +71,11 @@ export default function GrowthStarterTermsPage() {
             strategy session, to review the changes you have made and your next steps.
           </li>
           <li>
-            <strong>Specialist support:</strong> for 1 month after the strategy session, the specialist who
-            prepared your analysis answers your questions about your strategy by email, usually within 2
-            working days. If they are unavailable, another member of our team answers instead.
+            <strong>Listing reviews:</strong> for 1 month after the strategy session, you may send us
+            proposed changes to your store listing, such as your title, subtitle, keywords, description, or
+            screenshots, before you publish them. The specialist who prepared your analysis replies by email
+            with written feedback, usually within 2 working days. If they are unavailable, another member of
+            our team replies instead.
           </li>
         </ul>
         <p>
@@ -92,11 +95,11 @@ export default function GrowthStarterTermsPage() {
         <h2>Scheduling</h2>
         <ul>
           <li>
-            After purchase, we email you to schedule your onboarding call. We schedule the strategy session within 7 working
-            days of onboarding, once your analysis is ready.
+            After purchase, we email you to schedule your deep-dive call. We schedule the strategy session within 7 working
+            days of the deep-dive call, once your analysis is ready.
           </li>
           <li>
-            The onboarding call and strategy session must take place within 60 days of purchase, and the
+            The deep-dive call and strategy session must take place within 60 days of purchase, and the
             check-in call within 90 days of purchase. Calls not held by then expire and are not refunded,
             unless the delay was on our side.
           </li>
@@ -145,16 +148,24 @@ export default function GrowthStarterTermsPage() {
           taxes, which you are responsible for where applicable.
         </p>
         <p>
-          The Starter is non-refundable, except where required by law. If we
-          cannot deliver a call for reasons on our side, we will refund the value of the
-          undelivered part.
+          <strong>Strategy session guarantee:</strong> if, after your strategy session, you feel the
+          Starter was not worth what you paid, email us at{" "}
+          <a href="mailto:hello@appaso.io">hello@appaso.io</a> within 7 days of the strategy session and we
+          will refund the full amount you paid. You may keep the action plan and anything else we shared
+          with you. A refund ends your Pro access from the Starter and any Growth Sprint credit. The
+          guarantee applies once per customer.
+        </p>
+        <p>
+          Apart from the guarantee above, the Starter is non-refundable, except where required by law. If
+          we cannot deliver a call for reasons on our side, we will refund the value of the undelivered
+          part.
         </p>
       </section>
 
       <section>
         <h2>Your Responsibilities</h2>
         <ul>
-          <li>Tell us which app, store, and market the analysis should cover before onboarding.</li>
+          <li>Tell us which app, store, and market the analysis should cover before the deep-dive call.</li>
           <li>
             If reaching your paywall or purchase flow needs an account, invite code, or paid download, give us
             access before the strategy session.

@@ -20,9 +20,9 @@ const INCLUDED = `Here's everything included in the $500 Growth Starter package:
 
 Lifetime App Growth Kit Access ($149 value): Get our growth playbook, experiment library, templates, and calculators.
 
-AppASO Pro Onboarding: A 30-minute session covering ASO fundamentals and how to use AppASO Pro so you can start implementing with confidence.
+Know-Your-App Deep Dive: A 30-minute call on your goals, numbers, users, and what you've tried so far, so every recommendation fits your app instead of a generic checklist.
 
-Full Funnel Review: Following onboarding, our ASO specialist will conduct an in-depth review of your app, covering everything from your store listing to the purchase experience, completed before our call.
+Full Funnel Review: Following the deep dive, our ASO specialist will conduct an in-depth review of your app, covering everything from your store listing to the purchase experience, completed before our call.
 
 60-Minute Strategy Call: A live walkthrough of your app, the growth opportunities you're missing, and a clear strategy to improve performance.
 
@@ -30,7 +30,9 @@ Prioritized Action Plan: A clear, written one-page roadmap detailing all our rec
 
 30-Day Check-In: A 30-minute follow-up call after one month to review progress and discuss next steps.
 
-Dedicated Email Support: One month of email support from the same specialist who researched your app.
+Listing Reviews Before You Publish: For one month, send any change to your title, subtitle, keywords, or screenshots to the same specialist who researched your app, and get written feedback before it goes live.
+
+Strategy Call Guarantee: If after the strategy call you don't think it was worth $500, tell us within 7 days and we refund you in full. You keep the action plan.
 
 You'll walk away with expert insights, a prioritized growth roadmap, and the tools and support to start improving your app's performance.`;
 
