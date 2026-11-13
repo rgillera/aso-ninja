@@ -12,25 +12,25 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter/terms",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, listing reviews, and the refund guarantee.",
+    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, change reviews, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the ASO Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, listing reviews, and the refund guarantee.",
+    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, change reviews, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
 };
 
-const LAST_UPDATED = "November 12, 2026";
+const LAST_UPDATED = "November 13, 2026";
 
 export default function GrowthStarterTermsPage() {
   return (
     <LegalLayout title="Growth Starter Terms" lastUpdated={LAST_UPDATED}>
       <section>
         <p>
-          These Growth Starter Terms (&quot;Starter Terms&quot;) govern your purchase of the ASO Growth
+          These Growth Starter Terms (&quot;Starter Terms&quot;) govern your purchase of the Growth
           Starter (the &quot;Starter&quot;) from AppASO (&quot;AppASO&quot;, &quot;we&quot;,
           &quot;us&quot;, or &quot;our&quot;). By paying for the Starter, you (&quot;you&quot; or the
           &quot;Client&quot;) agree to these Starter Terms.
@@ -71,9 +71,10 @@ export default function GrowthStarterTermsPage() {
             strategy session, to review the changes you have made and your next steps.
           </li>
           <li>
-            <strong>Listing reviews:</strong> for 1 month after the strategy session, you may send us
-            proposed changes to your store listing, such as your title, subtitle, keywords, description, or
-            screenshots, before you publish them. The specialist who prepared your analysis replies by email
+            <strong>Change reviews:</strong> for 1 month after the strategy session, you may send us
+            proposed changes before you publish them: changes to your store listing, such as your title,
+            subtitle, keywords, description, or screenshots, and changes to your onboarding or paywall, shared
+            as screenshots, designs, or a screen recording. The specialist who prepared your analysis replies by email
             with written feedback, usually within 2 working days. If they are unavailable, another member of
             our team replies instead.
           </li>
@@ -85,7 +86,7 @@ export default function GrowthStarterTermsPage() {
         </p>
         <p>
           The Starter is guidance only. App roast feedback is advice, not design or development work. You make the
-          changes to your store listing yourself. We do not write or edit your metadata or listing, run A/B tests, produce creatives, or manage ads as part of the Starter. Anything not
+          changes to your store listing and your app yourself. We do not write or edit your metadata or listing, run A/B tests, produce creatives, or manage ads as part of the Starter. Anything not
           listed above is out of scope unless we agree to it in writing, which may involve an additional
           fee.
         </p>

@@ -1,26 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  MagnifyingGlassIcon,
-  FireIcon,
   QuestionMarkCircleIcon,
   ArrowTrendingDownIcon,
   CreditCardIcon,
-  AcademicCapIcon,
-  KeyIcon,
   ShieldCheckIcon,
-  DocumentMagnifyingGlassIcon,
-  ArrowRightIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   GiftIcon,
-  FunnelIcon,
-  ClipboardDocumentListIcon,
-  CalendarDaysIcon,
-  ReceiptPercentIcon,
-  BookOpenIcon,
 } from "@heroicons/react/24/outline";
-import { CheckIcon, XMarkIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/20/solid";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/20/solid";
 import { createClient } from "@/libs/supabase/server";
 import PortalNav from "@/features/portal/PortalNav";
 import PortalFooter from "@/features/portal/PortalFooter";
@@ -37,9 +26,9 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 // the call: with a valid ?offer token (libs/stripe/growth-starter-offer.ts)
 // the page shows it and its deadline, and checkout grants it.
 export const metadata: Metadata = {
-  title: "ASO Growth Starter",
+  title: "Growth Starter",
   description:
-    "Stop guessing how to grow your app. A growth expert reviews your full funnel, roasts it live with you, and stays on as your partner for a month. $500, one payment.",
+    "Know exactly why your app isn't growing and what to fix first. A growth expert reviews your full funnel, roasts it live with you, and stays on as your partner for a month. $500, one payment.",
   alternates: {
     canonical: "/growth-starter",
   },
@@ -47,30 +36,20 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: "/growth-starter",
-    title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
+    title: "Growth Starter | AppASO",
+    description: "Know exactly why your app isn't growing and what to fix first. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ASO Growth Starter | AppASO",
-    description: "Stop guessing how to grow your app. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
+    title: "Growth Starter | AppASO",
+    description: "Know exactly why your app isn't growing and what to fix first. An expert review of your full funnel, a live roast, a written action plan, and a month with your specialist. $500, one payment.",
     images: ["/opengraph-image"],
   },
 };
 
 const baseCheckoutHref = "/growth-starter/checkout";
 const ctaLabel = "Get started for $500";
-
-const baseStats = [
-  { label: "Price", value: "$500", note: "one payment" },
-  { label: "Expert time", value: "2 hours", note: "3 live calls" },
-  { label: "Guarantee", value: "Full refund", note: "if not worth it" },
-];
-const proStat = { label: "AppASO Pro", value: "12 months", note: "$288 value" };
-const proMonthStat = { label: "AppASO Pro", value: "3 months", note: "$87 value" };
-type Stat = { label: string; value: string; note?: string; href?: string };
-const kitStat: Stat = { label: "Growth Kit", value: "Free", note: "$149 value", href: "https://appgrowthkit.app" };
 
 const pains = [
   {
@@ -109,8 +88,8 @@ const stepsFor = (withPro: boolean) => [
     title: "Get roasted",
     description: "A growth expert studies your full funnel, from store listing to purchase, and your competitors. Then we go through all of it with you, live, for 60 minutes.",
     items: [
-      "An ASO strategy for your app: keywords you're missing and gaps your competitors leave",
-      "An honest roast of your listing, onboarding, and paywall",
+      "A growth strategy for your app, from the keywords you're missing to the gaps your competitors leave",
+      "An honest roast of your listing, onboarding, and paywall. Record the call and keep every point",
       "Your next moves, in order of impact",
       "Then, within 2 working days: a one-page action plan, in writing",
     ],
@@ -122,7 +101,7 @@ const stepsFor = (withPro: boolean) => [
     description: "You make the changes, and your specialist checks them before they go live.",
     items: [
       "Work through your plan, with the App Growth Kit beside you",
-      "Send any listing change for review before you publish, for a month",
+      "Send any listing, onboarding, or paywall change for review before you publish, for a month, with written feedback within 2 working days",
       "A 30-minute check-in call at month 1",
       "Watch each change move your rankings in Pro",
     ],
@@ -141,68 +120,44 @@ const stepsFor = (withPro: boolean) => [
   }] : []),
 ];
 
-const proDeliverable = {
-  name: "12 months of AppASO Pro",
-  description: "The tool to act on everything you learn: unlimited keywords, the Keyword Inspector, est. downloads per keyword, AI suggestions, and competitor tracking.",
-  icon: KeyIcon,
-};
+// The pricing card: the four parts of the roadmap, then the extras.
+const proLink = (
+  <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">AppASO Pro</Link>
+);
 
-const deliverablesFor = (withPro: boolean) => [
-  ...(withPro ? [proDeliverable] : []),
+// Everything on the pricing card, in one list. Values are what each piece
+// would cost on its own, totalled against the $500 price. The Sprint credit
+// has none: it only counts if they upgrade.
+const extrasFor = (withPro: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
+  { key: "review", content: <>An expert review of your app, from store listing to purchase</>, value: 300 },
+  { key: "calls", content: <>3 expert calls, 2 hours in total: a deep dive, a live strategy roast, and a month-1 check-in</>, value: 500 },
+  { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</>, value: 150 },
+  { key: "reviews", content: <>A month of expert reviews on your changes before you publish</>, value: 200 },
+  withPro
+    ? { key: "pro", content: <>12 months of {proLink}</>, value: 288 }
+    : { key: "pro", content: <>3 months of {proLink}</>, value: 87 },
   {
-    name: "Know-your-app deep dive",
-    description: "A 30-minute call on your goals, your numbers, your users, and what you've tried. Every recommendation after it is built for your app, not a generic checklist.",
-    icon: AcademicCapIcon,
+    key: "kit",
+    content: (
+      <>
+        Lifetime access to the{" "}
+        <a href="https://appgrowthkit.app" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
+          App Growth Kit
+        </a>
+      </>
+    ),
+    value: 149,
   },
   {
-    name: "Keyword & competitor gaps",
-    description: "The keywords you could realistically rank for but don't, and where your closest competitors leave gaps you can take. Walked through on the call.",
-    icon: MagnifyingGlassIcon,
+    key: "credit",
+    content: (
+      <>
+        A $500 credit toward the{" "}
+        <Link href="/growth-sprint" className="font-medium text-indigo-600 hover:underline">Growth Sprint</Link>{" "}
+        if you upgrade within 2 months
+      </>
+    ),
   },
-  {
-    name: "Free App Growth Kit",
-    description: "Lifetime access to our growth playbook, 30 ready-to-run experiments, templates, and calculators. $149 value, free: your specialist sends you a code for full access after checkout.",
-    icon: BookOpenIcon,
-  },
-  // Takes the Pro card's place, so the grid stays at 8 (2 rows of 4) either way.
-  ...(withPro ? [] : [{
-    name: "Full-funnel review",
-    description: "We go through your app the way a new user does, from store listing to onboarding to paywall, and find where people drop off. Done before the call.",
-    icon: FunnelIcon,
-  }]),
-  {
-    name: "60-minute roast & strategy call",
-    description: "No fluff, no sugarcoating. We tell you what's holding your app back, from listing to paywall, then agree what to change first. Record it and keep every point.",
-    icon: FireIcon,
-  },
-  {
-    name: "One-page action plan",
-    description: "Every fix from the call, ranked by impact, in writing. Sent within 2 working days of the call, so you always know what to do next.",
-    icon: ClipboardDocumentListIcon,
-  },
-  {
-    name: "Month-1 check-in call",
-    description: "30 minutes, about a month after your strategy call. We look at what you shipped, what moved, and what to do next.",
-    icon: CalendarDaysIcon,
-  },
-  {
-    name: "Listing reviews before you publish",
-    description: "For a month, send a new title, subtitle, keywords, or screenshots to the specialist who researched your app before they go live. Get written feedback within 2 working days, so no change ships blind.",
-    icon: DocumentMagnifyingGlassIcon,
-  },
-];
-
-// The value stack on the pricing card. Dollar values are what each piece
-// would cost on its own; the total is shown against the $500 price.
-const starterIncludesFor = (withPro: boolean) => [
-  withPro ? { item: "12 months of AppASO Pro", value: 288 } : { item: "3 months of AppASO Pro", value: 87 },
-  { item: "Lifetime access to the App Growth Kit", value: 149 },
-  { item: "30-minute deep dive into your app, goals, and numbers", value: 100 },
-  { item: "Expert review of your full funnel, from store listing to purchase", value: 300 },
-  { item: "60-minute roast & strategy call: keyword gaps, competitor gaps, and your ASO strategy", value: 300 },
-  { item: "One-page action plan with every fix ranked by impact", value: 150 },
-  { item: "30-minute check-in call at month 1", value: 100 },
-  { item: "1 month of listing reviews before you publish", value: 200 },
 ];
 
 const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
@@ -213,9 +168,6 @@ const goodFit = [
   "You want an expert to check your direction before you spend months on it",
   "You'd rather learn the work than hand it off",
 ];
-
-const guarantee =
-  "Finish your strategy call. If you don't think it was worth $500, email us within 7 days and we refund every cent. You keep the action plan.";
 
 const notFit = [
   "You want someone to do the work for you",
@@ -291,11 +243,9 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
   const offer = offerCheck?.status === "valid" ? offerCheck.offer : null;
   const withPro = !!offer;
   const checkoutHref = offer ? `${baseCheckoutHref}?offer=${encodeURIComponent(offer.token)}` : baseCheckoutHref;
-  const stats: Stat[] = [...baseStats, withPro ? proStat : proMonthStat, kitStat];
   const steps = stepsFor(withPro);
-  const deliverables = deliverablesFor(withPro);
-  const starterIncludes = starterIncludesFor(withPro);
-  const totalValue = starterIncludes.reduce((sum, i) => sum + i.value, 0);
+  const extras = extrasFor(withPro);
+  const totalValue = extras.reduce((sum, item) => sum + (item.value ?? 0), 0);
   const faqs = faqsFor(withPro);
 
   return (
@@ -371,48 +321,50 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               </div>
             )}
 
-            <PortalEyebrow>ASO Growth Starter</PortalEyebrow>
+            <PortalEyebrow>Growth Starter</PortalEyebrow>
             <h1 className="mt-8 text-balance text-4xl font-semibold tracking-tight text-gray-950 sm:mt-10 sm:text-6xl sm:leading-[1.05]">
-              Stop guessing how to{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">grow your app</span>
+              Know exactly why your app isn&apos;t growing and{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-violet-500 bg-clip-text text-transparent">what to fix first</span>
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-balance text-lg text-gray-600 sm:text-xl">
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
-              A growth expert walks your funnel with you and ranks your fixes, then checks your changes for a
+              A growth expert walks your funnel with you and ranks your fixes, then guides you for a
               month{withPro ? <>. Plus a year of AppASO Pro to{" "}</> : <> while you{" "}</>}
               <span className="font-semibold text-indigo-600">ship them yourself.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
               {ctaLabel}
             </PortalButton>
-            <p className="mt-4 text-sm text-gray-500">One payment · No renewal · Full refund if the strategy call isn&apos;t worth it</p>
+            <p className="mt-4 text-sm text-gray-500">One payment · No renewal</p>
 
-            {/* 5 cells: one row on large screens; below that, 2 columns with the last cell spanning both. */}
-            <dl className="mx-auto mt-16 grid max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl bg-gray-950/10 ring-1 ring-gray-950/10 lg:grid-cols-5">
-              {stats.map((stat) => (
-                <div key={stat.label} className="bg-white px-3 py-5 last:col-span-2 lg:last:col-span-1">
-                  <dt className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">
-                    {stat.href ? (
-                      <a
-                        href={stat.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 hover:text-indigo-600"
-                        aria-label={`${stat.label} (opens in a new tab)`}
-                      >
-                        {stat.label}
-                        <ArrowTopRightOnSquareIcon className="size-3.5" aria-hidden="true" />
-                      </a>
-                    ) : (
-                      stat.label
-                    )}
-                  </dt>
-                  <dd className="mt-1.5 whitespace-nowrap text-sm font-semibold text-gray-950 sm:text-lg">{stat.value}</dd>
-                  {stat.note && <dd className="mt-0.5 whitespace-nowrap text-xs text-gray-500">{stat.note}</dd>}
+            {/* The split of work, said plainly (the customer ships, the expert steers), then the guarantee. */}
+            <div className="mx-auto mt-16 grid max-w-4xl grid-cols-1 gap-px overflow-hidden rounded-2xl bg-gray-950/10 text-left ring-1 ring-gray-950/10 md:grid-cols-3">
+              <div className="bg-white p-6">
+                <p className="text-lg font-semibold tracking-tight text-gray-950">You implement.</p>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  You make the changes: your listing and keywords, plus product fixes from onboarding to purchase.
+                </p>
+              </div>
+              <div className="bg-white p-6">
+                <p className="text-lg font-semibold tracking-tight text-indigo-600">We guide.</p>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  A growth expert reviews your whole funnel, from first impression to sale, and tells you what to fix
+                  first.
+                </p>
+              </div>
+              <div className="bg-indigo-50 p-6">
+                <div className="flex items-center gap-2">
+                  <ShieldCheckIcon className="size-5 shrink-0 text-indigo-600" aria-hidden="true" />
+                  <p className="text-lg font-semibold tracking-tight text-gray-950">Your $500 back.</p>
                 </div>
-              ))}
-            </dl>
+                <p className="mt-2 text-sm leading-6 text-gray-600">
+                  Get your growth roadmap. If you don&apos;t find the strategy valuable, get your $500 back. Ask within 7
+                  days of your strategy call.{" "}
+                  <a href="#pricing" className="font-medium text-indigo-600 hover:underline">Guarantee details</a>
+                </p>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -448,12 +400,12 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <PortalSectionHeading
               eyebrow="How it works"
-              title="One week to a plan."
-              highlight={withPro ? "A year to run it." : "A month of backup."}
+              title="Your plan in a week."
+              highlight={withPro ? "A year to run it." : "An expert for a month."}
               description={
                 withPro
-                  ? "Learn the tool, get your app roasted by an expert, build your ASO strategy, then ship the changes with Pro running all year."
-                  : "Learn the tool, get your app roasted by an expert, build your ASO strategy, then ship the changes with a specialist checking them before they go live."
+                  ? "We get to know your app, roast your funnel live, and hand you a plan ranked by impact. Then you ship the fixes, with Pro tracking what moves all year."
+                  : "We get to know your app, roast your funnel live, and hand you a plan ranked by impact. Then you ship the fixes, with a specialist guiding you for a month."
               }
             />
 
@@ -490,55 +442,32 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <section className="py-24 sm:py-32">
+        <section id="pricing" className="scroll-mt-24 py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <PortalSectionHeading
-              eyebrow="What you get"
-              title="Expert eyes on your app."
-              highlight="The tools to act on it."
-              description="Agencies charge thousands to do this for you. Here, you get the same expert review and learn to do the work yourself."
+              eyebrow="Pricing"
+              title="Find your app's biggest growth opportunities."
+              highlight="Get a clear plan to fix them."
+              description="A personalized growth strategy for your whole funnel, from first impression to sale. For indie app developers who want more downloads and more revenue without hiring a full-service agency."
             />
-
-            <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-px overflow-hidden rounded-3xl bg-gray-950/10 ring-1 ring-gray-950/10 sm:mt-20 md:grid-cols-2 lg:max-w-none lg:grid-cols-4">
-              {deliverables.map((d) => (
-                <div key={d.name} className="flex flex-col bg-white p-8 sm:p-10">
-                  <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-50 ring-1 ring-indigo-100">
-                    <d.icon className="size-5 text-indigo-600" aria-hidden="true" />
-                  </div>
-                  <h3 className="mt-6 text-balance text-lg font-semibold tracking-tight text-gray-950">{d.name}</h3>
-                  <p className="mt-3 flex-1 text-sm leading-6 text-gray-600">{d.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <PortalSectionHeading eyebrow="Pricing" title="One payment." highlight="No subscription." />
 
             <div className="mx-auto mt-16 grid max-w-6xl grid-cols-1 gap-6 sm:mt-20 lg:grid-cols-5 lg:items-stretch">
               <div className="flex flex-col rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:p-10 lg:col-span-3">
-                <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">ASO Growth Starter</p>
-                <p className="mt-4 flex items-baseline gap-x-1.5">
-                  <span className="text-5xl font-semibold tracking-tight text-gray-950">$500</span>
-                  <span className="text-sm font-medium text-gray-500">one payment</span>
+                <p className="font-mono text-xs font-medium uppercase tracking-widest text-gray-500">Growth Starter</p>
+                <p className="mt-4 text-5xl font-semibold tracking-tight text-gray-950">$500</p>
+                <p className="mt-2 font-mono text-xs font-medium uppercase tracking-widest text-gray-500">
+                  One-time payment · No subscription
                 </p>
-                {withPro ? (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Pro alone is <span className="font-semibold text-gray-950">$288/year</span>. For $212 more, a growth expert works on your app with you.
-                  </p>
-                ) : (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Total value <span className="font-semibold text-gray-950">{usd(totalValue)}</span>. You pay $500, once.
-                  </p>
-                )}
-                <ul className="mt-8 flex-1 space-y-3 border-t border-gray-950/10 pt-8">
-                  {starterIncludes.map(({ item, value }) => (
-                    <li key={item} className="flex items-start gap-3">
+
+                <p className="mt-8 border-t border-gray-950/10 pt-8 text-sm font-semibold text-gray-950">What you get:</p>
+                <ul className="mt-4 flex-1 space-y-3">
+                  {extras.map((item) => (
+                    <li key={item.key} className="flex items-start gap-3">
                       <CheckIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
-                      <span className="flex-1 text-sm text-gray-600">{item}</span>
-                      <span className="shrink-0 text-sm tabular-nums text-gray-500">{usd(value)}</span>
+                      <span className="flex-1 text-sm leading-6 text-gray-600">{item.content}</span>
+                      {item.value !== undefined && (
+                        <span className="shrink-0 text-sm leading-6 tabular-nums text-gray-500">{usd(item.value)}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -551,18 +480,17 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     <span>You pay</span>
                     <span className="tabular-nums">$500</span>
                   </p>
-                  <p className="flex items-start gap-3 pt-2 text-sm text-gray-600">
-                    <GiftIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
-                    <span>Plus a $500 credit toward the Growth Sprint if you upgrade within 2 months of your strategy call</span>
-                  </p>
                 </div>
+
                 <PortalButton href={checkoutHref} className="mt-8 w-fit">
                   {ctaLabel}
                 </PortalButton>
                 <div className="mt-6 flex items-start gap-3 rounded-2xl bg-indigo-50 p-4 ring-1 ring-indigo-100">
                   <ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-indigo-600" aria-hidden="true" />
                   <p className="text-sm leading-6 text-gray-600">
-                    <span className="font-semibold text-gray-950">Strategy call guarantee.</span> {guarantee}
+                    <span className="font-semibold text-gray-950">Your investment is protected.</span>{" "}
+                    Complete your strategy call. If you don&apos;t believe it was worth $500, request a full refund
+                    within seven days under our guarantee.
                   </p>
                 </div>
                 <p className="mt-4 text-xs text-gray-500">
@@ -594,27 +522,6 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   ))}
                 </ul>
               </div>
-            </div>
-
-            <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-6 rounded-3xl bg-white p-8 ring-1 ring-gray-950/10 sm:flex-row sm:items-center sm:justify-between sm:p-10">
-              <div className="max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <ReceiptPercentIcon className="size-5 text-indigo-600" aria-hidden="true" />
-                  <h3 className="text-lg font-semibold text-gray-950">Rather we do the work? Your $500 carries over.</h3>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-gray-600">
-                  In the 90-Day Growth Sprint, our team runs the audit, rewrites your listing, tests your
-                  creatives, and manages your ads, with a year of Pro included. Upgrade within 2 months of your
-                  strategy call and the full $500 comes off your first Sprint payment.
-                </p>
-              </div>
-              <Link
-                href="/growth-sprint"
-                className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-indigo-600 hover:text-indigo-500"
-              >
-                See the Growth Sprint
-                <ArrowRightIcon className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-              </Link>
             </div>
           </div>
         </section>
