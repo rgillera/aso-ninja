@@ -19,8 +19,11 @@ async function generateKeywords(
   category: "discovery" | "generic" | "branded" | "relevancy",
   count: number,
   country: string,
+  store: "ios" | "android",
 ): Promise<string[]> {
-  const market = `${localeInstructions(country)}\n${RESTRICTED_TERMS_RULE}`;
+  // Google Play doesn't hide these searches ("porn blocker" returns normal
+  // results there), so the rule is App Store only.
+  const market = store === "ios" ? `${localeInstructions(country)}\n${RESTRICTED_TERMS_RULE}` : localeInstructions(country);
   const prompts: Record<typeof category, string> = {
     discovery: `You are an App Store Optimization expert. Generate ${count} discovery keywords for the app "${appName}".
 Description: ${description.slice(0, 400)}
@@ -169,6 +172,7 @@ export async function GET(request: NextRequest) {
   const workspaceId = searchParams.get("workspaceId") ?? "";
   const onboarding  = searchParams.get("onboarding") === "1";
   const country     = searchParams.get("country")     || "us";
+  const store       = searchParams.get("store") === "android" ? "android" : "ios";
 
   if (!appName) return NextResponse.json(EMPTY);
 
@@ -196,13 +200,16 @@ export async function GET(request: NextRequest) {
   if (!allowed) return NextResponse.json(EMPTY);
 
   const [rawDiscovery, rawGeneric, rawBranded, rawRelevancy] = await Promise.all([
-    generateKeywords(appName, description, "discovery", 30, country),
-    generateKeywords(appName, description, "generic",   30, country),
-    generateKeywords(appName, description, "branded",   30, country),
-    generateKeywords(appName, description, "relevancy", 30, country),
+    generateKeywords(appName, description, "discovery", 30, country, store),
+    generateKeywords(appName, description, "generic",   30, country, store),
+    generateKeywords(appName, description, "branded",   30, country, store),
+    generateKeywords(appName, description, "relevancy", 30, country, store),
   ]);
 
-  const restricted = await findRestricted([...rawDiscovery, ...rawGeneric, ...rawBranded, ...rawRelevancy], country);
+  // Stored snapshots only show restriction for iOS (see findRestricted).
+  const restricted = store === "ios"
+    ? await findRestricted([...rawDiscovery, ...rawGeneric, ...rawBranded, ...rawRelevancy], country)
+    : new Set<string>();
   const keep = (terms: string[]) => terms.filter((t) => !restricted.has(t.toLowerCase().trim()));
   const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =
     deduplicateAcross(keep(rawDiscovery), keep(rawGeneric), keep(rawBranded), keep(rawRelevancy));

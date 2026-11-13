@@ -189,6 +189,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
     const params = new URLSearchParams({
       appName: selected.name,
       country: selected.country,
+      store: selected.store,
       workspaceId,
       onboarding: "1",
     });
@@ -202,7 +203,7 @@ export function OnboardingWizard({ workspaceId, onDone }: Props) {
       })
       .catch(() => setSuggestions([]));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected?.name, selected?.country, workspaceId]);
+  }, [selected?.name, selected?.country, selected?.store, workspaceId]);
 
   function handlePickApp(r: AppSearchResult) {
     setSelected({

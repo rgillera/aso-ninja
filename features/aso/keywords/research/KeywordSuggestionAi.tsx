@@ -165,11 +165,11 @@ export function KeywordSuggestionAi({ activeApp, trackedKeywords, onAddKeyword, 
     setLoading(true);
     setData(null);
 
-    fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us", workspaceId })}`)
+    fetch(`/api/keywords/ai-suggestions?${new URLSearchParams({ appName: activeApp.name, country: activeApp.country ?? "us", store: activeApp.store ?? "ios", workspaceId })}`)
       .then((r) => r.json())
       .then((d: AISuggestionsResult) => { setData(d); setLoading(false); })
       .catch(() => { setData({ discovery: [], generic: [], branded: [], relevancy: [] }); setLoading(false); });
-  }, [activeApp?.name, activeApp?.country, activeApp?.store_id, workspaceId, locked, fetched]);
+  }, [activeApp?.name, activeApp?.country, activeApp?.store, activeApp?.store_id, workspaceId, locked, fetched]);
 
   useEffect(() => {
     if (!translateToggle) return;
