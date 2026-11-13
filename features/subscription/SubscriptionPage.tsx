@@ -229,8 +229,7 @@ export default function SubscriptionPage({
 
         {frozenTotal > 0 && (
           <div className="mb-8 rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20 px-4 py-3 text-sm text-amber-300 light:text-amber-700">
-            {frozenTotal.toLocaleString()} {frozenTotal === 1 ? "item is" : "items are"} paused because they exceed
-            your plan&apos;s limits — upgrade to resume tracking them.
+            {`${frozenTotal.toLocaleString()} ${frozenTotal === 1 ? "item is" : "items are"} paused because they exceed your plan's limits. Upgrade to resume tracking them.`}
           </div>
         )}
 
