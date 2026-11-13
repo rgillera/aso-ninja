@@ -131,7 +131,7 @@ const proLink = (
 const extrasFor = (withPro: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
   { key: "review", content: <>An expert review of your app, from store listing to purchase</>, value: 300 },
   { key: "calls", content: <>3 expert calls, 2 hours in total: a deep dive, a live strategy roast, and a month-1 check-in</>, value: 500 },
-  { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</>, value: 150 },
+  { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</>, value: 200 },
   { key: "reviews", content: <>A month of expert reviews on your changes before you publish</>, value: 200 },
   withPro
     ? { key: "pro", content: <>12 months of {proLink}</>, value: 288 }
