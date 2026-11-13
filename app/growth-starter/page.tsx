@@ -150,13 +150,7 @@ const extrasFor = (withPro: boolean): { key: string; content: React.ReactNode; v
   },
   {
     key: "credit",
-    content: (
-      <>
-        A $500 credit toward the{" "}
-        <Link href="/growth-sprint" className="font-medium text-indigo-600 hover:underline">Growth Sprint</Link>{" "}
-        if you upgrade within 2 months
-      </>
-    ),
+    content: <>A $500 credit toward the Growth Sprint if you upgrade within 2 months</>,
   },
 ];
 
