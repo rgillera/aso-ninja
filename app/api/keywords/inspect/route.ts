@@ -6,6 +6,7 @@ import { fetchIosCoreMetrics, fetchAndroidCoreMetrics } from "@/libs/keyword-cor
 import { estimateDailySearches } from "@/libs/keyword-impressions";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { recomputeOpportunity } from "@/libs/keyword-volume";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import type { AppSearchResult } from "@/app/api/keywords/search/route";
 
 const TOP_APPS_LIMIT = 20;
@@ -33,7 +34,7 @@ export type KeywordInspection = {
   trackedRelevancy?: number;
 };
 
-export type TrackedRowRefresh = { volume: number; diff: number; chance: number; rank: number | null; opportunity: number | null };
+export type TrackedRowRefresh = { volume: number; diff: number; chance: number; rank: number | null; opportunity: number | null; results: number };
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -65,15 +66,16 @@ async function refreshTrackedRow(
 
   const rankIdx = findRankIdx(names, r.apps.name, ids, r.apps.store_id);
   const rank = store === "ios" && r.apps.ipad_only === true ? r.rank : rankIdx >= 0 ? rankIdx + 1 : null;
-  const chance = computeChance(diff, rank);
+  const results = names.length;
+  const chance = computeChance(diff, rank, isRestrictedSearch(results, volume));
   const opportunity = recomputeOpportunity(r, volume, chance);
 
   const { error } = await supabase
     .from("keyword_metrics")
-    .update({ volume, diff, chance, rank, opportunity, updated_at: new Date().toISOString() })
+    .update({ volume, diff, chance, rank, opportunity, results, updated_at: new Date().toISOString() })
     .eq("app_id", appId)
     .eq("keyword_id", r.keyword_id);
-  return { row: error ? undefined : { volume, diff, chance, rank, opportunity }, relevancy };
+  return { row: error ? undefined : { volume, diff, chance, rank, opportunity, results }, relevancy };
 }
 
 // Body of the 403 a below-Pro user gets.

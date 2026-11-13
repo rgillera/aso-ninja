@@ -14,6 +14,7 @@ import {
   PlusIcon,
   CheckIcon,
   LockClosedIcon,
+  NoSymbolIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
@@ -27,6 +28,7 @@ import { Toggle } from "@/features/aso/keywords/research/ui";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
 import { COUNTRY_MAP, countryFlag } from "@/libs/countries";
 import { findRankIdx } from "@/libs/keyword-rank-match";
+import { isRestrictedSearch, RESTRICTED_SEARCH_HINT } from "@/libs/keyword-restricted";
 import { formatEstimate, formatEstimateCount } from "@/libs/keyword-impressions";
 import { FeatureLocked } from "@/features/subscription/FeatureLocked";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
@@ -1106,6 +1108,9 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     : 0;
   const pop = metrics ? popularityLabel(metrics.popularity) : null;
   const diff = metrics ? difficultyLabel(metrics.difficulty) : null;
+  // The store hides this term's results: no difficulty to score and no app
+  // can rank for it (see libs/keyword-restricted.ts).
+  const restricted = !!metrics && isRestrictedSearch(metrics.results, metrics.popularity);
 
   // A tour step whose section isn't going to show (lookup failed) moves on
   // instead of waiting forever.
@@ -1330,8 +1335,12 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                     loading={metricsLoading}
                     items={[
                       { label: "Volume", value: String(metrics?.popularity ?? ""), note: pop?.label, noteTone: pop?.className, hint: "Estimated search demand (0 to 100), from App Store and Google Play search signals." },
-                      { label: "Difficulty", value: String(metrics?.difficulty ?? ""), note: diff?.label, tone: diff?.className, hint: "How hard it is to rank for this keyword (0 to 100), based on how established the top 5 apps are." },
-                      ...(dockChance === undefined ? [] : [{
+                      restricted
+                        ? { label: "Difficulty", value: "Restricted", muted: true, hint: RESTRICTED_SEARCH_HINT }
+                        : { label: "Difficulty", value: String(metrics?.difficulty ?? ""), note: diff?.label, tone: diff?.className, hint: "How hard it is to rank for this keyword (0 to 100), based on how established the top 5 apps are." },
+                      ...(dockChance === undefined ? [] : [restricted
+                        ? { label: "Chance", value: "–", muted: true, hint: RESTRICTED_SEARCH_HINT }
+                        : {
                         label: "Chance",
                         value: String(dockChance),
                         tone: dockChance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600",
@@ -1360,6 +1369,12 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       </div>
                       <ScoreBar value={metrics.popularity} className="bg-indigo-500/70" />
                     </StatCard>
+                    {restricted ? (
+                    <StatCard label="Difficulty" hint={RESTRICTED_SEARCH_HINT}>
+                      <span className="text-2xl font-semibold text-gray-500">–</span>
+                      <p className="mt-2 text-[11px] font-medium text-red-400 light:text-red-600">Restricted search</p>
+                    </StatCard>
+                    ) : (
                     <StatCard label="Difficulty" hint="How hard it is to rank for this keyword (0 to 100), based on how established the top 5 apps are.">
                       <div className="flex items-baseline gap-2">
                         <span className={`text-2xl font-semibold ${diff.className}`}>{metrics.difficulty}</span>
@@ -1367,6 +1382,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       </div>
                       <ScoreBar value={metrics.difficulty} className={diff.bar} />
                     </StatCard>
+                    )}
                     <StatCard label="Est. daily searches" hint="A ballpark modeled from Volume, for comparing keywords. Not a store-reported count.">
                       <span className="text-2xl font-semibold text-white light:text-gray-900">{formatEstimate(metrics.estDailySearches)}</span>
                       <p className="mt-2 text-[11px] text-gray-500">searches per day</p>
@@ -1601,9 +1617,21 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                       {appsError}
                     </div>
                   )}
-                  {apps && apps.length === 0 && (
+                  {apps && apps.length === 0 && (restricted ? (
+                    <div className="px-6 py-8 text-center">
+                      <p className="inline-flex items-center gap-1.5 text-sm font-medium text-red-400 light:text-red-600">
+                        <NoSymbolIcon className="size-4" />
+                        Restricted search term
+                      </p>
+                      <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-gray-500">
+                        People search for &ldquo;{query.term}&rdquo;, but the {query.store === "ios" ? "App Store" : "Play Store"} hides
+                        its results, so no app can rank for it. Keep the individual words in your metadata if they fit, and
+                        target nearby phrases that do return results.
+                      </p>
+                    </div>
+                  ) : (
                     <p className="px-4 py-8 text-center text-sm text-gray-500">No apps found for this keyword in this country.</p>
-                  )}
+                  ))}
                   {apps && apps.map((app) => (
                       <ResultRow
                         key={`${app.position}-${app.trackId || app.appId}`}

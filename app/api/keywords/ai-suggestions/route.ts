@@ -4,6 +4,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { COUNTRY_MAP } from "@/libs/countries";
 import { generateText } from "@/libs/gemini";
 import { createClient } from "@/libs/supabase/server";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 
 export type AISuggestionsResult = {
   discovery:  { term: string; volume: number }[];
@@ -19,7 +20,7 @@ async function generateKeywords(
   count: number,
   country: string,
 ): Promise<string[]> {
-  const market = localeInstructions(country);
+  const market = `${localeInstructions(country)}\n${RESTRICTED_TERMS_RULE}`;
   const prompts: Record<typeof category, string> = {
     discovery: `You are an App Store Optimization expert. Generate ${count} discovery keywords for the app "${appName}".
 Description: ${description.slice(0, 400)}
@@ -95,6 +96,43 @@ Reply with ONLY a JSON array of strings. Example: ["keyword one","keyword two"]`
   } catch { return []; }
 }
 
+// The App Store returns no apps for some explicit searches, so no app can
+// rank for them (see libs/keyword-restricted.ts). Steer the model away from
+// them up front; findRestricted catches the ones already seen.
+const RESTRICTED_TERMS_RULE = `- Never suggest sexually explicit terms (e.g. "porn", "nsfw", "adult content"): the App Store hides their search results, so no app can rank for them. Neutral wording such as "adult blocker" is fine.`;
+
+// Recent iOS searches already stored for these terms in this storefront
+// (Keyword Research, Inspector, Long Tail, the cron): a term the store
+// returned no apps for despite being popular is restricted and left out.
+// Terms never searched pass through. Best-effort: on error nothing is dropped.
+const RESTRICTED_LOOKBACK_DAYS = 14;
+async function findRestricted(terms: string[], country: string): Promise<Set<string>> {
+  if (!terms.length) return new Set();
+  try {
+    const supabase = await createClient();
+    const since = new Date(Date.now() - RESTRICTED_LOOKBACK_DAYS * 86_400_000).toISOString().split("T")[0];
+    const { data } = await supabase
+      .from("keyword_volume_history")
+      // First result only: whether the search was empty, without pulling
+      // every stored result set.
+      .select("term, score, recorded_on, first:raw_apps->0")
+      .eq("store", "ios")
+      .in("country", [country.toLowerCase(), country.toUpperCase()])
+      .in("term", terms.map((t) => t.toLowerCase().trim()))
+      .gte("recorded_on", since)
+      .not("raw_apps", "is", null)
+      .order("recorded_on", { ascending: false });
+    // Latest snapshot per term decides, so a term the store un-hides drops back in.
+    const latest = new Map<string, { score: number | null; first: unknown }>();
+    for (const row of (data ?? []) as { term: string; score: number | null; first: unknown }[]) {
+      if (!latest.has(row.term)) latest.set(row.term, row);
+    }
+    return new Set([...latest].filter(([, r]) => isRestrictedSearch(r.first == null ? 0 : 1, r.score)).map(([t]) => t));
+  } catch {
+    return new Set();
+  }
+}
+
 // Keywords only rank for what people type in that storefront, so the
 // suggestions have to be in the market's search language, not English.
 // No country→language table here: the LLM picks the dominant search
@@ -164,8 +202,10 @@ export async function GET(request: NextRequest) {
     generateKeywords(appName, description, "relevancy", 30, country),
   ]);
 
+  const restricted = await findRestricted([...rawDiscovery, ...rawGeneric, ...rawBranded, ...rawRelevancy], country);
+  const keep = (terms: string[]) => terms.filter((t) => !restricted.has(t.toLowerCase().trim()));
   const [discoveryTerms, genericTerms, brandedTerms, relevancyTerms] =
-    deduplicateAcross(rawDiscovery, rawGeneric, rawBranded, rawRelevancy);
+    deduplicateAcross(keep(rawDiscovery), keep(rawGeneric), keep(rawBranded), keep(rawRelevancy));
 
   return NextResponse.json({
     discovery: discoveryTerms.map((term) => ({ term, volume: 0 })),

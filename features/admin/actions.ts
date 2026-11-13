@@ -12,6 +12,7 @@ import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity, computeAndroidTitleVolume, difficultyFromRatings } from "@/libs/keyword-volume";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { persistIpadRank } from "@/libs/store/ipad-only";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { createStripeClient } from "@/libs/stripe/server";
@@ -266,9 +267,9 @@ async function syncTrackedAppRanks(
   const updates = (rows as any[]).filter((row) => !ipadRows.includes(row) || ipadRanks.has(row.app_id)).map((row) => {
     const rankIdx = findRankIdx(resultNames, row.apps.name, resultIds, row.apps.store_id);
     const rank = ipadRanks.has(row.app_id) ? ipadRanks.get(row.app_id) ?? null : rankIdx >= 0 ? rankIdx + 1 : null;
-    const chance = computeChance(row.diff ?? 0, rank);
+    const chance = computeChance(row.diff ?? 0, rank, isRestrictedSearch(resultNames.length, volume));
     const opportunity = recomputeOpportunity(row, volume, chance);
-    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, updated_at: new Date().toISOString() };
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, opportunity, results: resultNames.length, updated_at: new Date().toISOString() };
   });
 
   if (updates.length) await admin.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });

@@ -47,7 +47,7 @@ type IosBase = {
 async function fetchIosMetricsBase(term: string, country: string, appName: string, storeId: string, supabase: SupabaseClient, ipadIcon?: string | null): Promise<IosBase | null | "rate_limited"> {
   const core = await fetchIosCoreMetrics(supabase, term, country);
   if (core === null || core === "rate_limited") return core;
-  const { volume, diff, results, apps } = core;
+  const { volume, diff, results, restricted, apps } = core;
 
   let rank: number | null;
   if (ipadIcon !== undefined) {
@@ -58,7 +58,7 @@ async function fetchIosMetricsBase(term: string, country: string, appName: strin
     const rankIdx = findRankIdx(apps.map((r) => r.trackName), appName, apps.map((r) => r.trackId), storeId);
     rank = rankIdx >= 0 ? rankIdx + 1 : null;
   }
-  const chance  = computeChance(diff, rank);
+  const chance  = computeChance(diff, rank, restricted);
   const topTitles = apps.slice(0, 10).map((r) => r.trackName);
 
   return { volume, diff, chance, results, rank, topTitles };
@@ -87,12 +87,12 @@ async function fetchAndroidMetrics(term: string, country: string, appName: strin
   // rankings history) — shared with Keyword Inspector.
   const core = await fetchAndroidCoreMetrics(supabase, term, country);
   if (!core) return null;
-  const { volume, diff, results: count, apps } = core;
+  const { volume, diff, results: count, restricted, apps } = core;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rankIdx = findRankIdx(apps.map((r: any) => r.title ?? ""), appName, apps.map((r: any) => r.appId), storeId);
   const rank    = rankIdx >= 0 ? rankIdx + 1 : null;
-  const chance  = computeChance(diff, rank);
+  const chance  = computeChance(diff, rank, restricted);
 
   let relevancy: number | null = null;
   let opportunity: number | null = null;

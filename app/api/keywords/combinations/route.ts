@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateCombinations } from "@/libs/keyword-combinations";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { resolveIosVolume } from "@/libs/keyword-autocomplete";
 import { MAX_COMBINATIONS_PER_SEED } from "@/features/aso/keywords/combination/types";
 
@@ -114,7 +115,10 @@ export async function GET(request: NextRequest) {
   const groups: CombinationGroup[] = await Promise.all(
     seeds.map(async (seed) => {
       const phrases  = await generateCombinations(seed, perSeed, appName, appSubtitle, exclude);
-      const children = await Promise.all(phrases.map((term) => fetchVolume(term, country, supabase)));
+      // A phrase the store hides results for can't be ranked for, so it's
+      // no long-tail opportunity (see libs/keyword-restricted.ts).
+      const children = (await Promise.all(phrases.map((term) => fetchVolume(term, country, supabase))))
+        .filter((c) => !isRestrictedSearch(c.results, c.volume));
       children.sort((a, b) => b.volume - a.volume);
       return { seed, children };
     })

@@ -61,7 +61,11 @@ export function findRankIdx(
 }
 
 // rank=1 -> 95, rank=10 -> 90, rank=50 -> 50, rank=100+ -> no boost over raw difficulty.
-export function computeChance(diff: number, rank: number | null): number {
+// restricted: the store hides this term's results (isRestrictedSearch in
+// libs/keyword-restricted.ts), so nobody can rank for it: Chance 0, which
+// also zeroes Opportunity and sorts it to the bottom.
+export function computeChance(diff: number, rank: number | null, restricted = false): number {
+  if (restricted) return 0;
   const rawChance = Math.min(Math.max(100 - diff, 5), 95);
   return rank !== null
     ? Math.max(rawChance, Math.min(95, 100 - rank))

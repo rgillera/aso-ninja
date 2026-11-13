@@ -19,6 +19,7 @@ import {
   LockClosedIcon,
   ExclamationTriangleIcon,
   DocumentMagnifyingGlassIcon,
+  NoSymbolIcon,
 } from "@heroicons/react/24/outline";
 import { TranslateToggle, VolumeBar, downloadsAsOfTitle } from "./ui";
 import { VolumeHistoryPanel } from "@/features/aso/keywords/performance/VolumeHistoryPanel";
@@ -35,6 +36,7 @@ import { TourTooltip, TourPulse } from "@/features/onboarding/TourTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import type { Keyword, DownloadsConnection } from "./types";
 import { unrankedLabel } from "@/features/aso/keywords/performance/types";
+import { isRestrictedSearch, RESTRICTED_SEARCH_HINT } from "@/libs/keyword-restricted";
 
 // Hard plan-tier lock: Est. Downloads, Potential Impressions, and (on Free,
 // which has no scoring pool) Relevancy & Opportunity all need Pro — same emerald/violet tier coloring as nameColor() in
@@ -120,6 +122,23 @@ function BulkAddConfirmDialog({ count, onCancel, onConfirm }: { count: number; o
       </div>
     </div>
   );
+}
+
+// The store hides this term's results, so its Diff/Chance mean nothing
+// (see libs/keyword-restricted.ts).
+function RestrictedBadge() {
+  return (
+    <HoverTooltip text={RESTRICTED_SEARCH_HINT}>
+      <span className="inline-flex items-center gap-1 shrink-0 rounded-full bg-red-500/10 px-1.5 py-px text-[10px] font-semibold text-red-400 light:text-red-600 cursor-help">
+        <NoSymbolIcon className="size-2.5" />
+        Restricted
+      </span>
+    </HoverTooltip>
+  );
+}
+
+function isRestrictedRow(row: Keyword) {
+  return isRestrictedSearch(row.results, row.volume);
 }
 
 function PausedBadge() {
@@ -487,6 +506,13 @@ export function KeywordTable({
       } else if (sortKey === "potentialImpressions") {
         av = estimatePotentialImpressions(a.volume, a.rank);
         bv = estimatePotentialImpressions(b.volume, b.rank);
+      } else if (sortKey === "diff" || sortKey === "chance") {
+        // Restricted terms have no real Diff/Chance: always at the end.
+        const ar = isRestrictedRow(a), br = isRestrictedRow(b);
+        if (ar && br) return 0;
+        if (ar) return 1;
+        if (br) return -1;
+        av = a[sortKey]; bv = b[sortKey];
       } else if (sortKey === "rank") {
         // null (unranked) always sorts to the end
         if (a.rank === null && b.rank === null) return 0;
@@ -545,6 +571,8 @@ export function KeywordTable({
       case "opportunity": return row.opportunity ?? "";
       case "potentialImpressions": return downloadsLocked ? "" : estimatePotentialImpressions(row.volume, row.rank);
       case "results": return row.results ?? "";
+      case "diff":
+      case "chance": return isRestrictedRow(row) ? "" : row[colKey];
       default: return (row as unknown as Record<string, number>)[colKey] ?? "";
     }
   }
@@ -570,12 +598,18 @@ export function KeywordTable({
           </button>
         </HoverTooltip>
       );
-      case "diff": return (
+      case "diff":
+      case "chance":
+        if (isRestrictedRow(row)) return (
+          <HoverTooltip text={RESTRICTED_SEARCH_HINT}>
+            <span className="text-sm text-gray-600 light:text-gray-400 cursor-help">–</span>
+          </HoverTooltip>
+        );
+        return colKey === "diff" ? (
         <span className={`text-sm ${row.diff > 60 ? "text-red-400 light:text-red-600" : row.diff > 40 ? "text-yellow-400" : "text-emerald-400 light:text-emerald-700"}`}>
           {row.diff}
         </span>
-      );
-      case "chance": return (
+      ) : (
         <span className={`text-sm ${row.chance > 15 ? "text-emerald-400 light:text-emerald-700" : "text-gray-400 light:text-gray-600"}`}>
           {row.chance}
         </span>
@@ -1062,6 +1096,7 @@ export function KeywordTable({
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm text-gray-200 light:text-gray-800">{row.keyword}</span>
+                        {isRestrictedRow(row) && <RestrictedBadge />}
                         {row.frozen && <PausedBadge />}
                       </div>
                       {translateToggle && (

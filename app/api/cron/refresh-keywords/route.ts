@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { computeIosVolumeAndDiff, computeAndroidTitleVolume, difficultyFromRatings } from "@/libs/keyword-volume";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
 import { recomputeOpportunity } from "@/libs/keyword-volume";
@@ -112,6 +113,12 @@ async function refreshKeywordMetrics(
   const rows = (allRows as any[]).filter((r) => !frozen.has(`${r.app_id}:${r.keyword_id}`));
   if (!rows.length) return;
 
+  // names is the whole result list, so its length is the results count. A
+  // restricted term (store hides its results) scores Chance 0, and the daily
+  // run is also what clears that once the store shows results again.
+  const results = names.length;
+  const restricted = isRestrictedSearch(results, volume);
+
   // iPad-only apps are never in the iPhone results above — rank them from one
   // extra iPad search, paid only when some iPad-only app tracks this term. A
   // failed or rate-limited iPad search leaves their rows untouched.
@@ -133,14 +140,14 @@ async function refreshKeywordMetrics(
     const rankIdx = findRankIdx(names, row.apps.name, ids, row.apps.store_id);
     const rank    = ipadRanks.has(row.app_id) ? ipadRanks.get(row.app_id) ?? null : rankIdx >= 0 ? rankIdx + 1 : null;
     const rowDiff = diff ?? row.diff ?? 0;
-    const chance  = computeChance(rowDiff, rank);
+    const chance  = computeChance(rowDiff, rank, restricted);
 
     if (isSignificantRankChange(row.rank, rank)) {
       changes.push({ appId: row.app_id, appName: row.apps.name, term, previousRank: row.rank, rank: rank! });
     }
 
     const opportunity = recomputeOpportunity(row, volume, chance);
-    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, diff: rowDiff, opportunity, updated_at: new Date().toISOString() };
+    return { app_id: row.app_id, keyword_id: row.keyword_id, rank, chance, volume, diff: rowDiff, opportunity, results, updated_at: new Date().toISOString() };
   });
 
   if (updates.length) await supabase.from("keyword_metrics").upsert(updates, { onConflict: "app_id,keyword_id" });

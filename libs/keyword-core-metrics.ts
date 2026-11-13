@@ -4,6 +4,7 @@ import { computeAndroidTitleVolume, difficultyFromRatings, recomputeOpportunity 
 import { computeChance } from "@/libs/keyword-rank-match";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { type RawIosApp, getCachedIosSearch, searchIosLive } from "@/libs/keyword-relevancy";
+import { isRestrictedSearch } from "@/libs/keyword-restricted";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -12,7 +13,8 @@ type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 // /api/keywords/metrics (which layers rank/chance/relevancy for one app on
 // top) and /api/keywords/inspect (Keyword Inspector, no app at all), so a
 // keyword always shows the same popularity/difficulty in both places.
-export type CoreMetrics<TApp> = { volume: number; diff: number; results: number; apps: TApp[] };
+// restricted: the store hides this term's results (see libs/keyword-restricted.ts).
+export type CoreMetrics<TApp> = { volume: number; diff: number; results: number; restricted: boolean; apps: TApp[] };
 
 // Average rating count of the top 5 results, on the shared difficulty scale
 // (difficultyFromRatings). Rating *count* (install signal), not star rating:
@@ -30,19 +32,23 @@ function computeDiff(ratingCounts: number[]) {
 // Admin client: the rows belong to other workspaces too. Rank stays as
 // stored (Chance is rescored with it): the cron owns rank, since it also
 // sends the rank-change pushes. Frozen links are left alone, as in the cron.
-async function syncTrackedRows(term: string, store: "ios" | "android", country: string, volume: number, diff: number) {
+// A restricted term (store hides its results) gets Chance 0 here too, so a
+// row scored before the store started hiding it doesn't keep its old Chance.
+async function syncTrackedRows(term: string, store: "ios" | "android", country: string, volume: number, diff: number, results: number) {
+  const restricted = isRestrictedSearch(results, volume);
   const admin = createAdminClient();
   const { data: rows } = await admin
     .from("keyword_metrics")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select("app_id, keyword_id, volume, diff, rank, relevancy, relevancy_scored, opportunity, apps!inner(store, country, status), keywords!inner(term, status)" as any)
+    .select("app_id, keyword_id, volume, diff, chance, results, rank, relevancy, relevancy_scored, opportunity, apps!inner(store, country, status), keywords!inner(term, status)" as any)
     .eq("keywords.term", term.toLowerCase().trim())
     .eq("keywords.status", "active")
     .eq("apps.status", "active")
     .eq("apps.store", store)
     .eq("apps.country", country.toUpperCase());
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stale = ((rows ?? []) as any[]).filter((r) => r.volume !== volume || r.diff !== diff);
+  const stale = ((rows ?? []) as any[]).filter((r) =>
+    r.volume !== volume || r.diff !== diff || r.results !== results || r.chance !== computeChance(diff, r.rank, restricted));
   if (!stale.length) return;
 
   const { data: frozenLinks } = await admin
@@ -54,9 +60,9 @@ async function syncTrackedRows(term: string, store: "ios" | "android", country: 
   const frozen = new Set((frozenLinks ?? []).map((l) => `${l.app_id}:${l.keyword_id}`));
 
   const updates = stale.filter((r) => !frozen.has(`${r.app_id}:${r.keyword_id}`)).map((r) => {
-    const chance = computeChance(diff, r.rank);
+    const chance = computeChance(diff, r.rank, restricted);
     return {
-      app_id: r.app_id, keyword_id: r.keyword_id, volume, diff, chance,
+      app_id: r.app_id, keyword_id: r.keyword_id, volume, diff, chance, results,
       opportunity: recomputeOpportunity(r, volume, chance), updated_at: new Date().toISOString(),
     };
   });
@@ -122,10 +128,13 @@ export async function fetchIosCoreMetrics(
     // the upsert is keyed on (term/keyword,store,country,recorded_on[,app_id]),
     // so re-writing the same day's data here is a no-op, not a duplicate.
     await persistIosSearch(supabase, term, country, apps, volume, diff);
-    // No results means no top-5 ratings to score diff from.
-    if (apps.length) await syncTrackedRows(term, "ios", country, volume, diff).catch(() => {});
+    // No results means no top-5 ratings to score diff from, unless the store
+    // is hiding a popular term's results: then tracked rows still need
+    // Chance 0 (see libs/keyword-restricted.ts).
+    const restricted = isRestrictedSearch(apps.length, volume);
+    if (apps.length || restricted) await syncTrackedRows(term, "ios", country, volume, diff, apps.length).catch(() => {});
 
-    return { volume, diff, results: apps.length, apps };
+    return { volume, diff, results: apps.length, restricted, apps };
   } catch {
     return null;
   }
@@ -196,9 +205,10 @@ export async function fetchAndroidCoreMetrics(
     await persistAndroidSearch(supabase, term, normCountry, apps, volume);
     // Every top-5 detail lookup failing scores diff from 0 ratings, which
     // says nothing about competition: leave the tracked rows alone then.
-    if (resolvedRatingCounts.length) await syncTrackedRows(term, "android", country, volume, diff).catch(() => {});
+    const restricted = isRestrictedSearch(apps.length, volume);
+    if (resolvedRatingCounts.length || restricted) await syncTrackedRows(term, "android", country, volume, diff, apps.length).catch(() => {});
 
-    return { volume, diff, results: apps.length, apps };
+    return { volume, diff, results: apps.length, restricted, apps };
   } catch {
     return null;
   }
