@@ -182,6 +182,7 @@ const faqsFor = (withPro: boolean) => [
       : "No. You pay $500 once. Your 3 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
   },
   {
+    id: "guarantee",
     q: "What if it's not worth it?",
     a: "Then you don't pay for it. After your strategy call, if you don't think the Starter was worth $500, email us within 7 days and we refund the full amount. You keep the action plan. Your Pro access from the Starter ends with the refund.",
   },
@@ -361,7 +362,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                 <p className="mt-2 text-sm leading-6 text-gray-600">
                   Get your growth roadmap. If you don&apos;t find the strategy valuable, get your $500 back. Ask within 7
                   days of your strategy call.{" "}
-                  <a href="#pricing" className="font-medium text-indigo-600 hover:underline">Guarantee details</a>
+                  <a href="#guarantee" className="font-medium text-indigo-600 hover:underline">Guarantee details</a>
                 </p>
               </div>
             </div>
@@ -531,7 +532,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalSectionHeading eyebrow="Questions" title="Before you" highlight="buy" />
             <dl className="mt-16 divide-y divide-gray-950/10 border-y border-gray-950/10">
               {faqs.map((faq) => (
-                <div key={faq.q} className="py-6">
+                <div key={faq.q} id={"id" in faq ? faq.id : undefined} className="scroll-mt-24 py-6">
                   <dt className="text-base font-semibold text-gray-950">{faq.q}</dt>
                   <dd className="mt-2 text-sm leading-6 text-gray-600">{faq.a}</dd>
                 </div>
