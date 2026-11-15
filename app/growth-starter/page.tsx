@@ -22,9 +22,10 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 
 // Mostly sent as a link after the free audit call. Linked in the footer but
 // kept out of the sitemap and search until the offer is proven.
-// Every Starter comes with 3 months of Pro. 12 months is a bonus offered on
-// the call: with a valid ?offer token (libs/stripe/growth-starter-offer.ts)
-// the page shows it and its deadline, and checkout grants it.
+// Every Starter comes with 12 months of Pro. Pro+ for those 12 months is a
+// bonus offered on the call: with a valid ?offer token
+// (libs/stripe/growth-starter-offer.ts) the page shows it and its deadline,
+// and checkout grants it.
 export const metadata: Metadata = {
   title: "Growth Starter",
   description:
@@ -69,8 +70,8 @@ const pains = [
   },
 ];
 
-// withPro: the page was opened from a valid Pro bonus link.
-const stepsFor = (withPro: boolean) => [
+// planName: "Pro", or "Pro+" when the page was opened from a valid bonus link.
+const stepsFor = (planName: string) => [
   {
     n: "After checkout",
     title: "Know your app",
@@ -107,35 +108,36 @@ const stepsFor = (withPro: boolean) => [
     ],
     milestone: "Your first changes are live",
   },
-  ...(withPro ? [{
+  {
     n: "Months 3–12",
     title: "Keep growing",
-    description: "Your AppASO Pro keeps running all year, so you can keep improving on your own.",
+    description: `Your AppASO ${planName} keeps running all year, so you can keep improving on your own.`,
     items: [
       "Track your rankings and competitors every week",
       "Find new keywords as your app grows",
       "Test new metadata and see what moves",
     ],
-    milestone: "12 months of Pro, no renewal",
-  }] : []),
+    milestone: `12 months of ${planName}, no renewal`,
+  },
 ];
 
 // The pricing card: the four parts of the roadmap, then the extras.
-const proLink = (
-  <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">AppASO Pro</Link>
+const planLink = (planName: string) => (
+  <Link href="/#pricing" className="font-medium text-indigo-600 hover:underline">AppASO {planName}</Link>
 );
 
-// Everything on the pricing card, in one list. Values are what each piece
-// would cost on its own, totalled against the $500 price. The Sprint credit
-// has none: it only counts if they upgrade.
-const extrasFor = (withPro: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
-  { key: "review", content: <>An expert review of your app, from store listing to purchase</>, value: 300 },
-  { key: "calls", content: <>3 expert calls, 2 hours in total: a deep dive, a live strategy roast, and a month-1 check-in</>, value: 500 },
-  { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</>, value: 200 },
-  { key: "reviews", content: <>A month of expert reviews on your changes before you publish</>, value: 200 },
-  withPro
-    ? { key: "pro", content: <>12 months of {proLink}</>, value: 288 }
-    : { key: "pro", content: <>3 months of {proLink}</>, value: 87 },
+// Everything on the pricing card, in one list. Only the software carries a
+// value (Pro or Pro+ at 12 × the monthly price, plus the Kit), so the year of
+// Pro reads as nearly covering the $500 and the expert work as on top. No
+// total. The Sprint credit has no value: it only counts if they upgrade.
+const extrasFor = (plusBonus: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
+  { key: "review", content: <>An expert review of your app, from store listing to purchase</> },
+  { key: "calls", content: <>3 expert calls, 2 hours in total: a deep dive, a live strategy roast, and a month-1 check-in</> },
+  { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</> },
+  { key: "reviews", content: <>A month of expert reviews on your changes before you publish</> },
+  plusBonus
+    ? { key: "pro", content: <>12 months of {planLink("Pro+")}</>, value: 1188 }
+    : { key: "pro", content: <>12 months of {planLink("Pro")}</>, value: 468 },
   {
     key: "kit",
     content: (
@@ -168,12 +170,10 @@ const notFit = [
   "You only need the software",
 ];
 
-const faqsFor = (withPro: boolean) => [
+const faqsFor = (plusBonus: boolean) => [
   {
     q: "Is this a subscription?",
-    a: withPro
-      ? "No. You pay $500 once. Your Pro access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again."
-      : "No. You pay $500 once. Your 3 months of Pro end on their own, and nothing renews unless you choose to subscribe.",
+    a: `No. You pay $500 once. Your ${plusBonus ? "Pro+" : "Pro"} access runs for 12 months and then ends. It doesn't renew unless you choose to subscribe again.`,
   },
   {
     id: "guarantee",
@@ -203,7 +203,7 @@ const faqsFor = (withPro: boolean) => [
   },
   {
     q: "I'm already on a paid AppASO plan. Can I buy it?",
-    a: withPro ? (
+    a: plusBonus ? (
       <>
         Yes. Email us at <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>{" "}
         and we&apos;ll set it up so you aren&apos;t charged twice for Pro.
@@ -236,12 +236,12 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
 
   const offerCheck = offerToken ? checkGrowthStarterOfferToken(offerToken) : null;
   const offer = offerCheck?.status === "valid" ? offerCheck.offer : null;
-  const withPro = !!offer;
+  const plusBonus = !!offer;
+  const planName = plusBonus ? "Pro+" : "Pro";
   const checkoutHref = offer ? `${baseCheckoutHref}?offer=${encodeURIComponent(offer.token)}` : baseCheckoutHref;
-  const steps = stepsFor(withPro);
-  const extras = extrasFor(withPro);
-  const totalValue = extras.reduce((sum, item) => sum + (item.value ?? 0), 0);
-  const faqs = faqsFor(withPro);
+  const steps = stepsFor(planName);
+  const extras = extrasFor(plusBonus);
+  const faqs = faqsFor(plusBonus);
 
   return (
     <div className="bg-white min-h-screen">
@@ -261,7 +261,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     <p className="mt-1 text-sm leading-6 text-gray-600">
                       {guest === "1" && !isAuthenticated
                         ? "Check your inbox: we've emailed you a link to get into your AppASO account. "
-                        : pro === "1" && "Your AppASO Pro access is active. "}
+                        : pro === "plus" ? "Your AppASO Pro+ access is active. " : pro === "1" && "Your AppASO Pro access is active. "}
                       Your assigned growth specialist will email you to
                       schedule your deep-dive call. Haven&apos;t heard from them within 3 days? Email{" "}
                       <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>.
@@ -281,11 +281,12 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                 <div className="flex items-start gap-3">
                   <GiftIcon className="mt-0.5 size-6 shrink-0 text-indigo-600" aria-hidden="true" />
                   <div>
-                    <p className="font-semibold text-gray-950">Your bonus: 12 months of AppASO Pro, free</p>
+                    <p className="font-semibold text-gray-950">Your bonus: a year of AppASO Pro+ instead of Pro</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
                       {offer.kind === "call" ? <>This bonus is only for our call: buy the Growth Starter in </> : <>Buy the Growth Starter by </>}
                       <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
-                      and you get 12 months of AppASO Pro ($288 value) instead of 3 months. Your Pro access starts the moment you check out.
+                      and your 12 months are on Pro+ ($1,188 value) instead of Pro ($468): 4 workspaces, relevancy scoring for
+                      5,000 keywords, the keyword simulator, 8 competitors per app, and a year of history. Your access starts the moment you check out.
                     </p>
                   </div>
                 </div>
@@ -296,8 +297,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               <div className="mx-auto mb-12 flex max-w-2xl items-start gap-3 rounded-2xl bg-amber-50 p-6 text-left ring-1 ring-amber-200">
                 <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-600" aria-hidden="true" />
                 <p className="text-sm leading-6 text-gray-700">
-                  {offerCheck.kind === "call" ? "The Pro bonus from our call has ended." : `The Pro bonus offer ended on ${offerCheck.deadlineLabel}.`} You can still get the Growth Starter below,
-                  with 3 months of Pro instead of 12 months.
+                  {offerCheck.kind === "call" ? "The Pro+ bonus from our call has ended." : `The Pro+ bonus offer ended on ${offerCheck.deadlineLabel}.`} You can still get the Growth Starter below,
+                  with 12 months of Pro instead of Pro+.
                 </p>
               </div>
             )}
@@ -325,8 +326,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               You don&apos;t need an agency. You need someone who&apos;s done it to{" "}
               <span className="font-semibold text-gray-950">look at your app and tell you what to fix first.</span>{" "}
               A growth expert walks your funnel with you and ranks your fixes, then guides you for a
-              month{withPro ? <>. Plus a year of AppASO Pro to{" "}</> : <> while you{" "}</>}
-              <span className="font-semibold text-indigo-600">ship them yourself.</span>
+              month. Plus{" "}
+              <span className="font-semibold text-indigo-600">a year of AppASO {planName}.</span>
             </p>
             <PortalButton href={checkoutHref} className="mt-9">
               {ctaLabel}
@@ -396,12 +397,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
             <PortalSectionHeading
               eyebrow="How it works"
               title="Your plan in a week."
-              highlight={withPro ? "A year to run it." : "An expert for a month."}
-              description={
-                withPro
-                  ? "We get to know your app, roast your funnel live, and hand you a plan ranked by impact. Then you ship the fixes, with Pro tracking what moves all year."
-                  : "We get to know your app, roast your funnel live, and hand you a plan ranked by impact. Then you ship the fixes, with a specialist guiding you for a month."
-              }
+              highlight="A year to run it."
+              description={`We get to know your app, roast your funnel live, and hand you a plan ranked by impact. Then you ship the fixes, with ${planName} tracking what moves all year.`}
             />
 
             {/* Same numbered rail as the Growth Sprint phases. */}
@@ -410,7 +407,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                 aria-hidden="true"
                 className="absolute left-5 right-0 top-5 hidden h-px bg-gradient-to-r from-indigo-300 via-violet-200 to-transparent lg:block"
               />
-              <ol className={`grid grid-cols-1 gap-12 sm:gap-x-8 ${withPro ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"}`}>
+              <ol className="grid grid-cols-1 gap-12 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-4">
                 {steps.map((step, i) => (
                   <li key={step.title} className="relative flex flex-col">
                     <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 shadow-clay-sm ring-4 ring-white">
@@ -466,17 +463,6 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6 space-y-2 border-t border-gray-950/10 pt-6">
-                  <p className="flex items-baseline justify-between gap-3 text-sm text-gray-600">
-                    <span>Total value</span>
-                    <span className="tabular-nums line-through">{usd(totalValue)}</span>
-                  </p>
-                  <p className="flex items-baseline justify-between gap-3 text-base font-semibold text-gray-950">
-                    <span>You pay</span>
-                    <span className="tabular-nums">$500</span>
-                  </p>
-                </div>
-
                 <PortalButton href={checkoutHref} className="mt-8 w-fit">
                   {ctaLabel}
                 </PortalButton>
@@ -541,11 +527,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               eyebrow="Get started"
               title="Stop guessing."
               highlight="Start growing."
-              description={
-                withPro
-                  ? <>Get an expert&apos;s eyes on your app this week, and a year of Pro to act on what you learn.</>
-                  : <>Get an expert&apos;s eyes on your app this week, and a specialist to back you while you act on it.</>
-              }
+              description={<>Get an expert&apos;s eyes on your app this week, and a year of {planName} to act on what you learn.</>}
             >
               <PortalButton href={checkoutHref} className="mt-8">
                 {ctaLabel}

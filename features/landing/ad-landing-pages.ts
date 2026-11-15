@@ -8,13 +8,12 @@ import { PLANS } from "@/features/subscription/plans";
 // Competitor figures come from features/blog/comparison-posts.ts, checked
 // against each company's pricing page on 2026-10-03. Update both together.
 // Only competitors AppASO is clearly cheaper than get a page here: Sonar
-// costs the same as Pro and Astro costs less, so a "cheaper alternative"
+// costs less than Pro ($29 vs $39) and Astro costs less, so a "cheaper alternative"
 // pitch would be misleading for them.
 
 const pro = PLANS.find((plan) => plan.id === "pro")!;
 const proMonthly = `$${pro.priceMonthlyCents / 100}/mo`;
-const proYearlyPerMonth = `$${Math.round(pro.priceYearlyCents / 1200)}/mo`;
-export const PRO_PRICE = `${proMonthly}, or ${proYearlyPerMonth} billed yearly`;
+export const PRO_PRICE = proMonthly;
 
 export type AdLandingPage = {
   slug: string;
@@ -53,7 +52,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
     headlineAccent: "without the $249/mo plan.",
     subhead:
       "Relevancy scoring, downloads per keyword, and unlimited tracked keywords on both stores. Start free, then upgrade to Pro from " +
-      proYearlyPerMonth +
+      proMonthly +
       " when you need more.",
     comparison: {
       competitor: "AppTweak",
@@ -79,7 +78,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
     headlineAccent: "without paying $239/mo.",
     subhead:
       "MobileAction keeps downloads per keyword on its Pro plan. AppASO Pro includes it, plus unlimited keywords and apps, from " +
-      proYearlyPerMonth +
+      proMonthly +
       ". Or start on the free plan.",
     comparison: {
       competitor: "MobileAction",

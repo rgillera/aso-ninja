@@ -22,9 +22,10 @@ const ALERT_TO = "hello@appaso.io";
 
 const DAY_SECONDS = 24 * 60 * 60;
 
-// Days of Pro a Growth Starter session grants: 90 (60 for sessions from
-// before 2026-11-08), 365 with a bonus link, 0 for buyers already on a paid plan. Sessions from before pro_days have
-// none, and were sold with 12 months.
+// Days of Pro a Growth Starter session grants: 365 (90, or 60 before
+// 2026-11-08, for sessions from before 12 months became the default), 0 for
+// buyers already on a paid plan. Sessions from before pro_days have none,
+// and were sold with 12 months.
 function growthStarterProDays(session: Stripe.Checkout.Session): number {
   const raw = session.metadata?.pro_days;
   if (raw === undefined) return 365;
@@ -32,27 +33,35 @@ function growthStarterProDays(session: Stripe.Checkout.Session): number {
   return days === 60 || days === 90 || days === 365 ? days : 0;
 }
 
-// The Growth Starter is paid once, so its Pro is a Pro yearly subscription
-// in a trial of proDays that cancels when the trial ends: no card
-// on file, nothing ever charged, and expiry comes through the usual
-// customer.subscription.deleted. Keyed on the session so a webhook retry
-// returns the same subscription instead of creating a second one.
+// The plan a Growth Starter session grants: Pro+ with a bonus link, else
+// Pro. Sessions from before pro_plan have none, and were sold with Pro.
+type StarterPlan = "pro" | "pro_plus";
+function growthStarterPlan(session: Stripe.Checkout.Session): StarterPlan {
+  return session.metadata?.pro_plan === "pro_plus" ? "pro_plus" : "pro";
+}
+
+// The Growth Starter is paid once, so its Pro (or Pro+) is a yearly
+// subscription on that plan in a trial of proDays that cancels when the
+// trial ends: no card on file, nothing ever charged, and expiry comes through
+// the usual customer.subscription.deleted. Keyed on the session so a webhook
+// retry returns the same subscription instead of creating a second one.
 async function grantGrowthStarterPro(
   stripe: Stripe,
   admin: ReturnType<typeof createAdminClient>,
   session: Stripe.Checkout.Session,
-  proDays: number
+  proDays: number,
+  plan: StarterPlan
 ) {
   const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
   if (!customerId) throw new Error(`Growth Starter session ${session.id} has no customer`);
 
-  const { data: pro } = await admin.from("plans").select("stripe_price_id_yearly").eq("slug", "pro").single();
-  if (!pro?.stripe_price_id_yearly) throw new Error("Pro plan has no yearly Stripe price");
+  const { data: row } = await admin.from("plans").select("stripe_price_id_yearly").eq("slug", plan).single();
+  if (!row?.stripe_price_id_yearly) throw new Error(`${plan} plan has no yearly Stripe price`);
 
   return stripe.subscriptions.create(
     {
       customer: customerId,
-      items: [{ price: pro.stripe_price_id_yearly }],
+      items: [{ price: row.stripe_price_id_yearly }],
       trial_end: session.created + proDays * DAY_SECONDS,
       trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
       cancel_at_period_end: true,
@@ -114,8 +123,8 @@ async function sendGrowthStarterEmails(purchase: GrowthStarterPurchase) {
         from: FROM,
         to: purchase.email,
         subject: growthStarterWelcomeSubject,
-        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays, purchase.account),
-        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays, purchase.account),
+        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays, purchase.account, purchase.planName),
+        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays, purchase.account, purchase.planName),
       })
     );
   }
@@ -228,6 +237,7 @@ export async function POST(request: NextRequest) {
       if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && (userId || isGuestStarter)) {
         if (session.payment_status !== "paid") break;
         let proDays = growthStarterProDays(session);
+        const starterPlan = growthStarterPlan(session);
         // "signed_in": bought while logged in. "existing": guest checkout with
         // an email that already has an account. Else the new account's
         // setup link.
@@ -251,7 +261,7 @@ export async function POST(request: NextRequest) {
         }
         const starterUserId = userId!;
         if (proDays > 0) {
-          const subscription = await grantGrowthStarterPro(stripe, admin, session, proDays);
+          const subscription = await grantGrowthStarterPro(stripe, admin, session, proDays, starterPlan);
           await upsertFromStripeSubscription(admin, subscription, starterUserId);
         }
         after(() =>
@@ -262,6 +272,7 @@ export async function POST(request: NextRequest) {
             currency: session.currency,
             sessionId: session.id,
             proDays,
+            planName: starterPlan === "pro_plus" ? "Pro+" : "Pro",
             proBonusSkipped,
             guest: isGuestStarter,
             account,
@@ -269,7 +280,7 @@ export async function POST(request: NextRequest) {
         );
         after(() =>
           recordUserEvent(starterUserId, "checkout_completed", {
-            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays, guest: isGuestStarter },
+            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays, pro_plan: starterPlan, guest: isGuestStarter },
             ref: session.id,
           })
         );

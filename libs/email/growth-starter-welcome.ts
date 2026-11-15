@@ -3,8 +3,9 @@ import { greetingHtml, greetingText } from "./greeting";
 // Sent to the buyer from the Stripe webhook right after a Growth Starter
 // purchase. Onboarding isn't self-booked: their specialist emails them to
 // schedule it, so this sets that expectation and gives a fallback contact.
-// proDays: Pro the purchase granted (365 bonus link, 90, or 0 when the buyer
-// is already on a paid plan and has Pro anyway).
+// proDays: days of Pro the purchase granted (365, 90 for older purchases, or
+// 0 when the buyer is already on a paid plan and has Pro anyway). planName:
+// "Pro", or "Pro+" when bought through a bonus link.
 
 // How the buyer's account came about, which decides how they get in.
 export type GrowthStarterAccount =
@@ -45,12 +46,12 @@ function proLength(proDays: number): string | null {
   return null;
 }
 
-export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }) {
+export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }, planName = "Pro") {
   const length = proLength(proDays);
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a; line-height: 1.6;">
   <p>${greetingHtml(fullName)}</p>
-  <p>Thanks for getting the Growth Starter! &#127881;${length ? ` Your <strong>AppASO Pro</strong> access is active now and runs for ${length}.` : ""}</p>
+  <p>Thanks for getting the Growth Starter! &#127881;${length ? ` Your <strong>AppASO ${planName}</strong> access is active now and runs for ${length}.` : ""}</p>
   ${accountHtml(account)}
   <p>Your assigned growth specialist will <strong>email you to schedule your 30-minute deep-dive call</strong>, where we learn about your app, your goals, and your numbers.</p>
   <p><strong>What happens next</strong></p>
@@ -66,11 +67,11 @@ export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays
 </div>`.trim();
 }
 
-export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }) {
+export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays = 0, account: GrowthStarterAccount = { kind: "signed_in" }, planName = "Pro") {
   const length = proLength(proDays);
   return `${greetingText(fullName)}
 
-Thanks for getting the Growth Starter!${length ? ` Your AppASO Pro access is active now and runs for ${length}.` : ""}
+Thanks for getting the Growth Starter!${length ? ` Your AppASO ${planName} access is active now and runs for ${length}.` : ""}
 ${accountText(account)}
 Your assigned growth specialist will email you to schedule your 30-minute deep-dive call, where we learn about your app, your goals, and your numbers.
 

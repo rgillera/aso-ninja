@@ -5,7 +5,8 @@ export type Plan = {
   name: string;
   priceMonthlyCents: number;
   // Already discounted, and picked so the per-month yearly price is a round
-  // number ($24 / $79) — not derived at render time.
+  // number ($32 / $79), not derived at render time. Pro yearly is 2 months
+  // free, shown only on the pricing grids; all other copy quotes $39/mo.
   priceYearlyCents: number;
   description: string;
   badge: string | null;
@@ -52,8 +53,8 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    priceMonthlyCents: 2900,
-    priceYearlyCents: 28800,
+    priceMonthlyCents: 3900,
+    priceYearlyCents: 38400,
     description: "For indie developers and small teams growing their apps.",
     badge: null,
     features: [

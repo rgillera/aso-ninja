@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-// Growth Starter Pro bonus links. The year of Pro is offered on the strategy
-// call, for buyers who purchase by a deadline, so it is not part of the
+// Growth Starter Pro+ bonus links. A year of Pro+ (instead of Pro) is offered
+// on the strategy call, for buyers who purchase by a deadline, so it is not part of the
 // public offer. A bonus link carries a signed deadline: one link per
 // deadline, shared by everyone told about it, that stops working on its own.
 //

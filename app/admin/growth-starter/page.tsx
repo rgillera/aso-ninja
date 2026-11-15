@@ -7,7 +7,7 @@ import { CopyField } from "@/features/admin/CopyField";
 import { ExtendStarterProForm } from "@/features/admin/ExtendStarterProForm";
 import { BonusLinkForm } from "@/features/admin/BonusLinkForm";
 
-// Makes Growth Starter Pro bonus links: pick a deadline, get one link to send
+// Makes Growth Starter Pro+ bonus links: pick a deadline, get one link to send
 // everyone offered the bonus for that deadline. A plain GET form, so nothing
 // is stored; the same date always gives the same link. The timed buttons make
 // a link valid from the moment it's made, a new link each time: 24 hours with
@@ -16,7 +16,7 @@ import { BonusLinkForm } from "@/features/admin/BonusLinkForm";
 // Shared by the follow-up email and the call chat message.
 const INCLUDED = `Here's everything included in the $500 Growth Starter package:
 
-12 Months of AppASO Pro ($288 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
+12 Months of AppASO Pro ($468 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
 
 Lifetime App Growth Kit Access ($149 value): Get our growth playbook, experiment library, templates, and calculators.
 
@@ -68,7 +68,7 @@ Based on what we discussed, I believe our Growth Starter is a good fit for where
 
 ${INCLUDED}
 
-Your bonus, since we're on the call: get the Growth Starter within the next ${hours} hours and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
+Your bonus, since we're on the call: get the Growth Starter within the next ${hours} hours and your 12 months are on AppASO Pro+ ($1,188 value) instead of Pro ($468): 4 workspaces, relevancy scoring for 5,000 keywords, the keyword simulator, 8 competitors per app, and a full year of history.
 
 It's $500, one payment.
 
@@ -87,7 +87,7 @@ This bonus is only for our call, so the link stops working after that. Any quest
 
 ${INCLUDED}
 
-Your bonus: get the Growth Starter ${bonusBy} and you get 12 months of AppASO Pro ($288 value) instead of the usual 3 months.
+Your bonus: get the Growth Starter ${bonusBy} and your 12 months are on AppASO Pro+ ($1,188 value) instead of Pro ($468): 4 workspaces, relevancy scoring for 5,000 keywords, the keyword simulator, 8 competitors per app, and a full year of history.
 
 It's $500, one payment.
 
@@ -108,7 +108,7 @@ The bonus ends ${bonusEnds}. Any questions, just reply to this email.`
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Growth Starter bonus</h1>
             <p className="text-xs text-gray-500">
-              A link that includes 12 months of Pro with the Growth Starter, until the end of the deadline day, for 24 hours with a follow-up email, or for 2 hours when offered on the call only.
+              A link that makes the Growth Starter&apos;s 12 months Pro+ instead of Pro, until the end of the deadline day, for 24 hours with a follow-up email, or for 2 hours when offered on the call only.
             </p>
           </div>
         </div>

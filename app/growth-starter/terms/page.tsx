@@ -47,7 +47,7 @@ export default function GrowthStarterTermsPage() {
         <p>The Starter covers one app and includes:</p>
         <ul>
           <li>
-            <strong>AppASO Pro:</strong> 3 months of access to the AppASO Pro plan, starting on the date of
+            <strong>AppASO Pro:</strong> 12 months of access to the AppASO Pro plan, starting on the date of
             purchase. If you already have a paid AppASO subscription, it keeps running instead and no
             separate Pro access is added.
           </li>
@@ -114,15 +114,15 @@ export default function GrowthStarterTermsPage() {
       <section>
         <h2>AppASO Pro Access and Bonus</h2>
         <p>
-          We may offer you a bonus that extends your Pro access to 12 months if you buy the Starter by a
-          deadline we give you. The bonus applies only to a purchase made through the bonus link we send you,
+          We may offer you a bonus that gives you the AppASO Pro+ plan instead of Pro for your 12 months if you
+          buy the Starter by a deadline we give you. The bonus applies only to a purchase made through the bonus link we send you,
           before the end of the deadline date in any time zone. It cannot be added to a purchase made without
           that link or after the deadline.
         </p>
         <p>
-          Pro access from the Starter, with or without the bonus, starts on the date of purchase and does not
-          renew automatically. When it ends, your account moves to the Free plan, under the same rules as any
-          other plan change. You can subscribe to a paid plan at any time to keep Pro features. Pro access
+          Pro or Pro+ access from the Starter starts on the date of purchase and does not renew
+          automatically. When it ends, your account moves to the Free plan, under the same rules as any
+          other plan change. You can subscribe to a paid plan at any time to keep those features. Access
           from the Starter has no cash value, and a refund of the Starter also ends it.
         </p>
         <p>

@@ -123,8 +123,9 @@ const cardStyles: Record<Variant, {
 };
 
 export default function PortalPricing({ isAuthenticated, proTrial = { kind: "none" } }: { isAuthenticated: boolean; proTrial?: ProTrialState }) {
-  // Yearly first: the per-month price is the lower anchor visitors see.
-  const [yearly, setYearly] = useState(true);
+  // Monthly first: $39/mo is the price visitors see, and the yearly toggle
+  // shows the 2-months-free saving against it.
+  const [yearly, setYearly] = useState(false);
 
   return (
     <section id="pricing" className="relative isolate overflow-hidden bg-gray-50 py-24 sm:py-32">

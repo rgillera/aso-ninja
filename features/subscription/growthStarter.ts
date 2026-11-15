@@ -9,11 +9,12 @@ import { checkGrowthStarterOfferToken } from "@/libs/stripe/growth-starter-offer
 
 // The Growth Starter ($500, onboarding plus a strategy session) is a
 // one-time payment, so checkout shows no "billed annually". It comes with
-// 3 months of Pro, or 12 months when bought through a Pro bonus link before
-// its deadline (libs/stripe/growth-starter-offer.ts). The webhook gives the
-// buyer a Pro subscription in a trial of that length that cancels at its
-// end, which keeps plan expiry on the usual webhook path instead of a
-// separate end date. pro_days in the session metadata says how long.
+// 12 months of Pro, or 12 months of Pro+ when bought through a bonus link
+// before its deadline (libs/stripe/growth-starter-offer.ts). The webhook
+// gives the buyer a subscription on that plan in a trial of that length that
+// cancels at its end, which keeps plan expiry on the usual webhook path
+// instead of a separate end date. pro_days in the session metadata says how
+// long, and pro_plan which plan.
 // Signed-out visitors go straight to Stripe as guests: Stripe collects the
 // email, and the webhook finds or creates the account for it
 // (resolveGrowthStarterBuyer). Errors "subscribed" and "offer_expired" are
@@ -27,7 +28,7 @@ export async function createGrowthStarterCheckoutAction(
     data: { user },
   } = await supabase.auth.getUser();
 
-  // A link that came with a token but no longer grants Pro sends the buyer
+  // A link that came with a token but no longer grants Pro+ sends the buyer
   // back to the page rather than charging them for less than they were shown.
   let proBonus = false;
   if (offerToken) {
@@ -49,10 +50,11 @@ export async function createGrowthStarterCheckoutAction(
 
   // A granted Pro subscription would overwrite a paid one's row while that
   // keeps billing. Paid subscribers already have Pro, so they buy the calls
-  // alone, and get the bonus year by hand for now.
+  // alone, and get the Pro+ bonus by hand for now.
   const isPaid = !!subscription?.stripe_subscription_id && subscription.status !== "canceled";
   if (proBonus && isPaid) return { error: "subscribed" };
-  const proDays = proBonus ? 365 : isPaid ? 0 : 90;
+  const proDays = isPaid ? 0 : 365;
+  const proPlan = proBonus ? "pro_plus" : "pro";
 
   const stripe = createStripeClient();
   // A Stripe error (say, a test-mode price under the live key) would
@@ -76,8 +78,9 @@ export async function createGrowthStarterCheckoutAction(
       offer: "growth_starter",
       pro_bonus: proBonus ? "1" : "0",
       pro_days: String(proDays),
+      pro_plan: proPlan,
     },
-    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter?purchased=1${proDays ? "&pro=1" : ""}${user ? "" : "&guest=1"}`,
+    success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter?purchased=1${proDays ? (proBonus ? "&pro=plus" : "&pro=1") : ""}${user ? "" : "&guest=1"}`,
     cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/growth-starter${proBonus ? `?offer=${encodeURIComponent(offerToken!)}` : ""}`,
   }).catch((err: unknown) => {
     console.error("Growth Starter checkout failed:", err);
@@ -85,6 +88,6 @@ export async function createGrowthStarterCheckoutAction(
   });
 
   if (!session?.url) return { error: "Failed to create checkout session." };
-  if (user) after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: "pro", offer: "growth_starter", pro_bonus: proBonus, pro_days: proDays }, ref: session.id }));
+  if (user) after(() => recordUserEvent(user.id, "checkout_started", { props: { plan: "pro", offer: "growth_starter", pro_bonus: proBonus, pro_days: proDays, pro_plan: proPlan }, ref: session.id }));
   return { url: session.url };
 }

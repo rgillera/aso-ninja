@@ -8,22 +8,25 @@ export type GrowthStarterPurchase = {
   amountCents: number | null;
   currency: string | null;
   sessionId: string;
-  // Days of Pro the webhook granted: 365 (bonus link), 90, or 0 (already
-  // on a paid plan).
+  // Days of Pro the webhook granted: 365, 90 (older purchases), or 0
+  // (already on a paid plan).
   proDays: number;
-  // Bought through a bonus link, but already on a paid plan: the 12 months
-  // weren't granted and need setting up by hand.
+  // "Pro", or "Pro+" when bought through a bonus link.
+  planName: string;
+  // Bought through a bonus link, but already on a paid plan: the Pro+ year
+  // wasn't granted and needs setting up by hand.
   proBonusSkipped?: boolean;
   // Checked out without being logged in.
   guest?: boolean;
   account: import("./growth-starter-welcome").GrowthStarterAccount;
 };
 
-function proLabel(days: number): string {
-  if (days === 365) return "12 months (bonus link)";
-  if (days === 90) return "3 months";
-  if (days === 60) return "2 months";
-  if (days > 0) return `${days} days`;
+function proLabel(days: number, planName: string): string {
+  const bonus = planName === "Pro+" ? " (bonus link)" : "";
+  if (days === 365) return `${planName}, 12 months${bonus}`;
+  if (days === 90) return `${planName}, 3 months${bonus}`;
+  if (days === 60) return `${planName}, 2 months${bonus}`;
+  if (days > 0) return `${planName}, ${days} days${bonus}`;
   return "none, already on a paid plan";
 }
 
@@ -59,7 +62,7 @@ export function renderGrowthStarterAlertHtml(p: GrowthStarterPurchase): string {
     <li><strong>Name:</strong> ${p.name ? escapeHtml(p.name) : "not given"}</li>
     <li><strong>Email:</strong> ${email ? `<a href="mailto:${email}">${email}</a>` : "not given"}</li>
     <li><strong>Paid:</strong> ${formatAmount(p)}</li>
-    <li><strong>Pro granted:</strong> ${proLabel(p.proDays)}${p.proBonusSkipped ? " <strong>(bought with the 12-month bonus: set it up by hand)</strong>" : ""}</li>
+    <li><strong>Plan granted:</strong> ${proLabel(p.proDays, p.planName)}${p.proBonusSkipped ? " <strong>(bought with the Pro+ bonus: set it up by hand)</strong>" : ""}</li>
     <li><strong>Account:</strong> ${accountLabel(p)}</li>
     <li><strong>Checkout session:</strong> ${escapeHtml(p.sessionId)}</li>
   </ul>
@@ -72,7 +75,7 @@ export function renderGrowthStarterAlertText(p: GrowthStarterPurchase): string {
 Name: ${p.name ?? "not given"}
 Email: ${p.email ?? "not given"}
 Paid: ${formatAmount(p)}
-Pro granted: ${proLabel(p.proDays)}${p.proBonusSkipped ? " (bought with the 12-month bonus: set it up by hand)" : ""}
+Plan granted: ${proLabel(p.proDays, p.planName)}${p.proBonusSkipped ? " (bought with the Pro+ bonus: set it up by hand)" : ""}
 Account: ${accountLabel(p)}
 Checkout session: ${p.sessionId}`;
 }

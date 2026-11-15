@@ -197,9 +197,9 @@ export default function SubscriptionPage({
   const searchParams = useSearchParams();
   // Carry over the toggle the visitor picked on the public pricing grid
   // (PortalPricing links through signup with ?billing=yearly|monthly), and
-  // otherwise open on yearly like the public grid does.
+  // otherwise open on monthly like the public grid does.
   const [billing, setBilling] = useState<Billing>(
-    searchParams.get("billing") === "monthly" ? "monthly" : "yearly"
+    searchParams.get("billing") === "yearly" ? "yearly" : "monthly"
   );
   useRefreshUntilUpgraded(searchParams.get("success") === "1");
 
