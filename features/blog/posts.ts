@@ -60,7 +60,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "A sourced, numbers-based comparison of AppASO against AppTweak, MobileAction, AppRadar, AppFollow, Sensor Tower, and Astro — real pricing, real limits, and where each tool actually wins.",
     metaDescription: "Compare AppASO with AppTweak, MobileAction, AppRadar, AppFollow, Sensor Tower and Astro: real pricing, keyword limits, and which ASO tool fits your team.",
     date: "2026-07-29",
-    updated: "2026-10-03",
+    updated: "2026-11-16",
     readTime: "10 min read",
     category: "Comparisons",
     keywords: [
