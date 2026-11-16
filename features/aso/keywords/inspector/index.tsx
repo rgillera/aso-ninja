@@ -319,15 +319,23 @@ async function fetchIosRatingCount(storeId: string, country: string): Promise<nu
 
 // "Ratings 1.2K / 85K": green at or above the top 10 median, amber within
 // 10x of it, red further below. Renders nothing until both numbers are known.
-function YourRatingsPill({ yours, median, className = "" }: { yours: number | null | undefined; median: number | null; className?: string }) {
+// Already in the top 10, the gap isn't a warning (you've cleared that bar
+// on relevancy and/or weak competition, e.g. a brand keyword), so it goes neutral: a red
+// pill next to "#1" reads as a contradiction.
+function YourRatingsPill({ yours, median, inTop, className = "" }: { yours: number | null | undefined; median: number | null; inTop: boolean; className?: string }) {
   if (yours == null || median == null) return null;
-  const tone = yours >= median ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700"
+  const tone = inTop ? "bg-white/[0.07] text-gray-300 light:bg-black/[0.05] light:text-gray-700"
+    : yours >= median ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700"
     : yours * 10 >= median ? "bg-amber-500/15 text-amber-400 light:text-amber-700"
     : "bg-red-500/10 text-red-400 light:text-red-600";
+  const base = `Your app has ${yours.toLocaleString()} ratings. The median of the top 10 apps for this keyword (not counting yours) is ${median.toLocaleString()}.`;
+  const title = inTop && yours < median
+    ? `${base} You already rank in the top 10 with fewer ratings, so other signals are carrying you here, like a strong keyword match (relevancy) and beatable competition (difficulty).`
+    : base;
   return (
     <p
       className={`flex shrink-0 items-center gap-1.5 text-xs text-gray-500 ${className}`}
-      title={`Your app has ${yours.toLocaleString()} ratings. The median of the top 10 apps for this keyword (not counting yours) is ${median.toLocaleString()}.`}
+      title={title}
     >
       Ratings
       <span className={`inline-block rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
@@ -1502,7 +1510,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           : <>Your app isn&apos;t in the top {allResults.length} yet</>}
                       </p>
                       <div className="ml-auto flex shrink-0 items-center gap-3">
-                        <YourRatingsPill yours={yourRatings} median={ratingsMedian} />
+                        <YourRatingsPill yours={yourRatings} median={ratingsMedian} inTop={yourRankIdx >= 0 && yourRankIdx < WEAK_SPOT_RANGE} />
                         <YourRelevancyPill score={yourScore} />
                       </div>
                     </div>
@@ -1536,7 +1544,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
                         </div>
                       </div>
-                      <YourRatingsPill yours={yourRatings} median={ratingsMedian} />
+                      <YourRatingsPill yours={yourRatings} median={ratingsMedian} inTop={yourRankIdx >= 0 && yourRankIdx < WEAK_SPOT_RANGE} />
                       <YourRelevancyPill score={yourScore} />
                       <p className="text-[11px] text-gray-500">
                         {yourRankIdx >= RESULTS_DISPLAY_LIMIT
