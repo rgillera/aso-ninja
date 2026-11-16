@@ -21,7 +21,6 @@ import { useActiveApp } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { usePlanSlug } from "@/features/dashboard/PlanContext";
 import { TourTooltip } from "@/features/onboarding/TourTooltip";
-import { HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { TOUR_STEPS, type TourStep } from "@/features/onboarding/tour";
 import { fetchLiveSearchResults, resolveIpadOnlyClient, type TrackedApp } from "@/features/aso/keywords/research/liveSearch";
 import { Toggle } from "@/features/aso/keywords/research/ui";
@@ -260,10 +259,6 @@ function EstimateStat({ value, basis, label, format }: {
   );
 }
 
-// Dotted underline = "hover for more", same as Keyword Research's hover
-// hints, on the rank row pills' labels.
-const HOVER_LABEL = "underline decoration-dotted decoration-gray-500 underline-offset-4";
-
 // The active app's relevancy beside its rank: "Relevancy 72", colored like
 // the column. null = loading, undefined = render nothing.
 function YourRelevancyPill({ score, className = "" }: { score: number | null | undefined; className?: string }) {
@@ -273,15 +268,15 @@ function YourRelevancyPill({ score, className = "" }: { score: number | null | u
     : score >= 41 ? "bg-amber-500/15 text-amber-400 light:text-amber-700"
     : "bg-red-500/10 text-red-400 light:text-red-600";
   return (
-    <HoverTooltip
-      text="How likely someone searching this keyword wants your app (0 to 100)."
-      className={`shrink-0 gap-1.5 text-xs text-gray-500 cursor-help ${className}`}
+    <p
+      className={`flex shrink-0 items-center gap-1.5 text-xs text-gray-500 ${className}`}
+      title="How likely someone searching this keyword wants your app (0 to 100)"
     >
-      <span className={HOVER_LABEL}>Relevancy</span>
+      Relevancy
       <span className={`inline-block min-w-8 rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
         {score === null ? "00" : score}
       </span>
-    </HoverTooltip>
+    </p>
   );
 }
 
@@ -335,15 +330,18 @@ function YourRatingsPill({ yours, median, inTop, className = "" }: { yours: numb
     : "bg-red-500/10 text-red-400 light:text-red-600";
   const base = `Your app has ${yours.toLocaleString()} ratings. The median of the top 10 apps for this keyword (not counting yours) is ${median.toLocaleString()}.`;
   const title = inTop && yours < median
-    ? `${base}\n\nYou already rank in the top 10 with fewer ratings, so other signals are carrying you here, like a strong keyword match (relevancy) and beatable competition (difficulty).`
+    ? `${base} You already rank in the top 10 with fewer ratings, so other signals are carrying you here, like a strong keyword match (relevancy) and beatable competition (difficulty).`
     : base;
   return (
-    <HoverTooltip text={title} className={`shrink-0 gap-1.5 text-xs text-gray-500 cursor-help ${className}`}>
-      <span className={HOVER_LABEL}>Ratings</span>
+    <p
+      className={`flex shrink-0 items-center gap-1.5 text-xs text-gray-500 ${className}`}
+      title={title}
+    >
+      Ratings
       <span className={`inline-block rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
         {formatCount(yours)} / {formatCount(median)}
       </span>
-    </HoverTooltip>
+    </p>
   );
 }
 
