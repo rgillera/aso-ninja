@@ -133,7 +133,10 @@ function writeJson(key: string, value: unknown) {
 
 function formatCount(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}K`;
+  // One decimal under 10K ("1.2K"), where rounding hides a real difference;
+  // a trailing ".0" is dropped ("2K", not "2.0K").
+  if (n >= 10_000) return `${Math.round(n / 1_000)}K`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
   return String(n);
 }
 
@@ -272,6 +275,63 @@ function YourRelevancyPill({ score, className = "" }: { score: number | null | u
       Relevancy
       <span className={`inline-block min-w-8 rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
         {score === null ? "00" : score}
+      </span>
+    </p>
+  );
+}
+
+// Your ratings count against the median of the top 10 for this keyword
+// (your own app left out, so ranking in it doesn't skew the bar). Median,
+// not mean: one 28M-ratings giant would make every keyword look hopeless.
+// Same "known count" rule as findWeakSpots: a 0 on Google Play means the
+// detail lookup failed, not "no ratings".
+function topRatingsMedian(apps: AppSearchResult[], store: Store, excludeStoreId?: string): number | null {
+  const counts = apps.slice(0, WEAK_SPOT_RANGE)
+    .filter((a) => !excludeStoreId || (store === "ios" ? String(a.trackId) : a.appId) !== excludeStoreId)
+    .map((a) => a.ratingCount)
+    .filter((n) => store === "ios" || n > 0)
+    .sort((a, b) => a - b);
+  // Too few known counts to call it a benchmark.
+  if (counts.length < 3) return null;
+  const mid = Math.floor(counts.length / 2);
+  return counts.length % 2 ? counts[mid] : Math.round((counts[mid - 1] + counts[mid]) / 2);
+}
+
+// An app outside the results still needs its own count: one browser-side
+// iTunes lookup per app and storefront, cached for the session (a failure
+// isn't cached, so the next keyword retries).
+const iosRatingCountCache = new Map<string, number>();
+async function fetchIosRatingCount(storeId: string, country: string): Promise<number | null> {
+  const key = `${storeId}:${country}`;
+  const cached = iosRatingCountCache.get(key);
+  if (cached !== undefined) return cached;
+  try {
+    const res = await fetch(`https://itunes.apple.com/lookup?id=${storeId}&country=${country}`);
+    const r = res.ok ? (await res.json()).results?.[0] : null;
+    if (!r) return null;
+    const count = typeof r.userRatingCount === "number" ? r.userRatingCount : 0;
+    iosRatingCountCache.set(key, count);
+    return count;
+  } catch {
+    return null;
+  }
+}
+
+// "Ratings 1.2K / 85K": green at or above the top 10 median, amber within
+// 10x of it, red further below. Renders nothing until both numbers are known.
+function YourRatingsPill({ yours, median, className = "" }: { yours: number | null | undefined; median: number | null; className?: string }) {
+  if (yours == null || median == null) return null;
+  const tone = yours >= median ? "bg-emerald-500/15 text-emerald-400 light:text-emerald-700"
+    : yours * 10 >= median ? "bg-amber-500/15 text-amber-400 light:text-amber-700"
+    : "bg-red-500/10 text-red-400 light:text-red-600";
+  return (
+    <p
+      className={`flex shrink-0 items-center gap-1.5 text-xs text-gray-500 ${className}`}
+      title={`Your app has ${yours.toLocaleString()} ratings. The median of the top 10 apps for this keyword (not counting yours) is ${median.toLocaleString()}.`}
+    >
+      Ratings
+      <span className={`inline-block rounded-full px-1.5 text-center text-[11px] font-semibold leading-[18px] tabular-nums ${tone}`}>
+        {formatCount(yours)} / {formatCount(median)}
       </span>
     </p>
   );
@@ -609,6 +669,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   // at the top 10). Tagged with its store id so switching apps can't show
   // the last app's score; score null = loading, undefined = none.
   const [yourRelevancy, setYourRelevancy] = useState<{ storeId: string; score: number | null | undefined } | null>(null);
+  // iOS: the active app's ratings count from a lookup, for when it isn't in
+  // the results (a ranked app's count comes with its result row). Keyed by
+  // store id + country so a stale answer never shows for another app.
+  const [yourLookupRatings, setYourLookupRatings] = useState<{ key: string; count: number } | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
   const [metricsError, setMetricsError] = useState<string | null>(null);
   const [apps, setApps] = useState<AppSearchResult[] | null>(null);
@@ -1059,6 +1123,21 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     </div>
   );
 
+  // Unranked on the App Store: look up the app's own ratings count so the
+  // Ratings pill can still compare it to the top 10.
+  const lookupStoreId = activeApp?.store === "ios" && query?.store === "ios" ? activeApp.store_id : undefined;
+  const lookupCountry = query?.country;
+  const needsRatingsLookup = !!lookupStoreId && !!allResults
+    && !allResults.some((a) => String(a.trackId) === lookupStoreId);
+  useEffect(() => {
+    if (!needsRatingsLookup || !lookupStoreId || !lookupCountry) return;
+    let cancelled = false;
+    fetchIosRatingCount(lookupStoreId, lookupCountry).then((count) => {
+      if (!cancelled && count !== null) setYourLookupRatings({ key: `${lookupStoreId}:${lookupCountry}`, count });
+    });
+    return () => { cancelled = true; };
+  }, [needsRatingsLookup, lookupStoreId, lookupCountry]);
+
   const busy = metricsLoading || appsLoading;
   // Google Play's search page returns a single page of ~20-30 apps with no
   // pagination token, so its result count says nothing about competition
@@ -1095,6 +1174,14 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const yourScore = !relevancyUnlocked ? undefined
     : rowRelevancy !== undefined ? rowRelevancy
     : yourRelevancy && yourRelevancy.storeId === yourStoreId ? yourRelevancy.score : undefined;
+  // Ratings pill: your count from your result row (Google Play's 0 means
+  // unknown), else the iOS lookup; undefined = nothing to show.
+  const yourResult = yourRankIdx >= 0 && allResults ? allResults[yourRankIdx] : undefined;
+  const yourRatings = !sameStore || !query ? undefined
+    : yourResult && (query.store === "ios" || yourResult.ratingCount > 0) ? yourResult.ratingCount
+    : query.store === "ios" && yourLookupRatings?.key === `${yourStoreId}:${query.country}` ? yourLookupRatings.count
+    : undefined;
+  const ratingsMedian = sameStore && query && apps ? topRatingsMedian(apps, query.store, yourStoreId) : null;
   const brandApp = query && apps ? brandSearchApp(apps, query.store, shownRelevancy) : null;
   const weakSpots = query && apps ? findWeakSpots(apps, query.store, yourStoreId, brandApp ? null : shownRelevancy) : [];
   // Relevancy scores are in (and it isn't a brand search), so the openings
@@ -1414,7 +1501,10 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           ? <>Your app ranks <span className="font-semibold text-white light:text-gray-900">#{yourRankIdx + 1}</span> for this keyword</>
                           : <>Your app isn&apos;t in the top {allResults.length} yet</>}
                       </p>
-                      <YourRelevancyPill score={yourScore} className="ml-auto" />
+                      <div className="ml-auto flex shrink-0 items-center gap-3">
+                        <YourRatingsPill yours={yourRatings} median={ratingsMedian} />
+                        <YourRelevancyPill score={yourScore} />
+                      </div>
                     </div>
                   )}
                   {!docked && sameStore && activeApp && allResults && (
@@ -1446,6 +1536,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
                           <p className="truncate text-xs text-gray-500">{activeApp.name}</p>
                         </div>
                       </div>
+                      <YourRatingsPill yours={yourRatings} median={ratingsMedian} />
                       <YourRelevancyPill score={yourScore} />
                       <p className="text-[11px] text-gray-500">
                         {yourRankIdx >= RESULTS_DISPLAY_LIMIT
