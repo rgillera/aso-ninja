@@ -487,6 +487,8 @@ export type QuickAuditRecord = {
 export type QuickAuditSummary = {
   id: string;
   appName: string;
+  // The store link the audit was run on.
+  url: string;
   store: "ios" | "android";
   country: string;
   createdAt: string;
@@ -535,7 +537,7 @@ export async function listQuickAuditsAction(query = ""): Promise<QuickAuditSumma
   await requireSuperAdmin();
   let q = createAdminClient()
     .from("quick_audits")
-    .select("id, app_name, store, country, created_at, followup_selected")
+    .select("id, url, app_name, store, country, created_at, followup_selected")
     .order("created_at", { ascending: false })
     .limit(100);
   // ILIKE wildcards in the search itself match literally.
@@ -543,7 +545,7 @@ export async function listQuickAuditsAction(query = ""): Promise<QuickAuditSumma
   if (term) q = q.ilike("app_name", `%${term}%`);
   const { data } = await q;
   return (data ?? []).map((r) => ({
-    id: r.id, appName: r.app_name, store: r.store, country: r.country, createdAt: r.created_at,
+    id: r.id, appName: r.app_name, url: r.url, store: r.store, country: r.country, createdAt: r.created_at,
     hasFollowup: (r.followup_selected ?? []).length > 0,
   }));
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon, MagnifyingGlassIcon, CodeBracketIcon } from "@heroicons/react/24/outline";
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon, MagnifyingGlassIcon, CodeBracketIcon, ArrowTopRightOnSquareIcon } from "@heroicons/react/24/outline";
 import {
   runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction, saveQuickAuditFollowupAction, runQuickAuditFollowupAction, listQuickAuditsAction,
   type QuickAuditSummary,
@@ -25,7 +25,15 @@ const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
 
 type EmailMode = "audit" | "uninterested" | "followup";
 
+// Every email ends with the sending tool's merge tag (ManyReach fills in the
+// sender's signature), so the copied text is ready to paste as-is.
+const SIGNATURE_TAG = "{{SENDER_SIGNATURE}}";
+
 function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, mode: EmailMode, sentCount = 0) {
+  return `${buildEmailBody(r, picked, firstName, calendly, mode, sentCount)}\n\n${SIGNATURE_TAG}`;
+}
+
+function buildEmailBody(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, mode: EmailMode, sentCount = 0) {
   // Only the first keyword finding carries the free-tool line, so the email
   // doesn't repeat the same nudge twice.
   let toolUsed = false;
@@ -166,7 +174,6 @@ function formatWhen(iso: string) {
 export default function AdminQuickAuditPage({ initialHistory }: { initialHistory: QuickAuditSummary[] }) {
   const [url, setUrl] = useState("");
   const [country, setCountry] = useState("");
-  const [fullAudit, setFullAudit] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
   const [mode, setMode] = useState<EmailMode>("audit");
@@ -192,7 +199,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     if (!targetUrl.trim() || pending) return;
     setError(null);
     startTransition(async () => {
-      const res = await runQuickAuditAction(targetUrl, targetCountry || undefined, fullAudit);
+      const res = await runQuickAuditAction(targetUrl, targetCountry || undefined);
       if (!res.ok) { setError(res.error); setResult(null); setAuditId(""); return; }
       const { record } = res;
       setResult(record.result);
@@ -205,7 +212,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setAuditedAt(record.createdAt);
       if (record.id) {
         setHistory((prev) => [{
-          id: record.id, appName: record.result.appName, store: record.result.store,
+          id: record.id, appName: record.result.appName, url: record.url, store: record.result.store,
           country: record.result.country, createdAt: record.createdAt, hasFollowup: false,
         }, ...prev]);
       }
@@ -394,22 +401,12 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
               </button>
             </form>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
               <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" className={inputCls} />
               <input value={calendly} onChange={(e) => setCalendly(e.target.value)} placeholder="Calendly link" className={inputCls} />
             </div>
 
-            <label className="flex items-start gap-2 mb-6 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
-              <input type="checkbox" checked={fullAudit} onChange={(e) => setFullAudit(e.target.checked)} className="mt-0.5 accent-indigo-500" />
-              <span>
-                Full audit
-                <span className="text-gray-500"> · also reviews screenshots (Gemini), localization and category benchmarks as extra findings. Slower, and uses more store requests.</span>
-              </span>
-            </label>
-
-            {auditing && <p className="text-sm text-gray-500 mb-6">{fullAudit
-              ? "Reading the listing, checking keywords, reviewing screenshots and comparing against the category. This usually takes 30 to 90 seconds."
-              : "Reading the listing, finding competitors and checking keywords. This usually takes 10 to 60 seconds."}</p>}
+            {auditing && <p className="text-sm text-gray-500 mb-6">Reading the listing, finding competitors and checking keywords. This usually takes 10 to 60 seconds.</p>}
             {error && <div className="rounded-lg bg-red-500/10 text-red-400 light:text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
             {result && !(auditing) && (
@@ -566,14 +563,28 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       </p>
                     </button>
                     {loadingId !== h.id && !(generating && h.id === auditId) && (
-                      <button
-                        type="button"
-                        onClick={() => openHistory(h.id, true)}
-                        disabled={pending}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-sm transition-opacity hover:bg-indigo-500 focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-0"
-                      >
-                        {h.hasFollowup ? "Open 2nd audit" : "2nd audit"}
-                      </button>
+                      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => openHistory(h.id, true)}
+                          disabled={pending}
+                          className="rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-0"
+                        >
+                          {h.hasFollowup ? "Open 2nd audit" : "2nd audit"}
+                        </button>
+                        {h.url && (
+                          <a
+                            href={h.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open in store"
+                            aria-label={`Open ${h.appName} in the store`}
+                            className="flex size-[26px] items-center justify-center rounded-md bg-[#1c1c20] text-gray-300 shadow-sm ring-1 ring-white/10 hover:text-white light:bg-white light:text-gray-600 light:ring-black/[0.08] light:hover:text-indigo-600"
+                          >
+                            <ArrowTopRightOnSquareIcon className="size-3.5" />
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

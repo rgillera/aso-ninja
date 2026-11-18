@@ -467,7 +467,19 @@ async function keywordFindings(
   const maxDiff = Math.max(60, target?.kind === "hard" ? target.k.difficulty - 3 : 0);
   // Only what the app actually does: autocomplete around "spam blocker"
   // happily offers "unknown call blocker" to an SMS-only app.
-  const inReach = sweet.filter(({ k }) => k.difficulty <= maxDiff);
+  // A long tail that adds a word the title and subtitle don't use narrows the
+  // search to a niche: "car logo quiz" wants a car-logo app, and a general
+  // logo quiz only loosely covers it, which relevancy (~50-60, inflated by
+  // word overlap in the embedding half) still lets through. Pitch one only
+  // when the listing is about that niche: the word (or its plural) comes up
+  // in the description at least twice, not once in passing ("long car ride").
+  const stem = (w: string) => w.length > 3 && w.endsWith("s") ? w.slice(0, -1) : w;
+  const descCounts = new Map<string, number>();
+  for (const w of words(data.description ?? "")) descCounts.set(stem(w), (descCounts.get(stem(w)) ?? 0) + 1);
+  const offNiche = (k: KeywordCheck) => words(k.term).some((w) => !vocab.has(w) && !vocab.has(stem(w)) && (descCounts.get(stem(w)) ?? 0) < 2);
+  const skippedNiche = sweet.filter(({ k }) => offNiche(k)).map(({ k }) => k.term);
+  if (skippedNiche.length) notes.push(`Long tails skipped as a niche the listing doesn't cover: ${skippedNiche.join(", ")}.`);
+  const inReach = sweet.filter(({ k }) => k.difficulty <= maxDiff && !offNiche(k));
   await scoreRelevancy(inReach.map(({ k }) => k));
   // Prefer ~100+ searches a day (popularity 40); thinner ones only when
   // nothing better exists.
