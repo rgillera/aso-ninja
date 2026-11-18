@@ -75,9 +75,13 @@ export async function POST(request: NextRequest) {
   // silently cut off at PostgREST's 1000-row cap, and since it was ordered
   // oldest-first, the rows dropped were the newest. See
   // 20261007000002_keyword_snapshots_visibility_rpc.sql.
-  const { data: reduced } = await supabase.rpc("keyword_performance_snapshots", {
+  const { data: reduced, error } = await supabase.rpc("keyword_performance_snapshots", {
     p_terms: terms, p_store: store, p_country: country, p_app_ids: relevantAppIds,
   });
+  // An error (e.g. a statement timeout on a large keyword list) must not
+  // look like "no history": the client would read every keyword as never
+  // ranked and queue a Live Search for each one.
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const popRes = { data: (reduced?.volume ?? []) as { term: string; recorded_on: string; score: number; max_score: number }[] };
   const rankRes = { data: (reduced?.rank ?? []) as { keyword: string; recorded_on: string; app_id: string; position: number | null }[] };
 

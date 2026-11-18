@@ -34,7 +34,8 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase.rpc("keyword_visibility_history", {
     p_terms: terms, p_store: store, p_country: country, p_app_ids: appIds, p_from: from, p_to: to,
   });
-  if (error) return NextResponse.json({});
+  // An error (e.g. a statement timeout) must not look like "no data yet".
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json(data as VisibilityHistoryResult);
 }

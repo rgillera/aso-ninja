@@ -18,6 +18,7 @@ import { PerformanceTable } from "./PerformanceTable";
 import { CompetitorsStrip } from "./CompetitorsStrip";
 import { exportPerformanceReport } from "./exportReport";
 import { VisibilityScoreChart, type ChartApp } from "./VisibilityScoreChart";
+import { useCoalescedFetch, postJson } from "./useCoalescedFetch";
 import { VolumeHistoryPanel } from "./VolumeHistoryPanel";
 import { RankHistoryPanel } from "./RankHistoryPanel";
 import { DownloadsHistoryPanel } from "./DownloadsHistoryPanel";
@@ -589,32 +590,27 @@ export default function KeywordPerformancePage() {
   // without the user having to leave and re-enter the page.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
 
-  useEffect(() => {
-    if (!activeApp || !trackedTerms || isLocked) return;
-    const t = setTimeout(() => {
-      setSnapshotsLoading(true);
-      // POST: 800+ terms in a query string overflow the URL limit.
-      fetch("/api/keywords/performance-snapshots", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          terms: trackedTerms.split(",").map(decodeURIComponent),
-          store: activeApp.store ?? "ios",
-          country: activeApp.country ?? "us",
-          storeId: activeApp.store_id ?? "",
-          competitorIds: competitors.map((c) => c.storeId),
-        }),
-      })
-        .then((r) => r.json())
-        .then((data: PerformanceSnapshotResult) => setSnapshots(data))
-        .catch(() => setSnapshots({}))
-        .finally(() => {
-          setSnapshotsLoading(false);
-          setSnapshotsLoadedOnce(true);
-        });
-    }, 300);
-    return () => clearTimeout(t);
-  }, [activeApp, trackedTerms, snapshotsRefreshKey, competitors, isLocked]);
+  // POST: 800+ terms in a query string overflow the URL limit. A failed
+  // load keeps what's on screen and doesn't count as loaded: treating it as
+  // "no keyword has a rank" would queue a Live Search for every keyword.
+  const competitorIdsKey = competitors.map((c) => c.storeId).join(",");
+  useCoalescedFetch<PerformanceSnapshotResult>({
+    enabled: !!activeApp && !!trackedTerms && !isLocked,
+    scope: [activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.store_id, trackedTerms, competitorIdsKey].join("|"),
+    refreshKey: snapshotsRefreshKey,
+    load: () => postJson("/api/keywords/performance-snapshots", {
+      terms: trackedTerms.split(",").map(decodeURIComponent),
+      store: activeApp?.store ?? "ios",
+      country: activeApp?.country ?? "us",
+      storeId: activeApp?.store_id ?? "",
+      competitorIds: competitorIdsKey ? competitorIdsKey.split(",") : [],
+    }),
+    onData: (data) => {
+      setSnapshots(data);
+      setSnapshotsLoadedOnce(true);
+    },
+    onLoading: setSnapshotsLoading,
+  });
 
   // Keywords with no rank history at all (rankLatestDate null) never got a
   // successful Live Search. Rather than requiring the user to notice "N
@@ -681,57 +677,34 @@ export default function KeywordPerformancePage() {
     ];
   }, [activeApp, competitors, planSlug]);
 
-  // What the chart last loaded for, minus snapshotsRefreshKey. A change here
-  // (another app, keyword list or competitor set) is a fresh load; a change
-  // in snapshotsRefreshKey alone is a rank check landing, which during a
-  // Refetch or auto-retry batch fires once per term.
-  const visibilityScopeRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!activeApp || !trackedTerms || !chartApps.length || isLocked) return;
-    const scope = [activeApp.store_id ?? activeApp.id, activeApp.store, activeApp.country, trackedTerms, chartApps.map((a) => a.id).join(",")].join("|");
-    // Rank-check refreshes keep the current chart on screen and wait for the
-    // batch to go quiet, so a batch reloads once at the end instead of
-    // flashing "Loading" once per keyword.
-    const quiet = visibilityScopeRef.current === scope;
-    let cancelled = false;
-    const t = setTimeout(() => {
-      visibilityScopeRef.current = scope;
-      if (!quiet) setVisibilityLoading(true);
+  // Reloads quietly as rank checks land (see useCoalescedFetch). The range
+  // starts no earlier than the day the app was followed (apps.created_at, the
+  // same "tracked since" the Export Report uses). Before that, the only
+  // checks of its keywords are whatever other users happened to run, too
+  // sparse to score fairly.
+  const chartAppIdsKey = chartApps.map((a) => a.id).join(",");
+  useCoalescedFetch<VisibilityHistoryResult>({
+    enabled: !!activeApp && !!trackedTerms && !!chartAppIdsKey && !isLocked,
+    scope: [activeApp?.store_id ?? activeApp?.id, activeApp?.store, activeApp?.country, activeApp?.created_at, trackedTerms, chartAppIdsKey].join("|"),
+    refreshKey: snapshotsRefreshKey,
+    load: () => {
       const today = new Date();
       const from30 = new Date(today); from30.setDate(today.getDate() - 29);
-      const toIso = today.toISOString().split("T")[0];
-      // Start no earlier than the day the app was followed (apps.created_at,
-      // the same "tracked since" the Export Report uses). Before that, the
-      // only checks of its keywords are whatever other users happened to run,
-      // too sparse to score fairly.
-      const trackedSince = activeApp.created_at?.slice(0, 10);
       const last30 = from30.toISOString().split("T")[0];
-      const fromIso = trackedSince && trackedSince > last30 ? trackedSince : last30;
-      // POST: 800+ terms in a query string overflow the URL limit.
-      fetch("/api/keywords/visibility-history", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          terms: trackedTerms.split(",").map(decodeURIComponent),
-          appIds: chartApps.map((a) => a.id),
-          store: activeApp.store ?? "ios",
-          country: activeApp.country ?? "us",
-          from: fromIso,
-          to: toIso,
-        }),
-      })
-        .then((r) => r.json())
-        .then((data: VisibilityHistoryResult) => { if (!cancelled) setVisibility(data); })
-        // A failed quiet refresh keeps the chart it already has.
-        .catch(() => { if (!cancelled && !quiet) setVisibility({}); })
-        .finally(() => { if (!cancelled) setVisibilityLoading(false); });
-    }, quiet ? 2000 : 300);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [activeApp, trackedTerms, chartApps, snapshotsRefreshKey, isLocked]);
+      const trackedSince = activeApp?.created_at?.slice(0, 10);
+      return postJson("/api/keywords/visibility-history", {
+        terms: trackedTerms.split(",").map(decodeURIComponent),
+        appIds: chartAppIdsKey.split(","),
+        store: activeApp?.store ?? "ios",
+        country: activeApp?.country ?? "us",
+        from: trackedSince && trackedSince > last30 ? trackedSince : last30,
+        to: today.toISOString().split("T")[0],
+      });
+    },
+    onData: setVisibility,
+    onLoading: setVisibilityLoading,
+    onFreshError: () => setVisibility({}),
+  });
 
   const filtered = useMemo(() => {
     if (!activeApp) return [];
