@@ -478,6 +478,7 @@ export type QuickAuditRecord = {
   createdAt: string;
   result: QuickAuditResult;
   selected: string[];
+  followupResult: QuickAuditResult | null;
   followupSelected: string[];
   firstName: string;
   calendly: string;
@@ -489,6 +490,7 @@ export type QuickAuditSummary = {
   store: "ios" | "android";
   country: string;
   createdAt: string;
+  hasFollowup: boolean;
 };
 
 export type QuickAuditActionResult =
@@ -499,7 +501,7 @@ export type QuickAuditActionResult =
 function toRecord(row: any): QuickAuditRecord {
   return {
     id: row.id, url: row.url, createdAt: row.created_at, result: row.result,
-    selected: row.selected ?? [], followupSelected: row.followup_selected ?? [], firstName: row.first_name ?? "", calendly: row.calendly ?? "",
+    selected: row.selected ?? [], followupResult: row.followup_result ?? null, followupSelected: row.followup_selected ?? [], firstName: row.first_name ?? "", calendly: row.calendly ?? "",
   };
 }
 
@@ -523,19 +525,27 @@ export async function runQuickAuditAction(url: string, country?: string, full = 
   }).select("*").single();
   // History is a convenience: a failed save still returns the audit.
   if (error || !data) {
-    return { ok: true, record: { id: "", url: url.trim(), createdAt: new Date().toISOString(), result, selected: result.defaultSelection, followupSelected: [], firstName: "", calendly: "" } };
+    return { ok: true, record: { id: "", url: url.trim(), createdAt: new Date().toISOString(), result, selected: result.defaultSelection, followupResult: null, followupSelected: [], firstName: "", calendly: "" } };
   }
   return { ok: true, record: toRecord(data) };
 }
 
-export async function listQuickAuditsAction(): Promise<QuickAuditSummary[]> {
+// Newest 100, or with `query` the newest 100 whose app name matches it.
+export async function listQuickAuditsAction(query = ""): Promise<QuickAuditSummary[]> {
   await requireSuperAdmin();
-  const { data } = await createAdminClient()
+  let q = createAdminClient()
     .from("quick_audits")
-    .select("id, app_name, store, country, created_at")
+    .select("id, app_name, store, country, created_at, followup_selected")
     .order("created_at", { ascending: false })
     .limit(100);
-  return (data ?? []).map((r) => ({ id: r.id, appName: r.app_name, store: r.store, country: r.country, createdAt: r.created_at }));
+  // ILIKE wildcards in the search itself match literally.
+  const term = query.trim().slice(0, 100).replace(/[\\%_]/g, (c) => `\\${c}`);
+  if (term) q = q.ilike("app_name", `%${term}%`);
+  const { data } = await q;
+  return (data ?? []).map((r) => ({
+    id: r.id, appName: r.app_name, store: r.store, country: r.country, createdAt: r.created_at,
+    hasFollowup: (r.followup_selected ?? []).length > 0,
+  }));
 }
 
 export async function getQuickAuditAction(id: string): Promise<QuickAuditRecord | null> {
@@ -554,7 +564,34 @@ export async function saveQuickAuditEmailAction(id: string, selected: string[], 
     .eq("id", id);
 }
 
-// The picks behind the one final follow-up email (findings not in the first).
+// The one final follow-up: a fresh full audit of the same app and store
+// country that leaves out every keyword and finding the first email carried,
+// so the follow-up brings new suggestions only.
+export async function runQuickAuditFollowupAction(id: string): Promise<QuickAuditActionResult> {
+  await requireSuperAdmin();
+  const admin = createAdminClient();
+  const { data: row } = await admin.from("quick_audits").select("*").eq("id", id).maybeSingle();
+  if (!row) return { ok: false, error: "That audit couldn't be loaded." };
+  const first: QuickAuditResult = row.result;
+  const sentIds: string[] = row.selected ?? [];
+  const sent = first.findings.filter((f) => sentIds.includes(f.id));
+  const { runQuickAudit, exclusionFrom } = await import("@/libs/admin/quick-audit");
+  let result: QuickAuditResult;
+  try {
+    result = await runQuickAudit(admin, { store: row.store, storeId: row.store_id, country: row.country }, { full: true, exclude: exclusionFrom(sent) });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Follow-up audit failed." };
+  }
+  const { data, error } = await admin.from("quick_audits")
+    .update({ followup_result: result, followup_selected: result.defaultSelection, updated_at: new Date().toISOString() })
+    .eq("id", id).select("*").single();
+  if (error || !data) {
+    return { ok: true, record: { ...toRecord(row), followupResult: result, followupSelected: result.defaultSelection } };
+  }
+  return { ok: true, record: toRecord(data) };
+}
+
+// The picks behind the one final follow-up email.
 export async function saveQuickAuditFollowupAction(id: string, followupSelected: string[]): Promise<void> {
   await requireSuperAdmin();
   if (!id) return;

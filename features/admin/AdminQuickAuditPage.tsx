@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState, useTransition } from "react";
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { Fragment, useMemo, useRef, useState, useTransition } from "react";
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
-  runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction, saveQuickAuditFollowupAction,
+  runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction, saveQuickAuditFollowupAction, runQuickAuditFollowupAction, listQuickAuditsAction,
   type QuickAuditSummary,
 } from "@/features/admin/actions";
 import type { AuditFinding, QuickAuditResult } from "@/libs/admin/quick-audit";
@@ -12,8 +12,6 @@ import { COUNTRIES, countryFlag } from "@/libs/countries";
 // The email carries two findings by default, title first then long tail
 // (see pickDefault in libs/admin/quick-audit.ts); a third can be ticked.
 const MAX_PICKS = 3;
-// The one final follow-up carries two fresh findings by default.
-const FOLLOWUP_PICKS = 2;
 
 const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
 
@@ -157,7 +155,9 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [firstName, setFirstName] = useState("");
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
   const [mode, setMode] = useState<EmailMode>("audit");
+  const [followupResult, setFollowupResult] = useState<QuickAuditResult | null>(null);
   const [followupSelected, setFollowupSelected] = useState<string[]>([]);
+  const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
   const [auditId, setAuditId] = useState("");
   const [auditUrl, setAuditUrl] = useState("");
@@ -166,6 +166,10 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [history, setHistory] = useState(initialHistory);
+  const [search, setSearch] = useState("");
+  const [searching, setSearching] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchSeq = useRef(0);
   const [pending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -178,6 +182,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       const { record } = res;
       setResult(record.result);
       setSelected(record.selected);
+      setFollowupResult(record.followupResult);
       setFollowupSelected(record.followupSelected);
       setMode("audit");
       setAuditId(record.id);
@@ -186,14 +191,17 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       if (record.id) {
         setHistory((prev) => [{
           id: record.id, appName: record.result.appName, store: record.result.store,
-          country: record.result.country, createdAt: record.createdAt,
+          country: record.result.country, createdAt: record.createdAt, hasFollowup: false,
         }, ...prev]);
       }
     });
   }
 
-  function openHistory(id: string) {
-    if (pending || id === auditId) return;
+  // `followup` (the card's hover "2nd audit" button) opens the audit straight
+  // on its follow-up, generating it first if it hasn't been run yet.
+  function openHistory(id: string, followup = false) {
+    if (pending) return;
+    if (id === auditId) { if (followup) switchMode("followup"); return; }
     setLoadingId(id);
     setError(null);
     startTransition(async () => {
@@ -202,6 +210,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       if (!record) { setError("That audit couldn't be loaded."); return; }
       setResult(record.result);
       setSelected(record.selected);
+      setFollowupResult(record.followupResult);
       setFollowupSelected(record.followupSelected);
       setAuditId(record.id);
       setAuditUrl(record.url);
@@ -211,7 +220,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setFirstName(record.firstName);
       setCalendly(record.calendly || DEFAULT_CALENDLY);
       // Reopening an audit that already has a follow-up drafted lands on it.
-      setMode(record.followupSelected.length ? "followup" : "audit");
+      setMode(followup || record.followupResult ? "followup" : "audit");
+      if (followup && !record.followupResult) await runFollowup(record.id);
     });
   }
 
@@ -226,24 +236,57 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     setAuditUrl("");
     setAuditedAt("");
     setSelected([]);
+    setFollowupResult(null);
     setFollowupSelected([]);
     setError(null);
   }
 
-  // Follow-up: the first email's picks are locked as "Sent", and the
-  // follow-up picks the next unsent findings (findings are in impact order).
+  // Follow-up: a fresh full audit that skips every keyword and finding the
+  // first email carried (runQuickAuditFollowupAction), run once on the first
+  // tick and kept with the audit.
+  async function runFollowup(id: string) {
+    setError(null);
+    setGenerating(true);
+    const res = await runQuickAuditFollowupAction(id);
+    setGenerating(false);
+    if (!res.ok) { setError(res.error); return; }
+    setFollowupResult(res.record.followupResult);
+    setFollowupSelected(res.record.followupSelected);
+    const has = res.record.followupSelected.length > 0;
+    setHistory((prev) => prev.map((h) => h.id === id ? { ...h, hasFollowup: has } : h));
+  }
+
+  function generateFollowup() {
+    if (!auditId || pending) return;
+    startTransition(async () => {
+      // The first email's picks as they stand now are what it excludes.
+      await saveQuickAuditEmailAction(auditId, selected, firstName, calendly).catch(() => {});
+      await runFollowup(auditId);
+    });
+  }
+
+  // Server-side, so audits past the newest 100 are findable too. Debounced;
+  // a slower earlier response never overwrites a newer one.
+  function onSearch(value: string) {
+    setSearch(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      const seq = ++searchSeq.current;
+      setSearching(true);
+      const rows = await listQuickAuditsAction(value).catch(() => null);
+      if (seq !== searchSeq.current) return;
+      setSearching(false);
+      if (rows) setHistory(rows);
+    }, 250);
+  }
+
   function switchMode(next: EmailMode) {
     setMode(next);
-    if (next === "followup" && result && !followupSelected.length) {
-      const fresh = result.findings.filter((f) => !selected.includes(f.id)).slice(0, FOLLOWUP_PICKS).map((f) => f.id);
-      setFollowupSelected(fresh);
-      if (auditId) saveQuickAuditFollowupAction(auditId, fresh).catch(() => {});
-    }
+    if (next === "followup" && !followupResult) generateFollowup();
   }
 
   function toggle(id: string) {
     if (mode === "followup") {
-      if (selected.includes(id)) return;
       const next = followupSelected.includes(id) ? followupSelected.filter((x) => x !== id) : followupSelected.length >= MAX_PICKS ? followupSelected : [...followupSelected, id];
       setFollowupSelected(next);
       if (auditId) saveQuickAuditFollowupAction(auditId, next).catch(() => {});
@@ -254,14 +297,20 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     if (auditId) saveQuickAuditEmailAction(auditId, next, firstName, calendly).catch(() => {});
   }
 
+  // A main audit run (not a history load or a follow-up generating), which
+  // swaps the result panel for the progress message.
+  const auditing = pending && !loadingId && !generating;
   const followup = mode === "followup";
   const activePicks = followup ? followupSelected : selected;
+  // The follow-up lists and emails findings from its own run.
+  const listed = followup ? followupResult : result;
   const picked = useMemo(
-    () => result ? activePicks.map((id) => result.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
-    [result, activePicks],
+    () => listed ? activePicks.map((id) => listed.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
+    [listed, activePicks],
   );
-  const unsentCount = result ? result.findings.filter((f) => !selected.includes(f.id)).length : 0;
-  const email = result ? buildEmail(result, picked, firstName, calendly, mode, selected.length) : "";
+  const email = !result ? ""
+    : followup && !followupResult ? (generating ? "" : "Tick Follow-up again to generate new findings.")
+    : buildEmail(followup && followupResult ? followupResult : result, picked, firstName, calendly, mode, selected.length);
 
   async function copy() {
     try {
@@ -312,8 +361,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                 {COUNTRIES.map((c) => <option key={c.code} value={c.code.toLowerCase()}>{countryFlag(c.code)} {c.label}</option>)}
               </select>
               <button type="submit" disabled={pending || !url.trim()} className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 flex items-center justify-center gap-2">
-                {pending && !loadingId && <ArrowPathIcon className="size-4 animate-spin" />}
-                {pending && !loadingId ? "Auditing..." : "Run audit"}
+                {auditing && <ArrowPathIcon className="size-4 animate-spin" />}
+                {auditing ? "Auditing..." : "Run audit"}
               </button>
             </form>
 
@@ -330,12 +379,12 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
               </span>
             </label>
 
-            {pending && !loadingId && <p className="text-sm text-gray-500 mb-6">{fullAudit
+            {auditing && <p className="text-sm text-gray-500 mb-6">{fullAudit
               ? "Reading the listing, checking keywords, reviewing screenshots and comparing against the category. This usually takes 30 to 90 seconds."
               : "Reading the listing, finding competitors and checking keywords. This usually takes 10 to 60 seconds."}</p>}
             {error && <div className="rounded-lg bg-red-500/10 text-red-400 light:text-red-600 text-sm px-4 py-3 mb-6">{error}</div>}
 
-            {result && !(pending && !loadingId) && (
+            {result && !(auditing) && (
               <div className="space-y-6">
                 <div className="rounded-2xl bg-[#141417] light:bg-white p-5">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -372,33 +421,41 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       {copied ? "Copied" : "Copy email"}
                     </button>
                   </div>
-                  {followup && unsentCount === 0 && (
-                    <p className="mb-2 text-xs text-amber-500">Every finding already went out in the first email. Run a full audit on this app for more.</p>
+                  {followup && generating && (
+                    <p className="mb-2 text-xs text-gray-500">Running a full audit for new findings, skipping everything the first email covered. This usually takes 30 to 90 seconds.</p>
                   )}
-                  <div className="whitespace-pre-wrap break-words rounded-2xl bg-[#141417] light:bg-white p-5 text-sm leading-relaxed text-gray-200 light:text-gray-800">
+                  {followup && followupResult && followupResult.findings.length === 0 && (
+                    <p className="mb-2 text-xs text-amber-500">No new findings beyond what the first email covered. Try Regenerate, or another store country.</p>
+                  )}
+                  {followup && followupResult?.notes.map((n) => <p key={n} className="mb-2 text-xs text-amber-500">{n}</p>)}
+                  {!(followup && generating) && <div className="whitespace-pre-wrap break-words rounded-2xl bg-[#141417] light:bg-white p-5 text-sm leading-relaxed text-gray-200 light:text-gray-800">
                     <LinkifiedText text={email} />
-                  </div>
+                  </div>}
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-white light:text-gray-900">Findings</h3>
-                    <span className="text-xs text-gray-500">{activePicks.length}/{MAX_PICKS} selected{followup ? " for the follow-up" : ""}, in email order</span>
+                    <span className="ml-auto text-xs text-gray-500">{activePicks.length}/{MAX_PICKS} selected{followup ? " for the follow-up" : ""}, in email order</span>
+                    {followup && followupResult && (
+                      <button type="button" onClick={generateFollowup} disabled={pending} className={`${ghostBtn} ml-3`}>
+                        <ArrowPathIcon className={`size-3.5 ${generating ? "animate-spin" : ""}`} />
+                        Regenerate
+                      </button>
+                    )}
                   </div>
-                  {result.findings.length === 0 ? (
+                  {followup && !followupResult ? null : !listed || listed.findings.length === 0 ? (
                     <div className="rounded-2xl bg-[#141417] light:bg-white px-5 py-8 text-center text-sm text-gray-500">No findings came out of this listing. It may be in good shape, or the store requests failed.</div>
                   ) : (
                     <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden">
-                      {result.findings.map((f) => {
+                      {listed.findings.map((f) => {
                         const pos = activePicks.indexOf(f.id);
-                        const sent = followup && selected.includes(f.id);
-                        const disabled = sent || (pos < 0 && activePicks.length >= MAX_PICKS);
+                        const disabled = pos < 0 && activePicks.length >= MAX_PICKS;
                         return (
                           <label key={f.id} className={`flex gap-3 px-5 py-3.5 cursor-pointer hover:bg-white/[0.03] light:hover:bg-black/[0.02] ${disabled ? "opacity-50" : ""}`}>
-                            <input type="checkbox" checked={pos >= 0 || sent} disabled={disabled} onChange={() => toggle(f.id)} className="mt-1 accent-indigo-500" />
+                            <input type="checkbox" checked={pos >= 0} disabled={disabled} onChange={() => toggle(f.id)} className="mt-1 accent-indigo-500" />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
-                                {sent && <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-400 light:text-emerald-600">Sent</span>}
                                 {pos >= 0 && <span className="flex size-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-semibold text-white">{pos + 1}</span>}
                                 <span className="rounded-md bg-white/[0.06] light:bg-black/[0.05] px-1.5 py-0.5 text-[11px] font-medium text-gray-300 light:text-gray-700">{CATEGORY_LABEL[f.category]}</span>
                                 <span className="text-[11px] text-gray-500">Impact {f.severity}</span>
@@ -421,27 +478,46 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
               <ClockIcon className="size-4 text-gray-500" />
               <h3 className="text-sm font-semibold text-white light:text-gray-900">History</h3>
             </div>
+            <div className="relative mb-2">
+              <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-500" />
+              <input value={search} onChange={(e) => onSearch(e.target.value)} placeholder="Search apps" aria-label="Search audit history" className={`${inputCls} pl-9 pr-9`} />
+              {searching && <ArrowPathIcon className="absolute right-3 top-1/2 size-3.5 -translate-y-1/2 animate-spin text-gray-500" />}
+            </div>
             {history.length === 0 ? (
-              <div className="rounded-2xl bg-[#141417] light:bg-white px-4 py-6 text-center text-xs text-gray-500">Audits you run show up here.</div>
+              <div className="rounded-2xl bg-[#141417] light:bg-white px-4 py-6 text-center text-xs text-gray-500">{search.trim() ? "No audits match that name." : "Audits you run show up here."}</div>
             ) : (
               <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden lg:max-h-[calc(100vh-10rem)] lg:overflow-y-auto">
                 {history.map((h) => (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => openHistory(h.id)}
-                    disabled={pending && loadingId !== h.id}
-                    className={`block w-full text-left px-4 py-3 transition-colors ${h.id === auditId ? "bg-white/[0.06] light:bg-indigo-50" : "hover:bg-white/[0.03] light:hover:bg-black/[0.02]"}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <img src={h.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3.5 shrink-0" />
-                      <span className="truncate text-sm text-gray-200 light:text-gray-800">{h.appName}</span>
-                      {loadingId === h.id && <ArrowPathIcon className="ml-auto size-3.5 shrink-0 animate-spin text-gray-500" />}
-                    </div>
-                    <p className="mt-0.5 text-[11px] text-gray-500" suppressHydrationWarning>
-                      {countryFlag(h.country)} {h.country.toUpperCase()} · {formatWhen(h.createdAt)}
-                    </p>
-                  </button>
+                  // Sibling buttons (a button can't hold another): the card
+                  // opens the audit, the hover one opens its follow-up.
+                  <div key={h.id} className="group relative">
+                    <button
+                      type="button"
+                      onClick={() => openHistory(h.id)}
+                      disabled={pending && loadingId !== h.id}
+                      className={`block w-full text-left px-4 py-3 transition-colors ${h.id === auditId ? "bg-white/[0.06] light:bg-indigo-50" : "hover:bg-white/[0.03] light:hover:bg-black/[0.02]"}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <img src={h.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3.5 shrink-0" />
+                        <span className="truncate text-sm text-gray-200 light:text-gray-800">{h.appName}</span>
+                        {loadingId === h.id && <ArrowPathIcon className="ml-auto size-3.5 shrink-0 animate-spin text-gray-500" />}
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-gray-500" suppressHydrationWarning>
+                        {countryFlag(h.country)} {h.country.toUpperCase()} · {formatWhen(h.createdAt)}
+                        {h.hasFollowup && <span className="ml-1.5 rounded bg-indigo-500/15 px-1 py-px text-[10px] font-medium text-indigo-300 light:text-indigo-600">2nd audit</span>}
+                      </p>
+                    </button>
+                    {loadingId !== h.id && (
+                      <button
+                        type="button"
+                        onClick={() => openHistory(h.id, true)}
+                        disabled={pending}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-indigo-600 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-sm transition-opacity hover:bg-indigo-500 focus-visible:opacity-100 group-hover:opacity-100 disabled:opacity-0"
+                      >
+                        {h.hasFollowup ? "Open 2nd audit" : "2nd audit"}
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

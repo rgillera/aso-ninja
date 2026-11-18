@@ -50,6 +50,7 @@ export type AuditFinding = {
   severity: number; // 0-100, higher = more worth leading with
   text: string; // the sentence that replaces {{FINDING_n}}
   toolLine?: string; // optional second line (the free-tool nudge)
+  terms?: string[]; // keywords a keyword finding pitches (lowercase), so a follow-up can skip them
   oneWord?: boolean; // pitches a single word ("sell"): only emailed if nothing better exists
   focus?: "title"; // about the app title: candidates for the email's first slot
   evidence: string; // admin-only context, never goes in the email
@@ -282,9 +283,12 @@ type Competitor = { id: string; data: NonNullable<StoreData> };
 
 async function keywordFindings(
   admin: SupabaseClient, store: AuditStore, storeId: string, country: string,
-  data: NonNullable<StoreData>, shortName: string, notes: string[],
+  data: NonNullable<StoreData>, shortName: string, notes: string[], excluded: Set<string> = new Set(),
 ): Promise<{ findings: AuditFinding[]; competitors: Competitor[] }> {
   const appName = data.name ?? "";
+  // Keywords an earlier email already pitched (follow-up runs): never pitched
+  // again, so the next-best candidate takes their place.
+  const fresh = (t: string) => !excluded.has(t.toLowerCase().trim());
   // One-word brands only: a multi-word title head like "Water Reminder" is
   // a generic phrase, not a name to keep out of keyword ideas.
   const oneWordBrand = (name: string) => { const b = words(titleBrand(name)); return b.length === 1 ? b : []; };
@@ -371,6 +375,7 @@ async function keywordFindings(
   type Target = { k: KeywordCheck; rank: number | null; kind: "opportunity" | "hard" | "low"; where: ReturnType<typeof whereIs>; order: number };
   const targets: Target[] = [];
   for (const [order, k] of targetChecks.entries()) {
+    if (!fresh(k.term)) continue;
     const rank = rankIn(k.hits, appName, storeId);
     const where = whereIs(k.term);
     const top10 = rank != null && rank <= 10;
@@ -417,6 +422,7 @@ async function keywordFindings(
       severity: 96 - i * 6,
       text: targetText(t),
       toolLine: toolLine(t.k.term),
+      terms: [t.k.term],
       oneWord: isOneWord(t.k.term),
       evidence: `Targeted (${t.kind}, in ${fieldName(t.where)}) · ${metricsLine(t.k, t.rank, rel(t.k))}`,
     });
@@ -441,7 +447,7 @@ async function keywordFindings(
   // Two-word terms go first so they survive the cap on keyword checks below.
   const isTwoWords = (t: string) => words(t).length === 2;
   const suggestions = (await longTailCandidates(store, country, longTailSeeds, notASearch))
-    .filter((t) => !targeted.includes(t) && !seeds.includes(t))
+    .filter((t) => !targeted.includes(t) && !seeds.includes(t) && fresh(t))
     .sort((a, b) => Number(isTwoWords(b)) - Number(isTwoWords(a)));
   await check(suggestions.slice(0, 8));
   const sweet = suggestions
@@ -496,6 +502,7 @@ async function keywordFindings(
         ? "Ranking for just one long-tail keyword like these can bring hundreds to thousands of impressions a day."
         : "Each one you rank for adds steady daily impressions you're not getting today, and they're less contested than the big head terms."}${placement}`,
       toolLine: toolLine(picks[0].k.term),
+      terms: picks.map(({ k }) => k.term),
       evidence: picks.map(({ k, rank }) => `${k.term}: ${metricsLine(k, rank, rel(k))}`).join(" | "),
     });
   }
@@ -517,7 +524,7 @@ async function keywordFindings(
   const gaps = shared
     .filter(([t, names]) => t.includes(" ") || !shared.some(([p, pn]) => p.includes(" ") && p.split(" ").includes(t) && pn.length >= names.length))
     .sort((a, b) => Number(isOneWord(a[0])) - Number(isOneWord(b[0])) || b[1].length - a[1].length || b[0].split(" ").length - a[0].split(" ").length)
-    .filter(([t]) => !seeds.includes(t))
+    .filter(([t]) => !seeds.includes(t) && fresh(t))
     .slice(0, 3);
   await check(gaps.map(([t]) => t));
   await scoreRelevancy(gaps.map(([t]) => got(t)).filter((k): k is KeywordCheck => !!k && k.popularity > 15));
@@ -537,6 +544,7 @@ async function keywordFindings(
       severity: Math.min(90, Math.round(45 + k.popularity * 0.4 + (rank == null || rank > 30 ? 8 : 0)) - i * 8),
       text: `Your ${fieldPhrase} ${fieldVerb} include "${k.term}", a ${volumeWord(k.popularity)} term ${names.length} of your top ${competitors.length} competitors (${listNames(names)}) use in theirs.${rankSentence(rank, k)}`,
       toolLine: toolLine(k.term),
+      terms: [k.term],
       oneWord: isOneWord(k.term),
       evidence: `${metricsLine(k, rank, rel(k))} · used by ${names.join(", ")}`,
     });
@@ -545,7 +553,7 @@ async function keywordFindings(
   await scoreRelevancy(seeds.map((t) => got(t)).filter((k): k is KeywordCheck => !!k && k.popularity >= 35));
   for (const [i, seed] of seeds.entries()) {
     const k = got(seed);
-    if (!k || k.popularity < 35 || !relevantEnough(k, 40)) continue;
+    if (!k || k.popularity < 35 || !relevantEnough(k, 40) || !fresh(k.term)) continue;
     // Already pitched as a targeted keyword.
     if (targets.slice(0, 2).some((t) => t.k.term === k.term)) continue;
     const rank = rankIn(k.hits, appName, storeId);
@@ -558,6 +566,7 @@ async function keywordFindings(
       severity: Math.min(88, Math.round(40 + k.popularity * 0.4 + (rank == null ? 10 : 0))),
       text: `${rank == null ? "You don't rank at all" : `You're only ranking #${rank}`} for "${k.term}", one of the main searches for apps like yours, where ${listNames(leaders)} take the top spots.`,
       toolLine: toolLine(k.term),
+      terms: [k.term],
       oneWord: isOneWord(k.term),
       evidence: `Core search · ${metricsLine(k, rank, rel(k))}`,
     });
@@ -566,7 +575,7 @@ async function keywordFindings(
   // as a search: when barely anyone types it, the most valuable 30
   // characters of the listing aren't earning impressions. An optional third
   // email finding, only made when the numbers back it up.
-  if (taglineOk) {
+  if (taglineOk && fresh(taglineTerm)) {
     const k = got(taglineTerm);
     // A long tagline is rarely typed whole ("SMS Spam Text Blocker"), so it
     // only counts as low when no keyword the title covers gets real volume
@@ -581,7 +590,7 @@ async function keywordFindings(
         .filter((c): c is KeywordCheck => !!c && c.term !== taglineTerm && !isOneWord(c.term) && !hasBrand(c.term))
         .filter((c) => c.popularity >= 35 && (rel(c) ?? 0) >= 60 && !covers(titleWords, c.term, appName.toLowerCase()))
         // The long-tail finding already pitches its picks.
-        .filter((c) => !picks.some((p) => p.k.term === c.term))
+        .filter((c) => !picks.some((p) => p.k.term === c.term) && fresh(c.term))
         .sort((a, b) => b.popularity - a.popularity)
         .slice(0, 2);
       const instead = better.length
@@ -594,6 +603,7 @@ async function keywordFindings(
         severity: 90,
         text: `"${tagline}" in your title has low search volume (${perDay(k)}), so it's not generating many impressions${rank != null && rank <= 3 ? `, even though you rank #${rank} for it` : ""}. Targeting more relevant keywords with higher search volume${instead} would put ${shortName} in front of a lot more people searching for apps like yours.`,
         toolLine: toolLine(taglineTerm),
+        terms: [taglineTerm, ...better.map((c) => c.term)],
         evidence: `Title tagline · ${metricsLine(k, rank, rel(k))}${better.length ? ` · alternatives: ${better.map((c) => `${c.term} (pop ${c.popularity}, rel ${rel(c)})`).join(", ")}` : ""}`,
       });
     }
@@ -890,8 +900,27 @@ function pickDefault(findings: AuditFinding[]): string[] {
 // localization check. Off by default, since the email carries two keyword
 // findings; skipping them drops the Gemini vision call and roughly 40% of
 // the store requests.
+// What a follow-up must not repeat: the findings an earlier email carried.
+// Keyword findings are matched by the keywords they quote (their ids are
+// slot numbers, "kw-gap-0", that point at different keywords run to run);
+// every other finding by id ("l10n", "shots-ai").
+export function exclusionFrom(sent: AuditFinding[]): { terms: string[]; ids: string[] } {
+  return {
+    terms: [...new Set(sent.flatMap(quotedTerms))],
+    ids: sent.filter((f) => f.category !== "keywords").map((f) => f.id),
+  };
+}
+
+// Audits saved before `terms` existed fall back to every quoted phrase in
+// the text, which can over-exclude a word or two but never repeats one.
+function quotedTerms(f: AuditFinding): string[] {
+  if (f.terms) return f.terms.map((t) => t.toLowerCase().trim());
+  return [...f.text.matchAll(/"([^"]+)"/g)].map((m) => m[1].toLowerCase().replace(/\s+/g, " ").trim());
+}
+
 export async function runQuickAudit(
-  admin: SupabaseClient, input: { store: AuditStore; storeId: string; country: string }, { full = false }: { full?: boolean } = {},
+  admin: SupabaseClient, input: { store: AuditStore; storeId: string; country: string },
+  { full = false, exclude }: { full?: boolean; exclude?: { terms: string[]; ids: string[] } } = {},
 ): Promise<QuickAuditResult> {
   const { store, storeId, country } = input;
   const data = await fetchStoreData(store, storeId, storeId, country);
@@ -902,7 +931,7 @@ export async function runQuickAudit(
 
   const [bench, kw, shots] = await Promise.all([
     full ? loadCategoryBenchmark(store, storeId, storeId, country, data) : Promise.resolve(null),
-    keywordFindings(admin, store, storeId, country, data, shortName, notes),
+    keywordFindings(admin, store, storeId, country, data, shortName, notes, new Set(exclude?.terms ?? [])),
     full ? screenshotFinding(store, data, notes) : Promise.resolve(null),
   ]);
   if (full && !bench) notes.push("Category benchmark unavailable; benchmark-based findings skipped.");
@@ -910,6 +939,8 @@ export async function runQuickAudit(
 
   // Metadata checks that need no benchmark (empty/short subtitle, brand-only
   // title) cost no requests, so they're always in as keyword-space alternates.
+  const excludedTerms = new Set(exclude?.terms ?? []);
+  const excludedIds = new Set(exclude?.ids ?? []);
   const findings = [
     ...kw.findings,
     ...(shots ? [shots] : []),
@@ -917,7 +948,10 @@ export async function runQuickAudit(
     ...(l10n ? [l10n] : []),
     ...ratingFindings(data, bench),
     ...metadataFindings(store, data, bench),
-  ].sort((a, b) => b.severity - a.severity);
+  ]
+    // Backstop for the follow-up: anything that still quotes a sent keyword.
+    .filter((f) => f.category === "keywords" ? !quotedTerms(f).some((t) => excludedTerms.has(t)) : !excludedIds.has(f.id))
+    .sort((a, b) => b.severity - a.severity);
 
   return {
     appName: data.name ?? "",
