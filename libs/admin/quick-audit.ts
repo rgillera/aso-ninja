@@ -99,8 +99,15 @@ export function parseAppInput(raw: string, countryOverride?: string): { store: A
 
 const segmenter = new Intl.Segmenter("und", { granularity: "word" });
 const NO_SPACE_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
-// Words every listing uses that nobody searches on their own.
-const FILLER = new Set(["app", "apps", "free", "best", "new", "pro", "plus", "premium", "lite", "official", "online", "mobile", "easy", "simple", "top", "now", "get", "one", "all", "daily"]);
+// Words every listing uses that nobody searches on their own. "app" and
+// "game" (and their translations) are also matched by the stores for every
+// listing (Apple indexes them, plus the category, automatically), so
+// spending title or subtitle space on them is never advice worth giving.
+const FILLER = new Set([
+  "app", "apps", "free", "best", "new", "pro", "plus", "premium", "lite", "official", "online", "mobile", "easy", "simple", "top", "now", "get", "one", "all", "daily",
+  "game", "games", "juego", "juegos", "jeu", "jeux", "spiel", "spiele", "gioco", "giochi", "jogo", "jogos", "spel", "spellen", "oyun", "игра", "игры",
+  "ゲーム", "アプリ", "게임", "앱", "游戏", "遊戲", "应用",
+]);
 
 function words(text: string): string[] {
   const out: string[] = [];
