@@ -380,7 +380,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_16rem] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_20rem] gap-6">
           <div className="min-w-0">
             <form onSubmit={(e) => { e.preventDefault(); run(); }} className="flex flex-col sm:flex-row gap-2 mb-3">
               <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://apps.apple.com/us/app/... or https://play.google.com/store/apps/details?id=..." className={inputCls} autoFocus />
