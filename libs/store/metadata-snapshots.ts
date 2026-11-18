@@ -68,7 +68,7 @@ export async function recordMetadataSnapshot(
   };
   const onConflict = "store,country,store_id,bundle_id,recorded_on";
   const { error } = await supabase.from("metadata_snapshots").upsert(row, { onConflict });
-  // Until 20261119000001 is applied, PostgREST rejects the whole row over
+  // Until 20261119000001/2 are applied, PostgREST rejects the whole row over
   // the unknown columns; save it without them rather than lose the day's
   // snapshot.
   if (error && isMissingNewColumns(error)) {

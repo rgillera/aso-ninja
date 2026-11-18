@@ -39,17 +39,20 @@ function screenshotsField(before: string[] | null, after: string[] | null): Fiel
   };
 }
 
-// Snapshots are daily at best and can skip days (cron backlog, a listing
-// added mid-week), so the snapshot that first sees a new version can be days
-// after the release; several competitors then land on the same day. When
-// the version changed and the store's release date for it falls after the
-// previous snapshot, the update goes on that day instead. Otherwise (no
+// The snapshot that first sees a new version can be days after the release:
+// snapshots can skip days (cron backlog, a listing added mid-week), and
+// Apple's lookup API is cached, so a snapshot taken after the release can
+// still report the old version. Several competitors then land on the same
+// day. When the version changed, the update goes on the store's release date
+// for it instead, as long as that's not in the future of this snapshot and
+// comes after the previous version's release (when known). Otherwise (no
 // release date recorded, or listing-only change) it stays on the day it was
 // first seen.
 function updateDate(prev: MetadataSnapshotRow, curr: MetadataSnapshotRow, versionChanged: boolean): string {
   const released = curr.version_released_on;
-  if (versionChanged && released && released > prev.recorded_on && released <= curr.recorded_on) return released;
-  return curr.recorded_on;
+  if (!versionChanged || !released || released > curr.recorded_on) return curr.recorded_on;
+  if (prev.version_released_on && released <= prev.version_released_on) return curr.recorded_on;
+  return released;
 }
 
 function diffSnapshots(prev: MetadataSnapshotRow, curr: MetadataSnapshotRow): UpdateEvent | null {
