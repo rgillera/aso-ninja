@@ -5,7 +5,7 @@ import type { PlanSlug } from "@/libs/contracts";
 // price, devices, keywords, or in-app purchases, since none of those are
 // publicly readable for any app.
 export const ALL_FIELDS = [
-  "Title", "Subtitle", "Description", "Screenshots",
+  "Version", "Title", "Subtitle", "Description", "Screenshots",
   "Preview Video", "Category", "Age Rating", "Localizations",
 ];
 

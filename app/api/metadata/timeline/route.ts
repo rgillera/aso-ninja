@@ -42,6 +42,12 @@ function screenshotsField(before: string[] | null, after: string[] | null): Fiel
 function diffSnapshots(prev: MetadataSnapshotRow, curr: MetadataSnapshotRow): UpdateEvent | null {
   const fields: FieldUpdate[] = [];
 
+  // A new version is an app update even when no listing text changed, which
+  // is how most competitor releases look. Both sides must be known: a
+  // snapshot with no version recorded isn't a change.
+  const version = prev.version && curr.version ? textField("Version", prev.version, curr.version) : null;
+  if (version) fields.push(version);
+
   const title = textField("Title", prev.title, curr.title);
   if (title) fields.push(title);
 
@@ -74,6 +80,7 @@ function diffSnapshots(prev: MetadataSnapshotRow, curr: MetadataSnapshotRow): Up
     date: curr.recorded_on,
     versionBefore: prev.version ?? "",
     versionAfter: curr.version ?? "",
+    ...(version && curr.release_notes ? { releaseNotes: curr.release_notes } : {}),
     fields,
   };
 }

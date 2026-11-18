@@ -19,6 +19,9 @@ export type UpdateEvent = {
   date: string;
   versionBefore: string;
   versionAfter: string;
+  /** The new version's "What's New" text, when the version changed and the
+   *  snapshot has it (snapshots before 2026-11-19 don't). */
+  releaseNotes?: string;
   fields: FieldUpdate[];
 };
 

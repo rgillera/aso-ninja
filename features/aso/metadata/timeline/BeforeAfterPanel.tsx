@@ -12,7 +12,10 @@ type Props = {
 };
 
 export function BeforeAfterPanel({ event, appName, selectedFields }: Props) {
-  const panelFields = event.fields.filter(f => selectedFields.has(f.field));
+  // Version has its own row at the top of the panel, so it isn't repeated
+  // in the field list below.
+  const panelFields = event.fields.filter(f => f.field !== "Version" && selectedFields.has(f.field));
+  const versionOnly = event.fields.every(f => f.field === "Version");
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -41,6 +44,23 @@ export function BeforeAfterPanel({ event, appName, selectedFields }: Props) {
           <span className="text-sm font-medium text-white light:text-gray-900">{event.versionAfter}</span>
         </div>
       </div>
+
+      {event.releaseNotes && (
+        <div className="py-4 px-6 border-b border-white/[0.04] light:border-black/[0.05]">
+          <div className="flex justify-center pb-3">
+            <span className="rounded-full bg-[#141417] light:bg-white px-3 py-0.5 text-[11px] text-gray-500">What&apos;s New in {event.versionAfter}</span>
+          </div>
+          <p className="mx-auto max-w-xl text-sm text-gray-300 light:text-gray-700 leading-relaxed whitespace-pre-line">
+            {event.releaseNotes}
+          </p>
+        </div>
+      )}
+
+      {versionOnly && !event.releaseNotes && (
+        <p className="py-6 px-6 text-center text-xs text-gray-500">
+          New version released. No listing text, screenshots or other tracked fields changed.
+        </p>
+      )}
 
       {/* Fields */}
       <div className="divide-y divide-white/[0.04] light:divide-black/[0.06]">
