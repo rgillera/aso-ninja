@@ -15,6 +15,7 @@ export type MetadataSnapshotRow = {
   age_rating: string | null;
   language_count: number | null;
   release_notes: string | null;
+  version_released_on: string | null;
 };
 
 // Identifies the real store listing a snapshot belongs to — NOT a
@@ -61,21 +62,24 @@ export async function recordMetadataSnapshot(
     age_rating: storeData.contentAdvisoryRating,
     language_count: storeData.languageCount ?? null,
     release_notes: storeData.releaseNotes || null,
+    // App Store currentVersionReleaseDate / Play "updated", as a UTC day
+    // like recorded_on.
+    version_released_on: storeData.lastUpdatedAt ? new Date(storeData.lastUpdatedAt).toISOString().slice(0, 10) : null,
   };
   const onConflict = "store,country,store_id,bundle_id,recorded_on";
   const { error } = await supabase.from("metadata_snapshots").upsert(row, { onConflict });
-  // Until 20261119000001 (release_notes) is applied, PostgREST rejects the
-  // whole row over the unknown column; save it without release notes rather
-  // than lose the day's snapshot.
-  if (error && isMissingReleaseNotes(error)) {
+  // Until 20261119000001 is applied, PostgREST rejects the whole row over
+  // the unknown columns; save it without them rather than lose the day's
+  // snapshot.
+  if (error && isMissingNewColumns(error)) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { release_notes, ...withoutNotes } = row;
-    await supabase.from("metadata_snapshots").upsert(withoutNotes, { onConflict });
+    const { release_notes, version_released_on, ...withoutNew } = row;
+    await supabase.from("metadata_snapshots").upsert(withoutNew, { onConflict });
   }
 }
 
-function isMissingReleaseNotes(error: { message?: string }): boolean {
-  return !!error.message?.includes("release_notes");
+function isMissingNewColumns(error: { message?: string }): boolean {
+  return /release_notes|version_released_on/.test(error.message ?? "");
 }
 
 const SNAPSHOT_COLUMNS = "recorded_on, version, title, subtitle, description, screenshot_urls, has_preview_video, category, age_rating, language_count";
@@ -96,9 +100,13 @@ export async function fetchMetadataSnapshots(
     .gte("recorded_on", from)
     .lte("recorded_on", to)
     .order("recorded_on", { ascending: true });
-  let { data, error } = await query(`${SNAPSHOT_COLUMNS}, release_notes`);
+  let { data, error } = await query(`${SNAPSHOT_COLUMNS}, release_notes, version_released_on`);
   // Same fallback as recordMetadataSnapshot: before the migration, read
-  // without release notes instead of returning no history at all.
-  if (error && isMissingReleaseNotes(error)) ({ data, error } = await query(SNAPSHOT_COLUMNS));
-  return ((data ?? []) as unknown as MetadataSnapshotRow[]).map((r) => ({ ...r, release_notes: r.release_notes ?? null }));
+  // without the new columns instead of returning no history at all.
+  if (error && isMissingNewColumns(error)) ({ data, error } = await query(SNAPSHOT_COLUMNS));
+  return ((data ?? []) as unknown as MetadataSnapshotRow[]).map((r) => ({
+    ...r,
+    release_notes: r.release_notes ?? null,
+    version_released_on: r.version_released_on ?? null,
+  }));
 }
