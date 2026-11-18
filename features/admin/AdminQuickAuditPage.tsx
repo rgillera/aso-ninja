@@ -1,7 +1,7 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState, useTransition } from "react";
-import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon, MagnifyingGlassIcon, CodeBracketIcon } from "@heroicons/react/24/outline";
 import {
   runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction, saveQuickAuditFollowupAction, runQuickAuditFollowupAction, listQuickAuditsAction,
   type QuickAuditSummary,
@@ -115,9 +115,8 @@ function escapeHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-// Rich-text copy of the email, so links stay clickable when pasted into
-// Gmail / Outlook. Indented lines keep their indent.
-function emailToHtml(text: string) {
+// The email as an HTML snippet, links as <a>. Indented lines keep their indent.
+function emailToHtmlSnippet(text: string) {
   const body = text.split("\n").map((line) => {
     let out = "", last = 0;
     for (const m of line.matchAll(URL_RE)) {
@@ -127,9 +126,15 @@ function emailToHtml(text: string) {
     out += escapeHtml(line.slice(last));
     return out.replace(/^ +/, (sp) => "&nbsp;".repeat(sp.length));
   }).join("<br>");
+  return `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;">${body}</div>`;
+}
+
+// Rich-text copy of the email, so links stay clickable when pasted into
+// Gmail / Outlook.
+function emailToHtml(text: string) {
   // A full document with fragment markers: some mail clients (Outlook, Apple
   // Mail) drop the links from a bare HTML snippet on paste and keep only text.
-  return `<html><body><!--StartFragment--><div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5;">${body}</div><!--EndFragment--></body></html>`;
+  return `<html><body><!--StartFragment-->${emailToHtmlSnippet(text)}<!--EndFragment--></body></html>`;
 }
 
 function LinkifiedText({ text }: { text: string }) {
@@ -142,6 +147,16 @@ function LinkifiedText({ text }: { text: string }) {
   }
   parts.push(text.slice(last));
   return <>{parts.map((p, i) => <Fragment key={i}>{p}</Fragment>)}</>;
+}
+
+// Seconds since mount, ticking, so a long run visibly isn't stuck.
+function Elapsed() {
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSecs((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return <span className="tabular-nums">{Math.floor(secs / 60)}:{String(secs % 60).padStart(2, "0")}</span>;
 }
 
 function formatWhen(iso: string) {
@@ -164,7 +179,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [auditedAt, setAuditedAt] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"" | "email" | "html">("");
   const [history, setHistory] = useState(initialHistory);
   const [search, setSearch] = useState("");
   const [searching, setSearching] = useState(false);
@@ -312,6 +327,25 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     : followup && !followupResult ? (generating ? "" : "Tick Follow-up again to generate new findings.")
     : buildEmail(followup && followupResult ? followupResult : result, picked, firstName, calendly, mode, selected.length);
 
+  function markCopied(kind: "email" | "html") {
+    setCopied(kind);
+    setTimeout(() => setCopied(""), 1500);
+    // What was copied is what was (probably) sent: keep it in history.
+    if (auditId) {
+      saveQuickAuditEmailAction(auditId, selected, firstName, calendly).catch(() => {});
+      if (followup) saveQuickAuditFollowupAction(auditId, followupSelected).catch(() => {});
+    }
+  }
+
+  // The raw HTML source as plain text, for editors that strip formatting on
+  // paste (ManyReach's reply box) but take HTML in their source view.
+  async function copyHtml() {
+    try {
+      await navigator.clipboard.writeText(emailToHtmlSnippet(email));
+      markCopied("html");
+    } catch { /* clipboard blocked */ }
+  }
+
   async function copy() {
     try {
       if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
@@ -322,14 +356,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       } else {
         await navigator.clipboard.writeText(email);
       }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      markCopied("email");
     } catch { /* clipboard blocked */ }
-    // What was copied is what was (probably) sent: keep it in history.
-    if (auditId) {
-      saveQuickAuditEmailAction(auditId, selected, firstName, calendly).catch(() => {});
-      if (followup) saveQuickAuditFollowupAction(auditId, followupSelected).catch(() => {});
-    }
   }
 
   const inputCls = "w-full rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none border border-white/[0.07] light:border-black/[0.08] focus:border-indigo-500/50";
@@ -411,18 +439,35 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                     <label className="ml-auto mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer" title="Final follow-up when they didn't reply or book: new findings only">
                       <input type="checkbox" checked={followup} onChange={(e) => switchMode(e.target.checked ? "followup" : "audit")} className="accent-indigo-500" />
                       Follow-up
+                      {generating && <ArrowPathIcon className="size-3.5 animate-spin text-indigo-500" />}
                     </label>
                     <label className="mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
                       <input type="checkbox" checked={mode === "uninterested"} onChange={(e) => switchMode(e.target.checked ? "uninterested" : "audit")} className="accent-indigo-500" />
                       Not interested
                     </label>
+                    <button onClick={copyHtml} disabled={!picked.length} className={`${ghostBtn} mr-2`} title="Raw HTML, for an editor's source or HTML view (keeps the links clickable)">
+                      {copied === "html" ? <CheckIcon className="size-3.5" /> : <CodeBracketIcon className="size-3.5" />}
+                      {copied === "html" ? "Copied" : "Copy HTML"}
+                    </button>
                     <button onClick={copy} disabled={!picked.length} className={ghostBtn}>
-                      {copied ? <CheckIcon className="size-3.5" /> : <ClipboardDocumentIcon className="size-3.5" />}
-                      {copied ? "Copied" : "Copy email"}
+                      {copied === "email" ? <CheckIcon className="size-3.5" /> : <ClipboardDocumentIcon className="size-3.5" />}
+                      {copied === "email" ? "Copied" : "Copy email"}
                     </button>
                   </div>
                   {followup && generating && (
-                    <p className="mb-2 text-xs text-gray-500">Running a full audit for new findings, skipping everything the first email covered. This usually takes 30 to 90 seconds.</p>
+                    <div className="rounded-2xl bg-[#141417] light:bg-white p-5 ring-1 ring-indigo-500/30">
+                      <div className="flex items-center gap-3">
+                        <ArrowPathIcon className="size-5 shrink-0 animate-spin text-indigo-500" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-white light:text-gray-900">Generating the 2nd audit...</p>
+                          <p className="mt-0.5 text-xs text-gray-500">Running a full audit for new findings, skipping everything the first email covered. This usually takes 30 to 90 seconds.</p>
+                        </div>
+                        <span className="shrink-0 text-xs text-gray-500"><Elapsed /></span>
+                      </div>
+                      <div className="mt-4 h-1 overflow-hidden rounded-full bg-indigo-500/15">
+                        <div className="h-full w-full animate-pulse rounded-full bg-indigo-500/60" />
+                      </div>
+                    </div>
                   )}
                   {followup && followupResult && followupResult.findings.length === 0 && (
                     <p className="mb-2 text-xs text-amber-500">No new findings beyond what the first email covered. Try Regenerate, or another store country.</p>
@@ -444,7 +489,20 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       </button>
                     )}
                   </div>
-                  {followup && !followupResult ? null : !listed || listed.findings.length === 0 ? (
+                  {followup && generating ? (
+                    <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden" aria-busy="true">
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} className="flex gap-3 px-5 py-4 animate-pulse">
+                          <div className="mt-1 size-3.5 shrink-0 rounded bg-white/[0.08] light:bg-black/[0.08]" />
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="h-3 w-24 rounded bg-white/[0.08] light:bg-black/[0.08]" />
+                            <div className="h-3 w-full rounded bg-white/[0.06] light:bg-black/[0.06]" />
+                            <div className="h-3 w-2/3 rounded bg-white/[0.06] light:bg-black/[0.06]" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : followup && !followupResult ? null : !listed || listed.findings.length === 0 ? (
                     <div className="rounded-2xl bg-[#141417] light:bg-white px-5 py-8 text-center text-sm text-gray-500">No findings came out of this listing. It may be in good shape, or the store requests failed.</div>
                   ) : (
                     <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden">
@@ -500,14 +558,14 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       <div className="flex items-center gap-2">
                         <img src={h.store === "ios" ? "/app-store.svg" : "/google-play.svg"} alt="" className="size-3.5 shrink-0" />
                         <span className="truncate text-sm text-gray-200 light:text-gray-800">{h.appName}</span>
-                        {loadingId === h.id && <ArrowPathIcon className="ml-auto size-3.5 shrink-0 animate-spin text-gray-500" />}
+                        {(loadingId === h.id || (generating && h.id === auditId)) && <ArrowPathIcon className="ml-auto size-3.5 shrink-0 animate-spin text-indigo-500" />}
                       </div>
                       <p className="mt-0.5 text-[11px] text-gray-500" suppressHydrationWarning>
                         {countryFlag(h.country)} {h.country.toUpperCase()} · {formatWhen(h.createdAt)}
                         {h.hasFollowup && <span className="ml-1.5 rounded bg-indigo-500/15 px-1 py-px text-[10px] font-medium text-indigo-300 light:text-indigo-600">2nd audit</span>}
                       </p>
                     </button>
-                    {loadingId !== h.id && (
+                    {loadingId !== h.id && !(generating && h.id === auditId) && (
                       <button
                         type="button"
                         onClick={() => openHistory(h.id, true)}
