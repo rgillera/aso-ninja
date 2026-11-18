@@ -75,6 +75,25 @@ export async function recordMetadataSnapshot(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { release_notes, version_released_on, ...withoutNew } = row;
     await supabase.from("metadata_snapshots").upsert(withoutNew, { onConflict });
+    return;
+  }
+
+  // Backfill: rows saved before version_released_on existed (or on days the
+  // store didn't return it) with this same version get today's release date,
+  // so a version update that was first seen days late moves to the day it
+  // shipped. Only rows still on the current version can be dated this way;
+  // the store only reports the current version's release date.
+  if (!error && row.version && row.version_released_on) {
+    await supabase
+      .from("metadata_snapshots")
+      .update({ version_released_on: row.version_released_on })
+      .eq("store", row.store)
+      .eq("country", row.country)
+      .eq("store_id", row.store_id)
+      .eq("bundle_id", row.bundle_id)
+      .eq("version", row.version)
+      .is("version_released_on", null)
+      .lt("recorded_on", recordedOn);
   }
 }
 
