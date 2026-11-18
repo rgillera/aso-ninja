@@ -59,6 +59,10 @@ const READ_ONLY_POST_ROUTES = new Set([
   "/api/keywords/performance-report",
   "/api/keywords/translate",
   "/api/market/compare/insights",
+  // POST only because 800+ tracked terms overflow a query string.
+  "/api/keywords/performance-snapshots",
+  "/api/keywords/visibility-history",
+  "/api/keywords/month-coverage",
 ]);
 
 export function isReadOnlyAllowedRequest(method: string, pathname: string, isServerAction: boolean): boolean {
