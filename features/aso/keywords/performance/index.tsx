@@ -485,8 +485,7 @@ export default function KeywordPerformancePage() {
   // returns gaps. Refetched whenever the tracked-keyword set changes.
   // Each term is percent-encoded before joining — one containing a literal
   // comma would otherwise be indistinguishable from the between-terms
-  // delimiter and get split in two server-side (see the matching decode in
-  // /api/keywords/performance-snapshots and /api/keywords/visibility-history).
+  // delimiter. Callers decode it back to an array before sending.
   const trackedTerms = useMemo(
     () => keywords.filter((k) => !k.loading).map((k) => k.term).sort().map(encodeURIComponent).join(","),
     [keywords]
@@ -594,14 +593,18 @@ export default function KeywordPerformancePage() {
     if (!activeApp || !trackedTerms || isLocked) return;
     const t = setTimeout(() => {
       setSnapshotsLoading(true);
-      const params = new URLSearchParams({
-        terms: trackedTerms,
-        store: activeApp.store ?? "ios",
-        country: activeApp.country ?? "us",
-        storeId: activeApp.store_id ?? "",
-        competitorIds: competitors.map((c) => c.storeId).join(","),
-      });
-      fetch(`/api/keywords/performance-snapshots?${params}`)
+      // POST: 800+ terms in a query string overflow the URL limit.
+      fetch("/api/keywords/performance-snapshots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: trackedTerms.split(",").map(decodeURIComponent),
+          store: activeApp.store ?? "ios",
+          country: activeApp.country ?? "us",
+          storeId: activeApp.store_id ?? "",
+          competitorIds: competitors.map((c) => c.storeId),
+        }),
+      })
         .then((r) => r.json())
         .then((data: PerformanceSnapshotResult) => setSnapshots(data))
         .catch(() => setSnapshots({}))
@@ -705,15 +708,19 @@ export default function KeywordPerformancePage() {
       const trackedSince = activeApp.created_at?.slice(0, 10);
       const last30 = from30.toISOString().split("T")[0];
       const fromIso = trackedSince && trackedSince > last30 ? trackedSince : last30;
-      const params = new URLSearchParams({
-        terms: trackedTerms,
-        appIds: chartApps.map((a) => a.id).join(","),
-        store: activeApp.store ?? "ios",
-        country: activeApp.country ?? "us",
-        from: fromIso,
-        to: toIso,
-      });
-      fetch(`/api/keywords/visibility-history?${params}`)
+      // POST: 800+ terms in a query string overflow the URL limit.
+      fetch("/api/keywords/visibility-history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          terms: trackedTerms.split(",").map(decodeURIComponent),
+          appIds: chartApps.map((a) => a.id),
+          store: activeApp.store ?? "ios",
+          country: activeApp.country ?? "us",
+          from: fromIso,
+          to: toIso,
+        }),
+      })
         .then((r) => r.json())
         .then((data: VisibilityHistoryResult) => { if (!cancelled) setVisibility(data); })
         // A failed quiet refresh keeps the chart it already has.

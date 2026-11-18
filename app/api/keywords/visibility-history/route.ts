@@ -4,21 +4,24 @@ import { createClient } from "@/libs/supabase/server";
 export type VisibilityPoint = { date: string; score: number };
 export type VisibilityHistoryResult = Record<string, VisibilityPoint[]>;
 
-// GET /api/keywords/visibility-history?terms=a,b&store=ios&country=us&from=2026-03-29&to=2026-06-29&appIds=123,456
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const termsParam  = searchParams.get("terms") ?? "";
-  const appIdsParam = searchParams.get("appIds") ?? "";
-  const store        = searchParams.get("store") ?? "ios";
-  const country       = (searchParams.get("country") ?? "us").toLowerCase();
-  const from           = searchParams.get("from") ?? "";
-  const to              = searchParams.get("to") ?? "";
-
-  // Each term arrives percent-encoded (see the client's encodeURIComponent
-  // before joining) so a literal comma inside a keyword survives as %2C
-  // instead of being mistaken for the between-terms delimiter.
-  const terms  = [...new Set(termsParam.split(",").map((t) => decodeURIComponent(t.trim()).toLowerCase()).filter(Boolean))];
-  const appIds = [...new Set(appIdsParam.split(",").map((a) => a.trim()).filter(Boolean))];
+// POST /api/keywords/visibility-history
+// body: { terms: string[], appIds: string[], store, country, from: "2026-03-29", to: "2026-06-29" }
+//
+// POST, not GET: a large tracked-keyword list (800+ terms) made the query
+// string ~30KB, past the server's URL/header limit, so the request was
+// rejected before reaching this handler and the chart showed no data.
+export async function POST(request: NextRequest) {
+  const body = (await request.json().catch(() => ({}))) as {
+    terms?: unknown; appIds?: unknown; store?: unknown; country?: unknown; from?: unknown; to?: unknown;
+  };
+  const strings = (v: unknown) =>
+    (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === "string").map((x) => x.trim()).filter(Boolean);
+  const store   = typeof body.store === "string" && body.store ? body.store : "ios";
+  const country = (typeof body.country === "string" && body.country ? body.country : "us").toLowerCase();
+  const from    = typeof body.from === "string" ? body.from : "";
+  const to      = typeof body.to === "string" ? body.to : "";
+  const terms   = [...new Set(strings(body.terms).map((t) => t.toLowerCase()))];
+  const appIds  = [...new Set(strings(body.appIds))];
   if (!terms.length || !appIds.length || !from || !to) return NextResponse.json({});
 
   const supabase = await createClient();

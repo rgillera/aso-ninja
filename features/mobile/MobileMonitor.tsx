@@ -50,15 +50,11 @@ export function MobileMonitor({
     setKeywords(kws ?? []);
 
     if (kws?.length && storeId && country) {
-      const params = new URLSearchParams({
-        terms: kws.map((k) => k.term).join(","),
-        store,
-        country,
-        storeId,
-      });
-      const data = (await fetch(
-        `/api/keywords/performance-snapshots?${params}`
-      ).then((r) => r.json())) as PerformanceSnapshotResult;
+      const data = (await fetch("/api/keywords/performance-snapshots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ terms: kws.map((k) => k.term), store, country, storeId }),
+      }).then((r) => r.json())) as PerformanceSnapshotResult;
       if (mountedRef.current) setSnapshots(data);
     }
   }, [appId, store, storeId, country]);

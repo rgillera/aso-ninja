@@ -25,7 +25,12 @@ export type TermSnapshot = {
 
 export type PerformanceSnapshotResult = Record<string, TermSnapshot>;
 
-// GET /api/keywords/performance-snapshots?terms=a,b&store=ios&country=us&storeId=123456&competitorIds=1,2
+// POST /api/keywords/performance-snapshots
+// body: { terms: string[], store, country, storeId, competitorIds: string[] }
+//
+// POST, not GET: a large tracked-keyword list (800+ terms) made the query
+// string ~30KB, past the server's URL/header limit, so the request was
+// rejected before reaching this handler and every term showed no snapshot.
 //
 // Compares the two most recent real snapshots we have for each keyword — not
 // two specific calendar dates. Snapshots land irregularly (Volume whenever
@@ -34,20 +39,21 @@ export type PerformanceSnapshotResult = Record<string, TermSnapshot>;
 // reflects real data, whatever dates those happen to be. Competitor ranks
 // reuse the same two dates as our own app — a Live Search records every
 // app's position for a keyword in one pass, so the dates already line up.
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const termsParam = searchParams.get("terms") ?? "";
-  const store      = searchParams.get("store") ?? "ios";
-  const country    = (searchParams.get("country") ?? "us").toLowerCase();
-  const ourAppId   = searchParams.get("storeId") ?? "";
+export async function POST(request: NextRequest) {
+  const body = (await request.json().catch(() => ({}))) as {
+    terms?: unknown; store?: unknown; country?: unknown; storeId?: unknown; competitorIds?: unknown;
+  };
+  const store     = typeof body.store === "string" && body.store ? body.store : "ios";
+  const country   = (typeof body.country === "string" && body.country ? body.country : "us").toLowerCase();
+  const ourAppId  = typeof body.storeId === "string" ? body.storeId : "";
   const competitorIds = [...new Set(
-    (searchParams.get("competitorIds") ?? "").split(",").map((s) => s.trim()).filter(Boolean)
+    (Array.isArray(body.competitorIds) ? body.competitorIds : [])
+      .filter((s): s is string => typeof s === "string").map((s) => s.trim()).filter(Boolean)
   )];
-
-  // Each term arrives percent-encoded (see the client's encodeURIComponent
-  // before joining) so a literal comma inside a keyword survives as %2C
-  // instead of being mistaken for the between-terms delimiter.
-  const terms = [...new Set(termsParam.split(",").map((t) => decodeURIComponent(t.trim()).toLowerCase()).filter(Boolean))];
+  const terms = [...new Set(
+    (Array.isArray(body.terms) ? body.terms : [])
+      .filter((t): t is string => typeof t === "string").map((t) => t.trim().toLowerCase()).filter(Boolean)
+  )];
   if (!terms.length) return NextResponse.json({});
 
   // rankAt() below only ever looks up ourAppId and competitorIds — every other

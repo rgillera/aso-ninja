@@ -64,19 +64,20 @@ export function KeywordPerformancePane({
     const from30 = new Date(today); from30.setDate(today.getDate() - 29);
     const last30 = from30.toISOString().split("T")[0];
     const trackedSince = app.created_at?.slice(0, 10);
-    const params = new URLSearchParams({
-      // Percent-encoded like the Performance page's terms list, so a comma
-      // inside the keyword isn't read as a separator.
-      terms: encodeURIComponent(term),
-      appIds,
-      store: app.store,
-      country: app.country ?? "us",
-      from: trackedSince && trackedSince > last30 ? trackedSince : last30,
-      to: today.toISOString().split("T")[0],
-    });
     /* eslint-disable-next-line react-hooks/set-state-in-effect */
     setVisibilityLoading(true);
-    fetch(`/api/keywords/visibility-history?${params}`)
+    fetch("/api/keywords/visibility-history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        terms: [term],
+        appIds: appIds.split(","),
+        store: app.store,
+        country: app.country ?? "us",
+        from: trackedSince && trackedSince > last30 ? trackedSince : last30,
+        to: today.toISOString().split("T")[0],
+      }),
+    })
       .then((r) => r.json())
       .then((data: VisibilityHistoryResult) => { if (!cancelled) setVisibility(data); })
       .catch(() => { if (!cancelled) setVisibility({}); })
