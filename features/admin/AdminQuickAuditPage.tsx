@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useState, useTransition } from "react";
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon, CheckIcon, ArrowPathIcon, ClockIcon } from "@heroicons/react/24/outline";
 import {
-  runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction,
+  runQuickAuditAction, getQuickAuditAction, saveQuickAuditEmailAction, saveQuickAuditFollowupAction,
   type QuickAuditSummary,
 } from "@/features/admin/actions";
 import type { AuditFinding, QuickAuditResult } from "@/libs/admin/quick-audit";
@@ -12,6 +12,8 @@ import { COUNTRIES, countryFlag } from "@/libs/countries";
 // The email carries two findings by default, title first then long tail
 // (see pickDefault in libs/admin/quick-audit.ts); a third can be ticked.
 const MAX_PICKS = 3;
+// The one final follow-up carries two fresh findings by default.
+const FOLLOWUP_PICKS = 2;
 
 const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
 
@@ -23,7 +25,9 @@ const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   metadata: "Metadata",
 };
 
-function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, uninterested: boolean) {
+type EmailMode = "audit" | "uninterested" | "followup";
+
+function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: string, calendly: string, mode: EmailMode, sentCount = 0) {
   // Only the first keyword finding carries the free-tool line, so the email
   // doesn't repeat the same nudge twice.
   let toolUsed = false;
@@ -34,9 +38,44 @@ function buildEmail(r: QuickAuditResult, picked: AuditFinding[], firstName: stri
   });
   const greeting = firstName.trim() ? `Hi ${firstName.trim()},` : "Hi there!";
   const link = calendly.trim() || DEFAULT_CALENDLY;
+  // No reply to the audit: one last note that leads with new value (findings
+  // the first email didn't carry), a soft ask, and a clean exit.
+  if (mode === "followup") {
+    const fresh = picked.map((f, i) => `${i + 1}. ${f.text}`);
+    const total = sentCount + picked.length;
+    // Name a real competitor when the audit found one: "where X beats you"
+    // lands harder than "your competitors".
+    const rival = r.competitors[0];
+    return [
+      greeting,
+      "",
+      `Quick follow-up on the audit I sent for ${r.shortName}. I took a second look and found ${picked.length === 1 ? "one more thing" : "a couple more things"} worth fixing:`,
+      "",
+      fresh.join("\n\n"),
+      "",
+      total > picked.length
+        ? `That's ${total} quick wins so far, and it's only what I can see from the outside.`
+        : "And that's only what I can see from the outside.",
+      "",
+      `On a free 15-minute call, I'll go through ${r.shortName} with you live and show you:`,
+      "",
+      rival
+        ? `- The keywords ${rival} and your other competitors rank for that you're missing`
+        : "- The keywords your competitors rank for that you're missing",
+      "- The changes I'd make first to grow your downloads",
+      `- A growth strategy built for ${r.shortName}`,
+      "",
+      "You'll leave with a clear plan you can act on yourself, whether we work together or not.",
+      "",
+      "Book a time here:",
+      link,
+      "",
+      "If now isn't the right time, no worries. This is my last note, and both audits are yours to keep either way.",
+    ].join("\n");
+  }
   // They said no: still hand over the audit as a free gift, no ask this
   // week, and leave the door open for later.
-  if (uninterested) {
+  if (mode === "uninterested") {
     return [
       greeting,
       "",
@@ -117,7 +156,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
   const [fullAudit, setFullAudit] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [calendly, setCalendly] = useState(DEFAULT_CALENDLY);
-  const [uninterested, setUninterested] = useState(false);
+  const [mode, setMode] = useState<EmailMode>("audit");
+  const [followupSelected, setFollowupSelected] = useState<string[]>([]);
   const [result, setResult] = useState<QuickAuditResult | null>(null);
   const [auditId, setAuditId] = useState("");
   const [auditUrl, setAuditUrl] = useState("");
@@ -138,6 +178,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       const { record } = res;
       setResult(record.result);
       setSelected(record.selected);
+      setFollowupSelected(record.followupSelected);
+      setMode("audit");
       setAuditId(record.id);
       setAuditUrl(record.url);
       setAuditedAt(record.createdAt);
@@ -160,6 +202,7 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       if (!record) { setError("That audit couldn't be loaded."); return; }
       setResult(record.result);
       setSelected(record.selected);
+      setFollowupSelected(record.followupSelected);
       setAuditId(record.id);
       setAuditUrl(record.url);
       setAuditedAt(record.createdAt);
@@ -167,7 +210,8 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setCountry("");
       setFirstName(record.firstName);
       setCalendly(record.calendly || DEFAULT_CALENDLY);
-      setUninterested(false);
+      // Reopening an audit that already has a follow-up drafted lands on it.
+      setMode(record.followupSelected.length ? "followup" : "audit");
     });
   }
 
@@ -176,26 +220,48 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
     setCountry("");
     setFirstName("");
     setCalendly(DEFAULT_CALENDLY);
-    setUninterested(false);
+    setMode("audit");
     setResult(null);
     setAuditId("");
     setAuditUrl("");
     setAuditedAt("");
     setSelected([]);
+    setFollowupSelected([]);
     setError(null);
   }
 
+  // Follow-up: the first email's picks are locked as "Sent", and the
+  // follow-up picks the next unsent findings (findings are in impact order).
+  function switchMode(next: EmailMode) {
+    setMode(next);
+    if (next === "followup" && result && !followupSelected.length) {
+      const fresh = result.findings.filter((f) => !selected.includes(f.id)).slice(0, FOLLOWUP_PICKS).map((f) => f.id);
+      setFollowupSelected(fresh);
+      if (auditId) saveQuickAuditFollowupAction(auditId, fresh).catch(() => {});
+    }
+  }
+
   function toggle(id: string) {
+    if (mode === "followup") {
+      if (selected.includes(id)) return;
+      const next = followupSelected.includes(id) ? followupSelected.filter((x) => x !== id) : followupSelected.length >= MAX_PICKS ? followupSelected : [...followupSelected, id];
+      setFollowupSelected(next);
+      if (auditId) saveQuickAuditFollowupAction(auditId, next).catch(() => {});
+      return;
+    }
     const next = selected.includes(id) ? selected.filter((x) => x !== id) : selected.length >= MAX_PICKS ? selected : [...selected, id];
     setSelected(next);
     if (auditId) saveQuickAuditEmailAction(auditId, next, firstName, calendly).catch(() => {});
   }
 
+  const followup = mode === "followup";
+  const activePicks = followup ? followupSelected : selected;
   const picked = useMemo(
-    () => result ? selected.map((id) => result.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
-    [result, selected],
+    () => result ? activePicks.map((id) => result.findings.find((f) => f.id === id)).filter((f): f is AuditFinding => !!f) : [],
+    [result, activePicks],
   );
-  const email = result ? buildEmail(result, picked, firstName, calendly, uninterested) : "";
+  const unsentCount = result ? result.findings.filter((f) => !selected.includes(f.id)).length : 0;
+  const email = result ? buildEmail(result, picked, firstName, calendly, mode, selected.length) : "";
 
   async function copy() {
     try {
@@ -211,7 +277,10 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
       setTimeout(() => setCopied(false), 1500);
     } catch { /* clipboard blocked */ }
     // What was copied is what was (probably) sent: keep it in history.
-    if (auditId) saveQuickAuditEmailAction(auditId, selected, firstName, calendly).catch(() => {});
+    if (auditId) {
+      saveQuickAuditEmailAction(auditId, selected, firstName, calendly).catch(() => {});
+      if (followup) saveQuickAuditFollowupAction(auditId, followupSelected).catch(() => {});
+    }
   }
 
   const inputCls = "w-full rounded-lg bg-[#141417] light:bg-white px-3 py-2.5 text-sm text-white light:text-gray-900 placeholder-gray-600 light:placeholder-gray-400 outline-none border border-white/[0.07] light:border-black/[0.08] focus:border-indigo-500/50";
@@ -290,8 +359,12 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-white light:text-gray-900">Email</h3>
-                    <label className="ml-auto mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
-                      <input type="checkbox" checked={uninterested} onChange={(e) => setUninterested(e.target.checked)} className="accent-indigo-500" />
+                    <label className="ml-auto mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer" title="Final follow-up when they didn't reply or book: new findings only">
+                      <input type="checkbox" checked={followup} onChange={(e) => switchMode(e.target.checked ? "followup" : "audit")} className="accent-indigo-500" />
+                      Follow-up
+                    </label>
+                    <label className="mr-3 flex items-center gap-2 text-xs text-gray-400 light:text-gray-600 cursor-pointer">
+                      <input type="checkbox" checked={mode === "uninterested"} onChange={(e) => switchMode(e.target.checked ? "uninterested" : "audit")} className="accent-indigo-500" />
                       Not interested
                     </label>
                     <button onClick={copy} disabled={!picked.length} className={ghostBtn}>
@@ -299,6 +372,9 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                       {copied ? "Copied" : "Copy email"}
                     </button>
                   </div>
+                  {followup && unsentCount === 0 && (
+                    <p className="mb-2 text-xs text-amber-500">Every finding already went out in the first email. Run a full audit on this app for more.</p>
+                  )}
                   <div className="whitespace-pre-wrap break-words rounded-2xl bg-[#141417] light:bg-white p-5 text-sm leading-relaxed text-gray-200 light:text-gray-800">
                     <LinkifiedText text={email} />
                   </div>
@@ -307,20 +383,22 @@ export default function AdminQuickAuditPage({ initialHistory }: { initialHistory
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-sm font-semibold text-white light:text-gray-900">Findings</h3>
-                    <span className="text-xs text-gray-500">{selected.length}/{MAX_PICKS} selected, in email order</span>
+                    <span className="text-xs text-gray-500">{activePicks.length}/{MAX_PICKS} selected{followup ? " for the follow-up" : ""}, in email order</span>
                   </div>
                   {result.findings.length === 0 ? (
                     <div className="rounded-2xl bg-[#141417] light:bg-white px-5 py-8 text-center text-sm text-gray-500">No findings came out of this listing. It may be in good shape, or the store requests failed.</div>
                   ) : (
                     <div className="rounded-2xl bg-[#141417] light:bg-white divide-y divide-white/[0.07] light:divide-black/[0.08] overflow-hidden">
                       {result.findings.map((f) => {
-                        const pos = selected.indexOf(f.id);
-                        const disabled = pos < 0 && selected.length >= MAX_PICKS;
+                        const pos = activePicks.indexOf(f.id);
+                        const sent = followup && selected.includes(f.id);
+                        const disabled = sent || (pos < 0 && activePicks.length >= MAX_PICKS);
                         return (
                           <label key={f.id} className={`flex gap-3 px-5 py-3.5 cursor-pointer hover:bg-white/[0.03] light:hover:bg-black/[0.02] ${disabled ? "opacity-50" : ""}`}>
-                            <input type="checkbox" checked={pos >= 0} disabled={disabled} onChange={() => toggle(f.id)} className="mt-1 accent-indigo-500" />
+                            <input type="checkbox" checked={pos >= 0 || sent} disabled={disabled} onChange={() => toggle(f.id)} className="mt-1 accent-indigo-500" />
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2 mb-1">
+                                {sent && <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-400 light:text-emerald-600">Sent</span>}
                                 {pos >= 0 && <span className="flex size-5 items-center justify-center rounded-full bg-indigo-600 text-[11px] font-semibold text-white">{pos + 1}</span>}
                                 <span className="rounded-md bg-white/[0.06] light:bg-black/[0.05] px-1.5 py-0.5 text-[11px] font-medium text-gray-300 light:text-gray-700">{CATEGORY_LABEL[f.category]}</span>
                                 <span className="text-[11px] text-gray-500">Impact {f.severity}</span>

@@ -478,6 +478,7 @@ export type QuickAuditRecord = {
   createdAt: string;
   result: QuickAuditResult;
   selected: string[];
+  followupSelected: string[];
   firstName: string;
   calendly: string;
 };
@@ -498,7 +499,7 @@ export type QuickAuditActionResult =
 function toRecord(row: any): QuickAuditRecord {
   return {
     id: row.id, url: row.url, createdAt: row.created_at, result: row.result,
-    selected: row.selected ?? [], firstName: row.first_name ?? "", calendly: row.calendly ?? "",
+    selected: row.selected ?? [], followupSelected: row.followup_selected ?? [], firstName: row.first_name ?? "", calendly: row.calendly ?? "",
   };
 }
 
@@ -522,7 +523,7 @@ export async function runQuickAuditAction(url: string, country?: string, full = 
   }).select("*").single();
   // History is a convenience: a failed save still returns the audit.
   if (error || !data) {
-    return { ok: true, record: { id: "", url: url.trim(), createdAt: new Date().toISOString(), result, selected: result.defaultSelection, firstName: "", calendly: "" } };
+    return { ok: true, record: { id: "", url: url.trim(), createdAt: new Date().toISOString(), result, selected: result.defaultSelection, followupSelected: [], firstName: "", calendly: "" } };
   }
   return { ok: true, record: toRecord(data) };
 }
@@ -549,7 +550,16 @@ export async function saveQuickAuditEmailAction(id: string, selected: string[], 
   await requireSuperAdmin();
   if (!id) return;
   await createAdminClient().from("quick_audits")
-    .update({ selected: selected.slice(0, 2), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
+    .update({ selected: selected.slice(0, 3), first_name: firstName.slice(0, 100), calendly: calendly.slice(0, 500), updated_at: new Date().toISOString() })
+    .eq("id", id);
+}
+
+// The picks behind the one final follow-up email (findings not in the first).
+export async function saveQuickAuditFollowupAction(id: string, followupSelected: string[]): Promise<void> {
+  await requireSuperAdmin();
+  if (!id) return;
+  await createAdminClient().from("quick_audits")
+    .update({ followup_selected: followupSelected.slice(0, 3), updated_at: new Date().toISOString() })
     .eq("id", id);
 }
 
