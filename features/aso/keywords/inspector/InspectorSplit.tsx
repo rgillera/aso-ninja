@@ -266,7 +266,7 @@ export function InspectorSplit({
               icon={<PuzzlePieceIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
               message={
                 <>
-                  Hard to rank for? Open <span className="font-semibold text-white light:text-gray-900">Long Tail</span> to see easier, more specific versions of this keyword, with the easiest first. Add the good ones to your table in one click.
+                  Hard to rank for? Open <span className="font-semibold text-white light:text-gray-900">Long Tail</span> to see easier, more specific keywords built on this one, with the easiest first. Add the good ones to your table in one click.
                 </>
               }
               buttonLabel="Next"
