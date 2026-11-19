@@ -1,12 +1,10 @@
 "use server";
 
 import { createRealUserClient } from "@/libs/supabase/server";
-import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { IMPERSONATION_COOKIE, type Impersonation } from "@/libs/admin/impersonation";
 import { createAdminClient } from "@/libs/supabase/admin";
-import { deleteUserAndData } from "@/libs/account/delete-user";
 import { isSuperAdminEmail } from "@/libs/admin/is-super-admin";
 import { searchIosLive, type RawIosApp } from "@/libs/keyword-relevancy";
 import { resolveIosVolume, resolveAndroidVolume } from "@/libs/keyword-autocomplete";
@@ -357,35 +355,6 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
   }
 
   return { ok: true, resultsCount: apps.length, recordedOn: today, volume };
-}
-
-// Deletes a user and all their data on their behalf (deletion requests sent
-// to support, spam/test accounts). confirmation must match the target's
-// email (or id when it has none), re-checked here rather than trusted from
-// the dialog. Super admins can't be deleted from here, including yourself.
-export async function deleteUserAction(userId: string, confirmation: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const me = await requireSuperAdmin();
-  if (userId === me.id) return { ok: false, error: "You can't delete your own account from here." };
-
-  const admin = createAdminClient();
-  const { data, error } = await admin.auth.admin.getUserById(userId);
-  if (error || !data.user) return { ok: false, error: error?.message ?? "User not found." };
-
-  const target = data.user;
-  if (isSuperAdminEmail(target.email)) return { ok: false, error: "Super admin accounts can't be deleted from here." };
-
-  const expected = (target.email ?? target.id).trim().toLowerCase();
-  if (confirmation.trim().toLowerCase() !== expected) {
-    return { ok: false, error: "Confirmation doesn't match." };
-  }
-
-  const result = await deleteUserAndData(userId);
-  if (result.error) return { ok: false, error: result.error };
-
-  // Users list and the Engagement page both show every user.
-  revalidatePath("/admin/users");
-  revalidatePath("/admin");
-  return { ok: true };
 }
 
 // Starts a read-only "view as" session for userId (see
