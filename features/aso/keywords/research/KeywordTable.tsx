@@ -322,6 +322,18 @@ export function KeywordTable({
   // keyword to look at.
   const detailsButtonRef = useRef<HTMLButtonElement>(null);
 
+  // The "opportunity" step sorts the table for them (best first) rather than
+  // asking them to, so "details" always lands on the strongest keyword even
+  // if they just click Next. Done once, during render (React's "adjust state
+  // on prop change" pattern), so a later re-sort of their own sticks. Skipped
+  // where Opportunity sorting is locked, as a click would be.
+  const [tourSorted, setTourSorted] = useState(false);
+  if (tourStep === "opportunity" && !tourSorted && !scoresLocked) {
+    setTourSorted(true);
+    setSortKey("opportunity");
+    setSortDir("desc");
+  }
+
   useEffect(() => {
     if (!colPickerOpen) return;
     function onMouseDown(e: MouseEvent) {
@@ -966,17 +978,18 @@ export function KeywordTable({
       </div>
 
       {/* Points at the Opportunity column header below, and introduces the
-          table along the way. Sorting by it is the instruction itself, so
-          that click also advances (see the column header's onClick further
-          down). */}
+          table along the way. The table is already sorted by it (see
+          tourSorted above), so this step only explains the score, in the
+          same terms as the column's hover tooltip (volume, ranking chance,
+          relevancy). */}
       <TourTooltip
         targetRef={opportunityThRef}
         active={tourStep === "opportunity"}
         step={TOUR_STEPS.indexOf("opportunity") + 1}
         total={TOUR_STEPS.length}
-        icon={<ArrowsUpDownIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
+        icon={<SparklesIcon className="size-4 text-indigo-400 light:text-indigo-600 shrink-0 mt-0.5" />}
         message={
-          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>. <span className="font-semibold text-white light:text-gray-900">Opportunity</span> blends volume, difficulty and relevancy into one score. Sort it to find the best keyword to target.</>
+          <>This is your <span className="font-semibold text-white light:text-gray-900">Keyword Table</span>, sorted by <span className="font-semibold text-white light:text-gray-900">Opportunity</span>: one score combining search volume, your chance to rank, and how well the keyword fits what your app does.</>
         }
         buttonLabel="Next"
         onAdvance={onAdvanceTour}
@@ -1038,15 +1051,9 @@ export function KeywordTable({
                   <div className="flex items-center gap-1.5">
                     <button
                       disabled={isSortLocked(col.key)}
-                      onClick={() => {
-                        handleSort(col.key);
-                        // Sorting by Opportunity is that step's instruction
-                        // itself — treat it as "got it" and advance the tour.
-                        if (col.key === "opportunity" && tourStep === "opportunity") onAdvanceTour();
-                      }}
+                      onClick={() => handleSort(col.key)}
                       className={`relative flex items-center gap-1 transition-colors ${isSortLocked(col.key) ? "cursor-default" : "hover:text-gray-400 light:hover:text-gray-600"} ${sortKey === col.key ? "text-gray-300 light:text-gray-700" : ""}`}
                     >
-                      {col.key === "opportunity" && tourStep === "opportunity" && <TourPulse />}
                       {col.tableLabel ?? col.label}
                       {!isSortLocked(col.key) && <SortIcon colKey={col.key} />}
                     </button>

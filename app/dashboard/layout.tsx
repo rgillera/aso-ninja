@@ -9,6 +9,7 @@ import { ActivityHeartbeat } from "@/features/activity/ActivityHeartbeat";
 import { resolveActiveWorkspaceId } from "@/libs/workspace";
 import { DashboardShell } from "@/features/dashboard/DashboardShell";
 import { getWorkspacePlanState } from "@/features/subscription/actions";
+import { onboardedCookieName } from "@/features/onboarding/onboarding-checklist";
 import type { Theme } from "@/features/dashboard/ThemeContext";
 import type { App, PlanSlug, Workspace, WorkspaceAccess, WorkspaceRole } from "@/libs/contracts";
 
@@ -68,6 +69,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const initialCanStartTrial =
     initialPlanState && !("error" in initialPlanState) ? initialPlanState.canStartTrial : false;
 
+  // A brand-new workspace (no apps, never onboarded) opens straight into the
+  // first-run wizard. Decided here so the server HTML already covers the
+  // page; deciding it client-side flashed the dashboard home first.
+  const initialShowOnboarding = !!initialWorkspaceId
+    && !(apps ?? []).some((a) => a.workspace_id === initialWorkspaceId)
+    && !cookieStore.get(onboardedCookieName(initialWorkspaceId));
+
   return (
     <>
       {/*
@@ -101,6 +109,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           initialCompetitorLimit={initialCompetitorLimit}
           initialTrialEndsAt={initialTrialEndsAt}
           initialCanStartTrial={initialCanStartTrial}
+          initialShowOnboarding={initialShowOnboarding}
           initialTheme={initialTheme}
           initialSidebarCollapsed={initialSidebarCollapsed}
         >

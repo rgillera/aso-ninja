@@ -19,7 +19,8 @@
 // column as its own step.
 //
 // The route answers a first-timer's questions in order: which keyword is
-// best ("opportunity", where sorting puts it on top), how big and how hard
+// best ("opportunity": the table is sorted by it for them, so it's on top,
+// and the step explains the score), how big and how hard
 // is it ("inspectorSearches"), can I win it ("inspectorRank"), and if not,
 // what instead ("longTail": most new apps can't take their head terms, and
 // the Inspector step usually just showed that). It ends where they'll come
@@ -46,7 +47,10 @@
 // Cut along the way: a Keyword Suggestions step (the wizard had just had
 // them pick keywords, so it repeated it, and the panel's "+" chips explain
 // themselves), a forced "add a keyword" step, and an "export report" step.
-// It used to cross pages (the Inspect link carried `tip=tour` to the
-// Inspector page); the side pane brought the rest onto one page.
+// The "opportunity" step also used to ask them to sort the column (the click
+// advanced it), but Next skipped that, leaving "details" on an unsorted top
+// row; sorting for them made the click redundant. It used to cross pages
+// (the Inspect link carried `tip=tour` to the Inspector page); the side pane
+// brought the rest onto one page.
 export const TOUR_STEPS = ["opportunity", "details", "inspectorSearches", "inspectorRank", "longTail", "sidebar"] as const;
 export type TourStep = typeof TOUR_STEPS[number];

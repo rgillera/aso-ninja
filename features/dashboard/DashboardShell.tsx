@@ -99,6 +99,8 @@ type Props = {
   initialCompetitorLimit?: number | null;
   initialTrialEndsAt?: string | null;
   initialCanStartTrial?: boolean;
+  /** Server's call that this is a brand-new workspace, so the first-run wizard covers the page from the first paint. */
+  initialShowOnboarding?: boolean;
   initialTheme: Theme;
   initialSidebarCollapsed: boolean;
   children: React.ReactNode;
@@ -106,7 +108,7 @@ type Props = {
 
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
-export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTrialEndsAt, initialCanStartTrial, initialTheme, initialSidebarCollapsed, children }: Props) {
+export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, lastWorkspaceId, accessByWorkspace, roleByWorkspace, initialPlanSlug, initialWorkspaceLimit, initialCompetitorLimit, initialTrialEndsAt, initialCanStartTrial, initialShowOnboarding, initialTheme, initialSidebarCollapsed, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const rawParams = useParams<{ id?: string }>();
@@ -554,6 +556,7 @@ export function DashboardShell({ workspaces, allApps, lastAppId, lastPreview, la
       <Onboarding
         hasApp={activeWorkspaceApps.length > 0}
         workspaceId={activeWorkspaceId ?? ""}
+        initialShow={initialShowOnboarding ?? false}
       />
     </SidebarTourProvider>
     </NavigationGuardProvider>

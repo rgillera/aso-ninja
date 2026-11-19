@@ -1226,10 +1226,14 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
           ? <>Your app isn&apos;t ranking for &ldquo;{query.term}&rdquo; yet.</>
           : null}{" "}
       {weakSpots.length > 0
-        ? <>{weakSpots.length === 1 ? "One app" : `${weakSpots.length} apps`} in the top {WEAK_SPOT_RANGE} {weakSpots.length === 1 ? "has" : "have"} {fitCounted ? "few ratings, low stars or a weak fit for the keyword" : "few ratings or low stars"}, so {weakSpots.length === 1 ? "it's" : "they're"} the <span className="font-semibold text-white light:text-gray-900">easiest spots to take</span>.</>
+        // Gives the reason as well as the weak spots (relevancy and ratings
+        // both weigh on ranking), so it's a rule they can apply to any
+        // keyword. "Weigh on", not "decide": downloads and other signals
+        // count too. "Relevancy" matches the table's column name.
+        ? <>Relevancy and ratings both weigh on ranking, so the {weakSpots.length === 1 ? "app" : `${weakSpots.length} apps`} in the top {WEAK_SPOT_RANGE} with {fitCounted ? "low relevancy, few ratings or low stars" : "few ratings or low stars"} {weakSpots.length === 1 ? "is" : "are"} the <span className="font-semibold text-white light:text-gray-900">easiest {weakSpots.length === 1 ? "spot" : "spots"} to take</span>.</>
         : sameStore && yourRankIdx >= 0 && yourRankIdx < WEAK_SPOT_RANGE
           ? <>Every other app in the top {WEAK_SPOT_RANGE} is well established, so this spot is worth holding on to.</>
-          : <>Every app in the top {WEAK_SPOT_RANGE} is well established, so a keyword with lower Difficulty may be a better first target.</>}
+          : <>Every app in the top {WEAK_SPOT_RANGE} has {fitCounted ? "high relevancy and plenty of ratings" : "plenty of ratings"}, so a keyword with lower Difficulty may be a better first target.</>}
     </>
   );
 

@@ -8,33 +8,48 @@ import { OnboardingWizard } from "./OnboardingWizard";
 type Props = {
   hasApp: boolean;
   workspaceId: string;
+  /** The dashboard layout's server-side call (no apps, no onboarded cookie). */
+  initialShow: boolean;
 };
 
 // A brand-new (app-less) workspace gets one locked first-run wizard: search
 // for an app, add its first keyword, then straight to Keywords Research —
 // no spotlight tour afterward. See OnboardingWizard.tsx for why it's locked.
-export function Onboarding({ hasApp, workspaceId }: Props) {
-  const [show, setShow] = useState(false);
+export function Onboarding({ hasApp, workspaceId, initialShow }: Props) {
+  // Starts from the server's call, so a brand-new signup's very first HTML
+  // is already covered (see `mounted` below) instead of showing the
+  // dashboard home until the client decides. Starting from false and
+  // deciding in the effect alone flashed the home page: the server HTML
+  // paints before any client effect can run.
+  const [show, setShow] = useState(initialShow);
+  // The wizard portals into document.body, which doesn't exist during SSR,
+  // so until mount a plain cover in the wizard's backdrop color stands in.
+  const [mounted, setMounted] = useState(false);
 
-  // Decide once, the first time this workspace loads, whether to show it.
-  // useLayoutEffect (not useEffect) on purpose: it commits before the browser
-  // paints, so a brand-new workspace never gets a visible frame of the page
-  // underneath (My Apps) before the wizard locks in. Deferred to an effect at
-  // all (rather than a lazy useState initializer) because localStorage isn't
-  // available during SSR — reading it during render would still produce a
-  // hydration mismatch even though this runs before paint.
+  // Confirms (or corrects) the server's call once the client knows the real
+  // active workspace and the localStorage flag. useLayoutEffect (not
+  // useEffect) so it commits before the browser paints.
   useLayoutEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setMounted(true);
     if (!workspaceId) return;
     const stored = loadOnboarding(workspaceId);
-    if (stored?.seen) return;
+    if (stored?.seen) {
+      // Re-saves to backfill the cookie for anyone who onboarded before it
+      // existed, so the server stops guessing wrong for them.
+      saveOnboarding(workspaceId, { seen: true });
+      setShow(false);
+      return;
+    }
     if (hasApp) {
       // Existing user who onboarded organically before this shipped — mark
       // it seen without ever showing anything.
       saveOnboarding(workspaceId, { seen: true });
+      setShow(false);
       return;
     }
-    /* eslint-disable-next-line react-hooks/set-state-in-effect */
     setShow(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
     // Fires again on each reload until the wizard is finished; the workspace
     // ID as transaction ID keeps Google Ads counting it once.
     trackAdsConversion(ADS_CONVERSIONS.signup, `signup-${workspaceId}`);
@@ -53,5 +68,6 @@ export function Onboarding({ hasApp, workspaceId }: Props) {
   }
 
   if (!show) return null;
+  if (!mounted) return <div className="fixed inset-0 z-[9999] bg-[#08080a] light:bg-[#f7f7f8]" />;
   return <OnboardingWizard workspaceId={workspaceId} onDone={handleDone} />;
 }
