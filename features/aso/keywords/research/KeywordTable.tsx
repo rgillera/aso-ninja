@@ -28,7 +28,7 @@ import { SelectionActionBar } from "@/features/aso/keywords/SelectionActionBar";
 import { downloadCsv } from "@/features/aso/keywords/csvExport";
 import { ColumnTooltip, HoverTooltip } from "@/features/aso/keywords/ColumnTooltip";
 import { ProLockedHint } from "@/features/aso/keywords/ProLockedHint";
-import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { usePlanSlug, useTrialEndsAt } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { estimateDailyImpressions, estimateDailySearches, estimatePotentialImpressions, formatEstimate, POTENTIAL_RANK } from "@/libs/keyword-impressions";
 import { getVisibleColumns, saveVisibleColumns } from "@/libs/keyword-table-columns";
@@ -61,11 +61,14 @@ function LockedCell({ plan, title }: { plan: "Pro"; title: string }) {
 // resolve, so it must not look like the ClockIcon "still computing" state
 // below.
 function PoolLimitCell() {
+  const trialEndsAt = useTrialEndsAt();
   return (
     <Link
       href="/dashboard/subscription"
       className="inline-flex items-center gap-1 shrink-0 rounded-full bg-amber-500/10 px-1.5 py-px text-[10px] font-semibold text-amber-500 light:text-amber-700 transition-opacity hover:opacity-75"
-      title="Your plan's relevancy & opportunity scoring pool is used up — click to upgrade for a bigger pool"
+      title={trialEndsAt
+        ? "Your Pro trial includes 200 scored keywords. Upgrade to Pro to score up to 1,000."
+        : "Your plan's relevancy & opportunity scoring pool is used up. Click to upgrade for a bigger pool."}
     >
       <LockClosedIcon className="size-2.5" />
       Limit

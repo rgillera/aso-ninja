@@ -8,7 +8,7 @@ import { AppHeader } from "@/features/aso/AppHeader";
 import { useActiveApp, useActiveAppResolving, ActiveAppLoading } from "@/features/dashboard/ActiveAppContext";
 import { useWorkspaceId } from "@/features/dashboard/WorkspaceContext";
 import { useNavigationGuard } from "@/features/dashboard/NavigationGuardContext";
-import { usePlanSlug } from "@/features/dashboard/PlanContext";
+import { usePlanSlug, useTrialEndsAt } from "@/features/dashboard/PlanContext";
 import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { KeywordSuggestionsPanel } from "./KeywordSuggestionsPanel";
@@ -43,6 +43,7 @@ export default function KeywordResearchPage() {
   const activeApp = useActiveApp();
   const workspaceId = useWorkspaceId();
   const planSlug = usePlanSlug();
+  const trialEndsAt = useTrialEndsAt();
   const router = useRouter();
   const searchParams = useSearchParams();
   const translateLocked = !isPlanAtLeast(planSlug, "free");
@@ -642,6 +643,16 @@ export default function KeywordResearchPage() {
         <div className="flex items-center gap-2 px-4 py-2.5 bg-indigo-500/10 border-b border-indigo-500/20 text-indigo-300 light:text-indigo-600 text-xs">
           <ExclamationTriangleIcon className="size-4 shrink-0" />
           <span className="flex-1">
+            {trialEndsAt ? (
+              <>
+                You&apos;ve scored all 200 keywords included in your Pro trial. Paid Pro scores up to 1,000. New
+                keywords will still be tracked, just without relevancy &amp; opportunity scores.{" "}
+                <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
+                  Upgrade to Pro for 1,000
+                </Link>
+              </>
+            ) : (
+              <>
             You&apos;ve used up your plan&apos;s relevancy &amp; opportunity scoring pool. New keywords will still be
             tracked, just without those scores.{" "}
             {isPlanAtLeast(planSlug, "pro_plus") ? (
@@ -655,6 +666,8 @@ export default function KeywordResearchPage() {
               <Link href="/dashboard/subscription" className="underline underline-offset-2 hover:no-underline">
                 {planSlug === "pro" ? "Upgrade to Pro+ for a bigger pool" : "Upgrade to Pro for a bigger pool"}
               </Link>
+            )}
+              </>
             )}
           </span>
           <button onClick={() => setRelevancyLimitReached(false)} className="shrink-0 hover:text-indigo-200">
