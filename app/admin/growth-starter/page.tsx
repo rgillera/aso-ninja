@@ -16,7 +16,7 @@ import { BonusLinkForm } from "@/features/admin/BonusLinkForm";
 // Shared by the follow-up email and the call chat message.
 const INCLUDED = `Here's everything included in the $500 Growth Starter package:
 
-12 Months of AppASO Pro ($468 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
+12 Months of AppASO Pro+ ($1,188 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
 
 Know-Your-App Deep Dive: A 30-minute call on your goals, numbers, users, and what you've tried so far, so every recommendation fits your app instead of a generic checklist.
 
