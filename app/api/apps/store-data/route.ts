@@ -39,7 +39,7 @@ function decodeHtmlEntities(s: string) {
   return s.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"');
 }
 
-async function fetchAndroidSubtitleAndDescription(packageId: string, country: string): Promise<{ subtitle: string; description: string } | null> {
+async function fetchAndroidSubtitleAndDescription(packageId: string, country: string): Promise<{ subtitle: string; description: string; ratingCount: number | null } | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
@@ -48,6 +48,9 @@ async function fetchAndroidSubtitleAndDescription(packageId: string, country: st
     return {
       subtitle: decodeHtmlEntities(r.summary ?? ""),
       description: r.description ?? "",
+      // The Keyword Inspector's Ratings pill needs it when the app isn't in
+      // the search results (those carry their own count).
+      ratingCount: typeof r.ratings === "number" ? r.ratings : null,
     };
   } catch { return null; }
 }

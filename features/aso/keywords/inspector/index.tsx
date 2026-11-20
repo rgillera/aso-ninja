@@ -317,6 +317,25 @@ async function fetchIosRatingCount(storeId: string, country: string): Promise<nu
   }
 }
 
+// Same for Google Play, via the store-data route (google-play-scraper is
+// server-only). A 0 or missing count is treated as unknown, like in search.
+const androidRatingCountCache = new Map<string, number>();
+async function fetchAndroidRatingCount(packageId: string, country: string): Promise<number | null> {
+  const key = `${packageId}:${country}`;
+  const cached = androidRatingCountCache.get(key);
+  if (cached !== undefined) return cached;
+  try {
+    const params = new URLSearchParams({ store: "android", bundleId: packageId, country });
+    const res = await fetch(`/api/apps/store-data?${params}`);
+    const count = res.ok ? (await res.json()).ratingCount : null;
+    if (typeof count !== "number" || count <= 0) return null;
+    androidRatingCountCache.set(key, count);
+    return count;
+  } catch {
+    return null;
+  }
+}
+
 // "Ratings 1.2K / 85K": green at or above the top 10 median, amber within
 // 10x of it, red further below. Renders nothing until both numbers are known.
 // Already in the top 10, the gap isn't a warning (you've cleared that bar
@@ -1131,20 +1150,24 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     </div>
   );
 
-  // Unranked on the App Store: look up the app's own ratings count so the
-  // Ratings pill can still compare it to the top 10.
-  const lookupStoreId = activeApp?.store === "ios" && query?.store === "ios" ? activeApp.store_id : undefined;
+  // Unranked (or Google Play's row has no count): look up the app's own
+  // ratings count so the Ratings pill can still compare it to the top 10.
+  const lookupStore = activeApp?.store === query?.store ? query?.store : undefined;
+  const lookupStoreId = lookupStore ? activeApp?.store_id : undefined;
   const lookupCountry = query?.country;
   const needsRatingsLookup = !!lookupStoreId && !!allResults
-    && !allResults.some((a) => String(a.trackId) === lookupStoreId);
+    && !allResults.some((a) => lookupStore === "ios"
+      ? String(a.trackId) === lookupStoreId
+      : a.appId === lookupStoreId && a.ratingCount > 0);
   useEffect(() => {
     if (!needsRatingsLookup || !lookupStoreId || !lookupCountry) return;
     let cancelled = false;
-    fetchIosRatingCount(lookupStoreId, lookupCountry).then((count) => {
+    const lookup = lookupStore === "ios" ? fetchIosRatingCount : fetchAndroidRatingCount;
+    lookup(lookupStoreId, lookupCountry).then((count) => {
       if (!cancelled && count !== null) setYourLookupRatings({ key: `${lookupStoreId}:${lookupCountry}`, count });
     });
     return () => { cancelled = true; };
-  }, [needsRatingsLookup, lookupStoreId, lookupCountry]);
+  }, [needsRatingsLookup, lookupStore, lookupStoreId, lookupCountry]);
 
   const busy = metricsLoading || appsLoading;
   // Google Play's search page returns a single page of ~20-30 apps with no
@@ -1183,11 +1206,11 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     : rowRelevancy !== undefined ? rowRelevancy
     : yourRelevancy && yourRelevancy.storeId === yourStoreId ? yourRelevancy.score : undefined;
   // Ratings pill: your count from your result row (Google Play's 0 means
-  // unknown), else the iOS lookup; undefined = nothing to show.
+  // unknown), else the store lookup; undefined = nothing to show.
   const yourResult = yourRankIdx >= 0 && allResults ? allResults[yourRankIdx] : undefined;
   const yourRatings = !sameStore || !query ? undefined
     : yourResult && (query.store === "ios" || yourResult.ratingCount > 0) ? yourResult.ratingCount
-    : query.store === "ios" && yourLookupRatings?.key === `${yourStoreId}:${query.country}` ? yourLookupRatings.count
+    : yourLookupRatings?.key === `${yourStoreId}:${query.country}` ? yourLookupRatings.count
     : undefined;
   const ratingsMedian = sameStore && query && apps ? topRatingsMedian(apps, query.store, yourStoreId) : null;
   const brandApp = query && apps ? brandSearchApp(apps, query.store, shownRelevancy) : null;
