@@ -127,7 +127,7 @@ const planLink = (planName: string) => (
 );
 
 // Everything on the pricing card, in one list. Only the software carries a
-// value (Pro or Pro+ at 12 × the monthly price, plus the Kit), so the year of
+// value (Pro or Pro+ at 12 × the monthly price), so the year of
 // Pro reads as nearly covering the $500 and the expert work as on top. No
 // total. The Sprint credit has no value: it only counts if they upgrade.
 const extrasFor = (plusBonus: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
@@ -138,18 +138,6 @@ const extrasFor = (plusBonus: boolean): { key: string; content: React.ReactNode;
   plusBonus
     ? { key: "pro", content: <>12 months of {planLink("Pro+")}</>, value: 1188 }
     : { key: "pro", content: <>12 months of {planLink("Pro")}</>, value: 468 },
-  {
-    key: "kit",
-    content: (
-      <>
-        Lifetime access to the{" "}
-        <a href="https://appgrowthkit.app" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
-          App Growth Kit
-        </a>
-      </>
-    ),
-    value: 149,
-  },
   {
     key: "credit",
     content: <>A $500 credit toward the Growth Sprint if you upgrade within 2 months</>,
