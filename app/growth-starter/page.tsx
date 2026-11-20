@@ -101,7 +101,6 @@ const stepsFor = (planName: string) => [
     title: "Ship it",
     description: "You make the changes, and your specialist checks them before they go live.",
     items: [
-      "Work through your plan, with the App Growth Kit beside you",
       "Send any listing, onboarding, or paywall change for review before you publish, for a month, with written feedback within 2 working days",
       "A 30-minute check-in call at month 1",
       "Watch each change move your rankings in Pro",
@@ -167,19 +166,6 @@ const faqsFor = (plusBonus: boolean) => [
     id: "guarantee",
     q: "What if it's not worth it?",
     a: "Then you don't pay for it. After your strategy call, if you don't think the Starter was worth $500, email us within 7 days and we refund the full amount. You keep the action plan. Your Pro access from the Starter ends with the refund.",
-  },
-  {
-    q: "What's the App Growth Kit?",
-    a: (
-      <>
-        Our growth playbook, experiment library, templates, and calculators for app developers, normally $149.{" "}
-        <a href="https://appgrowthkit.app" target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
-          App Growth Kit
-        </a>{" "}
-        is included free with the Growth Starter, with lifetime access, so you have the playbook beside you while you ship your plan.
-        After checkout, your specialist sends you a code that unlocks it at no cost.
-      </>
-    ),
   },
   {
     q: "Do I get anything in writing?",

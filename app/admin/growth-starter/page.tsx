@@ -18,8 +18,6 @@ const INCLUDED = `Here's everything included in the $500 Growth Starter package:
 
 12 Months of AppASO Pro ($468 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
 
-Lifetime App Growth Kit Access ($149 value): Get our growth playbook, experiment library, templates, and calculators.
-
 Know-Your-App Deep Dive: A 30-minute call on your goals, numbers, users, and what you've tried so far, so every recommendation fits your app instead of a generic checklist.
 
 Full Funnel Review: Following the deep dive, our ASO specialist will conduct an in-depth review of your app, covering everything from your store listing to the purchase experience, completed before our call.
