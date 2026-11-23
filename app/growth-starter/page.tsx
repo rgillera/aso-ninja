@@ -257,7 +257,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                   <div>
                     <p className="font-semibold text-gray-950">Your bonus: a year of AppASO Pro+ instead of Pro</p>
                     <p className="mt-1 text-sm leading-6 text-gray-600">
-                      {offer.kind === "call" ? <>This bonus is only for our call: buy the Growth Starter in </> : <>Buy the Growth Starter by </>}
+                      {offer.kind === "call" ? <>This bonus is only for our call: buy the Growth Starter in </> : offer.kind === "timed" ? <>Buy the Growth Starter in </> : <>Buy the Growth Starter by </>}
                       <span className="font-semibold text-gray-950">{offer.deadlineLabel}</span>{" "}
                       and your 12 months are on Pro+ ($1,188 value) instead of Pro ($468): 4 workspaces, relevancy scoring for
                       5,000 keywords, the keyword simulator, 8 competitors per app, and a year of history. Your access starts the moment you check out.
@@ -271,7 +271,7 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
               <div className="mx-auto mb-12 flex max-w-2xl items-start gap-3 rounded-2xl bg-amber-50 p-6 text-left ring-1 ring-amber-200">
                 <ExclamationTriangleIcon className="mt-0.5 size-6 shrink-0 text-amber-600" aria-hidden="true" />
                 <p className="text-sm leading-6 text-gray-700">
-                  {offerCheck.kind === "call" ? "The Pro+ bonus from our call has ended." : `The Pro+ bonus offer ended on ${offerCheck.deadlineLabel}.`} You can still get the Growth Starter below,
+                  {offerCheck.kind === "call" ? "The Pro+ bonus from our call has ended." : offerCheck.kind === "timed" ? "The Pro+ bonus offer has ended." : `The Pro+ bonus offer ended on ${offerCheck.deadlineLabel}.`} You can still get the Growth Starter below,
                   with 12 months of Pro instead of Pro+.
                 </p>
               </div>

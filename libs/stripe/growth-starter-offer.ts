@@ -9,13 +9,16 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //   "<YYYYMMDD>.<signature>"  a deadline day, lasting until that day ends in
 //                             the last time zone on Earth (UTC-12), so the
 //                             date in the email holds wherever the buyer is.
-//   "h<unix seconds>.<signature>"  a timed offer, valid for one of
-//                             TIMED_OFFER_MINUTES from when it's made: 24 hours
-//                             for a follow-up email, 30 minutes for the call
-//                             only. The token holds its end time, so changing
-//                             these lengths never affects links already sent.
-//                             Signed under a different prefix, so a day
-//                             token's signature can't be reused for one.
+//   "h<unix seconds>.<signature>"  a timed offer for a follow-up email.
+//   "c<unix seconds>.<signature>"  a timed offer for the call only, so the
+//                             page can say it's from the call.
+//                             Timed offers last one of TIMED_OFFER_MINUTES
+//                             from when they're made. The token holds its end
+//                             time, so changing these lengths never affects
+//                             links already sent. Signed under a different
+//                             prefix, and the letter is part of what's signed,
+//                             so no token's signature can be reused for
+//                             another kind.
 
 export const TIMED_OFFER_MINUTES = [24 * 60, 30] as const;
 export type TimedOfferMinutes = (typeof TIMED_OFFER_MINUTES)[number];
@@ -32,7 +35,7 @@ export function formatOfferDuration(minutes: number): string {
   const hours = Math.round(minutes / 60);
   return hours === 1 ? "1 hour" : `${hours} hours`;
 }
-const TIMED_RE = /^h(\d{9,11})$/;
+const TIMED_RE = /^([hc])(\d{9,11})$/;
 
 const DAY_RE = /^(\d{4})(\d{2})(\d{2})$/;
 
@@ -58,12 +61,14 @@ function expiresAt({ y, m, d }: { y: number; m: number; d: number }): Date {
   return new Date(Date.UTC(y, m - 1, d + 1, 12, 0, 0));
 }
 
+export type OfferKind = "day" | "timed" | "call";
+
 export type GrowthStarterOffer = {
   token: string;
-  // "day": "Friday, November 13", for the page and emails. "call": "the
-  // next 23 hours" at the time it's read (the buyer's time zone is unknown,
-  // so no clock time).
-  kind: "day" | "call";
+  // "day": "Friday, November 13", for the page and emails. "timed" (follow-up
+  // email) and "call": "the next 23 hours" at the time it's read (the buyer's
+  // time zone is unknown, so no clock time).
+  kind: OfferKind;
   deadlineLabel: string;
   expiresAt: Date;
 };
@@ -84,8 +89,9 @@ export function createGrowthStarterTimedOfferToken(minutes: TimedOfferMinutes): 
   const key = secret();
   if (!key) return { error: "GROWTH_STARTER_OFFER_SECRET is not set." };
   const end = new Date(Date.now() + minutes * 60_000);
-  const stamp = `h${Math.floor(end.getTime() / 1000)}`;
-  return { token: `${stamp}.${signTimed(stamp, key)}`, kind: "call", deadlineLabel: hoursLeftLabel(end), expiresAt: end };
+  const kind = minutes === CALL_OFFER_MINUTES ? "call" : "timed";
+  const stamp = `${kind === "call" ? "c" : "h"}${Math.floor(end.getTime() / 1000)}`;
+  return { token: `${stamp}.${signTimed(stamp, key)}`, kind, deadlineLabel: hoursLeftLabel(end), expiresAt: end };
 }
 
 function labelFor({ y, m, d }: { y: number; m: number; d: number }): string {
@@ -111,7 +117,7 @@ export function createGrowthStarterOfferToken(deadline: string): GrowthStarterOf
 
 export type OfferCheck =
   | { status: "valid"; offer: GrowthStarterOffer }
-  | { status: "expired"; kind: "day" | "call"; deadlineLabel: string }
+  | { status: "expired"; kind: OfferKind; deadlineLabel: string }
   | { status: "invalid" };
 
 export function checkGrowthStarterOfferToken(token: string | null | undefined): OfferCheck {
@@ -125,11 +131,12 @@ export function checkGrowthStarterOfferToken(token: string | null | undefined): 
     const expected = Buffer.from(signTimed(day, key));
     const given = Buffer.from(signature);
     if (expected.length !== given.length || !timingSafeEqual(expected, given)) return { status: "invalid" };
-    const end = new Date(Number(timed[1]) * 1000);
+    const kind = timed[1] === "c" ? "call" : "timed";
+    const end = new Date(Number(timed[2]) * 1000);
     // Expired call offers name the day it ran out, in UTC.
     const endLabel = end.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
-    if (end.getTime() <= Date.now()) return { status: "expired", kind: "call", deadlineLabel: endLabel };
-    return { status: "valid", offer: { token, kind: "call", deadlineLabel: hoursLeftLabel(end), expiresAt: end } };
+    if (end.getTime() <= Date.now()) return { status: "expired", kind, deadlineLabel: endLabel };
+    return { status: "valid", offer: { token, kind, deadlineLabel: hoursLeftLabel(end), expiresAt: end } };
   }
 
   const parts = day ? parseDay(day) : null;
