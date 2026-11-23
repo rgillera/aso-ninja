@@ -10,17 +10,27 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //                             the last time zone on Earth (UTC-12), so the
 //                             date in the email holds wherever the buyer is.
 //   "h<unix seconds>.<signature>"  a timed offer, valid for one of
-//                             TIMED_OFFER_HOURS from when it's made: 24 hours
-//                             for a follow-up email, 2 for the call only.
+//                             TIMED_OFFER_MINUTES from when it's made: 24 hours
+//                             for a follow-up email, 30 minutes for the call
+//                             only. The token holds its end time, so changing
+//                             these lengths never affects links already sent.
 //                             Signed under a different prefix, so a day
 //                             token's signature can't be reused for one.
 
-export const TIMED_OFFER_HOURS = [24, 2] as const;
-export type TimedOfferHours = (typeof TIMED_OFFER_HOURS)[number];
+export const TIMED_OFFER_MINUTES = [24 * 60, 30] as const;
+export type TimedOfferMinutes = (typeof TIMED_OFFER_MINUTES)[number];
+export const CALL_OFFER_MINUTES: TimedOfferMinutes = 30;
 
-export function parseTimedOfferHours(value: string | undefined): TimedOfferHours | null {
+export function parseTimedOfferMinutes(value: string | undefined): TimedOfferMinutes | null {
   const n = Number(value);
-  return (TIMED_OFFER_HOURS as readonly number[]).includes(n) ? (n as TimedOfferHours) : null;
+  return (TIMED_OFFER_MINUTES as readonly number[]).includes(n) ? (n as TimedOfferMinutes) : null;
+}
+
+// "30 minutes", "24 hours", "1 hour".
+export function formatOfferDuration(minutes: number): string {
+  if (minutes < 60) return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  const hours = Math.round(minutes / 60);
+  return hours === 1 ? "1 hour" : `${hours} hours`;
 }
 const TIMED_RE = /^h(\d{9,11})$/;
 
@@ -63,15 +73,17 @@ function signTimed(stamp: string, key: string): string {
 }
 
 function hoursLeftLabel(end: Date): string {
-  const hours = Math.max(1, Math.ceil((end.getTime() - Date.now()) / 3_600_000));
+  const minutes = Math.max(1, Math.ceil((end.getTime() - Date.now()) / 60_000));
+  if (minutes < 60) return minutes === 1 ? "the next minute" : `the next ${minutes} minutes`;
+  const hours = Math.ceil(minutes / 60);
   return hours === 1 ? "the next hour" : `the next ${hours} hours`;
 }
 
-// A timed bonus link, valid for `hours` from now.
-export function createGrowthStarterTimedOfferToken(hours: TimedOfferHours): GrowthStarterOffer | { error: string } {
+// A timed bonus link, valid for `minutes` from now.
+export function createGrowthStarterTimedOfferToken(minutes: TimedOfferMinutes): GrowthStarterOffer | { error: string } {
   const key = secret();
   if (!key) return { error: "GROWTH_STARTER_OFFER_SECRET is not set." };
-  const end = new Date(Date.now() + hours * 3_600_000);
+  const end = new Date(Date.now() + minutes * 60_000);
   const stamp = `h${Math.floor(end.getTime() / 1000)}`;
   return { token: `${stamp}.${signTimed(stamp, key)}`, kind: "call", deadlineLabel: hoursLeftLabel(end), expiresAt: end };
 }
