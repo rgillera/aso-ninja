@@ -56,10 +56,12 @@ function groupApps(apps: App[]): AppGroup[] {
     map.get(key)!.push(app);
   }
   // Store names are per storefront (a rename can land in US only), so the
-  // card takes its name from the US row and lists US first, next to it.
+  // card takes its name from the US row and lists US first, next to it. The
+  // rest go alphabetically so the same app reads the same on both stores.
   const isUs = (a: App) => (a.country ?? "US").toUpperCase() === "US";
+  const byCountry = (a: App, b: App) => (a.country ?? "").localeCompare(b.country ?? "");
   return [...map.entries()].map(([key, entries]) => {
-    const sorted = [...entries.filter(isUs), ...entries.filter((a) => !isUs(a))];
+    const sorted = [...entries.filter(isUs), ...entries.filter((a) => !isUs(a)).sort(byCountry)];
     return { key, primary: sorted[0], entries: sorted };
   });
 }
