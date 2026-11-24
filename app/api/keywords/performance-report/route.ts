@@ -10,6 +10,7 @@ import { isPlanAtLeast } from "@/features/subscription/planTiers";
 import { REPORT_MONTHS } from "@/libs/keyword-report-window";
 import { searchIosLive } from "@/libs/keyword-relevancy";
 import { resolveIpadOnly, persistIpadRank } from "@/libs/store/ipad-only";
+import { playLang } from "@/libs/store/play-language";
 
 // Lets the background catch-up pass below (kicked off via `after()`) keep
 // running past a normal request's lifetime — same ceiling refresh-keywords
@@ -93,7 +94,7 @@ async function backfillCurrentMonth(terms: string[], store: string, country: str
         const gplay = await import("google-play-scraper");
         const api = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
+        const apps: any[] = await api.search({ term, country: country.toLowerCase(), lang: playLang(country), num: 250 });
 
         // Play suggest popularity (letter-by-letter, same walk as iOS), with the
         // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.

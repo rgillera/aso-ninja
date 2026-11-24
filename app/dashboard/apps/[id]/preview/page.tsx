@@ -3,6 +3,7 @@ import { createClient } from "@/libs/supabase/server";
 import AppPagePreview from "@/features/aso/metadata/preview/AppPagePreview";
 import type { App } from "@/libs/contracts";
 import { extractIosSubtitle } from "@/libs/store/appstore";
+import { playLang } from "@/libs/store/play-language";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -71,7 +72,7 @@ async function fetchGooglePlayData(packageId: string, country: string) {
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: "en" });
+    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: playLang(country) });
 
     return {
       screenshotUrls: (r.screenshots ?? []).slice(0, 7).map((url: string) => `${url}=w390-h844-rw`),

@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { itunesFetch } from "./appstore";
+import { playLang } from "@/libs/store/play-language";
 
 const CACHE_REVALIDATE_SECONDS = 6 * 60 * 60;
 
@@ -72,6 +73,7 @@ async function fetchAndroidReviewsImpl(bundleId: string, country: string, num: n
   const { data }: { data: any[] } = await api.reviews({
     appId: bundleId,
     country: country.toLowerCase(),
+    lang: playLang(country),
     sort: api.sort.NEWEST,
     num,
   });
@@ -93,7 +95,7 @@ async function fetchAndroidReviewsImpl(bundleId: string, country: string, num: n
     .filter((r): r is FetchedReview => r !== null);
 }
 
-const cachedFetchAndroidReviews = unstable_cache(fetchAndroidReviewsImpl, ["android-reviews"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchAndroidReviews = unstable_cache(fetchAndroidReviewsImpl, ["android-reviews-v2"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
 export async function fetchAndroidReviews(bundleId: string, country: string, num = 300): Promise<FetchedReview[]> {
   try {

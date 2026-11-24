@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
+import { playLang } from "@/libs/store/play-language";
 
 // Play's short description comes HTML-escaped ("fitness &amp; workouts").
 function decodeHtmlEntities(text: string): string {
@@ -173,7 +174,7 @@ export async function GET(request: NextRequest) {
     // matching note in liveSearch.ts). Callers that display results trim to
     // their own top 20; fullDetail below only enriches those 20.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const results: any[] = await api.search({ term, country, num: 250 });
+    const results: any[] = await api.search({ term, country, lang: playLang(country), num: 250 });
     const apps: AppSearchResult[] = results.map((a, i) => ({
       position:       i + 1,
       trackId:        0,
@@ -201,7 +202,7 @@ export async function GET(request: NextRequest) {
     // keeps a lookup failure scoped to that one row's count (stays 0).
     if (fullDetail && apps.length) {
       const details = await Promise.allSettled(
-        results.slice(0, 20).map((a) => api.app({ appId: a.appId, country }))
+        results.slice(0, 20).map((a) => api.app({ appId: a.appId, country, lang: playLang(country) }))
       );
       details.forEach((d, i) => {
         if (d.status === "fulfilled") {

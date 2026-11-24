@@ -2,6 +2,7 @@ import { createClient } from "@/libs/supabase/server";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
 import { generateText, embedText, embedTexts } from "@/libs/gemini";
 import { extractIosSubtitle } from "@/libs/store/appstore";
+import { playLang } from "@/libs/store/play-language";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -517,7 +518,7 @@ export async function fetchAndroidAppMeta(appName: string, country: string, with
     const gplay = await import("google-play-scraper");
     const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apps: any[] = await api.search({ term: appName, country: country.toLowerCase(), num: 5 });
+    const apps: any[] = await api.search({ term: appName, country: country.toLowerCase(), lang: playLang(country), num: 5 });
     const name  = appName.toLowerCase().trim();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const match = apps.find((a: any) => (a.title ?? "").toLowerCase().trim() === name)
@@ -535,7 +536,7 @@ export async function fetchAndroidAppMeta(appName: string, country: string, with
     if (match?.appId) {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const full: any = await api.app({ appId: match.appId, country: country.toLowerCase(), lang: "en" });
+        const full: any = await api.app({ appId: match.appId, country: country.toLowerCase(), lang: playLang(country) });
         description = ((full?.description ?? match?.summary ?? "") as string).slice(0, 500);
         subtitle = (full?.summary ?? match?.summary ?? "") as string;
       } catch { /* keep the search-result summary for both fields */ }

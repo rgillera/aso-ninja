@@ -5,6 +5,7 @@ import { computeChance } from "@/libs/keyword-rank-match";
 import { createAdminClient } from "@/libs/supabase/admin";
 import { type RawIosApp, getCachedIosSearch, searchIosLive } from "@/libs/keyword-relevancy";
 import { isRestrictedSearch } from "@/libs/keyword-restricted";
+import { playLang } from "@/libs/store/play-language";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -176,7 +177,7 @@ export async function fetchAndroidCoreMetrics(
     const normCountry = country.toLowerCase();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const apps: any[] = await api.search({ term, country: normCountry, num: 250 });
+    const apps: any[] = await api.search({ term, country: normCountry, lang: playLang(country), num: 250 });
 
     // Play suggest popularity (letter-by-letter, same walk as iOS), with the
     // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
@@ -191,7 +192,7 @@ export async function fetchAndroidCoreMetrics(
     const top5RatingCounts = await Promise.all(
       apps.slice(0, 5).map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         try {
-          const full: any = await api.app({ appId: r.appId, country: normCountry, lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+          const full: any = await api.app({ appId: r.appId, country: normCountry, lang: playLang(country) }); // eslint-disable-line @typescript-eslint/no-explicit-any
           return (full?.ratings ?? full?.reviews ?? 0) as number;
         } catch {
           return null;

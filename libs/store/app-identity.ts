@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { itunesFetch } from "@/libs/store/appstore";
 import { enqueueAppleRequest } from "@/libs/apple-rate-limiter";
+import { playLang } from "@/libs/store/play-language";
 
 // apps.name / icon_url are copied from the store when an app is followed and
 // never re-read otherwise, so a renamed app kept its old title in the header,
@@ -41,7 +42,7 @@ async function fetchAndroidIdentity(bundleId: string, country: string): Promise<
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app({ appId: bundleId, country: country.toLowerCase() });
+    const r: any = await (api as any).app({ appId: bundleId, country: country.toLowerCase(), lang: playLang(country) });
     if (!r?.title) return null;
     const icon = r.icon ? (r.icon.startsWith("//") ? "https:" + r.icon : r.icon) + "=s200" : null;
     return { name: r.title, iconUrl: icon };

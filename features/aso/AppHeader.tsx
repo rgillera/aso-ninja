@@ -13,6 +13,7 @@ import { PlanLimitMessage } from "@/features/subscription/PlanLimitMessage";
 import { CountrySwitcher } from "@/features/aso/CountrySwitcher";
 import { useActiveAppResolving, type ActiveApp } from "@/features/dashboard/ActiveAppContext";
 import type { App } from "@/libs/contracts";
+import { playLang } from "@/libs/store/play-language";
 
 type Props = {
   app: ActiveApp | null;
@@ -161,7 +162,7 @@ export function StoreLinkButton({ app }: { app: ActiveApp }) {
   const url =
     app.store === "ios"
       ? `https://apps.apple.com/${country}/app/id${app.store_id}`
-      : `https://play.google.com/store/apps/details?id=${app.store_id}&hl=en&gl=${country}`;
+      : `https://play.google.com/store/apps/details?id=${app.store_id}&hl=${playLang(country)}&gl=${country}`;
 
   return (
     <a

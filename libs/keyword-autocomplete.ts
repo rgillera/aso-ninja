@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { enqueueAppleHintsRequest, createQueue } from "@/libs/apple-rate-limiter";
+import { playLang } from "@/libs/store/play-language";
 
 // iOS keyword popularity estimated from App Store search autocomplete — the
 // same suggestion list the App Store app shows while typing. Popular
@@ -119,7 +120,7 @@ async function fetchPlayHints(prefix: string, country: string): Promise<string[]
     const term = encodeURIComponent(prefix);
     const body = `f.req=%5B%5B%5B%22IJ4APc%22%2C%22%5B%5Bnull%2C%5B%5C%22${term}%5C%22%5D%2C%5B10%5D%2C%5B2%5D%2C4%5D%5D%22%5D%5D%5D`;
     const res = await enqueuePlaySuggestRequest(() =>
-      fetch(`${PLAY_SUGGEST_URL}&hl=en&gl=${encodeURIComponent(country)}`, {
+      fetch(`${PLAY_SUGGEST_URL}&hl=${playLang(country)}&gl=${encodeURIComponent(country)}`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body,

@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import type { AppSearchResult, StoreData, CategoryBenchmark, ChartApp } from "@/libs/contracts";
 import { average, median } from "./benchmark-utils";
 import { ANDROID_CATEGORY_MAP } from "@/libs/categories";
+import { playLang } from "@/libs/store/play-language";
 
 // Benchmark data (peer descriptions, screenshots, ratings...) doesn't meaningfully
 // shift minute to minute, so results are cached for a few hours. This is the main
@@ -29,6 +30,7 @@ export async function searchPlayStore(
     const results: any[] = await (api as any).search({
       term: q,
       country: country.toLowerCase(),
+      lang: playLang(country),
       num: 15,
     });
     return results.map((r) => ({
@@ -49,7 +51,7 @@ export async function lookupPlayStore(bundleId: string, country?: string): Promi
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app(country ? { appId: bundleId, country: country.toLowerCase() } : { appId: bundleId });
+    const r: any = await (api as any).app(country ? { appId: bundleId, country: country.toLowerCase(), lang: playLang(country) } : { appId: bundleId });
     return {
       name: r.title,
       store: "android",
@@ -67,7 +69,7 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
   const gplay = await import("google-play-scraper");
   const api = gplay.default ?? gplay;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const r: any = await (api as any).app({ appId: bundleId, country: country.toLowerCase() });
+  const r: any = await (api as any).app({ appId: bundleId, country: country.toLowerCase(), lang: playLang(country) });
   return {
     name: (r.title ?? "") as string,
     screenshotUrls: (r.screenshots ?? []).map((url: string) => ensureHttps(url)),
@@ -92,7 +94,7 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
 
 // Cached per app (not per caller) — the same peer app looked up by two different
 // benchmark requests (e.g. as each other's category peer) shares one cache entry.
-const cachedFetchAndroidStoreData = unstable_cache(fetchAndroidStoreDataImpl, ["android-store-data"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchAndroidStoreData = unstable_cache(fetchAndroidStoreDataImpl, ["android-store-data-v2"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
 // `fresh` skips the cache; see fetchIosStoreData.
 export async function fetchAndroidStoreData(bundleId: string, country: string, { fresh = false }: { fresh?: boolean } = {}): Promise<StoreData> {
@@ -113,12 +115,13 @@ async function fetchAndroidGenreTopIdsImpl(genreId: string, country: string, lim
     category: genreId,
     collection: topFree,
     country: country.toLowerCase(),
+    lang: playLang(country),
     num: limit,
   });
   return top.map((a) => a.appId as string).filter(Boolean);
 }
 
-const cachedFetchAndroidGenreTopIds = unstable_cache(fetchAndroidGenreTopIdsImpl, ["android-genre-top-ids"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchAndroidGenreTopIds = unstable_cache(fetchAndroidGenreTopIdsImpl, ["android-genre-top-ids-v2"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
 // Averages description length, screenshot count, and preview-video presence across
 // the top free apps in the same Play Store category (genreId doubles as the
@@ -217,6 +220,7 @@ async function fetchAndroidTopChartsImpl(
     collection: api.collection[ANDROID_COLLECTION[chart]],
     category: categoryId ? api.category[categoryId] : api.category.APPLICATION,
     country: country.toLowerCase(),
+    lang: playLang(country),
     num: limit,
   });
 
@@ -236,7 +240,7 @@ async function fetchAndroidTopChartsImpl(
       price,
       priceLabel: r.free ? "Free" : formatPrice(price, currency),
       genre: genreLabel,
-      url: r.url ?? `https://play.google.com/store/apps/details?id=${r.appId}&hl=en&gl=${country.toLowerCase()}`,
+      url: r.url ?? `https://play.google.com/store/apps/details?id=${r.appId}&hl=${playLang(country)}&gl=${country.toLowerCase()}`,
       rating: typeof r.score === "number" ? r.score : null,
       ratingCount: null,
       lastUpdatedAt: null,
@@ -244,7 +248,7 @@ async function fetchAndroidTopChartsImpl(
   });
 }
 
-const cachedFetchAndroidTopCharts = unstable_cache(fetchAndroidTopChartsImpl, ["android-top-charts"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchAndroidTopCharts = unstable_cache(fetchAndroidTopChartsImpl, ["android-top-charts-v2"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
 export async function fetchAndroidTopCharts(opts: {
   country: string;
@@ -268,7 +272,7 @@ async function fetchAndroidPrivacyPolicyUrlImpl(bundleId: string, country: strin
     const gplay = await import("google-play-scraper");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const api: any = gplay.default ?? gplay;
-    const r = await api.app({ appId: bundleId, country: country.toLowerCase() });
+    const r = await api.app({ appId: bundleId, country: country.toLowerCase(), lang: playLang(country) });
     return typeof r.privacyPolicy === "string" && r.privacyPolicy ? r.privacyPolicy : null;
   } catch {
     return null;

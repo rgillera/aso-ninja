@@ -14,6 +14,7 @@ import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { persistIpadRank } from "@/libs/store/ipad-only";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { createStripeClient } from "@/libs/stripe/server";
+import { playLang } from "@/libs/store/play-language";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -208,7 +209,7 @@ async function computeAndroidVolumeAndDiff(api: any, apps: any[], term: string, 
   const top5RatingCounts = await Promise.all(
     apps.slice(0, 5).map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
       try {
-        const full: any = await api.app({ appId: r.appId, country, lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+        const full: any = await api.app({ appId: r.appId, country, lang: playLang(country) }); // eslint-disable-line @typescript-eslint/no-explicit-any
         return (full?.ratings ?? full?.reviews ?? 0) as number;
       } catch {
         return null;
@@ -329,7 +330,7 @@ export async function refreshKeywordAction(term: string, store: "ios" | "android
   try {
     const gplay = await import("google-play-scraper");
     api = gplay.default ?? gplay;
-    apps = await api.search({ term: normTerm, country: countryLower, num: 250 });
+    apps = await api.search({ term: normTerm, country: countryLower, lang: playLang(countryLower), num: 250 });
   } catch {
     return { ok: false, error: "Google Play search failed." };
   }

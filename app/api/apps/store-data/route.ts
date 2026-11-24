@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractIosSubtitle } from "@/libs/store/appstore";
+import { playLang } from "@/libs/store/play-language";
 
 // Client-fetchable subset of what app/dashboard/apps/[id]/preview/page.tsx's
 // fetchItunesData/fetchGooglePlayData compute server-side — just subtitle +
@@ -44,7 +45,7 @@ async function fetchAndroidSubtitleAndDescription(packageId: string, country: st
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: "en" });
+    const r: any = await (api as any).app({ appId: packageId, country: country.toLowerCase(), lang: playLang(country) });
     return {
       subtitle: decodeHtmlEntities(r.summary ?? ""),
       description: r.description ?? "",

@@ -9,6 +9,7 @@ import { recomputeOpportunity } from "@/libs/keyword-volume";
 import { getWebPushClient } from "@/libs/webpush";
 import { searchIosLive } from "@/libs/keyword-relevancy";
 import { persistIpadRank } from "@/libs/store/ipad-only";
+import { playLang } from "@/libs/store/play-language";
 
 // Vercel: 300s on Pro, 60s on Hobby. Runs frequently (see vercel.json) in
 // small batches now — see TIME_BUDGET_MS below for why it no longer tries to
@@ -309,7 +310,7 @@ export async function GET(req: Request) {
         const api   = (gplay.default ?? gplay) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const apps: any[] = await api.search({ term, country: country.toLowerCase(), num: 250 });
+        const apps: any[] = await api.search({ term, country: country.toLowerCase(), lang: playLang(country), num: 250 });
 
         // Play suggest popularity (letter-by-letter, same walk as iOS), with the
         // title-match/result-count estimate as fallback — see libs/keyword-autocomplete.ts.
@@ -326,7 +327,7 @@ export async function GET(req: Request) {
         const top5RatingCounts = await Promise.all(
           top5.map(async (r: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
             try {
-              const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: "en" }); // eslint-disable-line @typescript-eslint/no-explicit-any
+              const full: any = await api.app({ appId: r.appId, country: country.toLowerCase(), lang: playLang(country) }); // eslint-disable-line @typescript-eslint/no-explicit-any
               return full?.ratings ?? full?.reviews ?? 0;
             } catch {
               return null;
