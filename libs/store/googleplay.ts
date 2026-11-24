@@ -44,12 +44,12 @@ export async function searchPlayStore(
   }
 }
 
-export async function lookupPlayStore(bundleId: string): Promise<AppSearchResult | null> {
+export async function lookupPlayStore(bundleId: string, country?: string): Promise<AppSearchResult | null> {
   try {
     const gplay = await import("google-play-scraper");
     const api = gplay.default ?? gplay;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const r: any = await (api as any).app({ appId: bundleId });
+    const r: any = await (api as any).app(country ? { appId: bundleId, country: country.toLowerCase() } : { appId: bundleId });
     return {
       name: r.title,
       store: "android",

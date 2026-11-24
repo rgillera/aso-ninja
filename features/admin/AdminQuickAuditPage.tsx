@@ -13,7 +13,7 @@ import { COUNTRIES, countryFlag } from "@/libs/countries";
 // (see pickDefault in libs/admin/quick-audit.ts); a third can be ticked.
 const MAX_PICKS = 3;
 
-const DEFAULT_CALENDLY = "https://calendly.com/erik-baring-appaso/15min";
+const DEFAULT_CALENDLY = "https://cal.com/erik-baring-rqnemo/15min";
 
 const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   keywords: "Keywords",
