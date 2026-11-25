@@ -123,6 +123,7 @@ async function fetchLiveSearchResultsInner(
       price:          (a.formattedPrice ?? "Free") as string,
       inAppPurchases: !!(a.minimumOsVersion) && (a.trackPrice === 0 || a.trackPrice === undefined),
       screenshotUrls: [],
+      updatedAt:      a.currentVersionReleaseDate ? Date.parse(a.currentVersionReleaseDate) || undefined : undefined,
     }));
     await fetch("/api/keywords/search", {
       method: "POST",

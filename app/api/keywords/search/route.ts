@@ -27,6 +27,10 @@ export type AppSearchResult = {
   price: string;
   inAppPurchases: boolean;
   screenshotUrls: string[];
+  // When the current version went live (ms): App Store
+  // currentVersionReleaseDate, Play "updated" (fullDetail rows only).
+  // Missing when the source didn't say.
+  updatedAt?: number;
 };
 
 // Records the "checked, not found" marker (null position) for a tracked app
@@ -138,6 +142,7 @@ export async function GET(request: NextRequest) {
         price:          (a.formattedPrice ?? "Free") as string,
         inAppPurchases: !!(a.minimumOsVersion) && (a.trackPrice === 0 || a.trackPrice === undefined),
         screenshotUrls: [],
+        updatedAt:      a.currentVersionReleaseDate ? Date.parse(a.currentVersionReleaseDate) || undefined : undefined,
       }));
 
       // Persist today's rankings to history (fire-and-forget)
@@ -208,6 +213,7 @@ export async function GET(request: NextRequest) {
         if (d.status === "fulfilled") {
           apps[i].ratingCount = (d.value.ratings ?? 0) as number;
           apps[i].subtitle = decodeHtmlEntities((d.value.summary ?? "") as string);
+          if (typeof d.value.updated === "number") apps[i].updatedAt = d.value.updated;
         }
       });
     }

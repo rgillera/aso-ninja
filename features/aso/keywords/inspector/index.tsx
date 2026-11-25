@@ -219,6 +219,76 @@ function KeywordHighlight({ text, term, active }: { text: string; term: string; 
   );
 }
 
+// How a title or subtitle matches the searched keyword, for the tags under
+// each result. "exact": the whole phrase, words in order; "all": every word,
+// but not as that phrase; "partial": some of the words. Same substring rule
+// as titleHasKeyword (so it works without spaces, e.g. CJK), with
+// punctuation read as a space so "location-tracker" still counts as exact.
+type MatchLevel = "exact" | "all" | "partial";
+function keywordMatch(text: string, term: string): MatchLevel | null {
+  const norm = (v: string) => v.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  const t = norm(text);
+  const words = norm(term).split(" ").filter(Boolean);
+  if (!t || !words.length) return null;
+  if (t.includes(words.join(" "))) return "exact";
+  const hits = words.filter((w) => t.includes(w)).length;
+  if (hits === words.length) return "all";
+  return hits ? "partial" : null;
+}
+
+const MATCH_LABEL: Record<MatchLevel, string> = { exact: "exact match", all: "all words", partial: "partial" };
+const MATCH_HINT: Record<MatchLevel, string> = {
+  exact: "The whole keyword appears here, words in order. Stores weigh this the most.",
+  all: "Every word of the keyword appears here, but not together as the phrase.",
+  partial: "Only some of the keyword's words appear here.",
+};
+
+// "Updated" tag window: older updates don't explain a rank move.
+const RECENT_UPDATE_DAYS = 30;
+
+function ResultTags({ name, subtitle, subtitleLabel, term, updatedAt }: {
+  name: string;
+  subtitle: string;
+  subtitleLabel: string;
+  term: string;
+  updatedAt?: number;
+}) {
+  const fields = [
+    { label: "Title", level: keywordMatch(name, term) },
+    { label: subtitleLabel, level: subtitle ? keywordMatch(subtitle, term) : null },
+  ].filter((f): f is { label: string; level: MatchLevel } => !!f.level);
+  // Read once per row mount (render must stay pure); a day-level age
+  // doesn't need to tick.
+  const [now] = useState(() => Date.now());
+  const days = updatedAt ? Math.floor((now - updatedAt) / 86_400_000) : null;
+  const recent = days !== null && days >= 0 && days <= RECENT_UPDATE_DAYS;
+  if (!fields.length && !recent) return null;
+  const tag = "rounded-full px-1.5 py-px text-[10px] font-medium";
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1">
+      {fields.map((f) => (
+        <span
+          key={f.label}
+          title={MATCH_HINT[f.level]}
+          className={`${tag} ${f.level === "exact"
+            ? "bg-emerald-500/15 text-emerald-300 light:text-emerald-700"
+            : "bg-white/[0.06] light:bg-black/[0.05] text-gray-400 light:text-gray-600"}`}
+        >
+          {f.label}: {MATCH_LABEL[f.level]}
+        </span>
+      ))}
+      {recent && (
+        <span
+          title={`Current version released ${new Date(updatedAt!).toLocaleDateString()}. An update can change the title, subtitle or keywords, which moves ranks.`}
+          className={`${tag} bg-amber-500/15 text-amber-300 light:text-amber-700`}
+        >
+          Updated {days === 0 ? "today" : `${days}d ago`}
+        </span>
+      )}
+    </div>
+  );
+}
+
 // A compact "label  value" chip for the keyword-match counts above the
 // results list. value null = still loading (App Store subtitles).
 function MatchPill({ label, value, hint }: { label: string; value: string | null; hint: string }) {
@@ -450,6 +520,13 @@ function ResultRow({
           <p className="text-xs leading-snug text-gray-400 light:text-gray-600 break-words"><KeywordHighlight text={subtitle} term={term} active={highlight} /></p>
         )}
         <p className={`truncate text-gray-500 ${subtitle ? "text-[11px]" : "text-xs"}`}>{app.developer}</p>
+        <ResultTags
+          name={app.name}
+          subtitle={subtitle}
+          subtitleLabel={store === "android" ? "Short description" : "Subtitle"}
+          term={term}
+          updatedAt={app.updatedAt}
+        />
         {(storeUrl || competitor) && (
           // One line, even in the narrow side pane: the two links are short.
           <div className="mt-1.5 flex items-center gap-3 whitespace-nowrap">
