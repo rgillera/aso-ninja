@@ -84,11 +84,16 @@ const GAMES_RPD_MULTIPLIER = 2;
 // Listings that declare no in-app purchases can still earn from ads.
 const NO_IAP_RPD_MULTIPLIER = 0.3;
 
-// A category chart's #1 is worth about this share of the overall #1.
+// A category chart's #1 is worth about this share of the overall #1. With the
+// same exponent, a share s puts category #k at overall rank k × s^(-1/b).
+// Downloads: 0.1 → non-game category #1 ≈ overall #20 and #10 ≈ #200, which
+// is about where those positions sit on the real charts; 0.08 → game
+// subcategory #1 ≈ overall #29. (Was 0.04 / 0.03, which put category #10
+// below the overall chart's floor and most non-US category apps under 5K.)
 function categoryShare(store: Store, genreId: string): { downloads: number; revenue: number } {
   if (genreId === "6014" || genreId === "GAME") return { downloads: 0.35, revenue: 0.55 };
-  if (/^7\d{3}$/.test(genreId) || genreId.startsWith("GAME_")) return { downloads: 0.03, revenue: 0.05 };
-  return store === "ios" || genreId in ANDROID_CATEGORY_MAP ? { downloads: 0.04, revenue: 0.03 } : { downloads: 0, revenue: 0 };
+  if (/^7\d{3}$/.test(genreId) || genreId.startsWith("GAME_")) return { downloads: 0.08, revenue: 0.05 };
+  return store === "ios" || genreId in ANDROID_CATEGORY_MAP ? { downloads: 0.1, revenue: 0.03 } : { downloads: 0, revenue: 0 };
 }
 
 function isGames(genreId: string | null): boolean {
