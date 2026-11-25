@@ -63,12 +63,12 @@ function buildEmailBody(r: QuickAuditResult, picked: AuditFinding[], firstName: 
         ? `That's ${total} quick wins so far, and it's only what I can see from the outside.`
         : "And that's only what I can see from the outside.",
       "",
-      `On a free 15-minute call, I'll go through ${r.shortName} with you live and show you:`,
+      `On a free 15-minute call, we'll go through ${r.shortName} with you live and show you:`,
       "",
       rival
         ? `- The keywords ${rival} and your other competitors rank for that you're missing`
         : "- The keywords your competitors rank for that you're missing",
-      "- The changes I'd make first to grow your downloads",
+      "- The changes we'd make first to grow your downloads",
       `- A growth strategy built for ${r.shortName}`,
       "",
       "You'll leave with a clear plan you can act on yourself, whether we work together or not.",
@@ -91,7 +91,7 @@ function buildEmailBody(r: QuickAuditResult, picked: AuditFinding[], firstName: 
       "",
       "No strings attached. Feel free to use these however you like.",
       "",
-      "If you ever decide to put more into ASO down the road, I'd be happy to help. You can book a free 15-minute call anytime here:",
+      "If you ever decide to put more into ASO down the road, we'd be happy to help. You can book a free 15-minute call anytime here:",
       link,
       "",
       `Wishing you all the best with ${r.shortName}!`,
@@ -106,7 +106,7 @@ function buildEmailBody(r: QuickAuditResult, picked: AuditFinding[], firstName: 
     "",
     "If your app isn't ranking in the top 10 for relevant keywords, those search impressions and downloads are going to your competitors instead.",
     "",
-    `I'd be happy to walk you through how we'd get ${r.shortName} into the top 10 for your target keywords.`,
+    `We'd be happy to walk you through how we'd get ${r.shortName} into the top 10 for your target keywords.`,
     "",
     "Open to a free 15-minute call this week? No commitment.",
     "",
