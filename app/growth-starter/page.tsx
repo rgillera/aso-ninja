@@ -101,7 +101,7 @@ const stepsFor = (planName: string) => [
     title: "Ship it",
     description: "You make the changes, with your specialist a message away.",
     items: [
-      "A month of email support: ask your specialist anything about your plan, with replies within 2 working days",
+      "A month of email support: ask your specialist anything about your plan, with replies within 1 to 3 working days",
       "Watch each change move your rankings in Pro",
     ],
     milestone: "Your first changes are live",

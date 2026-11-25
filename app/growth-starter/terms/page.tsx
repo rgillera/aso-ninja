@@ -69,7 +69,7 @@ export default function GrowthStarterTermsPage() {
           <li>
             <strong>Email support:</strong> for 1 month after the strategy session, you may email the
             specialist who prepared your analysis with questions about your action plan and how to carry it out.
-            They reply by email, usually within 2 working days. If they are unavailable, another member of our
+            They reply by email, usually within 1 to 3 working days. If they are unavailable, another member of our
             team replies instead. Email support does not include reviewing each change before you publish it.
           </li>
         </ul>
