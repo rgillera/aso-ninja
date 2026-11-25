@@ -760,7 +760,7 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
   const [query, setQuery] = useState<Recent | null>(null);
   const [metrics, setMetrics] = useState<KeywordInspection | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [highlightKeyword, setHighlightKeyword] = useState(true);
+  const [highlightKeyword, setHighlightKeyword] = useState(false);
   const [iosSubtitles, setIosSubtitles] = useState<Record<string, string>>({});
   const [subtitlesLoading, setSubtitlesLoading] = useState(false);
   // Monthly downloads/revenue per result, keyed by store id. null = loading
@@ -864,10 +864,11 @@ export default function KeywordInspectorPage({ dock }: { dock?: InspectorDock } 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Highlight is on by default; only a saved "off" changes it. Docked or not.
+  // Highlight is off by default (the match tags on each row say where the
+  // keyword appears); only a saved "on" changes it. Docked or not.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (readJson<boolean>(HIGHLIGHT_KEY) === false) setHighlightKeyword(false);
+    if (readJson<boolean>(HIGHLIGHT_KEY) === true) setHighlightKeyword(true);
   }, []);
 
   // Recent searches live server-side (keyword_inspector_searches, written by
