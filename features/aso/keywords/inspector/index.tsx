@@ -243,26 +243,17 @@ const MATCH_HINT: Record<MatchLevel, string> = {
   partial: "Only some of the keyword's words appear here.",
 };
 
-// "Updated" tag window: older updates don't explain a rank move.
-const RECENT_UPDATE_DAYS = 30;
-
-function ResultTags({ name, subtitle, subtitleLabel, term, updatedAt }: {
+function ResultTags({ name, subtitle, subtitleLabel, term }: {
   name: string;
   subtitle: string;
   subtitleLabel: string;
   term: string;
-  updatedAt?: number;
 }) {
   const fields = [
     { label: "Title", level: keywordMatch(name, term) },
     { label: subtitleLabel, level: subtitle ? keywordMatch(subtitle, term) : null },
   ].filter((f): f is { label: string; level: MatchLevel } => !!f.level);
-  // Read once per row mount (render must stay pure); a day-level age
-  // doesn't need to tick.
-  const [now] = useState(() => Date.now());
-  const days = updatedAt ? Math.floor((now - updatedAt) / 86_400_000) : null;
-  const recent = days !== null && days >= 0 && days <= RECENT_UPDATE_DAYS;
-  if (!fields.length && !recent) return null;
+  if (!fields.length) return null;
   const tag = "rounded-full px-1.5 py-px text-[10px] font-medium";
   return (
     <div className="mt-1 flex flex-wrap items-center gap-1">
@@ -277,14 +268,6 @@ function ResultTags({ name, subtitle, subtitleLabel, term, updatedAt }: {
           {f.label}: {MATCH_LABEL[f.level]}
         </span>
       ))}
-      {recent && (
-        <span
-          title={`Current version released ${new Date(updatedAt!).toLocaleDateString()}. An update can change the title, subtitle or keywords, which moves ranks.`}
-          className={`${tag} bg-amber-500/15 text-amber-300 light:text-amber-700`}
-        >
-          Updated {days === 0 ? "today" : `${days}d ago`}
-        </span>
-      )}
     </div>
   );
 }
@@ -525,7 +508,6 @@ function ResultRow({
           subtitle={subtitle}
           subtitleLabel={store === "android" ? "Short description" : "Subtitle"}
           term={term}
-          updatedAt={app.updatedAt}
         />
         {(storeUrl || competitor) && (
           // One line, even in the narrow side pane: the two links are short.
