@@ -11,7 +11,7 @@ import { BonusLinkForm } from "@/features/admin/BonusLinkForm";
 // everyone offered the bonus for that deadline. A plain GET form, so nothing
 // is stored; the same date always gives the same link. The timed buttons make
 // a link valid from the moment it's made, a new link each time: 24 hours with
-// a follow-up email, or 30 minutes to share in the chat near the end of the
+// a follow-up email, or 1 hour to share in the chat near the end of the
 // strategy call (the chat message says "before we end the call", not a timer).
 
 // Shared by the follow-up email and the call chat message.
@@ -19,17 +19,15 @@ const INCLUDED = `Here's everything included in the $500 Growth Starter package:
 
 12 Months of AppASO Pro+ ($1,188 value): Get a full year of access to our ASO platform to research high-potential keywords, monitor keyword rankings, analyze competitors, and track your app's organic growth.
 
-Know-Your-App Deep Dive: A 30-minute call on your goals, numbers, users, and what you've tried so far, so every recommendation fits your app instead of a generic checklist.
+Know-Your-App Questions: A few short questions by email on your goals, numbers, users, and what you've tried so far, so every recommendation fits your app instead of a generic checklist.
 
-Full Funnel Review: Following the deep dive, our ASO specialist will conduct an in-depth review of your app, covering everything from your store listing to the purchase experience, completed before our call.
+Full Funnel Review: Our ASO specialist will conduct an in-depth review of your app, covering everything from your store listing to the purchase experience, completed before our call.
 
-60-Minute Strategy Call: A live walkthrough of your app, the growth opportunities you're missing, and a clear strategy to improve performance.
+30-Minute Strategy Call: About 3 working days after you send us your app details, a live walkthrough of your app, the growth opportunities you're missing, and a clear strategy to improve performance.
 
 Prioritized Action Plan: A clear, written one-page roadmap detailing all our recommended improvements, organized by priority and ranked by potential impact, so you know exactly what to fix first and how to maximize your app's growth opportunities.
 
-30-Day Check-In: A 30-minute follow-up call after one month to review progress and discuss next steps.
-
-Listing Reviews Before You Publish: For one month, send any change to your title, subtitle, keywords, or screenshots to the same specialist who researched your app, and get written feedback before it goes live.
+1 Month of Email Support: For one month after the call, email the same specialist who researched your app with any question about your plan and how to carry it out.
 
 Strategy Call Guarantee: If after the strategy call you don't think it was worth $500, tell us within 7 days and we refund you in full. You keep the action plan.
 
@@ -108,14 +106,14 @@ The bonus ends ${bonusEnds}. Any questions, just reply to this email.`
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Growth Starter bonus</h1>
             <p className="text-xs text-gray-500">
-              A link that makes the Growth Starter&apos;s 12 months Pro+ instead of Pro, until the end of the deadline day, for 24 hours with a follow-up email, or for 30 minutes when offered on the call only.
+              A link that makes the Growth Starter&apos;s 12 months Pro+ instead of Pro, until the end of the deadline day, for 24 hours with a follow-up email, or for 1 hour when offered on the call only.
             </p>
           </div>
         </div>
 
         <BonusLinkForm
           key={`${minutesParam ?? ""}|${deadline ?? ""}`}
-          initialMode={minutes === 24 * 60 ? "1440" : deadline ? "date" : "30"}
+          initialMode={minutes === 24 * 60 ? "1440" : deadline ? "date" : "60"}
           initialDeadline={deadline ?? defaultDeadline()}
           showReset={Boolean(minutesParam || deadline)}
         />

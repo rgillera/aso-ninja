@@ -20,9 +20,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 //                             so no token's signature can be reused for
 //                             another kind.
 
-export const TIMED_OFFER_MINUTES = [24 * 60, 30] as const;
+export const TIMED_OFFER_MINUTES = [24 * 60, 60] as const;
 export type TimedOfferMinutes = (typeof TIMED_OFFER_MINUTES)[number];
-export const CALL_OFFER_MINUTES: TimedOfferMinutes = 30;
+export const CALL_OFFER_MINUTES: TimedOfferMinutes = 60;
 
 export function parseTimedOfferMinutes(value: string | undefined): TimedOfferMinutes | null {
   const n = Number(value);

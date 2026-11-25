@@ -75,7 +75,7 @@ const stepsFor = (planName: string) => [
   {
     n: "After checkout",
     title: "Know your app",
-    description: "A 30-minute deep-dive call so we understand your app before we judge it. The better we know it, the sharper your plan.",
+    description: "Answer a few short questions by email so we understand your app before we judge it. The better we know it, the sharper your plan.",
     items: [
       "Your goals, and the numbers behind them: downloads, conversion, revenue",
       "Who your users are and which markets matter",
@@ -85,9 +85,9 @@ const stepsFor = (planName: string) => [
     milestone: "We know your app inside out",
   },
   {
-    n: "Within 7 working days",
+    n: "3 days after your answers",
     title: "Get roasted",
-    description: "A growth expert studies your full funnel, from store listing to purchase, and your competitors. Then we go through all of it with you, live, for 60 minutes.",
+    description: "A growth expert studies your full funnel, from store listing to purchase, and your competitors. Then we go through all of it with you, live, for 30 minutes.",
     items: [
       "A growth strategy for your app, from the keywords you're missing to the gaps your competitors leave",
       "An honest roast of your listing, onboarding, and paywall. Record the call and keep every point",
@@ -99,10 +99,9 @@ const stepsFor = (planName: string) => [
   {
     n: "The next month",
     title: "Ship it",
-    description: "You make the changes, and your specialist checks them before they go live.",
+    description: "You make the changes, with your specialist a message away.",
     items: [
-      "Send any listing, onboarding, or paywall change for review before you publish, for a month, with written feedback within 2 working days",
-      "A 30-minute check-in call at month 1",
+      "A month of email support: ask your specialist anything about your plan, with replies within 2 working days",
       "Watch each change move your rankings in Pro",
     ],
     milestone: "Your first changes are live",
@@ -131,9 +130,9 @@ const planLink = (planName: string) => (
 // total. The Sprint credit has no value: it only counts if they upgrade.
 const extrasFor = (plusBonus: boolean): { key: string; content: React.ReactNode; value?: number }[] => [
   { key: "review", content: <>An expert review of your app, from store listing to purchase</> },
-  { key: "calls", content: <>3 expert calls, 2 hours in total: a deep dive, a live strategy roast, and a month-1 check-in</> },
+  { key: "call", content: <>A 30-minute live strategy call with a growth expert, about 3 working days after you send us your app details</> },
   { key: "plan", content: <>A concrete action plan, in writing, ranked by impact</> },
-  { key: "reviews", content: <>A month of expert reviews on your changes before you publish</> },
+  { key: "support", content: <>A month of email support from your specialist</> },
   plusBonus
     ? { key: "pro", content: <>12 months of {planLink("Pro+")}</>, value: 1188 }
     : { key: "pro", content: <>12 months of {planLink("Pro")}</>, value: 468 },
@@ -183,16 +182,16 @@ const faqsFor = (plusBonus: boolean) => [
         and we&apos;ll set it up so you aren&apos;t charged twice for Pro.
       </>
     ) : (
-      "Yes. You already have Pro, so your current plan keeps running as it is and you get the calls and support."
+      "Yes. You already have Pro, so your current plan keeps running as it is and you get the call and support."
     ),
   },
   {
-    q: "When do the calls happen?",
-    a: "After checkout, your assigned growth specialist emails you to schedule your deep-dive call. The strategy call follows within 7 working days of it, once your review is ready.",
+    q: "When is the strategy call?",
+    a: "After checkout, your assigned growth specialist emails you within 1 working day with a few questions about your app and to book your strategy call, usually about 3 working days after you send us your answers, once your review is ready.",
   },
   {
     q: "Will you change my store listing for me?",
-    a: "No, you make the changes, and your specialist reviews them before they go live. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
+    a: "No, you make the changes, and your specialist answers your questions by email for a month. That's why it's $500 and not $4,800. If you'd rather we do the work, look at the Growth Sprint.",
   },
   {
     q: "What if I decide I want you to do the work?",
@@ -236,8 +235,8 @@ export default async function GrowthStarterPage({ searchParams }: PageProps) {
                       {guest === "1" && !isAuthenticated
                         ? "Check your inbox: we've emailed you a link to get into your AppASO account. "
                         : pro === "plus" ? "Your AppASO Pro+ access is active. " : pro === "1" && "Your AppASO Pro access is active. "}
-                      Your assigned growth specialist will email you to
-                      schedule your deep-dive call. Haven&apos;t heard from them within 3 days? Email{" "}
+                      Your assigned growth specialist will email you within 1 working day to ask about your app and
+                      book your strategy call. Haven&apos;t heard from them within 2 working days? Email{" "}
                       <a href="mailto:hello@appaso.io" className="font-medium text-indigo-600 hover:underline">hello@appaso.io</a>.
                     </p>
                     {isAuthenticated && (

@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     type: "website",
     url: "/growth-starter/terms",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, change reviews, and the refund guarantee.",
+    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, email support, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Growth Starter Terms | AppASO",
-    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, change reviews, and the refund guarantee.",
+    description: "Terms for the Growth Starter: what's included, scheduling, the AppASO Pro bonus, the Growth Sprint credit, email support, and the refund guarantee.",
     images: ["/opengraph-image"],
   },
 };
@@ -52,11 +52,11 @@ export default function GrowthStarterTermsPage() {
             separate Pro access is added.
           </li>
           <li>
-            <strong>Deep-dive call:</strong> one 30-minute video call in which we learn about your app, goals,
-            metrics, users, and past growth efforts, and set your app up in AppASO Pro.
+            <strong>App questions:</strong> after purchase, we email you a short set of questions about your app,
+            goals, metrics, users, and past growth efforts, and set your app up in AppASO Pro.
           </li>
           <li>
-            <strong>Strategy session:</strong> one 60-minute video call in which we go through a keyword
+            <strong>Strategy session:</strong> one 30-minute video call in which we go through a keyword
             opportunity analysis and a competitor analysis for your app, in one store and one country or
             language of your choice; review your store listing and the experience a new user sees in your
             app, such as onboarding and the paywall (the &quot;app roast&quot;); and agree a growth strategy
@@ -67,22 +67,16 @@ export default function GrowthStarterTermsPage() {
             one-page action plan listing the agreed changes in order of priority.
           </li>
           <li>
-            <strong>Check-in call:</strong> one 30-minute video call, about 1 month after the
-            strategy session, to review the changes you have made and your next steps.
-          </li>
-          <li>
-            <strong>Change reviews:</strong> for 1 month after the strategy session, you may send us
-            proposed changes before you publish them: changes to your store listing, such as your title,
-            subtitle, keywords, description, or screenshots, and changes to your onboarding or paywall, shared
-            as screenshots, designs, or a screen recording. The specialist who prepared your analysis replies by email
-            with written feedback, usually within 2 working days. If they are unavailable, another member of
-            our team replies instead.
+            <strong>Email support:</strong> for 1 month after the strategy session, you may email the
+            specialist who prepared your analysis with questions about your action plan and how to carry it out.
+            They reply by email, usually within 2 working days. If they are unavailable, another member of our
+            team replies instead. Email support does not include reviewing each change before you publish it.
           </li>
         </ul>
         <p>
           The analysis, app roast, and strategy are presented live on the call. Apart from the action
           plan above, we do not deliver a written report, analysis, or roadmap. You may record the
-          calls, and you may take your own notes.
+          call, and you may take your own notes.
         </p>
         <p>
           The Starter is guidance only. App roast feedback is advice, not design or development work. You make the
@@ -96,17 +90,16 @@ export default function GrowthStarterTermsPage() {
         <h2>Scheduling</h2>
         <ul>
           <li>
-            After purchase, we email you to schedule your deep-dive call. We schedule the strategy session within 7 working
-            days of the deep-dive call, once your analysis is ready.
+            After purchase, we email you within 1 working day with your app questions and to schedule your strategy
+            session, usually about 3 working days after you send us your answers, once your analysis is ready.
           </li>
           <li>
-            The deep-dive call and strategy session must take place within 60 days of purchase, and the
-            check-in call within 90 days of purchase. Calls not held by then expire and are not refunded,
-            unless the delay was on our side.
+            The strategy session must take place within 60 days of purchase. If it is not held by then, it
+            expires and is not refunded, unless the delay was on our side.
           </li>
           <li>
-            You may reschedule each call once with at least 24 hours&apos; notice. A call you miss without
-            notice counts as delivered.
+            You may reschedule the strategy session once with at least 24 hours&apos; notice. A session you
+            miss without notice counts as delivered.
           </li>
         </ul>
       </section>
@@ -166,12 +159,12 @@ export default function GrowthStarterTermsPage() {
       <section>
         <h2>Your Responsibilities</h2>
         <ul>
-          <li>Tell us which app, store, and market the analysis should cover before the deep-dive call.</li>
+          <li>Answer our app questions, including which app, store, and market the analysis should cover, before the strategy session.</li>
           <li>
             If reaching your paywall or purchase flow needs an account, invite code, or paid download, give us
             access before the strategy session.
           </li>
-          <li>Reply to our scheduling emails, attend the calls you schedule, or reschedule them in time.</li>
+          <li>Reply to our scheduling emails, attend the strategy session you schedule, or reschedule it in time.</li>
           <li>Decide which recommendations to apply, and keep your app compliant with store policies.</li>
         </ul>
       </section>

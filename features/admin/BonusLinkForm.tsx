@@ -6,10 +6,10 @@ import Link from "next/link";
 // Admin → Growth Starter bonus: pick the kind of link first, then "Make link"
 // submits it as a GET to the same page. "Start over" drops the query string.
 
-export type BonusLinkMode = "date" | "1440" | "30";
+export type BonusLinkMode = "date" | "1440" | "60";
 
 const MODES: { value: BonusLinkMode; label: string }[] = [
-  { value: "30", label: "Call only (30 minutes)" },
+  { value: "60", label: "Call only (1 hour)" },
   { value: "1440", label: "24 hours" },
   { value: "date", label: "Deadline date" },
 ];

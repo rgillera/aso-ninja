@@ -1,7 +1,7 @@
 import { greetingHtml, greetingText } from "./greeting";
 
 // Sent to the buyer from the Stripe webhook right after a Growth Starter
-// purchase. Onboarding isn't self-booked: their specialist emails them to
+// purchase. The strategy call isn't self-booked: their specialist emails them to
 // schedule it, so this sets that expectation and gives a fallback contact.
 // proDays: days of Pro the purchase granted (365, 90 for older purchases, or
 // 0 when the buyer is already on a paid plan and has Pro anyway). planName:
@@ -53,16 +53,15 @@ export function renderGrowthStarterWelcomeHtml(fullName?: string | null, proDays
   <p>${greetingHtml(fullName)}</p>
   <p>Thanks for getting the Growth Starter! &#127881;${length ? ` Your <strong>AppASO ${planName}</strong> access is active now and runs for ${length}.` : ""}</p>
   ${accountHtml(account)}
-  <p>Your assigned growth specialist will <strong>email you to schedule your 30-minute deep-dive call</strong>, where we learn about your app, your goals, and your numbers.</p>
+  <p>Your assigned growth specialist will <strong>email you within 1 working day</strong> with a few questions about your app, your goals, and your numbers, and to book your strategy call.</p>
   <p><strong>What happens next</strong></p>
   <ol style="padding-left: 20px;">
-    <li>Deep-dive call: your app, goals, users, and numbers, so your plan fits your app.</li>
-    <li>Within 7 working days: your 60-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.</li>
-    <li>At month 1: a 30-minute check-in call to review what moved.</li>
-    <li>For 30 days: send us any listing change before you publish it, and we review it.</li>
+    <li>Answer a few questions about your app, goals, users, and numbers, so your plan fits your app.</li>
+    <li>About 3 working days after you send your answers: your 30-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.</li>
+    <li>For 1 month after the call: email your specialist any question about your plan.</li>
   </ol>
   <p>To get a head start, reply to this email with your App Store or Google Play link.</p>
-  <p>If you haven't heard from your specialist within 3 days, email us at <a href="mailto:hello@appaso.io" style="color: #4f46e5;">hello@appaso.io</a>.</p>
+  <p>If you haven't heard from your specialist within 2 working days, email us at <a href="mailto:hello@appaso.io" style="color: #4f46e5;">hello@appaso.io</a>.</p>
   <p>Best,<br/>The AppASO Team</p>
 </div>`.trim();
 }
@@ -73,17 +72,16 @@ export function renderGrowthStarterWelcomeText(fullName?: string | null, proDays
 
 Thanks for getting the Growth Starter!${length ? ` Your AppASO ${planName} access is active now and runs for ${length}.` : ""}
 ${accountText(account)}
-Your assigned growth specialist will email you to schedule your 30-minute deep-dive call, where we learn about your app, your goals, and your numbers.
+Your assigned growth specialist will email you within 1 working day with a few questions about your app, your goals, and your numbers, and to book your strategy call.
 
 What happens next:
-1. Deep-dive call: your app, goals, users, and numbers, so your plan fits your app.
-2. Within 7 working days: your 60-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.
-3. At month 1: a 30-minute check-in call to review what moved.
-4. For 30 days: send us any listing change before you publish it, and we review it.
+1. Answer a few questions about your app, goals, users, and numbers, so your plan fits your app.
+2. About 3 working days after you send your answers: your 30-minute call, where we roast your app and build your growth strategy. Record it if you like. Either way, within 2 working days we send you a one-page action plan with every fix ranked by impact.
+3. For 1 month after the call: email your specialist any question about your plan.
 
 To get a head start, reply to this email with your App Store or Google Play link.
 
-If you haven't heard from your specialist within 3 days, email us at hello@appaso.io.
+If you haven't heard from your specialist within 2 working days, email us at hello@appaso.io.
 
 Best,
 The AppASO Team`;
