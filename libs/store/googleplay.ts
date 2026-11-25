@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache";
 import type { AppSearchResult, StoreData, CategoryBenchmark, ChartApp } from "@/libs/contracts";
 import { average, median } from "./benchmark-utils";
 import { ANDROID_CATEGORY_MAP } from "@/libs/categories";
-import { playLang } from "@/libs/store/play-language";
+import { parsePlayDate, playLang } from "@/libs/store/play-language";
 
 // Benchmark data (peer descriptions, screenshots, ratings...) doesn't meaningfully
 // shift minute to minute, so results are cached for a few hours. This is the main
@@ -86,7 +86,7 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
     hasPreviewVideo: !!r.video,
     lastUpdatedAt: typeof r.updated === "number" ? r.updated : undefined,
     price: typeof r.price === "number" ? r.price : undefined,
-    releasedAt: typeof r.released === "string" && !Number.isNaN(Date.parse(r.released)) ? Date.parse(r.released) : undefined,
+    releasedAt: parsePlayDate(typeof r.released === "string" ? r.released : null, playLang(country)),
     installs: typeof r.maxInstalls === "number" ? r.maxInstalls : typeof r.minInstalls === "number" ? r.minInstalls : undefined,
     offersIAP: typeof r.offersIAP === "boolean" ? r.offersIAP : undefined,
   };
@@ -94,7 +94,7 @@ async function fetchAndroidStoreDataImpl(bundleId: string, country: string): Pro
 
 // Cached per app (not per caller) — the same peer app looked up by two different
 // benchmark requests (e.g. as each other's category peer) shares one cache entry.
-const cachedFetchAndroidStoreData = unstable_cache(fetchAndroidStoreDataImpl, ["android-store-data-v2"], { revalidate: CACHE_REVALIDATE_SECONDS });
+const cachedFetchAndroidStoreData = unstable_cache(fetchAndroidStoreDataImpl, ["android-store-data-v3"], { revalidate: CACHE_REVALIDATE_SECONDS });
 
 // `fresh` skips the cache; see fetchIosStoreData.
 export async function fetchAndroidStoreData(bundleId: string, country: string, { fresh = false }: { fresh?: boolean } = {}): Promise<StoreData> {

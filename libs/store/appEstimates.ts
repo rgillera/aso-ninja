@@ -75,6 +75,12 @@ const IOS_DOWNLOADS_PER_RATING = 70;
 // The US's share of Play's global installs; other countries scale off it
 // via DOWNLOAD_SCALE (so India ≈ 20%).
 const ANDROID_US_INSTALL_SHARE = 0.05;
+// Lifetime installs averaged over the app's age read low next to the chart
+// curve: growth skews installs toward recent months, and Play's counter
+// lags. On 36 US category-chart apps (ranks 20-200, 2026-11-25) the chart
+// estimate was a median 4.5x this fallback, while iOS's ratings fallback
+// already sat at ~0.7x its chart estimate, so Android alone gets this lift.
+const ANDROID_INSTALLS_CALIBRATION = 4;
 // Gross spend per download for apps outside Top Grossing, US. Scaled per
 // country by that market's revenue-to-downloads ratio. Deliberately low:
 // many big non-grossing apps (Meta, delivery, banking) monetize off-store,
@@ -236,7 +242,7 @@ function estimate(s: Signals, overall: ChartSet, category: ChartSet | null): App
       usEquivalent = downloads / dlScale;
       downloadsBasis = `Modeled from ${s.ratingCount.toLocaleString("en-US")} ratings since ${new Date(s.releasedAt!).getFullYear()}`;
     } else if (s.store === "android" && s.installs && ageMonths) {
-      downloads = (s.installs * ANDROID_US_INSTALL_SHARE * dlScale) / ageMonths;
+      downloads = (s.installs * ANDROID_US_INSTALL_SHARE * ANDROID_INSTALLS_CALIBRATION * dlScale) / ageMonths;
       usEquivalent = downloads / dlScale;
       downloadsBasis = `Modeled from ${s.installs.toLocaleString("en-US")}+ global installs since ${new Date(s.releasedAt!).getFullYear()}`;
     }
