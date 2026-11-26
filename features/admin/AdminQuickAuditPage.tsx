@@ -14,6 +14,9 @@ import { COUNTRIES, countryFlag } from "@/libs/countries";
 const MAX_PICKS = 3;
 
 const DEFAULT_CALENDLY = "https://cal.com/erik-baring-rqnemo/15min";
+// The 2nd audit (follow-up) always books through this link, whatever link
+// was saved with the first email (older audits carry the old Calendly URL).
+const SECOND_AUDIT_BOOKING = "https://cal.com/erik-baring-rqnemo/15min";
 
 const CATEGORY_LABEL: Record<AuditFinding["category"], string> = {
   keywords: "Keywords",
@@ -74,7 +77,7 @@ function buildEmailBody(r: QuickAuditResult, picked: AuditFinding[], firstName: 
       "You'll leave with a clear plan you can act on yourself, whether we work together or not.",
       "",
       "Book a time here:",
-      link,
+      SECOND_AUDIT_BOOKING,
       "",
       "If now isn't the right time, no worries. This is my last note, and both audits are yours to keep either way.",
     ].join("\n");
