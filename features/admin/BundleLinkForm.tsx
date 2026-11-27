@@ -4,16 +4,19 @@ import { useState, useTransition } from "react";
 import { createBundleLinkAction } from "@/features/admin/actions";
 import { CopyField } from "@/features/admin/CopyField";
 import { BUNDLES, type BundlePlan } from "@/libs/stripe/bundles";
+import { bundleEmailBody, bundleEmailSubject } from "@/features/admin/bundleEmail";
 
 function price(cents: number) {
   return `$${(cents / 100).toLocaleString("en-US")}`;
 }
 
 // Admin → Bundle Links: pick Pro or Pro+, optionally lock the buyer's email,
-// and get a checkout link to paste into the call chat.
+// and get a checkout link to paste into the call chat, plus a follow-up
+// email with the link in it.
 export function BundleLinkForm() {
   const [email, setEmail] = useState("");
-  const [result, setResult] = useState<{ plan: BundlePlan; url: string; expiresAt: string; email: string } | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [result, setResult] = useState<{ plan: BundlePlan; url: string; expiresAt: string; email: string; firstName: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -22,7 +25,7 @@ export function BundleLinkForm() {
     setResult(null);
     startTransition(async () => {
       const res = await createBundleLinkAction(plan, email);
-      if (res.ok) setResult({ plan, url: res.url, expiresAt: res.expiresAt, email: email.trim() });
+      if (res.ok) setResult({ plan, url: res.url, expiresAt: res.expiresAt, email: email.trim().toLowerCase(), firstName });
       else setError(res.error);
     });
   }
@@ -34,6 +37,18 @@ export function BundleLinkForm() {
   return (
     <div className="space-y-6">
       <div className="rounded-xl bg-[#141417] light:bg-white p-4 ring-1 ring-white/[0.06] light:ring-black/[0.08]">
+        <label htmlFor="bundle-name" className="block text-xs font-medium text-gray-400 light:text-gray-600">
+          Buyer first name (optional, for the email)
+        </label>
+        <input
+          id="bundle-name"
+          type="text"
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
+          placeholder="Alex"
+          className="mt-1.5 mb-4 w-full rounded-lg bg-black/30 light:bg-gray-50 px-3 py-2 text-sm text-white light:text-gray-900 ring-1 ring-white/10 light:ring-black/10 outline-none focus:ring-indigo-500"
+        />
+
         <label htmlFor="bundle-email" className="block text-xs font-medium text-gray-400 light:text-gray-600">
           Buyer email (optional)
         </label>
@@ -67,10 +82,14 @@ export function BundleLinkForm() {
       </div>
 
       {result && (
-        <CopyField
-          label={`${BUNDLES[result.plan].label} bundle, ${price(BUNDLES[result.plan].amountCents)}${result.email ? ` for ${result.email}` : ""}, valid until ${expires} PH time`}
-          value={result.url}
-        />
+        <div className="space-y-5">
+          <CopyField
+            label={`${BUNDLES[result.plan].label} bundle, ${price(BUNDLES[result.plan].amountCents)}${result.email ? ` for ${result.email}` : ""}, valid until ${expires} PH time`}
+            value={result.url}
+          />
+          <CopyField label="Email subject" value={bundleEmailSubject(result.plan)} />
+          <CopyField label="Email" value={bundleEmailBody(result)} multiline />
+        </div>
       )}
     </div>
   );
