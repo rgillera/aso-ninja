@@ -70,6 +70,9 @@ type Props = {
   // Free owner who never had a Pro trial: Pro's card offers it instead of
   // going straight to checkout.
   canStartTrial?: boolean;
+  // Subscribed before the current prices went live, so they keep their old
+  // price: shows the new-pricing note.
+  showPriceLockNote?: boolean;
 };
 
 type Billing = "monthly" | "yearly";
@@ -184,6 +187,7 @@ export default function SubscriptionPage({
   pendingCancellation,
   trialEndsAt,
   canStartTrial = false,
+  showPriceLockNote = false,
 }: Props) {
   const currentPlan = PLANS.find((p) => p.id === currentPlanId);
   const currentPlanIndex = PLANS.findIndex((p) => p.id === currentPlanId);
@@ -191,8 +195,6 @@ export default function SubscriptionPage({
   const sellablePlans = PLANS.filter(
     (plan) => SELLABLE_PLANS.includes(plan) || (plan.retired && plan.id === currentPlanId)
   );
-  // Anyone already paying for Pro or Pro+ keeps the price they signed up at.
-  const isGrandfathered = !trialEndsAt && (currentPlanId === "pro" || currentPlanId === "pro_plus");
   const frozenTotal = usage
     ? usage.keyword_frozen_count + usage.app_frozen_count + usage.member_frozen_count
     : 0;
@@ -229,12 +231,12 @@ export default function SubscriptionPage({
           </p>
         </div>
 
+        {showPriceLockNote && (
         <div className="mb-8 rounded-xl bg-indigo-500/10 ring-1 ring-indigo-500/20 px-4 py-3 text-sm text-indigo-200 light:text-indigo-800">
           <span className="font-semibold">New pricing.</span> Pro is now {formatPrice(PLANS.find((p) => p.id === "pro")!.priceMonthlyCents)}/mo and Pro+ is {formatPrice(PLANS.find((p) => p.id === "pro_plus")!.priceMonthlyCents)}/mo, so we can keep improving our infrastructure and data.{" "}
-          {isGrandfathered
-            ? "Your current price stays the same for as long as your subscription stays active."
-            : "If you already subscribed before the change, your price stays the same."}
+          Your current price stays the same for as long as your subscription stays active.
         </div>
+        )}
 
         {frozenTotal > 0 && (
           <div className="mb-8 rounded-xl bg-amber-500/10 ring-1 ring-amber-500/20 px-4 py-3 text-sm text-amber-300 light:text-amber-700">
@@ -291,7 +293,7 @@ export default function SubscriptionPage({
             const displayCents = isFree
               ? 0
               : billing === "yearly"
-                ? Math.round(plan.priceYearlyCents / 12)
+                ? plan.priceYearlyCents
                 : plan.priceMonthlyCents;
 
             const tone = toneByPlan[plan.id];
@@ -335,7 +337,7 @@ export default function SubscriptionPage({
                     {plan.contactSales ? "Custom" : isFree ? "Free" : formatPrice(displayCents)}
                   </span>
                   {!isFree && !plan.contactSales && (
-                    <span className={`text-xs ${c.subtitle}`}>/ mo</span>
+                    <span className={`text-xs ${c.subtitle}`}>{billing === "yearly" ? "/ yr" : "/ mo"}</span>
                   )}
                 </div>
                 {!isFree && !plan.contactSales && billing === "yearly" && (

@@ -50,10 +50,9 @@ const plans = SELLABLE_PLANS.map((plan) => {
       signupHref: `/signup?plan=${plan.id}&next=${encodeURIComponent("/dashboard/subscription?billing=monthly")}`,
     },
     yearly: {
-      price: isFree ? "Free" : formatPrice(Math.round(plan.priceYearlyCents / 12)),
+      price: isFree ? "Free" : formatPrice(plan.priceYearlyCents),
       signupHref: `/signup?plan=${plan.id}&next=${encodeURIComponent("/dashboard/subscription?billing=yearly")}`,
     },
-    yearlyTotal: isFree ? null : formatPrice(plan.priceYearlyCents),
     yearlySavings: isFree ? null : formatPrice(plan.priceMonthlyCents * 12 - plan.priceYearlyCents),
     description: plan.description,
     badge: plan.badge,
@@ -225,8 +224,8 @@ export default function PortalPricing({ isAuthenticated, proTrial = { kind: "non
               : isFree
               ? "No credit card required"
               : yearly
-              ? `${plan.yearlyTotal} billed yearly · save ${plan.yearlySavings}`
-              : `or ${plan.yearly.price}/mo billed yearly`;
+              ? `${plan.yearly.price} billed yearly · save ${plan.yearlySavings}`
+              : `or ${plan.yearly.price}/yr, 2 months free`;
             return (
               <div
                 key={plan.name}
@@ -256,7 +255,7 @@ export default function PortalPricing({ isAuthenticated, proTrial = { kind: "non
                     {plan.contactSales ? "Custom" : billing.price}
                   </span>
                   {!isFree && !plan.contactSales && (
-                    <span className={`text-sm font-medium ${s.subtitle}`}>/mo</span>
+                    <span className={`text-sm font-medium ${s.subtitle}`}>{yearly ? "/yr" : "/mo"}</span>
                   )}
                 </div>
                 <p className={`mt-2 text-xs font-medium ${s.subtitle}`}>{priceNote}</p>
