@@ -28,7 +28,7 @@ export default async function Image() {
           Pro-level ASO data, without the $299 price tag.
         </div>
         <div style={{ display: "flex", marginTop: 12, fontSize: 30, color: "#9ca3af" }}>
-          Start free. Upgrade from $39/mo.
+          Start free. Upgrade from $49/mo.
         </div>
       </div>
     ),

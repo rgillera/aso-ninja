@@ -191,6 +191,8 @@ export default function SubscriptionPage({
   const sellablePlans = PLANS.filter(
     (plan) => SELLABLE_PLANS.includes(plan) || (plan.retired && plan.id === currentPlanId)
   );
+  // Anyone already paying for Pro or Pro+ keeps the price they signed up at.
+  const isGrandfathered = !trialEndsAt && (currentPlanId === "pro" || currentPlanId === "pro_plus");
   const frozenTotal = usage
     ? usage.keyword_frozen_count + usage.app_frozen_count + usage.member_frozen_count
     : 0;
@@ -225,6 +227,13 @@ export default function SubscriptionPage({
               </>
             )}
           </p>
+        </div>
+
+        <div className="mb-8 rounded-xl bg-indigo-500/10 ring-1 ring-indigo-500/20 px-4 py-3 text-sm text-indigo-200 light:text-indigo-800">
+          <span className="font-semibold">New pricing.</span> Pro is now {formatPrice(PLANS.find((p) => p.id === "pro")!.priceMonthlyCents)}/mo and Pro+ is {formatPrice(PLANS.find((p) => p.id === "pro_plus")!.priceMonthlyCents)}/mo, so we can keep improving our infrastructure and data.{" "}
+          {isGrandfathered
+            ? "Your current price stays the same for as long as your subscription stays active."
+            : "If you already subscribed before the change, your price stays the same."}
         </div>
 
         {frozenTotal > 0 && (

@@ -123,7 +123,7 @@ const cardStyles: Record<Variant, {
 };
 
 export default function PortalPricing({ isAuthenticated, proTrial = { kind: "none" } }: { isAuthenticated: boolean; proTrial?: ProTrialState }) {
-  // Monthly first: $39/mo is the price visitors see, and the yearly toggle
+  // Monthly first: $49/mo is the price visitors see, and the yearly toggle
   // shows the 2-months-free saving against it.
   const [yearly, setYearly] = useState(false);
 

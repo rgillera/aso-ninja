@@ -8,7 +8,7 @@ import { PLANS } from "@/features/subscription/plans";
 // Competitor figures come from features/blog/comparison-posts.ts, checked
 // against each company's pricing page on 2026-10-03. Update both together.
 // Only competitors AppASO is clearly cheaper than get a page here: Sonar
-// costs less than Pro ($29 vs $39) and Astro costs less, so a "cheaper alternative"
+// costs less than Pro ($29 vs $49) and Astro costs less, so a "cheaper alternative"
 // pitch would be misleading for them.
 
 const pro = PLANS.find((plan) => plan.id === "pro")!;

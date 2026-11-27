@@ -4,9 +4,8 @@ export type Plan = {
   id: PlanId;
   name: string;
   priceMonthlyCents: number;
-  // Already discounted, and picked so the per-month yearly price is a round
-  // number ($32 / $79), not derived at render time. Pro yearly is 2 months
-  // free, shown only on the pricing grids; all other copy quotes $39/mo.
+  // Already discounted: exactly 2 months free (10x the monthly price). Yearly
+  // is shown only on the pricing grids; all other copy quotes $49/mo.
   priceYearlyCents: number;
   description: string;
   badge: string | null;
@@ -53,8 +52,8 @@ export const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    priceMonthlyCents: 3900,
-    priceYearlyCents: 38400,
+    priceMonthlyCents: 4900,
+    priceYearlyCents: 49000,
     description: "For indie developers and small teams growing their apps.",
     badge: null,
     features: [
@@ -79,8 +78,8 @@ export const PLANS: Plan[] = [
   {
     id: "pro_plus",
     name: "Pro+",
-    priceMonthlyCents: 9900,
-    priceYearlyCents: 94800,
+    priceMonthlyCents: 14900,
+    priceYearlyCents: 149000,
     description: "For studios managing a portfolio of apps.",
     badge: null,
     features: [
