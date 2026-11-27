@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       { source: "/growth-audit", destination: "/growth-sprint", permanent: true },
       // Growth Assistant replaced by the Growth Retainer as the post-Sprint offer.
       { source: "/growth-assistant/:path*", destination: "/growth-retainer", permanent: true },
+      // Growth Starter removed; plan bundles are now sold on calls through Stripe Payment Links.
+      { source: "/growth-starter/:path*", destination: "/growth-sprint", permanent: false },
+      { source: "/growth-starter", destination: "/growth-sprint", permanent: false },
     ];
   },
   async headers() {

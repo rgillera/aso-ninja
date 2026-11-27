@@ -95,7 +95,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && matchesRoute(pathname, AUTH_PAGES)) {
     const next = request.nextUrl.searchParams.get("next");
-    // next may carry its own query (a Growth Starter ?offer token), so it is
+    // next may carry its own query, so it is
     // parsed as a URL rather than set as the pathname, where "?" would be
     // escaped. "//" is refused so next can't point at another site.
     const target = next?.startsWith("/") && !next.startsWith("//")

@@ -13,7 +13,6 @@ import { findRankIdx, computeChance } from "@/libs/keyword-rank-match";
 import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { persistIpadRank } from "@/libs/store/ipad-only";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
-import { createStripeClient } from "@/libs/stripe/server";
 import { playLang } from "@/libs/store/play-language";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
@@ -570,61 +569,4 @@ export async function saveQuickAuditFollowupAction(id: string, followupSelected:
   await createAdminClient().from("quick_audits")
     .update({ followup_selected: followupSelected.slice(0, 3), updated_at: new Date().toISOString() })
     .eq("id", id);
-}
-
-// For a Growth Starter buyer who was offered the Pro+ bonus but bought
-// without the bonus link: moves their Starter subscription onto Pro+ and, for
-// older 3-month purchases, stretches its trial to 12 months counted from when
-// it started. Only touches a subscription the Starter created
-// (metadata.offer), so a paid plan is never changed here. The subscriptions
-// row (plan included) follows via customer.subscription.updated.
-export async function upgradeGrowthStarterToProPlusAction(
-  email: string
-): Promise<{ ok: true; endsAt: string } | { ok: false; error: string }> {
-  await requireSuperAdmin();
-  const admin = createAdminClient();
-
-  const { data: userId } = await admin.rpc("get_user_id_by_email", { p_email: email });
-  if (!userId) return { ok: false, error: "No account with that email." };
-
-  const { data: row } = await admin
-    .from("subscriptions")
-    .select("stripe_subscription_id")
-    .eq("user_id", userId as string)
-    .maybeSingle();
-  if (!row?.stripe_subscription_id) return { ok: false, error: "That account has no Growth Starter Pro to upgrade." };
-
-  const stripe = createStripeClient();
-  const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id).catch(() => null);
-  if (!sub || sub.metadata?.offer !== "growth_starter") {
-    return { ok: false, error: "That account's subscription isn't a Growth Starter one (maybe a paid plan). Handle it by hand." };
-  }
-  if (sub.status !== "trialing") return { ok: false, error: `Their Starter Pro is ${sub.status}, not running. Handle it by hand.` };
-
-  const { data: proPlus } = await admin.from("plans").select("stripe_price_id_yearly").eq("slug", "pro_plus").single();
-  if (!proPlus?.stripe_price_id_yearly) return { ok: false, error: "Pro+ has no yearly Stripe price." };
-
-  const item = sub.items.data[0];
-  if (!item) return { ok: false, error: "Their Starter subscription has no items. Handle it by hand." };
-  if (item.price.id === proPlus.stripe_price_id_yearly) {
-    return { ok: false, error: `Already on Pro+ until ${new Date((sub.trial_end ?? 0) * 1000).toDateString()}.` };
-  }
-
-  const target = Math.max(sub.trial_end ?? 0, sub.start_date + 365 * 24 * 60 * 60);
-  const updated = await stripe.subscriptions
-    .update(sub.id, {
-      items: [{ id: item.id, price: proPlus.stripe_price_id_yearly }],
-      trial_end: target,
-      // Restated so the subscription still ends with the trial.
-      cancel_at_period_end: true,
-      proration_behavior: "none",
-      metadata: { ...sub.metadata, upgraded_to_pro_plus: new Date().toISOString() },
-    })
-    .catch((err: unknown) => {
-      console.error("Upgrading Growth Starter to Pro+ failed:", err);
-      return null;
-    });
-  if (!updated) return { ok: false, error: "Stripe refused the change. Check the logs." };
-
-  return { ok: true, endsAt: new Date(target * 1000).toISOString() };
 }

@@ -5,56 +5,66 @@ import { createAdminClient } from "@/libs/supabase/admin";
 import { recordUserEvent } from "@/libs/analytics/events";
 import { getResendClient } from "@/libs/resend";
 import {
-  growthStarterAlertSubject,
-  renderGrowthStarterAlertHtml,
-  renderGrowthStarterAlertText,
-  type GrowthStarterPurchase,
-} from "@/libs/email/growth-starter-alert";
+  bundleAlertSubject,
+  renderBundleAlertHtml,
+  renderBundleAlertText,
+  type BundlePurchase,
+} from "@/libs/email/bundle-alert";
 import {
-  growthStarterWelcomeSubject,
-  renderGrowthStarterWelcomeHtml,
-  renderGrowthStarterWelcomeText,
-  type GrowthStarterAccount,
-} from "@/libs/email/growth-starter-welcome";
+  bundleWelcomeSubject,
+  renderBundleWelcomeHtml,
+  renderBundleWelcomeText,
+  type BundleAccount,
+} from "@/libs/email/bundle-welcome";
 
 const FROM = "AppASO <hello@appaso.io>";
 const ALERT_TO = "hello@appaso.io";
 
 const DAY_SECONDS = 24 * 60 * 60;
+const BUNDLE_DAYS = 365;
 
-// Days of Pro a Growth Starter session grants: 365 (90, or 60 before
-// 2026-11-08, for sessions from before 12 months became the default), 0 for
-// buyers already on a paid plan. Sessions from before pro_days have none,
-// and were sold with 12 months.
-function growthStarterProDays(session: Stripe.Checkout.Session): number {
-  const raw = session.metadata?.pro_days;
-  if (raw === undefined) return 365;
-  const days = Number(raw);
-  return days === 60 || days === 90 || days === 365 ? days : 0;
+// Bundles (12 months of Pro or Pro+ plus 1 month of service) are sold on a
+// call through Stripe Payment Links, one link per plan, so the buyer pays
+// without signing up first. Each link carries metadata plan = "pro" or
+// "pro_plus", which Stripe copies onto its checkout sessions; the link itself
+// is read too, in case a session lacks it. Payment Links without that
+// metadata aren't bundles and are left alone.
+type BundlePlan = "pro" | "pro_plus";
+async function bundlePlan(stripe: Stripe, session: Stripe.Checkout.Session): Promise<BundlePlan | null> {
+  if (session.mode !== "payment" || !session.payment_link) return null;
+  let plan = session.metadata?.plan;
+  if (!plan) {
+    const linkId = typeof session.payment_link === "string" ? session.payment_link : session.payment_link.id;
+    plan = (await stripe.paymentLinks.retrieve(linkId)).metadata?.plan;
+  }
+  return plan === "pro" || plan === "pro_plus" ? plan : null;
 }
 
-// The plan a Growth Starter session grants: Pro+ with a bonus link, else
-// Pro. Sessions from before pro_plan have none, and were sold with Pro.
-type StarterPlan = "pro" | "pro_plus";
-function growthStarterPlan(session: Stripe.Checkout.Session): StarterPlan {
-  return session.metadata?.pro_plan === "pro_plus" ? "pro_plus" : "pro";
+// A Payment Link only makes a customer when set to, so one is made here if
+// the session has none; the plan's subscription needs it. Keyed on the
+// session so a webhook retry reuses it.
+async function bundleCustomer(stripe: Stripe, session: Stripe.Checkout.Session, email: string): Promise<string> {
+  const id = typeof session.customer === "string" ? session.customer : session.customer?.id;
+  if (id) return id;
+  const customer = await stripe.customers.create(
+    { email, name: session.customer_details?.name ?? undefined, metadata: { checkout_session: session.id } },
+    { idempotencyKey: `bundle-customer-${session.id}` }
+  );
+  return customer.id;
 }
 
-// The Growth Starter is paid once, so its Pro (or Pro+) is a yearly
-// subscription on that plan in a trial of proDays that cancels when the
-// trial ends: no card on file, nothing ever charged, and expiry comes through
-// the usual customer.subscription.deleted. Keyed on the session so a webhook
-// retry returns the same subscription instead of creating a second one.
-async function grantGrowthStarterPro(
+// The bundle is paid once, so its plan is a yearly subscription on that plan
+// in a 12-month trial that cancels when the trial ends: no card on file,
+// nothing ever charged, and expiry comes through the usual
+// customer.subscription.deleted. Keyed on the session so a webhook retry
+// returns the same subscription instead of creating a second one.
+async function grantBundlePlan(
   stripe: Stripe,
   admin: ReturnType<typeof createAdminClient>,
   session: Stripe.Checkout.Session,
-  proDays: number,
-  plan: StarterPlan
+  customerId: string,
+  plan: BundlePlan
 ) {
-  const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
-  if (!customerId) throw new Error(`Growth Starter session ${session.id} has no customer`);
-
   const { data: row } = await admin.from("plans").select("stripe_price_id_yearly").eq("slug", plan).single();
   if (!row?.stripe_price_id_yearly) throw new Error(`${plan} plan has no yearly Stripe price`);
 
@@ -62,27 +72,26 @@ async function grantGrowthStarterPro(
     {
       customer: customerId,
       items: [{ price: row.stripe_price_id_yearly }],
-      trial_end: session.created + proDays * DAY_SECONDS,
+      trial_end: session.created + BUNDLE_DAYS * DAY_SECONDS,
       trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
       cancel_at_period_end: true,
-      metadata: { offer: "growth_starter", checkout_session: session.id },
+      metadata: { offer: "bundle", checkout_session: session.id },
     },
-    { idempotencyKey: `growth-starter-${session.id}` }
+    { idempotencyKey: `bundle-${session.id}` }
   );
 }
 
-// A guest Growth Starter checkout has no user_id, only the email typed into
-// Stripe. A new email gets an account through an invite link (not emailed by
-// Supabase: the link goes in our welcome email, and lands on /auth/invite to
-// set a name and password). A known email reuses its account; generating a
-// magic link is just how to read its id, and that link is thrown away.
-// Webhook retries land on the "already registered" path, so they never
-// create a second account.
-async function resolveGrowthStarterBuyer(
+// The buyer has only the email typed into Stripe. A new email gets an
+// account through an invite link (not emailed by Supabase: the link goes in
+// our welcome email, and lands on /auth/invite to set a name and password).
+// A known email reuses its account; generating a magic link is just how to
+// read its id, and that link is thrown away. Webhook retries land on the
+// "already registered" path, so they never create a second account.
+async function resolveBuyer(
   admin: ReturnType<typeof createAdminClient>,
   email: string,
   name: string | null
-): Promise<{ userId: string; setupUrl: string | null }> {
+): Promise<{ userId: string; account: BundleAccount }> {
   const invite = await admin.auth.admin.generateLink({
     type: "invite",
     email,
@@ -92,46 +101,41 @@ async function resolveGrowthStarterBuyer(
     },
   });
   if (!invite.error && invite.data.user) {
-    return { userId: invite.data.user.id, setupUrl: invite.data.properties.action_link };
+    return { userId: invite.data.user.id, account: { kind: "new", setupUrl: invite.data.properties.action_link } };
   }
 
   const existing = await admin.auth.admin.generateLink({ type: "magiclink", email });
   if (existing.error || !existing.data.user) {
-    throw new Error(`Growth Starter buyer ${email}: ${invite.error?.message ?? ""} / ${existing.error?.message ?? "no user"}`);
+    throw new Error(`Bundle buyer ${email}: ${invite.error?.message ?? ""} / ${existing.error?.message ?? "no user"}`);
   }
-  return { userId: existing.data.user.id, setupUrl: null };
+  return { userId: existing.data.user.id, account: { kind: "existing" } };
 }
 
-// After a Growth Starter purchase: the buyer gets the onboarding booking
-// link, and the team gets an alert. Runs in after(); a failed send is
-// logged, never fails the webhook.
-async function sendGrowthStarterEmails(purchase: GrowthStarterPurchase) {
+// After a bundle purchase: the buyer gets the welcome email (with their
+// account setup link if new), and the team gets an alert. Runs in after();
+// a failed send is logged, never fails the webhook.
+async function sendBundleEmails(purchase: BundlePurchase) {
   const resend = getResendClient();
-  const sends = [
+  const results = await Promise.allSettled([
     resend.emails.send({
       from: FROM,
       to: ALERT_TO,
-      replyTo: purchase.email ?? undefined,
-      subject: growthStarterAlertSubject(purchase),
-      html: renderGrowthStarterAlertHtml(purchase),
-      text: renderGrowthStarterAlertText(purchase),
+      replyTo: purchase.email,
+      subject: bundleAlertSubject(purchase),
+      html: renderBundleAlertHtml(purchase),
+      text: renderBundleAlertText(purchase),
     }),
-  ];
-  if (purchase.email) {
-    sends.push(
-      resend.emails.send({
-        from: FROM,
-        to: purchase.email,
-        subject: growthStarterWelcomeSubject,
-        html: renderGrowthStarterWelcomeHtml(purchase.name, purchase.proDays, purchase.account, purchase.planName),
-        text: renderGrowthStarterWelcomeText(purchase.name, purchase.proDays, purchase.account, purchase.planName),
-      })
-    );
-  }
-
-  for (const result of await Promise.allSettled(sends)) {
-    if (result.status === "rejected") console.error("Growth Starter email failed:", result.reason);
-    else if (result.value.error) console.error("Growth Starter email failed:", result.value.error);
+    resend.emails.send({
+      from: FROM,
+      to: purchase.email,
+      subject: bundleWelcomeSubject,
+      html: renderBundleWelcomeHtml(purchase.name, purchase.planName, purchase.planGranted, purchase.account),
+      text: renderBundleWelcomeText(purchase.name, purchase.planName, purchase.planGranted, purchase.account),
+    }),
+  ]);
+  for (const result of results) {
+    if (result.status === "rejected") console.error("Bundle email failed:", result.reason);
+    else if (result.value.error) console.error("Bundle email failed:", result.value.error);
   }
 }
 
@@ -230,57 +234,45 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
-      let userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
-      const buyerEmail = session.customer_details?.email ?? session.customer_email ?? null;
-      const isGuestStarter =
-        session.mode === "payment" && session.metadata?.offer === "growth_starter" && !userId && !!buyerEmail;
-      if (session.mode === "payment" && session.metadata?.offer === "growth_starter" && (userId || isGuestStarter)) {
+      const userId = session.metadata?.user_id ?? session.client_reference_id ?? undefined;
+      const plan = await bundlePlan(stripe, session);
+      if (plan) {
+        const buyerEmail = session.customer_details?.email ?? session.customer_email ?? null;
         if (session.payment_status !== "paid") break;
-        let proDays = growthStarterProDays(session);
-        const starterPlan = growthStarterPlan(session);
-        // "signed_in": bought while logged in. "existing": guest checkout with
-        // an email that already has an account. Else the new account's
-        // setup link.
-        let account: GrowthStarterAccount = { kind: "signed_in" };
-        let proBonusSkipped = false;
-        if (isGuestStarter) {
-          const buyer = await resolveGrowthStarterBuyer(admin, buyerEmail!, session.customer_details?.name ?? null);
-          userId = buyer.userId;
-          account = buyer.setupUrl ? { kind: "new", setupUrl: buyer.setupUrl } : { kind: "existing" };
-          // Checkout couldn't check a guest's plan. A paying subscriber keeps
-          // their subscription: granting Pro would overwrite its row.
-          const { data: current } = await admin
-            .from("subscriptions")
-            .select("stripe_subscription_id, status")
-            .eq("user_id", userId)
-            .maybeSingle();
-          if (current?.stripe_subscription_id && current.status !== "canceled") {
-            proBonusSkipped = session.metadata?.pro_bonus === "1";
-            proDays = 0;
-          }
-        }
-        const starterUserId = userId!;
-        if (proDays > 0) {
-          const subscription = await grantGrowthStarterPro(stripe, admin, session, proDays, starterPlan);
-          await upsertFromStripeSubscription(admin, subscription, starterUserId);
+        if (!buyerEmail) throw new Error(`Bundle session ${session.id} has no email`);
+        const buyerName = session.customer_details?.name ?? null;
+        const buyer = await resolveBuyer(admin, buyerEmail, buyerName);
+        // A paying subscriber keeps their subscription: granting the bundle
+        // would overwrite its row while it keeps billing, so the alert says
+        // to set it up by hand. A trialing one is an earlier bundle or
+        // Growth Starter (or this one, on a webhook retry), never billed, so
+        // the new bundle replaces it.
+        const { data: current } = await admin
+          .from("subscriptions")
+          .select("stripe_subscription_id, status")
+          .eq("user_id", buyer.userId)
+          .maybeSingle();
+        const isPaid = !!current?.stripe_subscription_id && (current.status === "active" || current.status === "past_due");
+        if (!isPaid) {
+          const customerId = await bundleCustomer(stripe, session, buyerEmail);
+          const subscription = await grantBundlePlan(stripe, admin, session, customerId, plan);
+          await upsertFromStripeSubscription(admin, subscription, buyer.userId);
         }
         after(() =>
-          sendGrowthStarterEmails({
+          sendBundleEmails({
             email: buyerEmail,
-            name: session.customer_details?.name ?? null,
+            name: buyerName,
             amountCents: session.amount_total,
             currency: session.currency,
             sessionId: session.id,
-            proDays,
-            planName: starterPlan === "pro_plus" ? "Pro+" : "Pro",
-            proBonusSkipped,
-            guest: isGuestStarter,
-            account,
+            planName: plan === "pro_plus" ? "Pro+" : "Pro",
+            planGranted: !isPaid,
+            account: buyer.account,
           })
         );
         after(() =>
-          recordUserEvent(starterUserId, "checkout_completed", {
-            props: { plan_id: null, billing: null, offer: "growth_starter", pro_days: proDays, pro_plan: starterPlan, guest: isGuestStarter },
+          recordUserEvent(buyer.userId, "checkout_completed", {
+            props: { plan_id: null, billing: null, offer: "bundle", pro_plan: plan, plan_granted: !isPaid },
             ref: session.id,
           })
         );
