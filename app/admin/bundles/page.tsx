@@ -6,7 +6,7 @@ import { BundleLinkForm } from "@/features/admin/BundleLinkForm";
 
 // Makes Stripe checkout links for the Pro and Pro+ bundles (12 months of the
 // plan plus 1 month of service), to send on a sales call. Each link is new
-// and lasts 24 hours.
+// and lasts 24 hours or 7 days.
 export default async function Page() {
   // The layout already gates /admin; checked again because this page makes payment links.
   const supabase = await createRealUserClient();
@@ -23,7 +23,7 @@ export default async function Page() {
           <div className="flex-1">
             <h1 className="text-lg font-semibold text-white light:text-gray-900">Super Admin · Bundle links</h1>
             <p className="text-xs text-gray-500">
-              A checkout link for 12 months of Pro or Pro+ plus 1 month of service. The buyer pays without signing up, and their account is ready by email right after. Each link lasts 24 hours.
+              A checkout link for 12 months of Pro or Pro+ plus 1 month of service. The buyer pays without signing up, and their account is ready by email right after. Each link lasts 24 hours or 7 days, your choice.
             </p>
           </div>
         </div>

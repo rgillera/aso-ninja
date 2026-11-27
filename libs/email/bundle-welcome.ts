@@ -40,7 +40,13 @@ export function renderBundleWelcomeHtml(fullName: string | null, planName: strin
   <p>${greetingHtml(fullName)}</p>
   <p>Thanks for your purchase! &#127881; ${access}</p>
   ${accountHtml(account)}
-  <p>Your 1 month of service starts now: your growth specialist will <strong>email you within 1 working day</strong> to get started.</p>
+  <p>Your growth specialist is now assigned to your account and is reviewing your app from store listing to purchase: your ASO and your funnel.</p>
+  <p><strong>What happens next</strong></p>
+  <ol style="padding-left: 20px;">
+    <li>Your specialist will <strong>email you within 1 working day</strong> to get you started.</li>
+    <li>Your 1:1 strategy call, within 7 days of your purchase, at a date and time you pick.</li>
+    <li>Then 1 month of support from your specialist to improve your app.</li>
+  </ol>
   <p>To get a head start, reply to this email with your App Store or Google Play link.</p>
   <p>If you haven't heard from us within 2 working days, email us at <a href="mailto:hello@appaso.io" style="color: #4f46e5;">hello@appaso.io</a>.</p>
   <p>Best,<br/>The AppASO Team</p>
@@ -57,7 +63,12 @@ Thanks for your purchase! ${access}
 
 ${accountText(account)}
 
-Your 1 month of service starts now: your growth specialist will email you within 1 working day to get started.
+Your growth specialist is now assigned to your account and is reviewing your app from store listing to purchase: your ASO and your funnel.
+
+What happens next:
+1. Your specialist will email you within 1 working day to get you started.
+2. Your 1:1 strategy call, within 7 days of your purchase, at a date and time you pick.
+3. Then 1 month of support from your specialist to improve your app.
 
 To get a head start, reply to this email with your App Store or Google Play link.
 

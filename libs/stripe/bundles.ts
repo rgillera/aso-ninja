@@ -11,13 +11,13 @@ export const BUNDLES: Record<BundlePlan, { label: string; name: string; descript
   pro: {
     label: "Pro",
     name: "AppASO Pro Annual + Growth Strategy",
-    description: "12 months of AppASO Pro, plus 1 month of 1:1 growth strategy support from a specialist who reviews your app.",
+    description: "12 months of AppASO Pro, plus a full review of your app, a 1:1 strategy call within 7 days, and 1 month of support from your growth specialist.",
     amountCents: 49000,
   },
   pro_plus: {
     label: "Pro+",
     name: "AppASO Pro+ Annual + Growth Strategy",
-    description: "12 months of AppASO Pro+, plus 1 month of 1:1 growth strategy support from a specialist who reviews your app.",
+    description: "12 months of AppASO Pro+, plus a full review of your app, a 1:1 strategy call within 7 days, and 1 month of support from your growth specialist.",
     amountCents: 149000,
   },
 };

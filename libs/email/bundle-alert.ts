@@ -49,7 +49,7 @@ export function bundleAlertSubject(p: BundlePurchase): string {
 export function renderBundleAlertHtml(p: BundlePurchase): string {
   const email = escapeHtml(p.email);
   return `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 15px; line-height: 1.6; color: #111827;">
-  <p>Someone just bought a ${escapeHtml(p.planName)} bundle. Start their month of service: they were told to expect your email within 1 working day.</p>
+  <p>Someone just bought a ${escapeHtml(p.planName)} bundle. Review their app (store listing to purchase, ASO and funnel) and email them your booking link within 1 working day; their strategy call must be within 7 days of purchase.</p>
   <ul>
     <li><strong>Name:</strong> ${p.name ? escapeHtml(p.name) : "not given"}</li>
     <li><strong>Email:</strong> <a href="mailto:${email}">${email}</a></li>
@@ -62,7 +62,7 @@ export function renderBundleAlertHtml(p: BundlePurchase): string {
 }
 
 export function renderBundleAlertText(p: BundlePurchase): string {
-  return `Someone just bought a ${p.planName} bundle. Start their month of service: they were told to expect your email within 1 working day.
+  return `Someone just bought a ${p.planName} bundle. Review their app (store listing to purchase, ASO and funnel) and email them your booking link within 1 working day; their strategy call must be within 7 days of purchase.
 
 Name: ${p.name ?? "not given"}
 Email: ${p.email}

@@ -6,6 +6,12 @@ import { CopyField } from "@/features/admin/CopyField";
 import { BUNDLES, type BundlePlan } from "@/libs/stripe/bundles";
 import { bundleEmailBody, bundleEmailSubject } from "@/features/admin/bundleEmail";
 
+const DURATIONS = [
+  { id: "24h", label: "24 hours" },
+  { id: "7d", label: "7 days" },
+] as const;
+type Duration = (typeof DURATIONS)[number]["id"];
+
 function price(cents: number) {
   return `$${(cents / 100).toLocaleString("en-US")}`;
 }
@@ -16,7 +22,8 @@ function price(cents: number) {
 export function BundleLinkForm() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [result, setResult] = useState<{ plan: BundlePlan; url: string; expiresAt: string; email: string; firstName: string } | null>(null);
+  const [duration, setDuration] = useState<Duration>("24h");
+  const [result, setResult] = useState<{ plan: BundlePlan; url: string; expiresAt: string; email: string; firstName: string; duration: Duration } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -24,8 +31,8 @@ export function BundleLinkForm() {
     setError(null);
     setResult(null);
     startTransition(async () => {
-      const res = await createBundleLinkAction(plan, email);
-      if (res.ok) setResult({ plan, url: res.url, expiresAt: res.expiresAt, email: email.trim().toLowerCase(), firstName });
+      const res = await createBundleLinkAction(plan, email, duration);
+      if (res.ok) setResult({ plan, url: res.url, expiresAt: res.expiresAt, email: email.trim().toLowerCase(), firstName, duration });
       else setError(res.error);
     });
   }
@@ -63,6 +70,24 @@ export function BundleLinkForm() {
         <p className="mt-1.5 text-xs text-gray-500">
           With an email, checkout can only be paid with it, so the plan goes on the account you expect. Leave it empty to let the buyer type their own.
         </p>
+
+        <div className="mt-4">
+          <span className="block text-xs font-medium text-gray-400 light:text-gray-600">Link works for</span>
+          <div className="mt-1.5 inline-flex rounded-lg bg-black/30 light:bg-gray-100 p-1 ring-1 ring-white/10 light:ring-black/10">
+            {DURATIONS.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDuration(d.id)}
+                aria-pressed={duration === d.id}
+                className={`rounded-md px-3 py-1 text-xs font-medium ${duration === d.id ? "bg-indigo-600 text-white" : "text-gray-400 light:text-gray-600 hover:text-white light:hover:text-gray-900"}`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-gray-500">24 hours for buyers ready on the call; 7 days for those who need someone&apos;s approval first.</p>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           {(Object.keys(BUNDLES) as BundlePlan[]).map((plan) => (
