@@ -51,7 +51,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
     headline: "Everything you use AppTweak for,",
     headlineAccent: "without the $249/mo plan.",
     subhead:
-      "Relevancy scoring, downloads per keyword, and unlimited tracked keywords on both stores. Start free, then upgrade to Pro from " +
+      "Relevancy scoring, downloads per keyword, and up to 4,000 tracked keywords on both stores. Start free, then upgrade to Pro from " +
       proMonthly +
       " when you need more.",
     comparison: {
@@ -60,7 +60,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
       rows: [
         ["Price", "$249/mo", PRO_PRICE],
         ["Free plan", "No", FREE_PLAN],
-        ["Tracked keywords", "1,500", "Unlimited"],
+        ["Tracked keywords", "1,500", "1,000 (4,000 on Pro+)"],
         ["Apps", "10", "Unlimited"],
         ["Relevancy scoring", "Yes", "Yes, 1,000 keywords"],
         ["Downloads per keyword", "Yes", "Yes, from your own store totals"],
@@ -77,7 +77,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
     headline: "Downloads per keyword",
     headlineAccent: "without paying $239/mo.",
     subhead:
-      "MobileAction keeps downloads per keyword on its Pro plan. AppASO Pro includes it, plus unlimited keywords and apps, from " +
+      "MobileAction keeps downloads per keyword on its Pro plan. AppASO Pro includes it, plus unlimited apps, from " +
       proMonthly +
       ". Or start on the free plan.",
     comparison: {
@@ -86,7 +86,7 @@ export const AD_LANDING_PAGES: AdLandingPage[] = [
       rows: [
         ["Price", "$239/mo ($199 billed yearly)", PRO_PRICE],
         ["Free plan", "No, Lite starts at $15/mo", FREE_PLAN],
-        ["Tracked keywords", "1,500", "Unlimited"],
+        ["Tracked keywords", "1,500", "1,000 (4,000 on Pro+)"],
         ["Apps", "10", "Unlimited"],
         ["Downloads per keyword", "Yes", "Yes, from your own store totals"],
         ["Competitors per app", "15", "5 (8 on Pro+)"],

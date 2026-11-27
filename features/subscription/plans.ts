@@ -59,7 +59,7 @@ export const PLANS: Plan[] = [
     features: [
       "Includes all in Free plan, plus:",
       "Unlimited apps & countries",
-      "Unlimited keywords",
+      "1,000 tracked keywords",
       "1 workspace, 3 seats",
       "5 competitors per app",
       "6 months of history",
@@ -84,6 +84,7 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Pro plan, plus:",
+      "4,000 tracked keywords",
       "4 workspaces, 6 seats each",
       "Relevancy & opportunity scoring (5,000 keywords)",
       "Ranked keywords",

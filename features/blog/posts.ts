@@ -133,7 +133,7 @@ export const BLOG_POSTS: BlogPost[] = [
             "AppASO",
             "iOS & Android ASO with relevancy scoring & download estimates",
             "Free (100 keywords) / $49/mo Pro",
-            "100 free; unlimited from the Pro plan, both platforms",
+            "100 free, 1,000 on Pro, 4,000 on Pro+, both platforms",
             "Indie developers & small teams on iOS and Android, agencies, large publishers",
           ],
         ],
@@ -144,7 +144,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppTweak's real strength is depth: the Essential plan ($79/mo) tracks 500 keywords with 6 months of historical data and includes relevancy scoring, and it scales up through Grow ($249/mo, 1,500 keywords, 12 months, organic installs per keyword) to Grow Plus ($499/mo, 3,000 keywords, 24 months). That's genuinely useful market intelligence if you're running ASO across a large portfolio and want years of trend data to lean on. It's also a much bigger commitment than most solo developers or small teams need. AppASO's Pro plan tracks unlimited keywords across unlimited apps for $49/mo, well below AppTweak's cheapest tier, and includes relevancy scoring and estimated downloads per keyword. What it doesn't have is AppTweak's multi-year archive: Pro keeps 6 months of history and Pro+ keeps a year.",
+        text: "AppTweak's real strength is depth: the Essential plan ($79/mo) tracks 500 keywords with 6 months of historical data and includes relevancy scoring, and it scales up through Grow ($249/mo, 1,500 keywords, 12 months, organic installs per keyword) to Grow Plus ($499/mo, 3,000 keywords, 24 months). That's genuinely useful market intelligence if you're running ASO across a large portfolio and want years of trend data to lean on. It's also a much bigger commitment than most solo developers or small teams need. AppASO's Pro plan tracks 1,000 keywords across unlimited apps for $49/mo, well below AppTweak's cheapest tier, and includes relevancy scoring and estimated downloads per keyword. What it doesn't have is AppTweak's multi-year archive: Pro keeps 6 months of history and Pro+ keeps a year.",
       },
       {
         type: "heading",
@@ -168,7 +168,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "AppFollow's free plan tracks 20 keywords across 2 apps and 2 countries with 20 review replies a month — a fraction of AppASO's free plan, though AppASO's free plan covers metadata optimization too. Where AppFollow genuinely pulls ahead is review management: sentiment analysis, automated triage, and direct-reply tooling that's more mature than what most ASO-first tools offer. Its Premium plans start at $99/mo, and a real ASO package (beyond the free 20 keywords) starts at 200 tracked keywords. If reviews are your primary pain point, AppFollow specializes there in a way AppASO doesn't yet match; if keyword tracking and metadata are the priority, AppASO's unlimited tracking from $49/mo (Pro) is the cheaper way to get there.",
+        text: "AppFollow's free plan tracks 20 keywords across 2 apps and 2 countries with 20 review replies a month — a fraction of AppASO's free plan, though AppASO's free plan covers metadata optimization too. Where AppFollow genuinely pulls ahead is review management: sentiment analysis, automated triage, and direct-reply tooling that's more mature than what most ASO-first tools offer. Its Premium plans start at $99/mo, and a real ASO package (beyond the free 20 keywords) starts at 200 tracked keywords. If reviews are your primary pain point, AppFollow specializes there in a way AppASO doesn't yet match; if keyword tracking and metadata are the priority, AppASO's Pro plan at $49/mo, with 1,000 tracked keywords, is the cheaper way to get there.",
       },
       {
         type: "heading",
@@ -184,7 +184,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Astro is the closest thing to AppASO on price: a flat ~$99/year (about $9/month) for unlimited keywords across unlimited apps, no per-keyword or per-app fees. It's a genuinely well-built, indie-friendly tool — and its real limitation is scope. Astro is a native Mac app built specifically for Apple's App Store; there's no Google Play tracking, no Android support, and no built-in metadata optimization workspace or competitor keyword discovery. If you only ship on iOS and want the cheapest possible flat-fee keyword tracker, Astro is worth a serious look. If you're on both iOS and Android, or want keyword research, metadata tooling, and competitor tracking in the same workspace, AppASO picks up where Astro's scope ends: its free plan covers 100 keywords across 2 apps or countries on either store, and Pro adds unlimited tracking from $49/mo.",
+        text: "Astro is the closest thing to AppASO on price: a flat ~$99/year (about $9/month) for unlimited keywords across unlimited apps, no per-keyword or per-app fees. It's a genuinely well-built, indie-friendly tool — and its real limitation is scope. Astro is a native Mac app built specifically for Apple's App Store; there's no Google Play tracking, no Android support, and no built-in metadata optimization workspace or competitor keyword discovery. If you only ship on iOS and want the cheapest possible flat-fee keyword tracker, Astro is worth a serious look. If you're on both iOS and Android, or want keyword research, metadata tooling, and competitor tracking in the same workspace, AppASO picks up where Astro's scope ends: its free plan covers 100 keywords across 2 apps or countries on either store, and Pro tracks 1,000 keywords from $49/mo.",
       },
       {
         type: "heading",
@@ -194,7 +194,7 @@ export const BLOG_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Relevancy scoring and estimated downloads per keyword included on Pro, from $49/mo",
-          "Unlimited keyword tracking on Pro, covering Android as well as iOS",
+          "1,000 tracked keywords on Pro and 4,000 on Pro+, covering Android as well as iOS",
           "A genuinely free plan to start on: 100 tracked keywords, rank tracking, and metadata optimization across 2 apps, no credit card required",
           "One workspace for keyword research, AI keyword suggestions, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
           "An ASO certification exam included with Pro, alongside a free overview course",
@@ -207,12 +207,12 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "If you need investor-grade market intelligence or you're running ASO across a large multi-app portfolio with a dedicated team, AppTweak, MobileAction, or Sensor Tower's depth of historical and competitive data is real, and you'll pay enterprise or agency prices for it. If AI-automated review replies and bulk multi-storefront publishing matter most, AppRadar fits. If reviews are your single biggest problem, AppFollow's sentiment tooling is the most mature option here. If you're a solo developer who only ships on iOS and wants the cheapest possible flat-fee keyword tracker, Astro is genuinely worth using. But if you're an indie developer or small team shipping on iOS and Android who wants unlimited keyword tracking, metadata tooling, and competitor tracking in one workspace, without an enterprise price tag, a sales call, or a Mac-only tool — that's exactly where AppASO fits.",
+        text: "If you need investor-grade market intelligence or you're running ASO across a large multi-app portfolio with a dedicated team, AppTweak, MobileAction, or Sensor Tower's depth of historical and competitive data is real, and you'll pay enterprise or agency prices for it. If AI-automated review replies and bulk multi-storefront publishing matter most, AppRadar fits. If reviews are your single biggest problem, AppFollow's sentiment tooling is the most mature option here. If you're a solo developer who only ships on iOS and wants the cheapest possible flat-fee keyword tracker, Astro is genuinely worth using. But if you're an indie developer or small team shipping on iOS and Android who wants keyword tracking across unlimited apps, metadata tooling, and competitor tracking in one workspace, without an enterprise price tag, a sales call, or a Mac-only tool — that's exactly where AppASO fits.",
       },
       {
         type: "faq",
         items: [
-          { question: "What is the cheapest ASO tool that covers iOS and Google Play?", answer: "AppASO has a free plan with 100 tracked keywords across 2 iOS or Android apps or countries, and Pro costs $49/mo for unlimited keywords. Astro is cheaper at $9/mo billed yearly, but it only covers the App Store and runs only on a Mac." },
+          { question: "What is the cheapest ASO tool that covers iOS and Google Play?", answer: "AppASO has a free plan with 100 tracked keywords across 2 iOS or Android apps or countries, and Pro costs $49/mo for 1,000 keywords. Astro is cheaper at $9/mo billed yearly, but it only covers the App Store and runs only on a Mac." },
           { question: "Which ASO tool is best for indie developers?", answer: "It depends on your platforms and budget. Solo iOS developers on a Mac often pick Astro. Indie developers shipping on both iOS and Android, or who want relevancy scoring and downloads per keyword without enterprise pricing, are AppASO's core audience." },
           { question: "Does AppASO replace Sensor Tower?", answer: "No. Sensor Tower is built for market-wide download and revenue intelligence used in strategy and investment decisions. AppASO is built for day-to-day ASO: tracking your own keywords and improving your own listing." },
         ],
@@ -220,7 +220,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: "cta",
         heading: "Try AppASO free",
-        body: "Track 100 keywords and optimize your metadata for free, or unlock unlimited keyword tracking, relevancy scoring, and download estimates from $49/mo. No credit card required.",
+        body: "Track 100 keywords and optimize your metadata for free, or track up to 4,000 keywords with relevancy scoring, and download estimates from $49/mo. No credit card required.",
         label: "Create free account",
         href: "/signup",
       },
