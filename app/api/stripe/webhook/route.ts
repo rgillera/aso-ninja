@@ -16,6 +16,7 @@ import {
   renderBundleWelcomeText,
   type BundleAccount,
 } from "@/libs/email/bundle-welcome";
+import { BUNDLES, isBundlePlan, type BundlePlan } from "@/libs/stripe/bundles";
 
 const FROM = "AppASO <hello@appaso.io>";
 const ALERT_TO = "hello@appaso.io";
@@ -23,21 +24,22 @@ const ALERT_TO = "hello@appaso.io";
 const DAY_SECONDS = 24 * 60 * 60;
 const BUNDLE_DAYS = 365;
 
-// Bundles (12 months of Pro or Pro+ plus 1 month of service) are sold on a
-// call through Stripe Payment Links, one link per plan, so the buyer pays
-// without signing up first. Each link carries metadata plan = "pro" or
-// "pro_plus", which Stripe copies onto its checkout sessions; the link itself
-// is read too, in case a session lacks it. Payment Links without that
-// metadata aren't bundles and are left alone.
-type BundlePlan = "pro" | "pro_plus";
+// Bundles (12 months of Pro or Pro+ plus 1 month of service) are paid once
+// without signing up first, through a checkout link from the admin Bundle
+// Links page (session metadata offer "bundle" and plan), or a Stripe Payment
+// Link whose metadata has plan = "pro" or "pro_plus" (Stripe copies it onto
+// the session; the link itself is read too, in case it didn't). Payment
+// Links without that metadata aren't bundles and are left alone.
 async function bundlePlan(stripe: Stripe, session: Stripe.Checkout.Session): Promise<BundlePlan | null> {
-  if (session.mode !== "payment" || !session.payment_link) return null;
+  if (session.mode !== "payment") return null;
+  if (session.metadata?.offer === "bundle") return isBundlePlan(session.metadata.plan) ? session.metadata.plan : null;
+  if (!session.payment_link) return null;
   let plan = session.metadata?.plan;
   if (!plan) {
     const linkId = typeof session.payment_link === "string" ? session.payment_link : session.payment_link.id;
     plan = (await stripe.paymentLinks.retrieve(linkId)).metadata?.plan;
   }
-  return plan === "pro" || plan === "pro_plus" ? plan : null;
+  return isBundlePlan(plan) ? plan : null;
 }
 
 // A Payment Link only makes a customer when set to, so one is made here if
@@ -265,7 +267,7 @@ export async function POST(request: NextRequest) {
             amountCents: session.amount_total,
             currency: session.currency,
             sessionId: session.id,
-            planName: plan === "pro_plus" ? "Pro+" : "Pro",
+            planName: BUNDLES[plan].label,
             planGranted: !isPaid,
             account: buyer.account,
           })

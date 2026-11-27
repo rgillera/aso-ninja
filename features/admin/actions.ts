@@ -14,6 +14,8 @@ import { isRestrictedSearch } from "@/libs/keyword-restricted";
 import { persistIpadRank } from "@/libs/store/ipad-only";
 import { fetchAllRows } from "@/libs/supabase/fetch-all";
 import { playLang } from "@/libs/store/play-language";
+import { createStripeClient } from "@/libs/stripe/server";
+import { bundlePriceId, isBundlePlan } from "@/libs/stripe/bundles";
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -569,4 +571,43 @@ export async function saveQuickAuditFollowupAction(id: string, followupSelected:
   await createAdminClient().from("quick_audits")
     .update({ followup_selected: followupSelected.slice(0, 3), updated_at: new Date().toISOString() })
     .eq("id", id);
+}
+
+// Admin → Bundle Links: a Stripe checkout link for a Pro or Pro+ bundle, to
+// send on a sales call. The buyer pays without signing up; the webhook makes
+// or finds their account by the checkout email (metadata offer "bundle").
+// With an email, checkout is locked to it, so the plan lands on the account
+// the buyer was told about. Links last 24 hours, Stripe's longest.
+export async function createBundleLinkAction(
+  plan: string,
+  email: string
+): Promise<{ ok: true; url: string; expiresAt: string } | { ok: false; error: string }> {
+  await requireSuperAdmin();
+  if (!isBundlePlan(plan)) return { ok: false, error: "Unknown plan." };
+  const buyerEmail = email.trim().toLowerCase();
+  if (buyerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerEmail)) return { ok: false, error: "That email doesn't look right." };
+
+  const stripe = createStripeClient();
+  const site = process.env.NEXT_PUBLIC_SITE_URL;
+  const session = await bundlePriceId(stripe, plan)
+    .then((price) =>
+      stripe.checkout.sessions.create({
+        mode: "payment",
+        line_items: [{ price, quantity: 1 }],
+        customer_email: buyerEmail || undefined,
+        customer_creation: "always",
+        invoice_creation: { enabled: true },
+        metadata: { offer: "bundle", plan },
+        expires_at: Math.floor(Date.now() / 1000) + 24 * 60 * 60 - 60,
+        success_url: `${site}/purchased`,
+        cancel_url: `${site}/`,
+      })
+    )
+    .catch((err: unknown) => {
+      console.error("Bundle link failed:", err);
+      return null;
+    });
+  if (!session?.url) return { ok: false, error: "Stripe couldn't make the link. Check the logs." };
+
+  return { ok: true, url: session.url, expiresAt: new Date(session.expires_at * 1000).toISOString() };
 }
