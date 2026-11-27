@@ -5,9 +5,21 @@ import type Stripe from "stripe";
 // buyer; the Stripe webhook turns the payment into an account and plan.
 export type BundlePlan = "pro" | "pro_plus";
 
-export const BUNDLES: Record<BundlePlan, { label: string; name: string; amountCents: number }> = {
-  pro: { label: "Pro", name: "AppASO Pro Bundle", amountCents: 49000 },
-  pro_plus: { label: "Pro+", name: "AppASO Pro+ Bundle", amountCents: 149000 },
+// name and description are what the buyer sees at checkout and on the
+// receipt; changing them here renames the Stripe product on the next link.
+export const BUNDLES: Record<BundlePlan, { label: string; name: string; description: string; amountCents: number }> = {
+  pro: {
+    label: "Pro",
+    name: "AppASO Pro Annual + Growth Strategy",
+    description: "12 months of AppASO Pro, plus 1 month of 1:1 growth strategy support from a specialist who reviews your app.",
+    amountCents: 49000,
+  },
+  pro_plus: {
+    label: "Pro+",
+    name: "AppASO Pro+ Annual + Growth Strategy",
+    description: "12 months of AppASO Pro+, plus 1 month of 1:1 growth strategy support from a specialist who reviews your app.",
+    amountCents: 149000,
+  },
 };
 
 export function isBundlePlan(value: unknown): value is BundlePlan {
@@ -21,17 +33,23 @@ export function isBundlePlan(value: unknown): value is BundlePlan {
 export async function bundlePriceId(stripe: Stripe, plan: BundlePlan): Promise<string> {
   const bundle = BUNDLES[plan];
   const lookupKey = `bundle_${plan}_${bundle.amountCents}`;
-  const found = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-  if (found.data[0]) return found.data[0].id;
+  const found = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1, expand: ["data.product"] });
+  const existing = found.data[0];
+  if (existing) {
+    const product = existing.product as Stripe.Product;
+    if (product.name !== bundle.name || product.description !== bundle.description) {
+      await stripe.products.update(product.id, { name: bundle.name, description: bundle.description });
+    }
+    return existing.id;
+  }
 
+  // Product first: a price's inline product_data can't carry a description.
+  const product = await stripe.products.create(
+    { name: bundle.name, description: bundle.description, metadata: { plan } },
+    { idempotencyKey: `bundle-product-${lookupKey}` }
+  );
   const price = await stripe.prices.create(
-    {
-      currency: "usd",
-      unit_amount: bundle.amountCents,
-      lookup_key: lookupKey,
-      product_data: { name: bundle.name, metadata: { plan } },
-      metadata: { plan },
-    },
+    { product: product.id, currency: "usd", unit_amount: bundle.amountCents, lookup_key: lookupKey, metadata: { plan } },
     { idempotencyKey: `bundle-price-${lookupKey}` }
   );
   return price.id;
