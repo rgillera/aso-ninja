@@ -59,7 +59,8 @@ export const PLANS: Plan[] = [
     features: [
       "Includes all in Free plan, plus:",
       "Unlimited apps & countries",
-      "1,000 tracked keywords",
+      "1,000 Keywords",
+      "Relevancy & opportunity scoring",
       "1 workspace, 3 seats",
       "5 competitors per app",
       "6 months of history",
@@ -67,7 +68,6 @@ export const PLANS: Plan[] = [
       "Keyword Inspector",
       "Keyword Inspector relevancy for the top 10 apps",
       "Est. searches, impressions & downloads per keyword",
-      "Relevancy & opportunity scoring (1,000 keywords)",
       "AI keyword suggestions",
       "Long tail keywords",
       "Intent grouping",
@@ -84,9 +84,8 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Pro plan, plus:",
-      "5,000 tracked keywords",
+      "5,000 Keywords",
       "4 workspaces, 6 seats each",
-      "Relevancy & opportunity scoring (5,000 keywords)",
       "Ranked keywords",
       "Keyword simulator",
       "8 competitors per app",
