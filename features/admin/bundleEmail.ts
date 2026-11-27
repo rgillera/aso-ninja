@@ -49,7 +49,7 @@ Growth strategy, with me as your specialist:
 - I'll be the one assigned to your account.
 - After you purchase, I review your app from store listing to purchase: your ASO and your funnel.
 - 1 strategy call within 7 days. I'll send you a booking link so you pick the date and time.
-- Then 1 month of support to improve your app.
+- Then 1 month of support, where I show you exactly what to fix and how to grow.
 
 It's ${dollars(bundle.amountCents)}, one payment. No subscription, nothing renews.
 

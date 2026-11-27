@@ -45,7 +45,7 @@ export function renderBundleWelcomeHtml(fullName: string | null, planName: strin
   <ol style="padding-left: 20px;">
     <li>Your specialist will <strong>email you within 1 working day</strong> to get you started.</li>
     <li>Your 1:1 strategy call, within 7 days of your purchase, at a date and time you pick.</li>
-    <li>Then 1 month of support from your specialist to improve your app.</li>
+    <li>Then 1 month of support from your specialist, showing you exactly what to fix and how to grow.</li>
   </ol>
   <p>To get a head start, reply to this email with your App Store or Google Play link.</p>
   <p>If you haven't heard from us within 2 working days, email us at <a href="mailto:hello@appaso.io" style="color: #4f46e5;">hello@appaso.io</a>.</p>
@@ -68,7 +68,7 @@ Your growth specialist is now assigned to your account and is reviewing your app
 What happens next:
 1. Your specialist will email you within 1 working day to get you started.
 2. Your 1:1 strategy call, within 7 days of your purchase, at a date and time you pick.
-3. Then 1 month of support from your specialist to improve your app.
+3. Then 1 month of support from your specialist, showing you exactly what to fix and how to grow.
 
 To get a head start, reply to this email with your App Store or Google Play link.
 
