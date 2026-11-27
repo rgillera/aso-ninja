@@ -84,7 +84,7 @@ export const PLANS: Plan[] = [
     badge: null,
     features: [
       "Includes all in Pro plan, plus:",
-      "4,000 tracked keywords",
+      "5,000 tracked keywords",
       "4 workspaces, 6 seats each",
       "Relevancy & opportunity scoring (5,000 keywords)",
       "Ranked keywords",

@@ -22,7 +22,7 @@ const APPASO_PLANS_TABLE = {
   rows: [
     ["Free", "$0", "100", "2 apps or countries", "1 month", "Keyword research, rank tracking, metadata optimization"],
     ["Pro", "$49/mo", "1,000", "Unlimited", "6 months", "Relevancy scoring (1,000 keywords), est. downloads per keyword, Keyword Inspector relevancy for the top 10 apps, AI keyword suggestions, 5 competitors per app, 3 seats"],
-    ["Pro+", "$149/mo, or $1,490/yr billed yearly", "4,000", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), ranked keywords, keyword simulator, 8 competitors per app"],
+    ["Pro+", "$149/mo, or $1,490/yr billed yearly", "5,000", "Unlimited", "1 year", "4 workspaces, 6 seats each, relevancy scoring (5,000 keywords), ranked keywords, keyword simulator, 8 competitors per app"],
     ["Enterprise", "Custom", "Custom", "Unlimited", "Custom", "Custom limits for publishers and agencies"],
   ],
 };
@@ -88,7 +88,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         headers: ["", "AppTweak Grow", "AppASO Pro"],
         rows: [
           ["Price", "$249/mo", "$49/mo"],
-          ["Tracked keywords", "1,500", "1,000 (4,000 on Pro+)"],
+          ["Tracked keywords", "1,500", "1,000 (5,000 on Pro+)"],
           ["Apps", "10", "Unlimited"],
           ["History", "12 months", "6 months (1 year on Pro+)"],
           ["Relevancy scoring", "Yes", "Yes, up to 1,000 keywords"],
@@ -167,7 +167,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Downloads per keyword for much less: MobileAction includes them from Pro at $239/mo. AppASO Pro includes estimated downloads per keyword at $49/mo.",
-          "No app cap on Pro: unlimited apps, versus 10 apps on MobileAction Pro. Pro tracks 1,000 keywords, and Pro+ tracks 4,000 for $149/mo, versus 1,500 on MobileAction Pro.",
+          "No app cap on Pro: unlimited apps, versus 10 apps on MobileAction Pro. Pro tracks 1,000 keywords, and Pro+ tracks 5,000 for $149/mo, versus 1,500 on MobileAction Pro.",
           "Relevancy scoring from Pro, so you can see which keywords actually fit your app before you chase them.",
           "A real free plan: 100 tracked keywords across 2 apps at $0, versus 100 keywords and 5 apps on the $15 Lite plan.",
         ],
@@ -226,7 +226,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         rows: [
           ["Free", "No free plan", "Free: 100 keywords, 2 apps"],
           ["Entry", "Essential: $79/mo, 500 keywords, 5 apps", "Pro: $49/mo, 1,000 keywords, unlimited apps"],
-          ["Mid", "Grow: $249/mo, 1,500 keywords, 10 apps", "Pro+: $149/mo ($1,490/yr billed yearly), 4,000 keywords, unlimited apps, 4 workspaces"],
+          ["Mid", "Grow: $249/mo, 1,500 keywords, 10 apps", "Pro+: $149/mo ($1,490/yr billed yearly), 5,000 keywords, unlimited apps, 4 workspaces"],
           ["Top", "Grow Plus: $499/mo, 3,000 keywords, 15 apps", "Enterprise: custom"],
         ],
       },
@@ -257,7 +257,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "You're an indie developer, startup, or small team and the price of AppTweak's mid tiers is hard to justify.",
-          "You want unlimited apps and more tracked keywords per dollar: 1,000 on Pro, 4,000 on Pro+.",
+          "You want unlimited apps and more tracked keywords per dollar: 1,000 on Pro, 5,000 on Pro+.",
           "You want relevancy scoring and downloads per keyword without paying $249/mo.",
           "You'd like to start free and upgrade only when it's clearly worth it.",
         ],
@@ -303,7 +303,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
         rows: [
           ["Free / entry", "Lite: $15/mo, 100 keywords, 5 apps", "Free: $0, 100 keywords, 2 apps"],
           ["Core", "Basic: $69/mo, 500 keywords, 8 apps", "Pro: $49/mo, 1,000 keywords, unlimited apps"],
-          ["Advanced", "Pro: $239/mo, 1,500 keywords, 10 apps", "Pro+: $149/mo ($1,490/yr billed yearly), 4,000 keywords, unlimited apps, 4 workspaces"],
+          ["Advanced", "Pro: $239/mo, 1,500 keywords, 10 apps", "Pro+: $149/mo ($1,490/yr billed yearly), 5,000 keywords, unlimited apps, 4 workspaces"],
           ["Top", "Enterprise: custom", "Enterprise: custom"],
         ],
       },
@@ -361,11 +361,11 @@ export const COMPARISON_POSTS: BlogPost[] = [
         rows: [
           ["Price", "$29/mo, or $290/yr", "$49/mo"],
           ["Free option", "7-day free trial", "Free plan: 100 keywords, 2 apps"],
-          ["Tracked keywords", "2,500", "1,000 (4,000 on Pro+)"],
+          ["Tracked keywords", "2,500", "1,000 (5,000 on Pro+)"],
           ["Apps", "10", "Unlimited"],
           ["Competitors", "Unlimited", "5 per app (8 on Pro+)"],
           ["Team seats", "5 seats on the Agency plan ($149/mo)", "3 seats (6 per workspace on Pro+)"],
-          ["Higher tier", "Agency: $149/mo, 50 apps, 10,000 keywords", "Pro+: $149/mo, unlimited apps, 4,000 keywords, 4 workspaces; Enterprise with custom limits"],
+          ["Higher tier", "Agency: $149/mo, 50 apps, 10,000 keywords", "Pro+: $149/mo, unlimited apps, 5,000 keywords, 4 workspaces; Enterprise with custom limits"],
         ],
       },
       { type: "heading", text: "Where Sonar is stronger" },
@@ -514,7 +514,7 @@ export const COMPARISON_POSTS: BlogPost[] = [
       { type: "heading", text: "1. AppASO" },
       {
         type: "paragraph",
-        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords across 2 apps, with keyword research, rank tracking, and metadata optimization. Pro ($49/mo) raises the cap to 1,000 tracked keywords (4,000 on Pro+) and adds relevancy & opportunity scoring for 1,000 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
+        text: "AppASO is a web-based ASO workspace for the App Store and Google Play. The free plan tracks 100 keywords across 2 apps, with keyword research, rank tracking, and metadata optimization. Pro ($49/mo) raises the cap to 1,000 tracked keywords (5,000 on Pro+) and adds relevancy & opportunity scoring for 1,000 keywords, estimated downloads per keyword from your real App Store Connect or Play Console totals, AI keyword suggestions, and competitor tracking.",
       },
       {
         type: "paragraph",

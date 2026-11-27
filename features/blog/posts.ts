@@ -133,7 +133,7 @@ export const BLOG_POSTS: BlogPost[] = [
             "AppASO",
             "iOS & Android ASO with relevancy scoring & download estimates",
             "Free (100 keywords) / $49/mo Pro",
-            "100 free, 1,000 on Pro, 4,000 on Pro+, both platforms",
+            "100 free, 1,000 on Pro, 5,000 on Pro+, both platforms",
             "Indie developers & small teams on iOS and Android, agencies, large publishers",
           ],
         ],
@@ -194,7 +194,7 @@ export const BLOG_POSTS: BlogPost[] = [
         type: "bullets",
         items: [
           "Relevancy scoring and estimated downloads per keyword included on Pro, from $49/mo",
-          "1,000 tracked keywords on Pro and 4,000 on Pro+, covering Android as well as iOS",
+          "1,000 tracked keywords on Pro and 5,000 on Pro+, covering Android as well as iOS",
           "A genuinely free plan to start on: 100 tracked keywords, rank tracking, and metadata optimization across 2 apps, no credit card required",
           "One workspace for keyword research, AI keyword suggestions, metadata optimization, competitor tracking, and reviews, instead of paying separately for tools that each specialize in one slice of that",
           "An ASO certification exam included with Pro, alongside a free overview course",
@@ -220,7 +220,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         type: "cta",
         heading: "Try AppASO free",
-        body: "Track 100 keywords and optimize your metadata for free, or track up to 4,000 keywords with relevancy scoring, and download estimates from $49/mo. No credit card required.",
+        body: "Track 100 keywords and optimize your metadata for free, or track up to 5,000 keywords with relevancy scoring, and download estimates from $49/mo. No credit card required.",
         label: "Create free account",
         href: "/signup",
       },
